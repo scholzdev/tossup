@@ -10,8 +10,7 @@ local catalog, characters = ui.catalog, ui.characters
 local function sidebar()
   box(16, 16, 248, 768, C.ink)
   outline(16, 16, 248, 768, C.panel_light)
-  centered("COIN", 25, 34, 230, ui.f48, C.gold)
-  centered("ROGUELIKE", 25, 87, 230, ui.f20, C.face)
+  centered("TOSSUP", 25, 40, 230, ui.f48, C.gold)
   local p = ui.game.player
   local stats = {
     {"GOLD", tostring(p.gold), C.gold},

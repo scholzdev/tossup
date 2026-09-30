@@ -46,8 +46,7 @@ local function draw_encounter()
 
   box(28, 28, 1224, 118, C.ink)
   outline(28, 28, 1224, 118, C.panel_light)
-  text("COIN", 43, 37, ui.f32, C.gold)
-  text("ROGUELIKE", 44, 74, ui.f16, C.face)
+  text("TOSSUP", 43, 37, ui.f32, C.gold)
   text("RUN " .. ui.game.encounter_index .. " / 4", 44, 110, ui.f16, C.muted)
   text(e.boss and "THE HOUSE" or e.name:upper(), 267, 37, ui.f32,
     e.boss and C.red or C.face)

@@ -10,7 +10,7 @@ local catalog, characters = ui.catalog, ui.characters
 local function draw_menu()
   box(144, 67, 992, 670, C.ink)
   outline(144, 67, 992, 670, C.gold)
-  centered("COIN ROGUELIKE", 160, 92, 960, ui.f48, C.gold)
+  centered("TOSSUP", 160, 92, 960, ui.f48, C.gold)
   local character = characters[ui.selected_character]
   text("CHARACTER", 173, 186, ui.f16, C.gold)
   box(172, 210, 346, 310, C.panel)
