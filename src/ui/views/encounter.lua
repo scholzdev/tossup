@@ -85,6 +85,11 @@ local function draw_encounter()
     box(x, y, 224, 64, owned and C.panel or C.slot)
     outline(x, y, 224, 64, current and C.gold or owned and C.panel_light or C.ink)
     if owned then
+      if current then -- tab on the card's top edge
+        color(C.gold)
+        love.graphics.rectangle("fill", x + 140, y - 9, 76, 18, 4)
+        centered("CURRENT", x + 140, y - 9, 76, ui.f16, C.ink)
+      end
       coin_image(owned.id, x + 4, y + 4, 56)
       text(catalog[owned.id].name:upper(), x + 63, y + 7, ui.f20, C.face)
       text(math.floor(Game.probability(ui.game, owned) * 100 + .5) .. "% HEADS",
