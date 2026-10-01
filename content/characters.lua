@@ -11,9 +11,9 @@ return {
   seer = {
     name = "The Seer", description = "Risk and changing odds",
     starter = "normal", deck = {"normal", "normal", "focus"},
-    pool = {"normal", "lucky", "focus", "spark"},
-    locked = {{"cursed", 3}, {"dagger", 3}, {"contrarian", 4}, {"lucky_seven", 4}, {"blood", 4},
-      {"gambler", 5}, {"hourglass", 5}, {"jester", 5}, {"echo", 6}, {"phoenix", 6}},
+    pool = {"normal", "cursed", "gambler", "spark", "focus", "lucky"},
+    locked = {{"dagger", 3}, {"contrarian", 4}, {"lucky_seven", 4}, {"blood", 4},
+      {"hourglass", 5}, {"jester", 5}, {"echo", 6}, {"phoenix", 6}},
   },
   trader = {
     name = "The Trader", description = "Gold and energy",

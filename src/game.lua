@@ -10,10 +10,10 @@ local characters = require("content.characters")
 local Game = {}
 
 local route = {
-  {name = "Opening", quota = 3, flips = 10, payout = 20},
-  {name = "Second Chance", quota = 8, flips = 10, payout = 25},
-  {name = "High Stakes", quota = 14, flips = 10, payout = 30},
-  {name = "The House", quota = 26, flips = 12, boss = true},
+  {name = "Opening", quota = 3, flips = 12, payout = 20},
+  {name = "Second Chance", quota = 11, flips = 10, payout = 25},
+  {name = "High Stakes", quota = 20, flips = 10, payout = 30},
+  {name = "The House", quota = 36, flips = 12, boss = true},
 }
 
 local function log(game, message)

@@ -50,7 +50,7 @@ assert(heads > 49000 and heads < 51000, "50% distribution: " .. heads)
 local g = Game.new(7)
 equal(#g.coins, 1, "one starting coin")
 equal(g.coins[1].id, "sword", "Blade starter")
-equal(g.encounter.draws, 10, "opening draw budget")
+equal(g.encounter.draws, 12, "opening draw budget")
 assert(not Game.resolve(g), "nothing to resolve before flip")
 assert(Game.flip(g))
 equal(g.pending.uid, g.coins[1].uid, "one drawn coin")
@@ -64,7 +64,7 @@ g.encounter.quota = 15
 local hp = g.encounter.quota
 assert(Game.resolve(g))
 equal(g.encounter.quota, hp - 5, "Sword Heads scores points")
-equal(g.encounter.draws, 9, "one draw consumed")
+equal(g.encounter.draws, 11, "one draw consumed")
 equal(g.encounter.flips, 1)
 assert(not Game.resolve(g), "cannot resolve twice")
 assert(Game.flip(g), "single-coin deck reshuffles")
@@ -135,7 +135,7 @@ assert(seen[cap.pending.uid], "reshuffle draws owned coin")
 
 local loss = Game.new(2)
 loss.encounter.quota = 10000
-for _ = 1, 10 do
+for _ = 1, loss.encounter.draws do
   assert(Game.flip(loss))
   assert(Game.resolve(loss))
 end
