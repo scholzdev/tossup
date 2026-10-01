@@ -9,6 +9,8 @@ Profile.SET_SIZE = 5 -- coins in a set (Game.START_MAX); older, longer sets are 
 
 local DEFAULT_OPTIONS = {screen_shake = true, fast_flip = false, fullscreen = false, seen_help = false, language = "en", volume_master = 80, volume_music = 40, volume_sfx = 80}
 
+Profile.DEFAULT_OPTIONS = DEFAULT_OPTIONS
+
 function Profile.new()
   local options = {}
   for key, value in pairs(DEFAULT_OPTIONS) do options[key] = value end

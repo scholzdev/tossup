@@ -47,6 +47,7 @@ local function draw_options()
 
   if ui.options_tab == "sound" then
     for i, row in ipairs(SLIDERS) do slider(row[1], row[2], row[3], 214 + (i - 1) * 96) end
+    button("RESTORE DEFAULTS", 440, 510, 400, 48, C.panel_light, function() A.restore_sound_defaults() Sound.play("score") end)
   else
     for i, row in ipairs(ROWS) do
       local y = 214 + (i - 1) * 86

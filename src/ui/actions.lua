@@ -80,6 +80,15 @@ end
 
 function A.save_options() save_profile() end
 
+-- Put the three volume sliders back to their defaults.
+function A.restore_sound_defaults()
+  for _, key in ipairs({"volume_master", "volume_music", "volume_sfx"}) do
+    ui.profile.options[key] = Profile.DEFAULT_OPTIONS[key]
+  end
+  Sound.apply(ui.profile.options)
+  save_profile()
+end
+
 -- Cycle through the available languages (English, Deutsch).
 function A.cycle_language()
   local order = Lang.order
