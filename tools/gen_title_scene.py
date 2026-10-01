@@ -96,6 +96,11 @@ def main():
             if rnd.random() < .25:
                 d.rectangle((x + 2, y + 2, x + 21, y + 7), fill=lerp(WALL, WALL_LT, rnd.random()))
 
+    # dust motes (before the sign, so none lands on it)
+    for _ in range(40):
+        x, y = rnd.randint(0, W - 1), rnd.randint(0, 150)
+        d.point((x, y), fill=lerp(WALL, GOLD_LT, .35))
+
     # neon coin sign
     cx, cy = 218, 66
     def sign(dd):
@@ -159,11 +164,6 @@ def main():
         coin(d, x, y, r, s)
     for i in range(5):
         sparkle(d, 120 + rnd.randint(0, 190), 40 + rnd.randint(0, 100), rnd.choice((1, 1, 2)), rnd.choice((GOLD_LT, (255, 255, 255), (170, 230, 255))))
-
-    # dust motes
-    for _ in range(40):
-        x, y = rnd.randint(0, W - 1), rnd.randint(0, 150)
-        d.point((x, y), fill=lerp(WALL, GOLD_LT, .35))
 
     # darker on the left (menu panel) and in the corners
     px = img.load()
