@@ -6,12 +6,14 @@ local ui = require("src.ui.state")
 local A = {}
 
 local Lang = require("src.lang")
+local Sound = require("src.ui.sound")
 
 local PROFILE_FILE = "profile.lua"
 
 local function apply_options()
   love.window.setFullscreen(ui.profile.options.fullscreen)
   Lang.set(ui.profile.options.language)
+  Sound.enabled = ui.profile.options.sound
 end
 
 function A.load_profile()
@@ -25,8 +27,7 @@ end
 
 function A.go(screen)
   ui.screen = screen
-  ui.quit_armed = false
-  ui.clear_armed = false
+  ui.confirm = nil
   ui.collection_page = 1
 end
 
@@ -39,11 +40,14 @@ function A.play()
   A.go("help")
 end
 
--- Quit needs a second click while a run is in progress, because runs are not saved.
+-- Quitting asks first (popup) while a run is in progress, because runs are not saved.
 function A.quit()
   local g = ui.game
   local running = g and g.phase ~= "GAME_OVER" and g.phase ~= "VICTORY"
-  if running and not ui.quit_armed then ui.quit_armed = true return end
+  if running then
+    ui.confirm = {title = "QUIT", text = "THE CURRENT RUN WILL BE LOST.", ok = love.event.quit}
+    return
+  end
   love.event.quit()
 end
 
@@ -64,7 +68,7 @@ end
 
 function A.toggle_option(key)
   ui.profile.options[key] = not ui.profile.options[key]
-  if key == "fullscreen" then apply_options() end
+  if key == "fullscreen" or key == "sound" then apply_options() end
   save_profile()
 end
 
@@ -83,14 +87,16 @@ end
 
 function A.continue_endless() Game.continue_endless(ui.game) end
 
--- Delete unlocks, collection, coin sets and tokens (options stay). Needs a second click; also ends a run in progress.
+-- Delete unlocks, collection, coin sets and tokens (options stay); also ends a run in progress. Asks first (popup).
 function A.clear_progress()
-  if not ui.clear_armed then ui.clear_armed = true return end
+  ui.confirm = {title = "CLEAR PROGRESS", text = "YOUR DATA WILL BE PERMANENTLY DELETED.", ok = A.do_clear_progress}
+end
+
+function A.do_clear_progress()
   local options = ui.profile.options
   ui.profile = Profile.new()
   ui.profile.options = options
   ui.game, ui.set_draft, ui.marked, ui.flip_animation, ui.holding = nil, nil, {}, nil, false
-  ui.clear_armed = false
   save_profile()
 end
 

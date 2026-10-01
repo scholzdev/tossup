@@ -3,6 +3,7 @@ local Game = require("src.game")
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
+local Sound = require("src.ui.sound")
 local views = {
   ENCOUNTER = require("src.ui.views.encounter"),
   SHOP = require("src.ui.views.shop"),
@@ -71,6 +72,7 @@ function app.load()
     ui.character_images[id] = love.graphics.newImage("assets/characters/" .. id .. ".png")
     ui.character_images[id]:setFilter("nearest", "nearest")
   end
+  Sound.load()
   A.load_profile()
   -- game cursors: an arrow with a coin; it turns gold with the coin on edge over anything clickable
   ui.cursors = {
@@ -99,12 +101,14 @@ function app.draw()
   if not ui.game or ui.game.paused then screens[ui.screen]() else draw_game() end
   D.coin_tooltip()
   D.text_tooltip()
+  D.confirm_dialog()
   love.graphics.pop()
   love.graphics.pop()
 end
 
 function app.update(dt)
   A.update(dt)
+  Sound.watch(ui)
   if ui.cursors then -- pick the cursor from what the last frame drew under the mouse
     local mx, my = ui.mouse()
     local over = false
@@ -126,6 +130,7 @@ function app.mousepressed(x, y, mouse_button)
     local b = ui.buttons[i]
     if x >= b.x and x <= b.x + b.w and y >= b.y and y <= b.y + b.h then
       ui.notice = ""
+      Sound.play("click")
       b.action()
       return
     end
@@ -135,6 +140,7 @@ end
 function app.keypressed(key)
   local game = ui.game
   if key == "f3" then ui.debug_visible = not ui.debug_visible return end
+  if ui.confirm then if key == "escape" then ui.confirm = nil end return end -- a popup is open
   if key == "escape" then
     if game and not game.paused then A.open_menu()
     elseif ui.screen ~= "title" then A.go("title")

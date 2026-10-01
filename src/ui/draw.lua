@@ -147,6 +147,24 @@ local function title(name)
   return (Lang.current ~= "en" and ui.ui_images["title_" .. name .. "_" .. Lang.current]) or ui.ui_images["title_" .. name]
 end
 
+-- A modal popup (ui.confirm = {title, text, ok = function}): dims the screen, shows the text with OK and Cancel, and
+-- replaces every other clickable while it is open. Draw it last.
+local function confirm_dialog()
+  local c = ui.confirm
+  if not c then return end
+  ui.buttons = {} -- nothing behind the popup can be clicked
+  color(C.ink, .72)
+  love.graphics.rectangle("fill", 0, 0, 1280, 800)
+  box(380, 270, 520, 260, C.panel_dk)
+  outline(380, 270, 520, 260, C.red)
+  centered(c.title, 380, 292, 520, ui.f32, C.red)
+  love.graphics.setFont(ui.f20)
+  color(C.face)
+  love.graphics.printf(L(c.text), 410, 352, 460, "center")
+  button("OK", 420, 454, 200, 52, C.red, function() ui.confirm = nil c.ok() end)
+  button("CANCEL", 660, 454, 200, 52, C.panel_light, function() ui.confirm = nil end)
+end
+
 local function coin_name(id, x, y, w)
   local name = catalog[id].name:upper()
   if w then centered(name, x, y, w, ui.f20, C.face) else text(name, x, y, ui.f20, C.face) end
@@ -221,5 +239,5 @@ local function coin_face(cx, cy, radius, outcome, selected, id)
 end
 
 return {C = C, color = color, box = box, outline = outline, text = text, centered = centered,
-  button = button, coin_image = coin_image, image_at = image_at, icon_button = icon_button, frame = frame, title = title, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
+  button = button, coin_image = coin_image, image_at = image_at, icon_button = icon_button, frame = frame, title = title, confirm_dialog = confirm_dialog, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
   effects = effects, effect_description = effect_description, coin_tooltip = draw_coin_tooltip, L = L, text_hover = text_hover, text_tooltip = draw_text_tooltip}

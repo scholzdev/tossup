@@ -3,7 +3,7 @@ return {
   -- menus
   ["BEAT THE QUOTA"] = "ERFÜLLE DAS ZIEL", ["CONTINUE"] = "WEITER", ["NEW RUN"] = "NEUER LAUF", ["PLAY"] = "SPIELEN",
   ["COIN SETS"] = "MÜNZSETS", ["COLLECTION"] = "SAMMLUNG", ["HOW TO PLAY"] = "ANLEITUNG", ["OPTIONS"] = "OPTIONEN",
-  ["QUIT"] = "BEENDEN", ["SURE? THE RUN IS LOST"] = "SICHER? DER LAUF GEHT VERLOREN", ["BACK"] = "ZURÜCK",
+  ["QUIT"] = "BEENDEN", ["BACK"] = "ZURÜCK",
   ["MENU"] = "MENÜ", ["BACK TO MENU"] = "ZUM MENÜ", ["COIN SET"] = "MÜNZSET", ["%s  /  %d COINS"] = "%s  /  %d MÜNZEN",
   ["THIS SET IS EMPTY  -  THE DEFAULT DECK IS USED"] = "DIESES SET IST LEER  -  DAS STANDARD-DECK WIRD BENUTZT",
   ["EDIT COIN SETS"] = "MÜNZSETS BEARBEITEN", ["START RUN"] = "LAUF STARTEN",
@@ -12,8 +12,9 @@ return {
   ["SCREEN SHAKE"] = "BILDSCHIRMWACKELN", ["Shake the screen when a coin lands."] = "Wackelt mit dem Bildschirm, wenn eine Münze landet.",
   ["FAST FLIP"] = "SCHNELLER WURF", ["Half-length coin flip animation."] = "Münzwurf-Animation in halber Länge.",
   ["FULLSCREEN"] = "VOLLBILD", ["Switch between windowed and fullscreen."] = "Wechselt zwischen Fenster und Vollbild.",
-  ["LANGUAGE"] = "SPRACHE", ["CLEAR PROGRESS"] = "FORTSCHRITT LÖSCHEN", ["Resets unlocks, collection, sets and tokens. Options stay."] = "Setzt Freischaltungen, Sammlung, Sets und Tokens zurück.",
-  ["CLEAR"] = "LÖSCHEN", ["SURE?"] = "SICHER?", ["Language of all texts."] = "Sprache aller Texte.", ["ON"] = "AN", ["OFF"] = "AUS",
+  ["LANGUAGE"] = "SPRACHE", ["SOUND"] = "TON", ["Play sound effects."] = "Spielt Soundeffekte ab.", ["CLEAR PROGRESS"] = "FORTSCHRITT LÖSCHEN", ["Resets unlocks, collection, sets and tokens. Options stay."] = "Setzt Freischaltungen, Sammlung, Sets und Tokens zurück.",
+  ["CLEAR"] = "LÖSCHEN", ["OK"] = "OK", ["CANCEL"] = "ABBRECHEN", ["YOUR DATA WILL BE PERMANENTLY DELETED."] = "DEINE DATEN WERDEN DAUERHAFT GELÖSCHT.",
+  ["THE CURRENT RUN WILL BE LOST."] = "DER AKTUELLE LAUF GEHT VERLOREN.", ["Language of all texts."] = "Sprache aller Texte.", ["ON"] = "AN", ["OFF"] = "AUS",
   ["F3 SHOWS DEBUG INFO IN A RUN"] = "F3 ZEIGT DEBUG-INFOS IM LAUF",
   -- end of run
   ["THE HOUSE FALLS"] = "DAS HAUS FÄLLT", ["RUN OVER"] = "LAUF VORBEI", ["YOU WON THE RUN"] = "DU HAST DEN LAUF GEWONNEN",
