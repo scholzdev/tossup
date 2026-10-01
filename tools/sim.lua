@@ -69,8 +69,9 @@ local function measure(id, games, flips)
   for seed = 1, games do
     local g = Game.new(seed, "sim")
     g.player.gold = 30
-    for _ = 1, flips do
+    for step = 1, flips do
       g.encounter.quota, g.encounter.max_quota = 1e9, 1e9
+      if step % 15 == 1 then g.encounter.doubler = nil end -- Doubler's counter is per level (about three passes of a deck)
       g.reshuffle = true -- measuring the coin, not running out of coins
       g.player.energy = math.max(g.player.energy, 3) -- measuring the coin, not the energy economy
       if g.dealt then Game.flip(g) Game.resolve(g) end

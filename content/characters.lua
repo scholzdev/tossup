@@ -10,7 +10,8 @@ return {
     locked = {{"hammer", 3}, {"blood", 4}, {"vampire", 4}, {"chain", 5}, {"cursed", 5}, {"fuse", 5},
       {"focus", 6}, {"martyr", 6}, {"snowball", 8},
       {"megaphone", 5}, {"pot", 4},
-      {"hot_hand", 4}, {"cash_out", 5}},
+      {"hot_hand", 4}, {"cash_out", 5},
+      {"doubler", 6}, {"amplifier", 6}},
   },
   seer = {
     name = "The Seer", description = "Risk and changing odds",
@@ -20,7 +21,8 @@ return {
     locked = {{"dagger", 3}, {"contrarian", 4}, {"lucky_seven", 4}, {"blood", 4},
       {"hourglass", 5}, {"jester", 5}, {"echo", 6}, {"phoenix", 6},
       {"mirror", 5}, {"domino", 6}, {"twin", 5},
-      {"cold_streak", 4}, {"anchor", 4}},
+      {"cold_streak", 4}, {"anchor", 4},
+      {"true_echo", 6}, {"amplifier", 6}},
   },
   trader = {
     name = "The Trader", description = "Gold and energy",
@@ -30,6 +32,7 @@ return {
     locked = {{"spark", 3}, {"bank", 4}, {"miser", 4}, {"hammer", 4}, {"bounty", 5},
       {"flock", 5}, {"momentum", 5}, {"capacitor", 6},
       {"cheerleader", 4}, {"megaphone", 5},
-      {"bettor", 5}, {"anchor", 4}},
+      {"bettor", 5}, {"anchor", 4},
+      {"doubler", 6}, {"true_echo", 6}},
   },
 }

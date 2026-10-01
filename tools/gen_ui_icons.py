@@ -10,7 +10,7 @@ Output (PNG, transparent background):
                                     open_shop, exchange, give_up, flip, discard, next_coin, start_level
   assets/ui/shop_title.png 544x256, assets/ui/logo.png 800x256,
   assets/ui/title_<name>.png  screen titles (play, sets, collection, options) in the same pixel-letter style,
-  assets/ui/cursor_arrow.png, cursor_click.png  32 px mouse cursors (an arrow with a small coin)  the colourful "SHOP" title (drawn from the pixel font)
+  assets/ui/cursor_arrow.png, cursor_click.png  32 px pixel-art mouse cursors (ivory arrow, gold over buttons)  the colourful "SHOP" title (drawn from the pixel font)
 
 Run from the repo root:  python3 tools/gen_ui_icons.py   (needs Pillow).
 To add an icon: add a colour to ITEMS / RELICS and an emblem branch in emblem().
@@ -354,20 +354,13 @@ def pixel_title(word, name):
     big.save(ROOT / "assets" / "ui" / f"title_{name}.png")
 
 
-def cursor(path_name, fill, coin_open):
-    """A 32 px mouse cursor: an arrow with a small coin on its tail. Hotspot is the arrow tip (2, 2)."""
-    s = 8  # supersample
-    img = Image.new("RGBA", (32 * s, 32 * s), (0, 0, 0, 0))
+def cursor(path_name, fill):
+    """A crisp pixel-art arrow cursor: drawn on a 16x16 grid without smoothing, doubled to 32x32. Hotspot (2, 2)."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    arrow = [(2, 2), (2, 25), (8, 19), (12, 28), (17, 26), (13, 17), (21, 17)]
-    d.polygon([(x * s, y * s) for x, y in arrow], fill=fill + (255,), outline=DARK, width=2 * s)
-    cx, cy = 24, 24
-    if coin_open:  # coin seen face on
-        d.ellipse(((cx - 6) * s, (cy - 6) * s, (cx + 6) * s, (cy + 6) * s), fill=(243, 185, 88, 255), outline=DARK, width=2 * s)
-        d.ellipse(((cx - 2) * s, (cy - 2) * s, (cx + 2) * s, (cy + 2) * s), fill=(160, 110, 30, 255))
-    else:  # coin edge-on: it is being "pressed"
-        d.ellipse(((cx - 2) * s, (cy - 6) * s, (cx + 2) * s, (cy + 6) * s), fill=(243, 185, 88, 255), outline=DARK, width=2 * s)
-    img.resize((32, 32), Image.Resampling.LANCZOS).save(ROOT / "assets" / "ui" / path_name)
+    arrow = [(1, 1), (1, 13), (4, 10), (6, 14), (8, 13), (6, 9), (10, 9)]
+    d.polygon(arrow, fill=fill + (255,), outline=DARK)
+    img.resize((32, 32), Image.Resampling.NEAREST).save(ROOT / "assets" / "ui" / path_name)
 
 
 def main():
@@ -382,8 +375,8 @@ def main():
                        ("SPIELEN", "play_de"), ("MÜNZSETS", "sets_de"), ("SAMMLUNG", "collection_de"),
                        ("OPTIONEN", "options_de"), ("ANLEITUNG", "help_de")):
         pixel_title(word, name)
-    cursor("cursor_arrow.png", IVORY[:3], True)
-    cursor("cursor_click.png", (243, 185, 88), False)
+    cursor("cursor_arrow.png", IVORY[:3])
+    cursor("cursor_click.png", (243, 185, 88))
     print(f"generated {len(ITEMS)} item icons, {len(RELICS)} relic icons and 14 UI images in {ROOT / 'assets'}")
 
 

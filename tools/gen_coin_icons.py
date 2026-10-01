@@ -59,6 +59,9 @@ COLORS = {
     "bettor": "9a4f7a",
     "cash_out": "4f9a58",
     "cold_streak": "6fa8c9",
+    "amplifier": "e0a030",
+    "true_echo": "6a7ec9",
+    "doubler": "c9a82a",
 }
 
 
@@ -255,6 +258,18 @@ def emblem(image, coin_id):
             a = math.radians(ang)
             d.line(points([(64 - 30 * math.cos(a), 64 - 30 * math.sin(a)), (64 + 30 * math.cos(a), 64 + 30 * math.sin(a))]), fill=ivory, width=p(5))
         d.ellipse(box(57, 57, 71, 71), fill=ivory)
+    elif coin_id == "amplifier":  # signal bars growing
+        for i, h in enumerate((18, 32, 46, 60)):
+            x = 36 + i * 15
+            d.rectangle(box(x, 94 - h, x + 10, 94), fill=ivory)
+    elif coin_id == "true_echo":  # a source and repeating wave arcs
+        d.ellipse(box(34, 56, 48, 70), fill=ivory)
+        for r in (16, 30, 44):
+            d.arc(box(41 - r, 63 - r, 41 + r, 63 + r), -55, 55, fill=ivory, width=p(5))
+    elif coin_id == "doubler":  # a big x2
+        d.line(points([(36, 48), (60, 80)]), fill=ivory, width=p(8))
+        d.line(points([(60, 48), (36, 80)]), fill=ivory, width=p(8))
+        d.line(points([(70, 52), (92, 52), (92, 64), (70, 76), (70, 80), (94, 80)]), fill=ivory, width=p(6), joint="curve")
     elif coin_id == "back":
         d.arc(box(44, 37, 84, 76), 190, 350, fill=ivory, width=p(8))
         d.line(points([(83, 59), (64, 77), (64, 82)]), fill=ivory, width=p(8))

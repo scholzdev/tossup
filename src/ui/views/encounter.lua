@@ -104,12 +104,13 @@ local function draw_encounter()
   color(C.white)
   local logo_scale = 64 / ui.ui_images.logo:getHeight()
   love.graphics.draw(ui.ui_images.logo, 70, 46, 0, logo_scale, logo_scale)
-  text(D.L("LEVEL %d / 4", ui.game.encounter_index), 70, 118, ui.f16, C.muted)
-  text(e.boss and D.L("THE HOUSE") or D.L(e.name):upper(), 70, 136, ui.f20, e.boss and C.red or C.face)
+  text(e.endless and D.L("LEVEL %d", ui.game.encounter_index) or D.L("LEVEL %d / 4", ui.game.encounter_index), 70, 118, ui.f16, C.muted)
+  text(e.endless and D.L("ENDLESS %d", e.endless) or e.boss and D.L("THE HOUSE") or D.L(e.name):upper(), 70, 136, ui.f20, e.boss and C.red or C.face)
   local met = e.quota <= 0
   local caption, caption_color = "POINTS", C.muted
   if e.cleared then caption, caption_color = "QUOTA MET  -  EXTRA POINTS PAY GOLD", C.green
-  elseif e.boss then caption, caption_color = "THE HOUSE  -  EVERY 5TH FLIP IS INVERTED", C.red end
+  elseif e.boss then caption, caption_color = "THE HOUSE  -  EVERY 5TH FLIP IS INVERTED", C.red
+  elseif e.endless then caption, caption_color = "INVERTED  -  EVERY 5TH FLIP", C.red end
   centered(caption, 330, 48, 580, ui.f16, caption_color)
   centered(e.scored .. " / " .. e.max_quota, 330, 68, 580, ui.f48, met and C.green or C.gold)
   color(C.slot_dk)
@@ -142,7 +143,7 @@ local function draw_encounter()
     local x, y = 83, 236 + (i - 1) * 112
     local owned = remaining[i] -- flipped and discarded coins drop off the list
     local current = owned and ui.game.dealt and owned.uid == ui.game.dealt.uid
-    local marked = owned and ui.marked[owned.uid]
+    local marked = owned and ui.game.mulligan and ui.marked[owned.uid] -- marking only exists in the opening hand
     box(x, y, 214, 84, marked and C.marked or owned and C.card or C.slot_dk)
     outline(x, y, 214, 84, marked and C.red or current and C.gold or owned and C.line or C.ink)
     if owned then
@@ -151,9 +152,6 @@ local function draw_encounter()
         color(C.red)
         love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
         centered("DISCARD", tab_x, y - 9, 76, ui.f16, C.ink)
-      end
-      if ui.game.dealt and not ui.flip_animation and not ui.holding and not ui.game.mulligan then
-        ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = 214, h = 84, action = function() A.toggle_mark(owned.uid) end}
       end
       if current and not marked then -- tab on the card's top edge
         color(C.gold)
@@ -312,9 +310,7 @@ local function draw_encounter()
     love.graphics.printf(D.L(hint), 70, 690, 240)
   end
   if ui.game.dealt and not ui.flip_animation and not ui.holding then
-    local n = A.marked_count()
-    D.icon_button(n > 0 and D.L("DISCARD %d", n) or "DISCARD", ui.ui_images.discard, 330, 676, 200, 64, C.red,
-      A.discard_marked, n > 0)
+    D.icon_button("DISCARD", ui.ui_images.discard, 330, 676, 200, 64, C.red, A.discard_current) -- only the current coin
   end
   local empty_stack = not ui.game.dealt and not ui.game.mulligan and not ui.game.pending
     and not ui.flip_animation and not ui.holding

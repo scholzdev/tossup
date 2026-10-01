@@ -15,7 +15,7 @@ local function draw_end()
   outline(36, 36, 1208, 728, C.gold)
 
   -- headline, drawn at double size in the outcome colour with a shadow
-  local headline = D.L(won and "THE HOUSE FALLS" or "RUN OVER")
+  local headline = D.L(g.endless and "ENDLESS RUN OVER" or won and "THE HOUSE FALLS" or "RUN OVER")
   love.graphics.setFont(ui.f48)
   local width = ui.f48:getWidth(headline) * 2
   color(C.black, .35)
@@ -37,9 +37,9 @@ local function draw_end()
   -- what the run reached
   box(650, 250, 250, 300, C.panel_dk)
   outline(650, 250, 250, 300, C.line)
-  centered(won and "YOU WON THE RUN" or "TRY A NEW SET", 650, 266, 250, ui.f20, C.face)
-  centered(tostring(g.cleared), 650, 320, 250, ui.f48, won and C.green or C.gold)
-  centered("LEVELS CLEARED OF 4", 650, 380, 250, ui.f16, C.muted)
+  centered(g.endless and "ENDLESS MODE" or won and "YOU WON THE RUN" or "TRY A NEW SET", 650, 266, 250, ui.f20, C.face)
+  centered(tostring(g.endless and g.cleared - 4 or g.cleared), 650, 320, 250, ui.f48, won and C.green or C.gold)
+  centered(g.endless and "ENDLESS LEVELS CLEARED" or "LEVELS CLEARED OF 4", 650, 380, 250, ui.f16, C.muted)
   D.image_at(ui.ui_images.gold, 690, 430, 44)
   text(tostring(g.player.gold), 746, 436, ui.f32, C.gold)
   text("GOLD LEFT", 690, 484, ui.f16, C.muted)
@@ -50,8 +50,15 @@ local function draw_end()
     love.graphics.printf((function(s) return s:sub(1, 1):upper() .. s:sub(2) end)(D.L(g.lost_why)), 380, 570, 520, "center")
   end
 
-  D.icon_button("NEW RUN", ui.ui_images.start_level, 470, 600, 340, 64, C.green, function() A.start() end)
-  button("BACK TO MENU", 520, 686, 240, 44, C.panel_light, A.open_menu)
+  if won and not g.endless then
+    -- the boss fell: keep going through endless levels, or start over
+    D.icon_button("ENDLESS MODE", ui.ui_images.next_coin, 470, 584, 340, 60, C.gold, A.continue_endless)
+    D.icon_button("NEW RUN", ui.ui_images.start_level, 470, 652, 340, 56, C.green, function() A.start() end)
+    button("BACK TO MENU", 520, 718, 240, 36, C.panel_light, A.open_menu)
+  else
+    D.icon_button("NEW RUN", ui.ui_images.start_level, 470, 600, 340, 64, C.green, function() A.start() end)
+    button("BACK TO MENU", 520, 686, 240, 44, C.panel_light, A.open_menu)
+  end
   button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu)
 end
 

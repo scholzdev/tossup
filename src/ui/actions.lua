@@ -51,7 +51,7 @@ local function log_run(game)
   local coins = {}
   for i, owned in ipairs(game.coins) do coins[i] = owned.id end
   love.filesystem.append("runs.log", string.format("%s seed=%d char=%s result=%s cleared=%d gold=%d why=%s coins=%s\n",
-    os.date("%Y-%m-%d %H:%M:%S"), game.seed, game.character_id, game.phase == "VICTORY" and "WIN" or "LOSS",
+    os.date("%Y-%m-%d %H:%M:%S"), game.seed, game.character_id, game.endless and "ENDLESS" or game.phase == "VICTORY" and "WIN" or "LOSS",
     game.cleared, game.player.gold, game.lost_why or "-", table.concat(coins, ",")))
 end
 
@@ -79,6 +79,8 @@ function A.cycle_language()
   Lang.set(ui.profile.options.language)
   save_profile()
 end
+
+function A.continue_endless() Game.continue_endless(ui.game) end
 
 function A.set_filter(rarity)
   ui.collection_filter = rarity
@@ -197,6 +199,12 @@ function A.discard_marked()
   ui.marked = {}
 end
 
+-- After the opening hand only the coin in play can be discarded (the bank cards are not clickable).
+function A.discard_current()
+  Game.discard(ui.game)
+  ui.marked = {}
+end
+
 function A.start(seed)
   ui.game = Game.new(seed or (os.time() + math.floor(love.timer.getTime() * 1000000)),
     ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character), A.loadout(), true)
@@ -296,6 +304,10 @@ function A.update(dt)
     log_run(game)
     ui.profile.tokens = ui.profile.tokens + game.tokens_paid
     save_profile()
+  end
+  if game and game.endless and game.phase == "GAME_OVER" and not game.endless_logged then
+    game.endless_logged = true
+    log_run(game) -- an endless run is logged again when it ends, with the levels cleared beyond the boss
   end
   if ui.resolve_timer > 0 and game and not game.paused then
     ui.resolve_timer = ui.resolve_timer - dt

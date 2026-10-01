@@ -69,7 +69,10 @@ return {
   ["NEXT %d x%d"] = "NÄCHSTE %d x%d", ["NEXT %d +%d%%"] = "NÄCHSTE %d +%d%%", ["NEXT: SWAP"] = "NÄCHSTE: TAUSCH", ["NEXT: HEADS"] = "NÄCHSTE: KOPF",
   ["Next %d coins pay x%d"] = "Die nächsten %d Münzen zahlen x%d", ["Next coin: +%d%% Heads"] = "Nächste Münze: +%d %% Kopf",
   ["Next %d coins: +%d%% Heads"] = "Nächste %d Münzen: +%d %% Kopf", ["Next coin uses its other side"] = "Nächste Münze nutzt ihre andere Seite",
-  ["Next coin lands Heads"] = "Nächste Münze landet auf Kopf", ["BUFF"] = "BONUS", ["COMBO +%d"] = "SERIE +%d", ["COMBO SHIELD"] = "SERIENSCHUTZ", ["Combo grows %d extra step"] = "Serie wächst um %d Schritt extra",
+  ["Next coin lands Heads"] = "Nächste Münze landet auf Kopf", ["BUFF"] = "BONUS", ["AMPLIFY"] = "VERSTÄRKEN", ["Buffs last 1 coin longer and get stronger"] = "Boni halten 1 Münze länger und werden stärker",
+  ["ENDLESS"] = "ENDLOS", ["ENDLESS %d"] = "ENDLOS %d", ["LEVEL %d"] = "LEVEL %d", ["ENDLESS MODE"] = "ENDLOSMODUS", ["ENDLESS RUN OVER"] = "ENDLOSLAUF VORBEI",
+  ["ENDLESS LEVELS CLEARED"] = "ENDLOS-LEVEL GESCHAFFT", ["NO LIMIT  -  EVERY 5TH FLIP IS INVERTED"] = "KEINE GRENZE  -  JEDER 5. WURF WIRD UMGEDREHT",
+  ["INVERTED  -  EVERY 5TH FLIP"] = "UMGEDREHT  -  JEDER 5. WURF", ["COMBO +%d"] = "SERIE +%d", ["COMBO SHIELD"] = "SERIENSCHUTZ", ["Combo grows %d extra step"] = "Serie wächst um %d Schritt extra",
   ["The next combo break is prevented"] = "Der nächste Serienbruch wird verhindert", ["+%d POINTS  (x%.2f)"] = "+%d PUNKTE  (x%.2f)",
   ["COMBO"] = "SERIE", ["COMBO  %s x%d"] = "SERIE  %s x%d", ["SHIELD %d"] = "SCHUTZ %d", ["BUFF x%d  (%d LEFT)"] = "BONUS x%d  (%d ÜBRIG)", ["BUFF +%d%% HEADS  (%d LEFT)"] = "BONUS +%d %% KOPF  (%d ÜBRIG)",
   ["BUFF: NEXT COIN SWAPS SIDES"] = "BONUS: NÄCHSTE TAUSCHT SEITE", ["BUFF: NEXT COIN LANDS HEADS"] = "BONUS: NÄCHSTE LANDET AUF KOPF",
@@ -83,8 +86,8 @@ return {
   ["You play with a small stack of coins. Each coin has a Heads chance and a Heads and a Tails effect. Every coin is played once per level; nothing is reshuffled."] =
     "Du spielst mit einem kleinen Stapel Münzen. Jede Münze hat eine Kopf-Chance sowie einen Kopf- und einen Zahl-Effekt. Jede Münze wird pro Level einmal gespielt; nichts wird neu gemischt.",
   ["EACH LEVEL"] = "JEDES LEVEL",
-  ["First you see an OPENING HAND: click coins to mark them and press Discard to throw them away for free. Then the bank shows your next 3 coins. Flip the first one, or mark coins and Discard them."] =
-    "Zuerst siehst du eine STARTHAND: Klicke Münzen zum Markieren und drücke Abwerfen, um sie kostenlos wegzuwerfen. Dann zeigt die Bank deine nächsten 3 Münzen. Wirf die erste oder markiere Münzen und wirf sie ab.",
+  ["First you see an OPENING HAND: click coins to mark them and press Discard to throw them away for free. Then the bank shows your next 3 coins. Flip the first one, or Discard it."] =
+    "Zuerst siehst du eine STARTHAND: Klicke Münzen zum Markieren und drücke Abwerfen, um sie kostenlos wegzuwerfen. Dann zeigt die Bank deine nächsten 3 Münzen. Wirf die erste oder wirf sie ab.",
   ["ENERGY"] = "ENERGIE",
   ["Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Capacitor give more. A coin you cannot pay for can only be discarded."] =
     "Starke Münzen kosten ENERGIE zum Werfen (angezeigt als E1, E2). Du bekommst 3 pro Level; Funke, Kupfer und Kondensator geben mehr. Eine Münze, die du nicht bezahlen kannst, kann nur abgeworfen werden.",
@@ -146,6 +149,9 @@ return {
     bettor = {name = "Wetter", description = "Kopf: 3 Punkte je Wurf der aktuellen Serie (max. 30). Zahl: Ziel +2."},
     cash_out = {name = "Auszahlung", description = "Kopf: 3 Punkte, der Serienbonus zählt doppelt, dann endet die Serie."},
     cold_streak = {name = "Kältewelle", description = "Zahl: 2 Punkte je Zahl in Folge (max. 20). Kopf: 1 Punkt."},
+    amplifier = {name = "Verstärker", description = "Kopf: 1 Punkt, und alle aktiven Boni halten 1 Münze länger und werden stärker. Zahl: 1 Punkt."},
+    true_echo = {name = "Wahres Echo", description = "Wiederholt, was die vorherige Münze wirklich getan hat, samt Boni und Wachstum, auf jeder Seite."},
+    doubler = {name = "Verdoppler", description = "Kopf: 3 Punkte, verdoppelt mit jedem bisherigen Verdoppler-Wurf in diesem Level (3, 6, 12, 24 ...)."},
     flock = {name = "Schwarm", description = "+10 % Kopf für jeden anderen Schwarm in deiner Bank."},
   },
   items = {

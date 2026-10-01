@@ -145,16 +145,24 @@ end
 
 -- A level's quota scales with the size of your deck (points per coin), because a level lasts exactly as
 -- long as your stack: a bigger deck means more flips.
+-- A level of the run. Beyond the route (after the boss) the levels are endless: each asks 0.5 more points per
+-- coin than the one before, pays more, and inverts every 5th flip like The House.
+function Game.stage(level)
+  if route[level] then return route[level] end
+  local k = level - #route
+  return {name = "Endless", endless = k, per_coin = route[#route].per_coin + 0.5 * k, payout = 40 + 5 * k, inverts = true}
+end
+
 function Game.quota_for(level, coin_count)
-  return math.max(1, math.floor(route[level].per_coin * coin_count + .5))
+  return math.max(1, math.floor(Game.stage(level).per_coin * coin_count + .5))
 end
 
 local function start_encounter(game)
-  local stage = route[game.encounter_index]
+  local stage = Game.stage(game.encounter_index)
   local quota = Game.quota_for(game.encounter_index, #game.coins)
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = quota, max_quota = quota,
-    boss = stage.boss or false, payout = stage.payout,
+    boss = stage.boss or false, inverts = stage.boss or stage.inverts or false, endless = stage.endless, payout = stage.payout,
     flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {}, combo_side = nil, combo_len = 0, shield = 0, combo_step = Game.COMBO_STEP, combo_cap = Game.COMBO_CAP,
     returned = 0, played = {}, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
@@ -277,7 +285,7 @@ local function finalize(game, item, flip)
   Signal.emit("coin_outcome", outcome)
   local final = outcome.result
   flip.altered = final ~= before and "RELIC" or nil -- shown in the UI so a changed side is never a mystery
-  if e.boss and nth % 5 == 0 then
+  if (e.boss or e.inverts) and nth % 5 == 0 then
     final = final == "Heads" and "Tails" or "Heads"
     flip.altered = (flip.altered and flip.altered .. " + " or "") .. "THE HOUSE"
   end
@@ -416,6 +424,14 @@ local function apply_effect(game, item, effect)
   elseif effect.type == "energy" then
     p.energy = p.energy + effect.amount
     return "+" .. effect.amount .. " energy"
+  elseif effect.type == "amplify" then
+    -- every active buff lasts one coin longer and gets stronger (x2 -> x3, +20% -> +40% Heads)
+    for _, buff in ipairs(e.buffs) do
+      buff.left = buff.left + 1
+      if buff.kind == "mult" then buff.amount = buff.amount + 1
+      elseif buff.kind == "odds" then buff.amount = math.min(.6, buff.amount * 2) end
+    end
+    return "buffs amplified"
   elseif effect.type == "combo_bonus" then
     e.combo_len = e.combo_len + effect.amount
     return "combo +" .. effect.amount
@@ -521,6 +537,10 @@ function Game.resolve(game)
     res.effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins}
   end
   Signal.emit("coin_resolve", {game = game, inst = item, res = res})
+  result.base_effects = {} -- what this coin did before multipliers (True Echo repeats it)
+  for i, effect in ipairs(res.effects) do
+    result.base_effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins}
+  end
   local multiplier = 1
   for _, buff in ipairs(e.buffs) do
     if buff.kind == "mult" and not buff.fresh then multiplier = multiplier * buff.amount end
@@ -746,6 +766,14 @@ end
 function Game.leave_shop(game)
   if game.phase ~= "SHOP" then return false end
   return Game.next_encounter(game)
+end
+
+-- After the boss: keep going through endless levels (the run is over only when you lose one).
+function Game.continue_endless(game)
+  if game.phase ~= "VICTORY" or game.endless then return false end
+  game.endless = true
+  enter_shop(game)
+  return true
 end
 
 function Game.next_encounter(game)
