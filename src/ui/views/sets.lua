@@ -33,7 +33,7 @@ local function draw_sets()
   for i, id in ipairs(ui.character_order) do
     local selected = id == ui.sets_character
     button(D.L(({blade = "BLADE", seer = "SEER", trader = "TRADER"})[id]), 340 + (i - 1) * 210, 148, 190, 44,
-      selected and C.gold or C.panel_light, function() A.sets_pick_character(id) end)
+      selected and C.gold or C.panel_light, function() A.sets_pick_character(id) end, Profile.character_unlocked(ui.profile, id))
   end
 
   local character_id = ui.sets_character

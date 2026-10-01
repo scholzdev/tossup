@@ -158,6 +158,7 @@ local function draw_encounter()
         love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
         centered("CURRENT", tab_x, y - 9, 76, ui.f16, C.ink)
       end
+      coin_hover(owned.id, x, y, 214, 84, Game.probability(ui.game, owned)) -- read what the next coins do
       coin_image(owned.id, x + 8, y + 10, 64)
       text(catalog[owned.id].name:upper(), x + 80, y + 16, ui.f20, C.face)
       text(D.L("%d%% HEADS", math.floor(Game.probability(ui.game, owned) * 100 + .5)), x + 80, y + 46, ui.f16, C.gold)

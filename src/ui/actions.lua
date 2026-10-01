@@ -151,13 +151,16 @@ function A.set_dirty()
 end
 
 function A.open_sets(character_id)
-  ui.sets_character = character_id or ui.selected_character
+  character_id = character_id or ui.selected_character
+  if not Profile.character_unlocked(ui.profile, character_id) then character_id = "blade" end
+  ui.sets_character = character_id
   ui.sets_index = Profile.active(ui.profile, ui.sets_character)
   ui.set_draft = nil
   A.go("sets")
 end
 
 function A.sets_pick_character(id)
+  if not Profile.character_unlocked(ui.profile, id) then return end
   ui.sets_character = id
   ui.sets_index = Profile.active(ui.profile, id)
   ui.set_draft = nil
@@ -232,6 +235,7 @@ function A.discard_current()
 end
 
 function A.start(seed)
+  if not Profile.character_unlocked(ui.profile, ui.selected_character) then return end -- win a run with the one before first
   ui.game = Game.new(seed or (os.time() + math.floor(love.timer.getTime() * 1000000)),
     ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character), A.loadout(), true)
   ui.flip_animation = nil
@@ -334,6 +338,16 @@ function A.update(dt)
     record.tokens_paid = Game.run_tokens(record)
     log_run(record)
     ui.profile.tokens = ui.profile.tokens + record.tokens_paid
+    save_profile()
+  end
+  if record and record.phase == "VICTORY" and not record.win_recorded then -- a won run unlocks the next character
+    record.win_recorded = true
+    record.unlocked_character = Profile.record_win(ui.profile, record.character_id)
+    save_profile()
+  end
+  if record and record.endless and record.phase == "GAME_OVER" and not record.endless_recorded then
+    record.endless_recorded = true
+    record.endless_record = Profile.record_endless(ui.profile, record.character_id, record.cleared - 4)
     save_profile()
   end
   if record and record.endless and record.phase == "GAME_OVER" and not record.endless_logged then

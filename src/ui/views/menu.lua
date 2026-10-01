@@ -29,9 +29,19 @@ local function draw_menu()
   local portrait = ui.character_images[ui.selected_character]
   local scale = math.min(366 / portrait:getWidth(), 380 / portrait:getHeight())
   local width, height = portrait:getWidth() * scale, portrait:getHeight() * scale
-  color(C.white)
+  local locked = not Profile.character_unlocked(ui.profile, ui.selected_character)
+  love.graphics.setColor(1, 1, 1, locked and .22 or 1)
   love.graphics.draw(portrait, 70 + (384 - width) / 2, 226 + (388 - height) / 2, 0, scale, scale)
-  centered(character.description:upper(), 70, 632, 384, ui.f16, C.muted)
+  if locked then
+    D.padlock(262, 396)
+    centered("LOCKED", 70, 440, 384, ui.f32, C.face)
+    local required = ui.characters[Profile.required_for(ui.selected_character)]
+    centered(D.L("WIN A RUN WITH: %s", required.name:upper()), 70, 632, 384, ui.f16, C.orange)
+  else
+    centered(character.description:upper(), 70, 632, 384, ui.f16, C.muted)
+    local best = ui.profile.best_endless[ui.selected_character]
+    if best then centered(D.L("BEST ENDLESS: %d", best), 70, 596, 384, ui.f16, C.gold) end
+  end
 
   -- right: the coin set you will play
   box(484, 160, 736, 460, C.panel_dk)
@@ -58,9 +68,9 @@ local function draw_menu()
   if #set.coins == 0 then
     centered("THIS SET IS EMPTY  -  THE DEFAULT DECK IS USED", 484, 490, 736, ui.f16, C.orange)
   end
-  button("EDIT COIN SETS", 674, 540, 356, 52, C.gold, function() A.open_sets(ui.selected_character) end)
+  button("EDIT COIN SETS", 674, 540, 356, 52, C.gold, function() A.open_sets(ui.selected_character) end, not locked)
 
-  D.icon_button("START RUN", ui.ui_images.start_level, 470, 660, 340, 68, C.green, function() A.start() end)
+  D.icon_button("START RUN", ui.ui_images.start_level, 470, 660, 340, 68, C.green, function() A.start() end, not locked)
 end
 
 return draw_menu

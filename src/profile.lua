@@ -12,7 +12,42 @@ local DEFAULT_OPTIONS = {screen_shake = true, fast_flip = false, fullscreen = fa
 function Profile.new()
   local options = {}
   for key, value in pairs(DEFAULT_OPTIONS) do options[key] = value end
-  return {tokens = 0, unlocked = {}, collected = {}, sets = {}, active_set = {}, options = options}
+  return {tokens = 0, unlocked = {}, collected = {}, sets = {}, active_set = {}, options = options, wins = {}, best_endless = {}}
+end
+
+-- Characters unlock in this order: the first is always playable, each next one after winning a run with the one before.
+Profile.CHARACTER_ORDER = {"blade", "seer", "trader"}
+
+function Profile.character_unlocked(profile, character_id)
+  for i, id in ipairs(Profile.CHARACTER_ORDER) do
+    if id == character_id then return i == 1 or profile.wins[Profile.CHARACTER_ORDER[i - 1]] == true end
+  end
+  return false
+end
+
+-- The character that must be beaten to unlock this one (nil for the first).
+function Profile.required_for(character_id)
+  for i, id in ipairs(Profile.CHARACTER_ORDER) do
+    if id == character_id then return Profile.CHARACTER_ORDER[i - 1] end
+  end
+end
+
+-- A run was won with this character. Returns the id of the character it unlocked, if it unlocked one.
+function Profile.record_win(profile, character_id)
+  if profile.wins[character_id] then return nil end
+  profile.wins[character_id] = true
+  for i, id in ipairs(Profile.CHARACTER_ORDER) do
+    if id == character_id then return Profile.CHARACTER_ORDER[i + 1] end
+  end
+end
+
+-- Endless levels cleared beyond the boss; keeps the best per character. Returns true for a new record.
+function Profile.record_endless(profile, character_id, levels)
+  if levels > 0 and levels > (profile.best_endless[character_id] or 0) then
+    profile.best_endless[character_id] = levels
+    return true
+  end
+  return false
 end
 
 -- Mark a coin as seen in the collection. Returns true if it was new.
@@ -161,6 +196,10 @@ function Profile.encode(profile)
   for _, character_id in ipairs(sorted_keys(profile.active_set)) do
     lines[#lines + 1] = "  " .. character_id .. " = " .. profile.active_set[character_id] .. ","
   end
+  lines[#lines + 1] = "}, wins = {"
+  for _, id in ipairs(sorted_keys(profile.wins)) do lines[#lines + 1] = "  " .. id .. " = true," end
+  lines[#lines + 1] = "}, best_endless = {"
+  for _, id in ipairs(sorted_keys(profile.best_endless)) do lines[#lines + 1] = "  " .. id .. " = " .. profile.best_endless[id] .. "," end
   lines[#lines + 1] = "}, options = {"
   for _, key in ipairs(sorted_keys(profile.options)) do
     lines[#lines + 1] = "  " .. key .. " = " .. tostring(profile.options[key]) .. ","
@@ -185,6 +224,8 @@ function Profile.decode(text)
       while type(set.coins) == "table" and #set.coins > Profile.SET_SIZE do table.remove(set.coins) end
     end
   end
+  data.wins = type(data.wins) == "table" and data.wins or fresh.wins
+  data.best_endless = type(data.best_endless) == "table" and data.best_endless or fresh.best_endless
   data.active_set = type(data.active_set) == "table" and data.active_set or fresh.active_set
   -- older saves kept a single loadout per character: it becomes set 1
   if type(data.loadouts) == "table" then

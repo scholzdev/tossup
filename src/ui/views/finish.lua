@@ -44,6 +44,10 @@ local function draw_end()
   text(tostring(g.player.gold), 746, 436, ui.f32, C.gold)
   text("GOLD LEFT", 690, 484, ui.f16, C.muted)
   text(D.L("SEED %s", g.seed), 690, 512, ui.f16, C.muted)
+  if g.endless_record then centered("NEW RECORD!", 380, 552, 520, ui.f20, C.gold) end
+  if g.unlocked_character then
+    centered(D.L("NEW CHARACTER UNLOCKED: %s", ui.characters[g.unlocked_character].name:upper()), 380, 552, 520, ui.f20, C.gold)
+  end
   if not won and g.lost_why then
     love.graphics.setFont(ui.f16)
     color(C.red)

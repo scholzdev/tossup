@@ -37,6 +37,23 @@ equal(old.tokens, 3)
 equal(old.options.screen_shake, true, "old save gets default options")
 assert(next(old.collected) == nil)
 
+-- characters unlock in order by winning runs; the endless record keeps the best
+local u = Profile.new()
+assert(Profile.character_unlocked(u, "blade"), "the first character is always open")
+assert(not Profile.character_unlocked(u, "seer") and not Profile.character_unlocked(u, "trader"))
+equal(Profile.required_for("seer"), "blade")
+equal(Profile.required_for("blade"), nil)
+equal(Profile.record_win(u, "blade"), "seer", "winning with the Blade unlocks the Seer")
+assert(Profile.character_unlocked(u, "seer") and not Profile.character_unlocked(u, "trader"))
+equal(Profile.record_win(u, "blade"), nil, "only the first win unlocks")
+equal(Profile.record_win(u, "seer"), "trader")
+assert(Profile.record_endless(u, "blade", 3) and not Profile.record_endless(u, "blade", 2) and Profile.record_endless(u, "blade", 5))
+assert(not Profile.record_endless(u, "seer", 0), "no endless levels, no record")
+local u2 = Profile.decode(Profile.encode(u))
+assert(Profile.character_unlocked(u2, "trader"), "unlocks survive a save")
+equal(u2.best_endless.blade, 5)
+assert(next(Profile.decode("return {tokens = 1, unlocked = {}}").wins) == nil, "old saves have no wins")
+
 -- coin sets: three per character, set 1 is the default deck; edits, active set and copy limits
 local sp = Profile.new()
 local sets = Profile.sets(sp, "blade")
