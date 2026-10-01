@@ -5,7 +5,7 @@
 local ui = require("src.ui.state")
 local Game = require("src.game")
 
-local Pad = {inspecting = false, device = "keyboard", active = false, focus = nil, key = nil, repeat_timer = 0, trigger_down = {}}
+local Pad = {connected = false, inspecting = false, device = "keyboard", active = false, focus = nil, key = nil, repeat_timer = 0, trigger_down = {}}
 
 local DIRECTIONS = {dpup = {0, -1}, dpdown = {0, 1}, dpleft = {-1, 0}, dpright = {1, 0}}
 
@@ -110,6 +110,10 @@ end
 
 -- Call every frame after the UI was drawn (the button list is then complete).
 function Pad.update(dt, app)
+  Pad.connected = Pad.simulate or false
+  for _, joystick in ipairs(love.joystick and love.joystick.getJoysticks() or {}) do
+    if joystick:isGamepad() then Pad.connected = true end
+  end
   local key = context_key()
   if key ~= Pad.key then -- a new screen: pick the start focus one frame later, when its buttons exist
     Pad.key = key
@@ -193,7 +197,33 @@ function Pad.inspect()
   ui.hover_anchor = {best.x + best.w * .5, best.y + best.h}
 end
 
+-- With a gamepad connected, every element that has a controller shortcut wears a small button badge on its top edge.
+local BADGE_COLOURS = {A = "green", B = "red", X = "blue", Y = "gold", START = "panel_light"}
+
+local function draw_badges()
+  local C = require("src.ui.theme")
+  love.graphics.setFont(ui.f16)
+  for _, b in ipairs(ui.buttons) do
+    if b.hotkey then
+      local w = math.max(26, ui.f16:getWidth(b.hotkey) + 14)
+      local x, y = b.x + b.w / 2 - w / 2, b.y - (b.h < 40 and 18 or 11) -- small buttons: the badge sits clear of the label
+      local tint = C[BADGE_COLOURS[b.hotkey] or "panel_light"]
+      love.graphics.setColor(0, 0, 0, .4)
+      love.graphics.rectangle("fill", x, y + 2, w, 20, 5)
+      love.graphics.setColor(tint[1], tint[2], tint[3], b.disabled and .55 or 1)
+      love.graphics.rectangle("fill", x, y, w, 20, 5)
+      love.graphics.setColor(C.face[1], C.face[2], C.face[3], .9)
+      love.graphics.setLineWidth(2)
+      love.graphics.rectangle("line", x + 1, y + 1, w - 2, 18, 5)
+      love.graphics.setLineWidth(1)
+      love.graphics.setColor(C.ink[1], C.ink[2], C.ink[3], 1)
+      love.graphics.print(b.hotkey, math.floor(x + (w - ui.f16:getWidth(b.hotkey)) / 2), y + 2)
+    end
+  end
+end
+
 function Pad.draw()
+  if Pad.connected then draw_badges() end
   if not Pad.active then return end
   local b = Pad.focused()
   if not b then return end

@@ -31,7 +31,7 @@ local function centered(str, x, y, w, face, tint)
   str = L(str)
   text(str, x + math.floor((w - face:getWidth(str)) / 2), y, face, tint)
 end
-local function button(str, x, y, w, h, tint, action, enabled)
+local function button(str, x, y, w, h, tint, action, enabled, hotkey)
   local active = enabled ~= false
   local mx, my = ui.mouse()
   local hover = active and mx >= x and mx <= x + w and my >= y and my <= y + h
@@ -41,7 +41,7 @@ local function button(str, x, y, w, h, tint, action, enabled)
   centered(str, x, y + (h - ui.f20:getHeight()) / 2 - (hover and 3 or 0), w, ui.f20,
     active and C.ink or C.muted)
   -- a disabled button is still in the list (the controller can focus it, e.g. to inspect a coin you cannot buy), but pressing it does nothing
-  ui.buttons[#ui.buttons + 1] = {x = x, y = y - (hover and 3 or 0), w = w, h = h, action = action, disabled = not active}
+  ui.buttons[#ui.buttons + 1] = {x = x, y = y - (hover and 3 or 0), w = w, h = h, action = action, disabled = not active, hotkey = hotkey}
 end
 
 local function effects(effects_list)
@@ -118,7 +118,7 @@ local function image_at(image, x, y, size)
 end
 
 -- A button with an icon on the left and its label centred in the rest.
-local function icon_button(label, icon, x, y, w, h, tint, action, enabled)
+local function icon_button(label, icon, x, y, w, h, tint, action, enabled, hotkey)
   local active = enabled ~= false
   local mx, my = ui.mouse()
   local hover = active and mx >= x and mx <= x + w and my >= y and my <= y + h
@@ -129,7 +129,7 @@ local function icon_button(label, icon, x, y, w, h, tint, action, enabled)
   if active then color(C.white) else love.graphics.setColor(1, 1, 1, .45) end
   love.graphics.draw(icon, x + 8, top + 6, 0, size / icon:getWidth(), size / icon:getHeight())
   centered(label, x + size + 8, top + (h - ui.f20:getHeight()) / 2, w - size - 8, ui.f20, active and C.ink or C.muted)
-  ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = h, action = action, disabled = not active}
+  ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = h, action = action, disabled = not active, hotkey = hotkey}
 end
 
 -- The shared full-screen look (the shop's): felt backdrop, a teal screen with a gold border, a pixel
@@ -143,7 +143,7 @@ local function frame(title_image, back_label, back_action)
     color(C.white)
     love.graphics.draw(title_image, 70, 46, 0, scale, scale)
   end
-  if back_action then button(back_label, 1120, 56, 100, 34, C.panel_light, back_action) end
+  if back_action then button(back_label, 1120, 56, 100, 34, C.panel_light, back_action, nil, "B") end
 end
 
 -- The pixel title image for a screen, in the current language when there is one.
@@ -169,7 +169,7 @@ local function confirm_dialog()
     button("OK", 540, 454, 200, 52, C.red, function() ui.confirm = nil c.ok() end)
   else
     button("OK", 420, 454, 200, 52, C.red, function() ui.confirm = nil c.ok() end)
-    button("CANCEL", 660, 454, 200, 52, C.panel_light, function() ui.confirm = nil end)
+    button("CANCEL", 660, 454, 200, 52, C.panel_light, function() ui.confirm = nil end, nil, "B")
   end
 end
 

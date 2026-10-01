@@ -69,7 +69,7 @@ local function draw_mulligan()
   local marked_count = A.marked_count()
   D.icon_button(marked_count > 0 and D.L("DISCARD %d", marked_count) or "DISCARD", ui.ui_images.discard, 330, 676, 200, 64,
     C.red, A.discard_marked, marked_count > 0 and marked_count < #hand)
-  D.icon_button("START LEVEL", ui.ui_images.start_level, 550, 676, 260, 64, C.green, function() Game.mulligan_done(g) end)
+  D.icon_button("START LEVEL", ui.ui_images.start_level, 550, 676, 260, 64, C.green, function() Game.mulligan_done(g) end, nil, "X")
 end
 
 local function draw_flip_animation()
@@ -118,7 +118,7 @@ local function draw_encounter()
   color(met and C.green or C.gold)
   love.graphics.rectangle("fill", 330, 128, 580 * math.min(1, e.scored / e.max_quota), 20, 4)
   outline(330, 128, 580, 20, C.line, 4)
-  button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu)
+  button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu, nil, "START")
   if e.cleared then
     D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 930, 54, 170, 38, C.green, A.open_shop,
       not ui.flip_animation and not ui.game.pending and not ui.game.mulligan)
@@ -321,7 +321,7 @@ local function draw_encounter()
     love.graphics.printf(D.L(hint), 70, 690, 240)
   end
   if ui.game.dealt and not ui.flip_animation and not ui.holding then
-    D.icon_button("DISCARD", ui.ui_images.discard, 330, 676, 200, 64, C.red, A.discard_current) -- only the current coin
+    D.icon_button("DISCARD", ui.ui_images.discard, 330, 676, 200, 64, C.red, A.discard_current, nil, "Y") -- only the current coin
   end
   local empty_stack = not ui.game.dealt and not ui.game.mulligan and not ui.game.pending
     and not ui.flip_animation and not ui.holding
@@ -354,7 +354,7 @@ local function draw_encounter()
       can_act = false
     end
     D.icon_button(flip_label, ui.holding and ui.ui_images.next_coin or ui.ui_images.flip, 550, 676, 260, 64, C.blue,
-      A.next_or_flip, can_act)
+      A.next_or_flip, can_act, "X")
   end
   if ui.game.mulligan then draw_mulligan() end -- covers the play area and takes over the bottom bar
 end

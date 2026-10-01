@@ -63,7 +63,7 @@ local function draw_end()
     D.icon_button("NEW RUN", ui.ui_images.start_level, 470, 600, 340, 64, C.green, function() A.start() end)
     button("BACK TO MENU", 520, 686, 240, 44, C.panel_light, A.open_menu)
   end
-  button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu)
+  button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu, nil, "START")
 end
 
 return draw_end

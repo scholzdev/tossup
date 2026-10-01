@@ -36,7 +36,7 @@ local function draw_shop()
   color(C.white)
   love.graphics.draw(D.title("shop"), 70, 44, 0, 110 / D.title("shop"):getHeight(),
     110 / D.title("shop"):getHeight())
-  button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu)
+  button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu, nil, "START")
   D.image_at(ui.ui_images.gold, 1010, 100, 44)
   text(tostring(g.player.gold), 1062, 104, ui.f32, C.gold)
 

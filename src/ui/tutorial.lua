@@ -145,7 +145,7 @@ function Tutorial.draw()
     kept[1] = {x = 0, y = 0, w = 1280, h = 800, action = Tutorial.next}
   end
   ui.buttons = kept
-  D.button("SKIP", 1150, 750, 100, 36, C.panel_light, Tutorial.finish)
+  D.button("SKIP", 1150, 750, 100, 36, C.panel_light, Tutorial.finish, nil, "B")
 end
 
 return Tutorial
