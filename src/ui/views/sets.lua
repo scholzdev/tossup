@@ -9,7 +9,6 @@ local C, color, box, outline, text, centered, button = D.C, D.color, D.box, D.ou
 local coin_image, coin_hover = D.coin_image, D.coin_hover
 
 local SLOT, SLOT_GAP = 64, 14
-local GRID_X, CELL = 566, 84
 
 local function padlock(cx, cy)
   color(C.face)
@@ -28,16 +27,12 @@ local function count_in(coins, id)
 end
 
 local function draw_sets()
-  color(C.felt_dark)
-  love.graphics.rectangle("fill", -2000, -2000, 5280, 4800)
-  box(400, -10, 480, 80, C.gold)
-  centered("COIN SETS", 400, 22, 480, ui.f32, C.ink)
-  button("X", 24, 24, 64, 64, C.gold, function() A.go("title") end)
+  D.frame(ui.ui_images.title_sets, "BACK", function() A.go("title") end)
 
   -- every character
   for i, id in ipairs(ui.character_order) do
     local selected = id == ui.sets_character
-    button(ui.characters[id].name:sub(5):upper(), 320 + (i - 1) * 220, 100, 200, 50,
+    button(ui.characters[id].name:sub(5):upper(), 340 + (i - 1) * 210, 148, 190, 44,
       selected and C.gold or C.panel_light, function() A.sets_pick_character(id) end)
   end
 
@@ -48,17 +43,17 @@ local function draw_sets()
   local dirty = A.set_dirty()
 
   -- left: the set being edited
-  box(60, 175, 470, 540, C.screen)
-  outline(60, 175, 470, 540, C.line)
+  box(70, 212, 430, 528, C.panel_dk)
+  outline(70, 212, 430, 528, C.line)
   for i = 1, Profile.SET_COUNT do
-    button(sets[i].name, 76 + (i - 1) * 146, 190, 138, 44, ui.sets_index == i and C.blue or C.panel_light,
+    button(sets[i].name, 84 + (i - 1) * 134, 226, 126, 40, ui.sets_index == i and C.blue or C.panel_light,
       function() A.sets_pick_set(i) end)
   end
-  centered(#set.coins .. " / " .. Game.START_MAX .. " COINS", 60, 252, 470, ui.f20, C.gold)
-  local x0 = 60 + (470 - (5 * (SLOT + SLOT_GAP) - SLOT_GAP)) / 2
+  centered(#set.coins .. " / " .. Game.START_MAX .. " COINS", 70, 280, 430, ui.f20, C.gold)
+  local x0 = 70 + (430 - (5 * (SLOT + SLOT_GAP) - SLOT_GAP)) / 2
   for i = 1, Game.START_MAX do
     local x = x0 + ((i - 1) % 5) * (SLOT + SLOT_GAP)
-    local y = 292 + math.floor((i - 1) / 5) * (SLOT + SLOT_GAP + 8)
+    local y = 322 + math.floor((i - 1) / 5) * (SLOT + SLOT_GAP + 8)
     box(x - 4, y - 4, SLOT + 8, SLOT + 8, C.slot_dk)
     outline(x - 4, y - 4, SLOT + 8, SLOT + 8, C.line)
     local id = set.coins[i]
@@ -68,28 +63,31 @@ local function draw_sets()
       ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = SLOT, h = SLOT, action = function() A.remove_coin_from_set(i) end}
     end
   end
-  centered(dirty and "UNSAVED CHANGES" or "CLICK A COIN HERE TO REMOVE IT", 60, 458, 470, ui.f16,
+  centered(dirty and "UNSAVED CHANGES" or "CLICK A COIN HERE TO REMOVE IT", 70, 496, 430, ui.f16,
     dirty and C.orange or C.muted)
-  button(dirty and "SAVE SET" or "SAVED", 96, 490, 398, 50, dirty and C.blue or C.panel_light, A.save_set, dirty)
-  button("CLEAR SET", 96, 560, 398, 44, C.red, A.clear_set, #set.coins > 0)
-  centered("MAX " .. Game.MAX_COPIES .. " OF THE SAME COIN  -  NORMAL: UP TO " .. Game.START_MAX, 60, 676, 470, ui.f16, C.muted)
+  button(dirty and "SAVE SET" or "SAVED", 100, 530, 370, 48, dirty and C.blue or C.panel_light, A.save_set, dirty)
+  button("CLEAR SET", 100, 592, 370, 44, C.red, A.clear_set, #set.coins > 0)
+  centered("MAX " .. Game.MAX_COPIES .. " OF THE SAME COIN  -  NORMAL: UP TO " .. Game.START_MAX, 70, 702, 430,
+    ui.f16, C.muted)
 
   -- right: all of this character's coins
-  box(550, 175, 690, 540, C.screen)
-  outline(550, 175, 690, 540, C.line)
-  centered(def.name:upper() .. "  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP", 550, 188, 690, ui.f16, C.gold)
+  box(520, 212, 700, 528, C.panel_dk)
+  outline(520, 212, 700, 528, C.line)
+  centered(def.name:upper() .. "  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP", 520, 226, 700,
+    ui.f16, C.gold)
   local entries = {}
   for _, id in ipairs(def.pool) do entries[#entries + 1] = {id = id} end
   for _, entry in ipairs(def.locked or {}) do
     entries[#entries + 1] = {id = entry[1], cost = entry[2], locked = not Profile.is_unlocked(ui.profile, character_id, entry[1])}
   end
-  local columns = 8
+  local columns, step = 8, 82
+  local gx = 520 + (700 - ((columns - 1) * step + SLOT)) / 2
   for i, entry in ipairs(entries) do
-    local x = GRID_X + ((i - 1) % columns) * CELL
-    local y = 220 + math.floor((i - 1) / columns) * (SLOT + 38)
+    local x = gx + ((i - 1) % columns) * step
+    local y = 262 + math.floor((i - 1) / columns) * (SLOT + 40)
     coin_image(entry.id, x, y, SLOT)
     if entry.locked then
-      color(C.slot, .7)
+      color(C.slot_dk, .7)
       love.graphics.circle("fill", x + SLOT / 2, y + SLOT / 2, SLOT / 2)
       padlock(x + SLOT / 2, y + SLOT / 2 - 4)
       centered("SHOP", x, y + SLOT + 2, SLOT, ui.f16, C.muted)

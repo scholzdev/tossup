@@ -6,7 +6,7 @@ local coin_hover = D.coin_hover
 
 local COLUMNS, ROWS = 5, 3
 local PER_PAGE = COLUMNS * ROWS
-local CELL_W, ICON = 170, 96
+local CELL_W, ICON = 170, 88
 
 -- rarity code (in the coin files) -> display name and tab colour
 local TABS = {
@@ -74,27 +74,16 @@ local function chevron(cx, cy, size, direction)
 end
 
 local function draw_collection()
-  color(C.felt_dark) -- oversized so it also covers the bars of a wide window
-  love.graphics.rectangle("fill", -2000, -2000, 5280, 4800)
-
-  -- header plate and back arrow
-  box(360, -10, 560, 90, C.gold)
-  centered("Coin Collection", 360, 18, 560, ui.f48, C.white)
-  local mx, my = ui.mouse()
-  local back_hover = mx >= 20 and mx <= 130 and my >= 22 and my <= 78
-  box(20, 22 + (back_hover and -2 or 0), 110, 56, C.gold)
-  color(C.white)
-  love.graphics.polygon("fill", 36, 50, 62, 32, 62, 43, 112, 43, 112, 57, 62, 57, 62, 68)
-  ui.buttons[#ui.buttons + 1] = {x = 20, y = 22, w = 110, h = 56, action = function() A.go("title") end}
+  D.frame(ui.ui_images.title_collection, "BACK", function() A.go("title") end)
 
   -- sort + rarity filters
-  text("Sort by", 130, 126, ui.f20, C.muted)
-  pill(sort_label(), 205, 108, 120, 50, TABS[1].fill, cycle_sort)
+  text("SORT", 70, 168, ui.f16, C.muted)
+  pill(sort_label(), 120, 156, 120, 40, TABS[1].fill, cycle_sort)
   color(C.white)
-  love.graphics.rectangle("fill", 342, 100, 3, 66)
+  love.graphics.rectangle("fill", 254, 152, 3, 48)
   for i, tab in ipairs(TABS) do
-    local x = 365 + (i - 1) * 150
-    pill(tab.label, x, 108 + (ui.collection_filter == tab.key and 5 or 0), 138, 50, tab.fill,
+    local x = 274 + (i - 1) * 126
+    pill(tab.label, x, 156 + (ui.collection_filter == tab.key and 3 or 0), 116, 40, tab.fill,
       function() A.set_filter(tab.key) end, ui.collection_filter == tab.key)
   end
 
@@ -108,35 +97,27 @@ local function draw_collection()
     local id = ids[first + slot]
     if id then
       local x = x0 + ((slot - 1) % COLUMNS) * CELL_W
-      local y = 195 + math.floor((slot - 1) / COLUMNS) * 160
+      local y = 224 + math.floor((slot - 1) / COLUMNS) * 154
       local collected = ui.profile.collected[id]
       local image = ui.coin_images[id]
-      if collected then
-        color(C.white)
-      else
-        love.graphics.setColor(0, 0, 0, .85) -- silhouette of a coin you have not owned yet
-      end
+      if collected then color(C.white) else love.graphics.setColor(0, 0, 0, .8) end
       love.graphics.draw(image, x + (CELL_W - ICON) / 2, y, 0, ICON / image:getWidth(), ICON / image:getHeight())
-      box(x + 11, y + 102, CELL_W - 22, 34, {.42, .50, .62})
-      centered(collected and ui.catalog[id].name or "Uncollected", x + 11, y + 109, CELL_W - 22, ui.f20,
-        collected and C.white or C.panel_light)
-      if collected then coin_hover(id, x + 37, y, ICON, 136) end
+      box(x + 11, y + 100, CELL_W - 22, 32, C.card)
+      outline(x + 11, y + 100, CELL_W - 22, 32, C.line)
+      centered(collected and ui.catalog[id].name or "Uncollected", x + 11, y + 106, CELL_W - 22, ui.f20,
+        collected and C.white or C.muted)
+      if collected then coin_hover(id, x + 37, y, ICON, 132) end
     end
   end
 
-  -- paging: a slim arrow on the left, a big block on the right, "1/3" at the bottom
+  -- paging inside the frame
   local can_prev, can_next = ui.collection_page > 1, ui.collection_page < pages
-  color(can_prev and {.20, .26, .30} or {.12, .17, .19})
-  love.graphics.rectangle("fill", 10, 335, 54, 70, 4)
-  chevron(40, 370, 12, -1)
-  ui.buttons[#ui.buttons + 1] = can_prev and {x = 10, y = 335, w = 54, h = 70, action = function() A.change_collection_page(-1) end} or nil
-  box(1170, 300, 110, 190, can_next and {.13, .27, .50} or {.12, .17, .25})
-  chevron(1225, 395, 18, 1)
-  ui.buttons[#ui.buttons + 1] = can_next and {x = 1170, y = 300, w = 110, h = 190, action = function() A.change_collection_page(1) end} or nil
+  button("<", 70, 380, 50, 90, C.green, function() A.change_collection_page(-1) end, can_prev)
+  button(">", 1160, 380, 50, 90, C.green, function() A.change_collection_page(1) end, can_next)
   centered(ui.collection_page .. "/" .. pages, 440, 700, 400, ui.f32, C.white)
   local owned = 0
   for _ in pairs(ui.profile.collected) do owned = owned + 1 end
-  centered("Collected " .. owned .. " / " .. #ui.coin_order, 940, 750, 320, ui.f16, C.muted)
+  centered("COLLECTED " .. owned .. " / " .. #ui.coin_order, 880, 710, 320, ui.f16, C.muted)
 end
 
 return draw_collection

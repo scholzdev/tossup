@@ -46,7 +46,7 @@ local function draw_end()
   text("SEED " .. g.seed, 690, 512, ui.f16, C.muted)
 
   D.icon_button("NEW RUN", ui.ui_images.start_level, 470, 600, 340, 64, C.green, function() A.start() end)
-  button("MENU", 540, 684, 200, 40, C.panel_light, A.open_menu)
+  button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu)
 end
 
 return draw_end

@@ -106,6 +106,20 @@ local function icon_button(label, icon, x, y, w, h, tint, action, enabled)
   if active then ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = h, action = action} end
 end
 
+-- The shared full-screen look (the shop's): felt backdrop, a teal screen with a gold border, a pixel
+-- title image at the top left and, when given, a button at the top right.
+local function frame(title_image, back_label, back_action)
+  box(0, 0, 1280, 800, C.felt_dark)
+  box(36, 36, 1208, 728, C.screen)
+  outline(36, 36, 1208, 728, C.gold)
+  if title_image then
+    local scale = 90 / title_image:getHeight()
+    color(C.white)
+    love.graphics.draw(title_image, 70, 46, 0, scale, scale)
+  end
+  if back_action then button(back_label, 1120, 56, 100, 34, C.panel_light, back_action) end
+end
+
 local function coin_name(id, x, y, w)
   local name = catalog[id].name:upper()
   if w then centered(name, x, y, w, ui.f20, C.face) else text(name, x, y, ui.f20, C.face) end
@@ -175,5 +189,5 @@ local function coin_face(cx, cy, radius, outcome, selected, id)
 end
 
 return {C = C, color = color, box = box, outline = outline, text = text, centered = centered,
-  button = button, coin_image = coin_image, image_at = image_at, icon_button = icon_button, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
+  button = button, coin_image = coin_image, image_at = image_at, icon_button = icon_button, frame = frame, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
   effects = effects, effect_description = effect_description, coin_tooltip = draw_coin_tooltip, text_hover = text_hover, text_tooltip = draw_text_tooltip}

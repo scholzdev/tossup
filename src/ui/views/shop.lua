@@ -35,9 +35,9 @@ local function draw_shop()
   color(C.white)
   love.graphics.draw(ui.ui_images.shop_title, 70, 44, 0, 110 / ui.ui_images.shop_title:getHeight(),
     110 / ui.ui_images.shop_title:getHeight())
-  D.image_at(ui.ui_images.gold, 1000, 60, 48)
-  text(tostring(g.player.gold), 1060, 64, ui.f48, C.gold)
-  button("MENU", 1128, 124, 92, 30, C.panel_light, A.open_menu)
+  button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu)
+  D.image_at(ui.ui_images.gold, 1010, 100, 44)
+  text(tostring(g.player.gold), 1062, 104, ui.f32, C.gold)
 
   -- reroll (coin offers only), level with the coin icons
   local reroll_cost = g.reroll_cost or 4
@@ -98,19 +98,19 @@ local function draw_shop()
 
   -- tune-ups for the selected coin
   box(1000, 190, 220, 370, PANEL)
-  outline(1000, 190, 220, 370, C.panel_light)
-  centered("TUNE-UPS", 1000, 202, 220, ui.f20, C.gold)
+  outline(1000, 190, 220, 370, C.line)
+  centered("TUNE-UPS", 1000, 200, 220, ui.f20, C.gold)
   local selected = Game.get_coin(g, g.selected_uid)
-  centered("ODDS TUNER", 1000, 244, 220, ui.f20, C.face)
-  centered("+10% HEADS ON THE", 1000, 272, 220, ui.f16, C.muted)
-  centered("SELECTED COIN", 1000, 292, 220, ui.f16, C.muted)
-  price(10, 1000, 314, 220, g.player.gold >= 10)
-  button("UPGRADE", 1032, 358, 156, 36, C.gold, function() Game.upgrade(g, g.selected_uid) end,
+  centered("ODDS TUNER", 1000, 236, 220, ui.f20, C.face)
+  centered("+10% HEADS ON THE", 1000, 262, 220, ui.f16, C.muted)
+  centered("SELECTED COIN", 1000, 281, 220, ui.f16, C.muted)
+  price(10, 1000, 298, 220, g.player.gold >= 10)
+  button("UPGRADE", 1032, 340, 156, 36, C.gold, function() Game.upgrade(g, g.selected_uid) end,
     g.player.gold >= 10 and selected and Game.probability(g, selected) < 1)
-  centered("COIN REMOVAL", 1000, 424, 220, ui.f20, C.face)
-  centered("DROP THE SELECTED COIN", 1000, 452, 220, ui.f16, C.muted)
-  price(8, 1000, 474, 220, g.player.gold >= 8)
-  button("REMOVE", 1032, 518, 156, 36, C.red, function() Game.remove(g, g.selected_uid) end,
+  centered("COIN REMOVAL", 1000, 400, 220, ui.f20, C.face)
+  centered("DROP THE SELECTED COIN", 1000, 426, 220, ui.f16, C.muted)
+  price(8, 1000, 444, 220, g.player.gold >= 8)
+  button("REMOVE", 1032, 486, 156, 36, C.red, function() Game.remove(g, g.selected_uid) end,
     g.player.gold >= 8 and #g.coins > 1)
 
   -- your deck

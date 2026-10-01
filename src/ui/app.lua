@@ -57,7 +57,8 @@ function app.load()
   for id in pairs(ui.item_catalog) do ui.item_images[id] = load_image("assets/items/" .. id .. ".png") end
   for id in pairs(Game.relics()) do ui.relic_images[id] = load_image("assets/relics/" .. id .. ".png") end
   for _, name in ipairs({"next_round", "reroll", "gold", "energy", "coins_left", "open_shop", "exchange", "give_up",
-    "flip", "discard", "next_coin", "start_level", "shop_title", "logo"}) do
+    "flip", "discard", "next_coin", "start_level", "shop_title", "logo",
+    "title_play", "title_sets", "title_collection", "title_options"}) do
     ui.ui_images[name] = load_image("assets/ui/" .. name .. ".png")
   end
   ui.coin_images.back = love.graphics.newImage("assets/coins/back.png", {mipmaps = true})
@@ -68,6 +69,12 @@ function app.load()
     ui.character_images[id]:setFilter("nearest", "nearest")
   end
   A.load_profile()
+  -- game cursors: an arrow with a coin; it turns gold with the coin on edge over anything clickable
+  ui.cursors = {
+    arrow = love.mouse.newCursor(love.image.newImageData("assets/ui/cursor_arrow.png"), 2, 2),
+    click = love.mouse.newCursor(love.image.newImageData("assets/ui/cursor_click.png"), 2, 2),
+  }
+  love.mouse.setCursor(ui.cursors.arrow)
   love.mouse.setPosition(0, 0)
 end
 
@@ -93,7 +100,21 @@ function app.draw()
   love.graphics.pop()
 end
 
-app.update = A.update
+function app.update(dt)
+  A.update(dt)
+  if ui.cursors then -- pick the cursor from what the last frame drew under the mouse
+    local mx, my = ui.mouse()
+    local over = false
+    for _, b in ipairs(ui.buttons) do
+      if mx >= b.x and mx <= b.x + b.w and my >= b.y and my <= b.y + b.h then over = true break end
+    end
+    local want = over and ui.cursors.click or ui.cursors.arrow
+    if want ~= ui.cursor_current then
+      love.mouse.setCursor(want)
+      ui.cursor_current = want
+    end
+  end
+end
 
 function app.mousepressed(x, y, mouse_button)
   if mouse_button ~= 1 then return end

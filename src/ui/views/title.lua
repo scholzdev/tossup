@@ -1,15 +1,15 @@
+-- Main menu, in the shop's full-screen style.
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
-local C, color, box, outline, centered, button = D.C, D.color, D.box, D.outline, D.centered, D.button
+local C, color, centered, button = D.C, D.color, D.centered, D.button
 
 local function draw_title()
-  box(344, 67, 592, 670, C.screen)
-  outline(344, 67, 592, 670, C.gold)
-  color(C.white)
+  D.frame(nil)
   local logo = ui.ui_images.logo
-  love.graphics.draw(logo, 640 - 180, 86, 0, 360 / logo:getWidth(), 360 / logo:getWidth())
-  centered("BEAT THE QUOTA", 344, 208, 592, ui.f16, C.muted)
+  color(C.white)
+  love.graphics.draw(logo, 640 - 230, 70, 0, 460 / logo:getWidth(), 460 / logo:getWidth())
+  centered("BEAT THE QUOTA", 0, 204, 1280, ui.f20, C.muted)
 
   local entries = {}
   if ui.game then
@@ -23,7 +23,7 @@ local function draw_title()
   entries[#entries + 1] = {"OPTIONS", C.panel_light, function() A.go("options") end}
   entries[#entries + 1] = {"QUIT", C.red, function() love.event.quit() end}
   for i, entry in ipairs(entries) do
-    button(entry[1], 470, 235 + (i - 1) * 78, 340, 58, entry[2], entry[3])
+    button(entry[1], 470, 262 + (i - 1) * 74, 340, 58, entry[2], entry[3])
   end
 end
 
