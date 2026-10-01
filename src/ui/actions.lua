@@ -7,17 +7,49 @@ local A = {}
 
 local PROFILE_FILE = "profile.lua"
 
+local function apply_options()
+  love.window.setFullscreen(ui.profile.options.fullscreen)
+end
+
 function A.load_profile()
   ui.profile = Profile.decode(love.filesystem.getInfo(PROFILE_FILE) and love.filesystem.read(PROFILE_FILE))
+  apply_options()
 end
 
 local function save_profile()
   love.filesystem.write(PROFILE_FILE, Profile.encode(ui.profile))
 end
 
+function A.go(screen)
+  ui.screen = screen
+  ui.collection_page = 1
+end
+
+-- Pause the run (if any) and show the title screen.
+function A.open_menu()
+  if ui.game then ui.game.paused = true end
+  A.go("title")
+end
+
+function A.toggle_option(key)
+  ui.profile.options[key] = not ui.profile.options[key]
+  if key == "fullscreen" then apply_options() end
+  save_profile()
+end
+
+function A.set_filter(rarity)
+  ui.collection_filter = rarity
+  ui.collection_page = 1
+end
+
+function A.change_collection_page(delta)
+  ui.collection_page = math.max(1, ui.collection_page + delta)
+end
+
 -- Spend tokens to unlock a locked coin for the selected character.
 function A.unlock_coin(coin_id)
   if Profile.unlock(ui.profile, ui.selected_character, coin_id) then
+    Profile.collect(ui.profile, coin_id)
     save_profile()
     return true
   end
@@ -35,7 +67,6 @@ end
 
 function A.select_character(id)
   ui.selected_character = id
-  ui.coin_page = 1
 end
 
 -- Every coin the menu shows for a character: base pool first, then the locked ones.
@@ -50,9 +81,15 @@ function A.menu_coins(character_id)
   return list
 end
 
-function A.change_coin_page(delta)
-  local pages = math.ceil(#A.menu_coins(ui.selected_character) / ui.coins_per_page)
-  ui.coin_page = math.max(1, math.min(pages, ui.coin_page + delta))
+-- Step to the previous/next character (wraps around).
+function A.cycle_character(delta)
+  local order = ui.character_order
+  for i, id in ipairs(order) do
+    if id == ui.selected_character then
+      A.select_character(order[(i - 1 + delta) % #order + 1])
+      return
+    end
+  end
 end
 
 function A.coin_action(item)
@@ -68,7 +105,8 @@ function A.flip_next_coin()
   local game = ui.game
   if not Game.flip(game) then return end
   ui.flip_animation = {id = Game.get_coin(game, game.pending.uid).id,
-    outcome = game.pending.result, elapsed = 0, duration = 1.6}
+    outcome = game.pending.result, elapsed = 0,
+    duration = ui.profile.options.fast_flip and .8 or 1.6}
 end
 
 function A.next_or_flip()
@@ -84,6 +122,11 @@ function A.update(dt)
   local game = ui.game
   ui.shake = math.max(0, ui.shake - dt)
   if game and game.phase ~= "ENCOUNTER" then ui.holding = false end
+  if game then -- anything that has been in your deck counts as collected
+    local fresh = false
+    for _, owned in ipairs(game.coins) do fresh = Profile.collect(ui.profile, owned.id) or fresh end
+    if fresh then save_profile() end
+  end
   if game and (game.phase == "GAME_OVER" or game.phase == "VICTORY") and not game.tokens_paid then
     game.tokens_paid = Game.run_tokens(game)
     ui.profile.tokens = ui.profile.tokens + game.tokens_paid
@@ -97,7 +140,7 @@ function A.update(dt)
     ui.flip_animation.elapsed = ui.flip_animation.elapsed + dt
     if ui.flip_animation.elapsed >= ui.flip_animation.duration then
       ui.flip_animation = nil
-      ui.shake = .3
+      ui.shake = ui.profile.options.screen_shake and .3 or 0
       ui.resolve_timer = .9
     end
   end

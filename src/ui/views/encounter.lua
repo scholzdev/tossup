@@ -33,7 +33,8 @@ local function draw_flip_animation()
   love.graphics.translate(619, 390 - lift)
   love.graphics.scale(squash, 1)
   color(C.white)
-  love.graphics.draw(ui.coin_images[ui.flip_animation.id], -150, -150, 0, 300 / 128, 300 / 128)
+  local image = ui.coin_images[ui.flip_animation.id]
+  love.graphics.draw(image, -150, -150, 0, 300 / image:getWidth(), 300 / image:getHeight())
   color(C.ink)
   love.graphics.rectangle("fill", -90, 76, 180, 44, 6)
   text(word, -ui.f32:getWidth(word) / 2, 82, ui.f32, heads and C.blue or C.red)
@@ -69,7 +70,7 @@ local function draw_encounter()
     text(stat[2], x + 9, 67, ui.f20, stat[3])
   end
   text("DRAWS " .. e.draws, 1006, 114, ui.f16, C.gold)
-  button("MENU", 1135, 109, 102, 30, C.panel_light, function() ui.game.paused = true end)
+  button("MENU", 1135, 109, 102, 30, C.panel_light, A.open_menu)
 
   local remaining = remaining_coins()
   box(28, 160, 250, 504, C.ink)
@@ -125,7 +126,7 @@ local function draw_encounter()
   if item then
     local coin = catalog[item.id]
     local chance = result.probability
-    local mx, my = love.mouse.getPosition()
+    local mx, my = ui.mouse()
     text(coin.name:upper(), 975, 210, ui.f32, C.face)
     text(coin.description, 975, 253, ui.f16, C.muted)
     text("HEADS " .. math.floor(chance * 100 + .5) .. "%", 975, 287, ui.f16, C.blue)
@@ -174,7 +175,7 @@ local function draw_encounter()
     for i, uid in ipairs(ui.game.peek) do names[i] = catalog[Game.get_coin(ui.game, uid).id].name:upper() end
     hint = "NEXT: " .. table.concat(names, ", ")
   end
-  local mx, my = love.mouse.getPosition()
+  local mx, my = ui.mouse()
   local usable = Items.can_use(ui.game) and not ui.flip_animation and not ui.holding
   for slot = 1, Items.MAX do
     local x = 790 + (slot - 1) * 152

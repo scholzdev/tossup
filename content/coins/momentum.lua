@@ -1,6 +1,7 @@
 -- Hooks used: on_odds (pure) to read the level's Heads streak.
 return {
   name = "Momentum", description = "+5% Heads for every Heads in a row this level.",
+  rarity = "SR",
   probability = .4,
   heads = {{type = "score", amount = 6}},
   tails = {},

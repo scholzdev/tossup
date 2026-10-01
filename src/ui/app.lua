@@ -8,7 +8,12 @@ local views = {
   ENCOUNTER = require("src.ui.views.encounter"),
   SHOP = require("src.ui.views.shop"),
 }
-local draw_menu = require("src.ui.views.menu")
+local screens = {
+  title = require("src.ui.views.title"),
+  select = require("src.ui.views.menu"),
+  collection = require("src.ui.views.collection"),
+  options = require("src.ui.views.options"),
+}
 local draw_end = require("src.ui.views.finish")
 local C, color, box, text = D.C, D.color, D.box, D.text
 
@@ -44,11 +49,13 @@ function app.load()
   ui.f48 = love.graphics.newFont(path, 48)
   for _, f in ipairs({ui.f16, ui.f20, ui.f32, ui.f48}) do f:setFilter("nearest", "nearest") end
   for id in pairs(ui.catalog) do
-    local image = love.graphics.newImage("assets/coins/" .. id .. ".png")
+    local image = love.graphics.newImage("assets/coins/" .. id .. ".png", {mipmaps = true})
     image:setFilter("linear", "linear")
+    image:setMipmapFilter("linear") -- smooth when a 512px coin is drawn small
     ui.coin_images[id] = image
   end
-  ui.coin_images.back = love.graphics.newImage("assets/coins/back.png")
+  ui.coin_images.back = love.graphics.newImage("assets/coins/back.png", {mipmaps = true})
+  ui.coin_images.back:setMipmapFilter("linear")
   ui.coin_images.back:setFilter("linear", "linear")
   for _, id in ipairs(ui.character_order) do
     ui.character_images[id] = love.graphics.newImage("assets/characters/" .. id .. ".png")
@@ -61,14 +68,20 @@ end
 function app.draw()
   ui.buttons = {}
   ui.hovered_coin = nil
+  local scale, ox, oy = ui.layout()
+  love.graphics.clear(C.felt[1], C.felt[2], C.felt[3]) -- fills the bars around the 16:10 canvas
+  love.graphics.push()
+  love.graphics.translate(ox, oy)
+  love.graphics.scale(scale)
   love.graphics.push()
   if ui.shake > 0 then
     love.graphics.translate(love.math.random(-6, 6) * ui.shake / .3, love.math.random(-6, 6) * ui.shake / .3)
   end
   color(C.felt)
   love.graphics.rectangle("fill", 0, 0, 1280, 800)
-  if not ui.game or ui.game.paused then draw_menu() else draw_game() end
+  if not ui.game or ui.game.paused then screens[ui.screen]() else draw_game() end
   D.coin_tooltip()
+  love.graphics.pop()
   love.graphics.pop()
 end
 
@@ -76,6 +89,7 @@ app.update = A.update
 
 function app.mousepressed(x, y, mouse_button)
   if mouse_button ~= 1 then return end
+  x, y = ui.to_canvas(x, y)
   for i = #ui.buttons, 1, -1 do
     local b = ui.buttons[i]
     if x >= b.x and x <= b.x + b.w and y >= b.y and y <= b.y + b.h then
@@ -86,22 +100,26 @@ function app.mousepressed(x, y, mouse_button)
   end
 end
 
-function app.wheelmoved(_, y)
-  if not ui.game or ui.game.paused then
-    if y < 0 then A.change_coin_page(1) elseif y > 0 then A.change_coin_page(-1) end
-  end
-end
-
 function app.keypressed(key)
   local game = ui.game
   if key == "f3" then ui.debug_visible = not ui.debug_visible return end
-  if key == "escape" then if game then game.paused = not game.paused end return end
+  if key == "escape" then
+    if game and not game.paused then A.open_menu()
+    elseif ui.screen ~= "title" then A.go("title")
+    elseif game then game.paused = false end
+    return
+  end
   if not game or game.paused then
-    local choice = tonumber(key)
-    if choice and ui.character_order[choice] then A.select_character(ui.character_order[choice]) end
-    if key == "pageup" or key == "[" then A.change_coin_page(-1) end
-    if key == "pagedown" or key == "]" then A.change_coin_page(1) end
-    if key == "return" then if game then game.paused = false else A.start() end end
+    if ui.screen == "select" then
+      local choice = tonumber(key)
+      if choice and ui.character_order[choice] then A.select_character(ui.character_order[choice]) end
+      if key == "left" then A.cycle_character(-1) end
+      if key == "right" then A.cycle_character(1) end
+      if key == "return" then A.start() end
+    elseif ui.screen == "collection" then
+      if key == "left" then A.change_collection_page(-1) end
+      if key == "right" then A.change_collection_page(1) end
+    end
     return
   end
   if game.phase == "ENCOUNTER" and ui.flip_animation then return end

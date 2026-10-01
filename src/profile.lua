@@ -4,7 +4,20 @@ local characters = require("content.characters")
 
 local Profile = {}
 
-function Profile.new() return {tokens = 0, unlocked = {}} end
+local DEFAULT_OPTIONS = {screen_shake = true, fast_flip = false, fullscreen = false}
+
+function Profile.new()
+  local options = {}
+  for key, value in pairs(DEFAULT_OPTIONS) do options[key] = value end
+  return {tokens = 0, unlocked = {}, collected = {}, options = options}
+end
+
+-- Mark a coin as seen in the collection. Returns true if it was new.
+function Profile.collect(profile, coin_id)
+  if profile.collected[coin_id] then return false end
+  profile.collected[coin_id] = true
+  return true
+end
 
 -- Extra coin ids this character may sell in the shop (for Game.new).
 function Profile.unlocked_list(profile, character_id)
@@ -42,6 +55,16 @@ function Profile.encode(profile)
     for _, id in ipairs(Profile.unlocked_list(profile, character_id)) do ids[#ids + 1] = id .. " = true" end
     lines[#lines + 1] = "  " .. character_id .. " = {" .. table.concat(ids, ", ") .. "},"
   end
+  lines[#lines + 1] = "}, collected = {"
+  local ids = {}
+  for id in pairs(profile.collected) do ids[#ids + 1] = id end
+  table.sort(ids)
+  for _, id in ipairs(ids) do lines[#lines + 1] = "  " .. id .. " = true," end
+  lines[#lines + 1] = "}, options = {"
+  local keys = {}
+  for key in pairs(profile.options) do keys[#keys + 1] = key end
+  table.sort(keys)
+  for _, key in ipairs(keys) do lines[#lines + 1] = "  " .. key .. " = " .. tostring(profile.options[key]) .. "," end
   lines[#lines + 1] = "}}"
   return table.concat(lines, "\n")
 end
@@ -52,6 +75,13 @@ function Profile.decode(text)
   local ok, data = pcall(chunk or function() end)
   if not ok or type(data) ~= "table" or type(data.tokens) ~= "number" or type(data.unlocked) ~= "table" then
     return Profile.new()
+  end
+  -- fill what older save files lack
+  local fresh = Profile.new()
+  data.collected = type(data.collected) == "table" and data.collected or fresh.collected
+  data.options = type(data.options) == "table" and data.options or {}
+  for key, value in pairs(DEFAULT_OPTIONS) do
+    if type(data.options[key]) ~= type(value) then data.options[key] = value end
   end
   return data
 end

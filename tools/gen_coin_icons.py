@@ -13,8 +13,9 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "coins"
-SCALE = 4
-SIZE = 128
+SCALE = 8  # supersampling: shapes are drawn at 8x, then reduced for smooth edges
+SIZE = 128  # coordinate space the shapes are authored in
+OUT_SIZE = 512  # PNG resolution; the game shows coins up to ~300px
 PIXELS = SIZE * SCALE
 
 COLORS = {
@@ -219,7 +220,7 @@ def make_icon(coin_id, value):
     symbol = transparent.copy()
     emblem(symbol, coin_id)
     image = Image.alpha_composite(image, symbol)
-    image.resize((SIZE, SIZE), Image.Resampling.LANCZOS).save(OUT / f"{coin_id}.png")
+    image.resize((OUT_SIZE, OUT_SIZE), Image.Resampling.LANCZOS).save(OUT / f"{coin_id}.png")
 
 
 def main():

@@ -3,6 +3,7 @@ local RNG = require("src.rng")
 
 return {
   name = "Gambler", description = "Heads is a bet: 50% triple points, otherwise nothing.",
+  rarity = "SR",
   probability = .5,
   heads = {{type = "score", amount = 7}},
   tails = {},

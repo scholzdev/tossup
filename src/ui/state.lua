@@ -1,14 +1,23 @@
 -- Shared mutable UI state. Game rules live in src/game.lua; this is presentation only.
 local Game = require("src.game")
 
-return {
+-- The game is drawn on a fixed 1280x800 canvas that is scaled and centred to fit the window.
+local function layout()
+  local w, h = love.graphics.getDimensions()
+  local scale = math.min(w / 1280, h / 800)
+  return scale, (w - 1280 * scale) / 2, (h - 800 * scale) / 2
+end
+
+local state = {
   catalog = Game.catalog(),
   item_catalog = Game.item_catalog(),
   characters = Game.characters(),
   character_order = {"blade", "seer", "trader"},
   selected_character = "blade",
-  coin_page = 1,
-  coins_per_page = 4,
+  screen = "title", -- title | select | collection | options (shown when no run is active or paused)
+  collection_page = 1,
+  collection_filter = "ALL",
+  coin_order = require("content.coin_order"),
   game = nil,
   profile = nil, -- meta progression (tokens, unlocks), loaded in app.load
   buttons = {},
@@ -23,3 +32,15 @@ return {
   holding = false, -- landed coin stays in view until the player asks for the next one
   resolve_timer = 0, -- hold on the flipped result before effects apply
 }
+
+state.layout = layout
+
+-- Window coordinates -> canvas coordinates.
+function state.to_canvas(x, y)
+  local scale, ox, oy = layout()
+  return (x - ox) / scale, (y - oy) / scale
+end
+
+function state.mouse() return state.to_canvas(love.mouse.getPosition()) end
+
+return state

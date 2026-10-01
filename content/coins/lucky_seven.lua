@@ -3,6 +3,7 @@ local RNG = require("src.rng")
 
 return {
   name = "Lucky Seven", description = "1 in 7: lands Heads and pays triple points.",
+  rarity = "SR",
   probability = .4,
   heads = {{type = "score", amount = 3}}, tails = {},
   on_flip = function(game, inst, flip)

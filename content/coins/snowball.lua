@@ -1,6 +1,7 @@
 -- Hooks used: grow("flip") for run-long growth, on_resolve to edit the effect list.
 return {
   name = "Snowball", description = "Grows +1 point every flip for the whole run (max +10).",
+  rarity = "SR",
   probability = .5,
   heads = {{type = "score", amount = 3}},
   tails = {{type = "score", amount = 1}},

@@ -1,6 +1,7 @@
 -- register(ctx): subscribe to a bus event yourself. Reacts to effects the game actually applied.
 return {
   name = "Bounty", description = "Pays 1 gold for every 2 points it scores.",
+  rarity = "SR",
   probability = .5,
   heads = {{type = "score", amount = 4}}, tails = {{type = "score", amount = 2}},
   register = function(ctx)

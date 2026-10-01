@@ -32,7 +32,7 @@ local function sidebar()
   love.graphics.draw(portrait, 35 + (210 - width) / 2, 462 + (194 - height) / 2,
     0, scale, scale)
   centered(characters[ui.game.character_id].name:upper(), 35, 663, 210, ui.f20, C.gold)
-  button("MENU / ESC", 30, 724, 220, 43, C.panel_light, function() ui.game.paused = true end)
+  button("MENU / ESC", 30, 724, 220, 43, C.panel_light, A.open_menu)
 end
 
 return {sidebar = sidebar}

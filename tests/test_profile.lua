@@ -23,4 +23,17 @@ equal(Profile.decode("garbage {").tokens, 0, "bad file gives a fresh profile")
 equal(Profile.decode(nil).tokens, 0)
 equal(Profile.decode("return 5").tokens, 0)
 
+-- collection and options survive save/load; old save files get defaults
+assert(Profile.collect(p, "sword"))
+assert(not Profile.collect(p, "sword"), "already collected")
+p.options.fast_flip = true
+local again = Profile.decode(Profile.encode(p))
+assert(again.collected.sword, "collection saved")
+equal(again.options.fast_flip, true, "option saved")
+equal(again.options.screen_shake, true, "default option kept")
+local old = Profile.decode("return {tokens = 3, unlocked = {}}")
+equal(old.tokens, 3)
+equal(old.options.screen_shake, true, "old save gets default options")
+assert(next(old.collected) == nil)
+
 print("profile tests passed")

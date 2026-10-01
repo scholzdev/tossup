@@ -1,6 +1,7 @@
 -- Replays the previous coin's effects for this side. Hook: on_resolve reading game.last_result.
 return {
   name = "Echo", description = "Repeats the effects the previous coin had for this side.",
+  rarity = "UR",
   probability = .5,
   heads = {}, tails = {},
   on_resolve = function(game, _, res)

@@ -8,6 +8,7 @@ local RESULTS = {
 
 return {
   name = "Jester", description = "Heads or Tails, it does something random.",
+  rarity = "UR",
   probability = .5,
   heads = {}, tails = {},
   on_resolve = function(game, _, res)

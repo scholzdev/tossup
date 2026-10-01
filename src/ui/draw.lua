@@ -29,7 +29,7 @@ local function centered(str, x, y, w, face, tint)
 end
 local function button(str, x, y, w, h, tint, action, enabled)
   local active = enabled ~= false
-  local mx, my = love.mouse.getPosition()
+  local mx, my = ui.mouse()
   local hover = active and mx >= x and mx <= x + w and my >= y and my <= y + h
   local fill = active and tint or C.panel_light
   box(x, y + (hover and -3 or 0), w, h, fill)
@@ -71,16 +71,18 @@ local function effect_description(effects_list)
   return table.concat(parts, "; ")
 end
 
-local function coin_hover(id, x, y, w, h, probability)
-  local mx, my = love.mouse.getPosition()
+local function coin_hover(id, x, y, w, h, probability, locked_cost)
+  local mx, my = ui.mouse()
   if mx >= x and mx <= x + w and my >= y and my <= y + h then
-    ui.hovered_coin = {id = id, probability = probability or catalog[id].probability}
+    ui.hovered_coin = {id = id, probability = probability or catalog[id].probability,
+      locked_cost = locked_cost}
   end
 end
 
 local function coin_image(id, x, y, size)
   color(C.white)
-  love.graphics.draw(ui.coin_images[id], x, y, 0, size / 128, size / 128)
+  local image = ui.coin_images[id]
+  love.graphics.draw(image, x, y, 0, size / image:getWidth(), size / image:getHeight())
 end
 
 local function coin_name(id, x, y, w)
@@ -91,8 +93,8 @@ end
 local function draw_coin_tooltip()
   if not ui.hovered_coin then return end
   local coin = catalog[ui.hovered_coin.id]
-  local mx, my = love.mouse.getPosition()
-  local w, h = 390, 172
+  local mx, my = ui.mouse()
+  local w, h = 390, ui.hovered_coin.locked_cost and 204 or 172
   local x = math.min(mx + 18, 1280 - w - 12)
   local y = my + 18
   if y + h > 788 then y = my - h - 18 end
@@ -106,6 +108,9 @@ local function draw_coin_tooltip()
   text("HEADS " .. heads .. "%  /  TAILS " .. (100 - heads) .. "%", x + 14, y + 78, ui.f16, C.gold)
   text("HEADS  " .. effect_description(coin.heads), x + 14, y + 108, ui.f16, C.blue)
   text("TAILS  " .. effect_description(coin.tails), x + 14, y + 137, ui.f16, C.red)
+  if ui.hovered_coin.locked_cost then
+    text("LOCKED  -  CLICK TO UNLOCK FOR " .. ui.hovered_coin.locked_cost .. " TOKENS", x + 14, y + 172, ui.f16, C.orange)
+  end
 end
 
 local function coin_face(cx, cy, radius, outcome, selected, id)
