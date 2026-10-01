@@ -5,5 +5,6 @@ set -e
 cd "$(dirname "$0")/.."   # always work from the repo root
 lua tools/dump_content.lua > dist-content.json
 python3 tools/gen_wiki.py dist-content.json
+python3 tools/gen_github_wiki.py dist-content.json wiki-github
 rm -f dist-content.json
 echo "open wiki/index.html"
