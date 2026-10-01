@@ -38,6 +38,7 @@ local state = {
   character_images = {},
   hovered_coin = nil,
   hovered_text = nil,
+  clear_armed = false, -- "Clear progress" was clicked once (needs a second click)
   quit_armed = false, -- Quit was clicked once during a run (needs a second click)
   help_next = nil, -- where the How To Play "continue" button goes on a first run
   cursors = nil, -- {arrow, click} LÖVE cursors, created in app.load

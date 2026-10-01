@@ -12,7 +12,8 @@ return {
   ["SCREEN SHAKE"] = "BILDSCHIRMWACKELN", ["Shake the screen when a coin lands."] = "Wackelt mit dem Bildschirm, wenn eine Münze landet.",
   ["FAST FLIP"] = "SCHNELLER WURF", ["Half-length coin flip animation."] = "Münzwurf-Animation in halber Länge.",
   ["FULLSCREEN"] = "VOLLBILD", ["Switch between windowed and fullscreen."] = "Wechselt zwischen Fenster und Vollbild.",
-  ["LANGUAGE"] = "SPRACHE", ["Language of all texts."] = "Sprache aller Texte.", ["ON"] = "AN", ["OFF"] = "AUS",
+  ["LANGUAGE"] = "SPRACHE", ["CLEAR PROGRESS"] = "FORTSCHRITT LÖSCHEN", ["Resets unlocks, collection, sets and tokens. Options stay."] = "Setzt Freischaltungen, Sammlung, Sets und Tokens zurück.",
+  ["CLEAR"] = "LÖSCHEN", ["SURE?"] = "SICHER?", ["Language of all texts."] = "Sprache aller Texte.", ["ON"] = "AN", ["OFF"] = "AUS",
   ["F3 SHOWS DEBUG INFO IN A RUN"] = "F3 ZEIGT DEBUG-INFOS IM LAUF",
   -- end of run
   ["THE HOUSE FALLS"] = "DAS HAUS FÄLLT", ["RUN OVER"] = "LAUF VORBEI", ["YOU WON THE RUN"] = "DU HAST DEN LAUF GEWONNEN",

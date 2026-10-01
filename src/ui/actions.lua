@@ -26,6 +26,7 @@ end
 function A.go(screen)
   ui.screen = screen
   ui.quit_armed = false
+  ui.clear_armed = false
   ui.collection_page = 1
 end
 
@@ -81,6 +82,17 @@ function A.cycle_language()
 end
 
 function A.continue_endless() Game.continue_endless(ui.game) end
+
+-- Delete unlocks, collection, coin sets and tokens (options stay). Needs a second click; also ends a run in progress.
+function A.clear_progress()
+  if not ui.clear_armed then ui.clear_armed = true return end
+  local options = ui.profile.options
+  ui.profile = Profile.new()
+  ui.profile.options = options
+  ui.game, ui.set_draft, ui.marked, ui.flip_animation, ui.holding = nil, nil, {}, nil, false
+  ui.clear_armed = false
+  save_profile()
+end
 
 function A.set_filter(rarity)
   ui.collection_filter = rarity
