@@ -2,3 +2,5 @@ dist/
 .DS_Store
 *.png~
 src/build_id.lua
+wiki/
+dist-content.json
