@@ -33,14 +33,13 @@ function Profile.is_unlocked(profile, character_id, coin_id)
   return (profile.unlocked[character_id] or {})[coin_id] == true
 end
 
--- Buy a locked coin with tokens. Returns true on success.
-function Profile.unlock(profile, character_id, coin_id)
+-- Unlock a coin of this character's locked list (done when it is bought in the shop). Returns
+-- true if it was newly unlocked.
+function Profile.grant(profile, character_id, coin_id)
   for _, entry in ipairs(characters[character_id].locked or {}) do
-    local id, cost = entry[1], entry[2]
-    if id == coin_id and not Profile.is_unlocked(profile, character_id, id) and profile.tokens >= cost then
-      profile.tokens = profile.tokens - cost
+    if entry[1] == coin_id and not Profile.is_unlocked(profile, character_id, coin_id) then
       profile.unlocked[character_id] = profile.unlocked[character_id] or {}
-      profile.unlocked[character_id][id] = true
+      profile.unlocked[character_id][coin_id] = true
       return true
     end
   end

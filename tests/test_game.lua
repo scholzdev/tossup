@@ -233,10 +233,15 @@ equal(d2.dealt.uid, d2.coins[1].uid, "discarded coin never returns")
 
 for id, r in pairs(real) do chars[id].starter, chars[id].deck, chars[id].pool, chars[id].locked = r[1], r[2], r[3], r[4] end
 
--- real content: Blade starts with three Normal coins and the bank tops up to five in the shop
+-- real content: every character starts with a full 10-coin set, and a win opens the shop
+for id, def in pairs(Game.characters()) do
+  if real[id] then equal(#real[id][2], Game.START_MAX, id .. " default deck has ten coins") end
+end
 local blade = Game.new(3, "blade")
-equal(#blade.coins, 3)
-for _, c in ipairs(blade.coins) do equal(c.id, "normal") end
+equal(#blade.coins, Game.START_MAX)
+local normals = 0
+for _, c in ipairs(blade.coins) do if c.id == "normal" then normals = normals + 1 end end
+assert(normals < Game.START_MAX, "the default deck is not all Normal coins")
 blade.encounter.quota = 1
 assert(Game.flip(blade))
 blade.pending.result = "Heads"
@@ -244,32 +249,58 @@ assert(Game.resolve(blade))
 assert(Game.end_level(blade))
 equal(blade.phase, "SHOP", "win opens the shop")
 equal(blade.cleared, 1)
-equal(blade.shop_offers[1], "normal", "normal coin always offered first")
+equal(#blade.shop_offers, 4, "four coin offers")
+local seen_offer = {}
 for _, id in ipairs(blade.shop_offers) do
-  assert(id == "normal" or id == "sword" or id == "dagger", "locked coin leaked into shop: " .. id)
+  assert(not seen_offer[id], "offers are distinct")
+  seen_offer[id] = true
+  assert(Game.catalog()[id], "offer is a real coin: " .. id)
 end
-blade.player.gold = 10
-assert(Game.buy(blade, 1))
-equal(blade.player.gold, 5, "normal coin costs 5")
-blade.shop_offers[1] = "normal"
-blade.player.gold = 5
-assert(Game.buy(blade, 1))
-equal(#blade.coins, 5, "bank topped up to five")
+-- every coin of the character, locked ones included, can show up in the shop
+local blade_all = {}
+for _, id in ipairs(Game.characters().blade.pool) do blade_all[id] = true end
+for _, entry in ipairs(Game.characters().blade.locked) do blade_all[entry[1]] = true end
+local appeared, only_listed = {}, true
+for seed = 1, 120 do
+  local g = Game.new(seed, "blade")
+  g.phase = "SHOP"
+  g.player.gold = 1000
+  g.reroll_cost = 0
+  Game.reroll_shop(g)
+  for _, id in ipairs(g.shop_offers) do
+    appeared[id] = true
+    if not blade_all[id] then only_listed = false end
+  end
+end
+assert(only_listed, "offers come from the character's own coins")
+assert(appeared.hammer and appeared.sword, "locked and starting coins both appear")
+
+-- buying a coin records it as purchased (the UI unlocks locked ones for good)
+local shopper = Game.new(5, "blade")
+shopper.phase = "SHOP"
+shopper.shop_offers = {"hammer"}
+shopper.player.gold = 60
+assert(not Game.buy(shopper, 1), "the starting deck is full")
+assert(Game.remove(shopper, shopper.coins[1].uid))
+assert(Game.buy(shopper, 1))
+assert(shopper.purchased.hammer, "purchase recorded")
+
+-- reroll gets 2 gold dearer each time within one visit and resets in the next shop
+local rr = Game.new(6, "blade")
+rr.phase = "SHOP"
+rr.reroll_cost = 4
+rr.player.gold = 100
+assert(Game.reroll_shop(rr))
+equal(rr.player.gold, 96)
+assert(Game.reroll_shop(rr))
+equal(rr.player.gold, 90, "second reroll costs 6")
+equal(rr.reroll_cost, 8)
+rr.player.gold = 5
+assert(not Game.reroll_shop(rr), "cannot afford")
+
 equal(Game.run_tokens(blade), 1, "one token per level cleared")
 blade.phase = "VICTORY"
 equal(Game.run_tokens(blade), 4, "boss bonus")
-
--- unlocked extras join the shop pool
-local unlocked = Game.new(3, "blade", {"hammer"})
-unlocked.phase = "SHOP"
-local found = false
-for seed = 1, 40 do
-  unlocked.rng_state = seed
-  unlocked.player.gold = 100
-  assert(Game.reroll_shop(unlocked))
-  for _, id in ipairs(unlocked.shop_offers) do if id == "hammer" then found = true end end
-end
-assert(found, "unlocked coin can appear in the shop")
 
 -- a penalty (negative effect) raises the quota instead of hurting a player
 local pen = Game.new(21, "blade")

@@ -32,6 +32,7 @@ local state = {
   coin_images = {},
   character_images = {},
   hovered_coin = nil,
+  hovered_text = nil,
   flip_animation = nil,
   shake = 0,
   holding = false, -- landed coin stays in view until the player asks for the next one

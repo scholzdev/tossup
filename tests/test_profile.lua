@@ -1,17 +1,18 @@
 local Profile = require("src.profile")
+local characters = require("content.characters")
+local blade_deck = table.concat(characters.blade.deck, ",")
 
 local function equal(a, b, message)
   assert(a == b, (message or "values differ") .. ": " .. tostring(a) .. " ~= " .. tostring(b))
 end
 
 local p = Profile.new()
-assert(not Profile.unlock(p, "blade", "hammer"), "not enough tokens")
-p.tokens = 5
-assert(Profile.unlock(p, "blade", "hammer"))
-equal(p.tokens, 2, "tokens spent")
+p.tokens = 2
+assert(not Profile.is_unlocked(p, "blade", "hammer"))
+assert(Profile.grant(p, "blade", "hammer"), "buying a locked coin in the shop unlocks it")
 assert(Profile.is_unlocked(p, "blade", "hammer"))
-assert(not Profile.unlock(p, "blade", "hammer"), "cannot buy twice")
-assert(not Profile.unlock(p, "blade", "sword"), "sword is not a locked coin")
+assert(not Profile.grant(p, "blade", "hammer"), "only newly unlocked once")
+assert(not Profile.grant(p, "blade", "sword"), "sword is in the starting pool, not a locked coin")
 assert(not Profile.is_unlocked(p, "seer", "hammer"), "unlocks are per character")
 equal(#Profile.unlocked_list(p, "blade"), 1)
 
@@ -40,7 +41,7 @@ assert(next(old.collected) == nil)
 local sp = Profile.new()
 local sets = Profile.sets(sp, "blade")
 equal(#sets, 3)
-equal(table.concat(sets[1].coins, ","), "normal,normal,normal", "set 1 is the default deck")
+equal(table.concat(sets[1].coins, ","), blade_deck, "set 1 is the default deck")
 equal(#sets[2].coins, 0, "other sets start empty")
 for _ = 1, 3 do assert(Profile.add_to_set(sp, "blade", 2, "sword", 10, 3)) end
 assert(not Profile.add_to_set(sp, "blade", 2, "sword", 10, 3), "a fourth copy is refused")
@@ -70,7 +71,7 @@ equal(legacy.loadouts, nil)
 -- Profile.loadout: empty set falls back to the default deck; locked coins are filtered out
 local fresh2 = Profile.new()
 Profile.set_active(fresh2, "blade", 3)
-equal(table.concat(Profile.loadout(fresh2, "blade", 10), ","), "normal,normal,normal", "empty set falls back")
+equal(table.concat(Profile.loadout(fresh2, "blade", 10), ","), blade_deck, "empty set falls back")
 Profile.sets(fresh2, "blade")[3].coins = {"hammer", "sword"}
 equal(table.concat(Profile.loadout(fresh2, "blade", 10), ","), "sword", "locked coin filtered out")
 

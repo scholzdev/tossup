@@ -61,8 +61,8 @@ local function offers(game, pool, count)
   return choices
 end
 
--- Coins the shop may sell: the character's base pool plus anything unlocked with tokens.
-local function shop_pool(game)
+-- Coins a coin set may contain: the character's starting pool plus coins already unlocked.
+local function usable_pool(game)
   local pool, seen = {}, {}
   for _, id in ipairs(characters[game.character_id].pool) do pool[#pool + 1] = id seen[id] = true end
   for _, id in ipairs(game.unlocked) do
@@ -71,15 +71,21 @@ local function shop_pool(game)
   return pool
 end
 
--- Four coin offers; slot 1 is always the cheap Normal coin so the bank can always be topped up.
-local function shop_stock(game)
-  local others = {}
-  for _, id in ipairs(shop_pool(game)) do
-    if id ~= "normal" then others[#others + 1] = id end
+-- Every coin the shop may offer this character, including coins that are still locked: buying a
+-- locked coin in the shop is what unlocks it (see game.purchased).
+local function shop_pool(game)
+  local pool = usable_pool(game)
+  local seen = {}
+  for _, id in ipairs(pool) do seen[id] = true end
+  for _, entry in ipairs(characters[game.character_id].locked or {}) do
+    if not seen[entry[1]] then pool[#pool + 1] = entry[1] seen[entry[1]] = true end
   end
-  local stock = {"normal"}
-  for _, id in ipairs(offers(game, others, 3)) do stock[#stock + 1] = id end
-  return stock
+  return pool
+end
+
+-- Four distinct coin offers from the whole coin list.
+local function shop_stock(game)
+  return offers(game, shop_pool(game), 4)
 end
 
 -- Draw pile: every owned coin that is not discarded this level and not already waiting in the bank.
@@ -200,14 +206,14 @@ function Game.new(seed, character_id, unlocked, loadout, manual_mulligan)
   local game = {seed = normalized, rng_state = normalized, last_rng = nil,
     character_id = character_id,
     phase = "ENCOUNTER", player = {gold = 10, energy = 3, max_energy = 3},
-    coins = {}, relics = {}, items = {}, shop_items = {}, unlocked = unlocked or {}, cleared = 0, shop_relic = nil, next_uid = 0, encounter_index = 1, encounter = nil,
+    coins = {}, relics = {}, items = {}, shop_items = {}, unlocked = unlocked or {}, purchased = {}, cleared = 0, shop_relic = nil, next_uid = 0, encounter_index = 1, encounter = nil,
     pending = nil, shop_offers = {}, log = {}, selected_uid = nil}
   local def = characters[character_id]
   game.manual_mulligan = manual_mulligan
   if loadout then
     assert(#loadout >= 1 and #loadout <= Game.START_MAX, "loadout must have 1-" .. Game.START_MAX .. " coins")
     local allowed = {}
-    for _, id in ipairs(shop_pool(game)) do allowed[id] = true end
+    for _, id in ipairs(usable_pool(game)) do allowed[id] = true end
     local copies = {}
     for _, id in ipairs(loadout) do
       assert(allowed[id], "coin not available to this character: " .. tostring(id))
@@ -371,6 +377,7 @@ end
 -- Stock the shop after a cleared level: four coins and one relic, all from the seeded RNG.
 local function enter_shop(game)
   game.phase = "SHOP"
+  game.reroll_cost = 4
   game.shop_offers = shop_stock(game)
   game.shop_relic = nil
   local owned = {}
@@ -495,17 +502,21 @@ function Game.buy(game, index)
   if not id or game.player.gold < (catalog[id].cost or 15) then return false end
   if #game.coins >= Game.DECK_MAX then return false end -- a full deck must lose a coin before it can gain one
   game.shop_offers[index] = false
+  game.purchased[id] = true -- the UI turns purchases of locked coins into permanent unlocks
   game.player.gold = game.player.gold - (catalog[id].cost or 15)
   add_to_deck(game, id)
   log(game, "Bought " .. catalog[id].name .. " for " .. (catalog[id].cost or 15) .. " gold.")
   return true
 end
 
+-- Rerolling the coin offers costs 4 gold, 2 more each time within one shop visit.
 function Game.reroll_shop(game)
-  if game.phase ~= "SHOP" or game.player.gold < 4 then return false end
-  game.player.gold = game.player.gold - 4
+  local cost = game.reroll_cost or 4
+  if game.phase ~= "SHOP" or game.player.gold < cost then return false end
+  game.player.gold = game.player.gold - cost
+  game.reroll_cost = cost + 2
   game.shop_offers = shop_stock(game)
-  log(game, "Shop rerolled for 4 gold.")
+  log(game, "Shop rerolled for " .. cost .. " gold.")
   return true
 end
 

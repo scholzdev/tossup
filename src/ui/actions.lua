@@ -46,18 +46,6 @@ function A.change_collection_page(delta)
   ui.collection_page = math.max(1, ui.collection_page + delta)
 end
 
--- Spend tokens to unlock a locked coin for the selected character.
-function A.unlock_coin_for(character_id, coin_id)
-  if Profile.unlock(ui.profile, character_id, coin_id) then
-    Profile.collect(ui.profile, coin_id)
-    save_profile()
-    return true
-  end
-  return false
-end
-
-function A.unlock_coin(coin_id) return A.unlock_coin_for(ui.selected_character, coin_id) end
-
 -- The coins the selected character starts a run with (its active coin set).
 function A.loadout() return Profile.loadout(ui.profile, ui.selected_character, Game.START_MAX, Game.MAX_COPIES) end
 
@@ -243,6 +231,14 @@ function A.update(dt)
     local live = {}
     for _, uid in ipairs(game.mulligan and game.mulligan.hand or game.encounter and game.encounter.queue or {}) do live[uid] = true end
     for uid in pairs(ui.marked) do if not live[uid] then ui.marked[uid] = nil end end
+  end
+  if game and next(game.purchased) then -- buying a locked coin in the shop unlocks it for good
+    local unlocked_now = false
+    for id in pairs(game.purchased) do
+      unlocked_now = Profile.grant(ui.profile, game.character_id, id) or unlocked_now
+    end
+    game.purchased = {}
+    if unlocked_now then save_profile() end
   end
   if game then -- anything that has been in your deck counts as collected
     local fresh = false

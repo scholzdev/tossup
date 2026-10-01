@@ -71,11 +71,11 @@ local function effect_description(effects_list)
   return table.concat(parts, "; ")
 end
 
-local function coin_hover(id, x, y, w, h, probability, locked_cost)
+local function coin_hover(id, x, y, w, h, probability, locked)
   local mx, my = ui.mouse()
   if mx >= x and mx <= x + w and my >= y and my <= y + h then
     ui.hovered_coin = {id = id, probability = probability or catalog[id].probability,
-      locked_cost = locked_cost}
+      locked = locked}
   end
 end
 
@@ -90,11 +90,32 @@ local function coin_name(id, x, y, w)
   if w then centered(name, x, y, w, ui.f20, C.face) else text(name, x, y, ui.f20, C.face) end
 end
 
+-- Plain title + text tooltip (items, relics). Register while drawing; drawn once per frame on top.
+local function text_hover(title, body, x, y, w, h)
+  local mx, my = ui.mouse()
+  if mx >= x and mx <= x + w and my >= y and my <= y + h then ui.hovered_text = {title = title, body = body} end
+end
+
+local function draw_text_tooltip()
+  local tip = ui.hovered_text
+  if not tip then return end
+  local mx, my = ui.mouse()
+  local w, h = 330, 92
+  local x = math.min(mx + 18, 1280 - w - 12)
+  local y = math.max(12, math.min(my + 18, 788 - h))
+  box(x, y, w, h, C.ink)
+  outline(x, y, w, h, C.gold)
+  text(tip.title:upper(), x + 14, y + 12, ui.f20, C.face)
+  love.graphics.setFont(ui.f16)
+  color(C.muted)
+  love.graphics.printf(tip.body, x + 14, y + 44, w - 28)
+end
+
 local function draw_coin_tooltip()
   if not ui.hovered_coin then return end
   local coin = catalog[ui.hovered_coin.id]
   local mx, my = ui.mouse()
-  local w, h = 390, ui.hovered_coin.locked_cost and 204 or 172
+  local w, h = 390, ui.hovered_coin.locked and 204 or 172
   local x = math.min(mx + 18, 1280 - w - 12)
   local y = my + 18
   if y + h > 788 then y = my - h - 18 end
@@ -109,8 +130,8 @@ local function draw_coin_tooltip()
     ((coin.energy_cost or 0) > 0 and ("  -  COSTS " .. coin.energy_cost .. " ENERGY") or ""), x + 14, y + 78, ui.f16, C.gold)
   text("HEADS  " .. effect_description(coin.heads), x + 14, y + 108, ui.f16, C.blue)
   text("TAILS  " .. effect_description(coin.tails), x + 14, y + 137, ui.f16, C.red)
-  if ui.hovered_coin.locked_cost then
-    text("LOCKED  -  CLICK TO UNLOCK FOR " .. ui.hovered_coin.locked_cost .. " TOKENS", x + 14, y + 172, ui.f16, C.orange)
+  if ui.hovered_coin.locked then
+    text("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK", x + 14, y + 172, ui.f16, C.orange)
   end
 end
 
@@ -134,4 +155,4 @@ end
 
 return {C = C, color = color, box = box, outline = outline, text = text, centered = centered,
   button = button, coin_image = coin_image, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
-  effects = effects, effect_description = effect_description, coin_tooltip = draw_coin_tooltip}
+  effects = effects, effect_description = effect_description, coin_tooltip = draw_coin_tooltip, text_hover = text_hover, text_tooltip = draw_text_tooltip}

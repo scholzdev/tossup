@@ -15,8 +15,7 @@ local function draw_end()
   coin_hover(characters[ui.game.character_id].starter, 595, 200, 358, 358)
   centered(ui.game.phase == "VICTORY" and "YOU WON THE RUN" or "TRY A NEW DECK", 320, 561, 910,
     ui.f32, C.face)
-  centered("+" .. (ui.game.tokens_paid or Game.run_tokens(ui.game)) .. " TOKENS  /  " ..
-    ui.game.cleared .. " LEVELS CLEARED", 320, 603, 910, ui.f20, C.gold)
+  centered(ui.game.cleared .. " LEVELS CLEARED", 320, 603, 910, ui.f20, C.gold)
   button("NEW RUN", 626, 642, 300, 63, C.blue, function() A.start() end)
 end
 

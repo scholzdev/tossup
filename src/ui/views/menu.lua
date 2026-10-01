@@ -44,7 +44,6 @@ local function draw_menu()
   color(C.white)
   love.graphics.draw(portrait, 172 + (346 - width) / 2, 205 + (290 - height) / 2, 0, scale, scale)
   centered(character.description:upper(), 172, 512, 346, ui.f16, C.muted)
-  centered("TOKENS  " .. ui.profile.tokens, 172, 540, 346, ui.f16, C.gold)
 
   -- right: the coin set you will play
   text("COIN SET", 560, 148, ui.f16, C.gold)

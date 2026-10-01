@@ -1,5 +1,5 @@
 -- Coin Sets: every character with all of its coins. Build up to three sets of up to 10 coins per
--- character; the active set is what a run starts with. Locked coins are unlocked here with tokens.
+-- character. Locked coins are unlocked by buying them in the shop during a run.
 local Game = require("src.game")
 local Profile = require("src.profile")
 local ui = require("src.ui.state")
@@ -33,7 +33,6 @@ local function draw_sets()
   box(400, -10, 480, 80, C.gold)
   centered("COIN SETS", 400, 22, 480, ui.f32, C.ink)
   button("X", 24, 24, 64, 64, C.gold, function() A.go("title") end)
-  centered("TOKENS  " .. ui.profile.tokens, 960, 30, 300, ui.f20, C.gold)
 
   -- every character
   for i, id in ipairs(ui.character_order) do
@@ -78,7 +77,7 @@ local function draw_sets()
   -- right: all of this character's coins
   box(550, 175, 690, 540, C.ink)
   outline(550, 175, 690, 540, C.panel_light)
-  centered(def.name:upper() .. "  -  CLICK A COIN TO ADD IT TO THE SET", 550, 188, 690, ui.f16, C.gold)
+  centered(def.name:upper() .. "  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP", 550, 188, 690, ui.f16, C.gold)
   local entries = {}
   for _, id in ipairs(def.pool) do entries[#entries + 1] = {id = id} end
   for _, entry in ipairs(def.locked or {}) do
@@ -93,14 +92,13 @@ local function draw_sets()
       color(C.slot, .7)
       love.graphics.circle("fill", x + SLOT / 2, y + SLOT / 2, SLOT / 2)
       padlock(x + SLOT / 2, y + SLOT / 2 - 4)
-      centered(tostring(entry.cost), x, y + SLOT + 2, SLOT, ui.f16, ui.profile.tokens >= entry.cost and C.gold or C.muted)
-      ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = SLOT, h = SLOT, action = function() A.unlock_coin_for(character_id, entry.id) end}
+      centered("SHOP", x, y + SLOT + 2, SLOT, ui.f16, C.muted)
     else
       local n = count_in(set.coins, entry.id)
       centered(n > 0 and ("x" .. n) or "", x, y + SLOT + 2, SLOT, ui.f16, C.green)
       ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = SLOT, h = SLOT, action = function() A.add_coin_to_set(entry.id) end}
     end
-    coin_hover(entry.id, x, y, SLOT, SLOT, nil, entry.locked and entry.cost or nil)
+    coin_hover(entry.id, x, y, SLOT, SLOT, nil, entry.locked)
   end
 end
 

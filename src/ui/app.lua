@@ -25,11 +25,14 @@ local function draw_game()
   if game.phase == "ENCOUNTER" then
     views.ENCOUNTER()
   else
-    Common.sidebar()
-    box(280, 16, 984, 768, C.felt_dark)
-    D.outline(280, 16, 984, 768, C.panel_light)
-    local view = views[game.phase]
-    if view then view() else draw_end() end
+    if game.phase == "SHOP" then
+      views.SHOP() -- the shop is a full-screen view
+    else
+      Common.sidebar()
+      box(280, 16, 984, 768, C.felt_dark)
+      D.outline(280, 16, 984, 768, C.panel_light)
+      draw_end()
+    end
   end
   if ui.notice ~= "" then text(ui.notice, 300, 762, ui.f16, C.red) end
   if ui.debug_visible then
@@ -69,6 +72,7 @@ end
 function app.draw()
   ui.buttons = {}
   ui.hovered_coin = nil
+  ui.hovered_text = nil
   local scale, ox, oy = ui.layout()
   love.graphics.clear(C.felt[1], C.felt[2], C.felt[3]) -- fills the bars around the 16:10 canvas
   love.graphics.push()
@@ -82,6 +86,7 @@ function app.draw()
   love.graphics.rectangle("fill", 0, 0, 1280, 800)
   if not ui.game or ui.game.paused then screens[ui.screen]() else draw_game() end
   D.coin_tooltip()
+  D.text_tooltip()
   love.graphics.pop()
   love.graphics.pop()
 end

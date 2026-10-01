@@ -1,5 +1,7 @@
 local Game = require("src.game")
 local Signal = require("src.signal")
+-- these tests want a small deck so the draw pile starts empty
+Game.characters().blade.deck = {"normal", "normal", "normal"}
 
 local function equal(a, b, message)
   assert(a == b, (message or "values differ") .. ": " .. tostring(a) .. " ~= " .. tostring(b))
