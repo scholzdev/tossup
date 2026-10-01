@@ -17,37 +17,46 @@ local function bank_coins()
   return list
 end
 
--- Opening hand: look at the coins, discard the ones you do not want (1 energy each), then start.
+-- Opening hand: the first coin that would play sits on the stage as always; the hand hovers over it as a
+-- row of floating cards. Click to mark, Discard throws the marked ones away (free), then start.
+local function first_unmarked(g)
+  for _, uid in ipairs(g.mulligan.hand) do
+    if not ui.marked[uid] then return uid end
+  end
+  return g.mulligan.hand[1]
+end
+
 local function draw_mulligan()
   local g = ui.game
   local hand = g.mulligan.hand
-  box(330, 170, 880, 480, C.panel_dk)
-  outline(330, 170, 880, 480, C.gold)
-  centered("OPENING HAND", 330, 186, 880, ui.f32, C.gold)
-  centered("DISCARD COINS YOU DO NOT WANT  -  FREE  -  THEY STAY OUT FOR THE LEVEL", 330, 226, 880, ui.f16, C.muted)
-  local w, gap = 150, 14
-  local x0 = 330 + (880 - (#hand * w + (#hand - 1) * gap)) / 2
+  local w, h, gap = 150, 176, 14
+  local x0 = 770 - (#hand * w + (#hand - 1) * gap) / 2
+  local now = love.timer.getTime()
   for i, uid in ipairs(hand) do
     local owned = Game.get_coin(g, uid)
     local def = catalog[owned.id]
-    local x, y = x0 + (i - 1) * (w + gap), 262
     local marked = ui.marked[uid]
-    box(x, y, w, 330, marked and C.marked or C.card)
-    outline(x, y, w, 330, marked and C.red or i <= Game.VISIBLE and C.gold or C.line)
-    coin_image(owned.id, x + 25, y + 12, 100)
-    centered(def.name:upper(), x, y + 118, w, ui.f20, C.face)
-    centered(math.floor(Game.probability(g, owned) * 100 + .5) .. "% HEADS", x, y + 146, w, ui.f16, C.gold)
-    text("H " .. effects(def.heads), x + 10, y + 180, ui.f16, C.blue)
-    text("T " .. effects(def.tails), x + 10, y + 204, ui.f16, C.red)
+    local x = x0 + (i - 1) * (w + gap)
+    local y = 472 + math.floor(math.sin(now * 2 + i) * 3 + .5) - (marked and 12 or 0)
+    color(C.black, .35)
+    love.graphics.rectangle("fill", x + 4, y + 8, w, h, 6) -- shadow: the cards float
+    box(x, y, w, h, marked and C.marked or C.card)
+    outline(x, y, w, h, marked and C.red or uid == first_unmarked(g) and C.gold or C.line)
+    coin_image(owned.id, x + (w - 64) / 2, y + 8, 64)
+    centered(def.name:upper(), x, y + 76, w, ui.f20, C.face)
+    centered(math.floor(Game.probability(g, owned) * 100 + .5) .. "% HEADS", x, y + 100, w, ui.f16, C.gold)
+    text("H " .. effects(def.heads), x + 10, y + 122, ui.f16, C.blue)
+    text("T " .. effects(def.tails), x + 10, y + 142, ui.f16, C.red)
+    if marked then
+      color(C.red)
+      love.graphics.rectangle("fill", x + 37, y - 9, 76, 18, 4)
+      centered("DISCARD", x + 37, y - 9, 76, ui.f16, C.ink)
+    end
     local cost = def.energy_cost or 0
-    if cost > 0 then text("ENERGY COST " .. cost, x + 10, y + 232, ui.f16, C.orange) end
-    if marked then centered("MARKED TO DISCARD", x, y + 292, w, ui.f16, C.red)
-    elseif i <= Game.VISIBLE then centered("PLAYS NEXT", x, y + 292, w, ui.f16, C.gold) end
-    coin_hover(owned.id, x, y, w, 330, Game.probability(g, owned))
-    ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = 330, action = function() A.toggle_mark(uid) end}
+    if cost > 0 then text("E" .. cost, x + w - 28, y + 8, ui.f16, C.orange) end
+    coin_hover(owned.id, x, y, w, h, Game.probability(g, owned))
+    ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = h, action = function() A.toggle_mark(uid) end}
   end
-  centered("CLICK COINS TO MARK THEM, THEN PRESS DISCARD  -  GOLD FRAMES PLAY FIRST", 330, 616, 880, ui.f16, C.muted)
-
   local marked_count = A.marked_count()
   D.icon_button(marked_count > 0 and ("DISCARD " .. marked_count) or "DISCARD", ui.ui_images.discard, 330, 676, 200, 64,
     C.red, A.discard_marked, marked_count > 0 and marked_count < #hand)
@@ -159,9 +168,13 @@ local function draw_encounter()
   box(330, 170, 880, 480, C.card)
   outline(330, 170, 880, 480, C.gold)
   local result = not ui.flip_animation and (ui.game.pending or ui.holding and ui.game.last_result or ui.game.dealt or ui.game.last_result)
+  if ui.game.mulligan then -- the stage shows the coin that would play first
+    local uid = first_unmarked(ui.game)
+    result = {uid = uid, probability = Game.probability(ui.game, Game.get_coin(ui.game, uid))}
+  end
   local item = result and Game.get_coin(ui.game, result.uid)
   local outcome = result and (result.final or result.result)
-  centered(ui.flip_animation and "FLIPPING" or ui.game.pending and "CURRENT FLIP" or
+  centered(ui.game.mulligan and "OPENING HAND  -  PLAYS FIRST" or ui.flip_animation and "FLIPPING" or ui.game.pending and "CURRENT FLIP" or
     ui.game.dealt and not ui.holding and "DEALT COIN" or item and "LAST FLIP" or "NO COIN", 330, 186, 880, ui.f20, C.gold)
   if result and result.altered and result.raw and not ui.flip_animation then
     centered("ROLLED " .. result.raw:upper() .. "  >  " .. outcome:upper() .. "  (" .. result.altered .. ")",
@@ -208,9 +221,10 @@ local function draw_encounter()
 
   -- name, odds bar
   local shown_cost = coin and coin.energy_cost or 0
-  centered(coin and coin.name:upper() or ui.flip_animation and "DRAWING..." or
-    (not ui.game.mulligan and "NO COINS LEFT" or "MYSTERY COIN"), 330, 548, 880, ui.f32, C.face)
-  if coin and result then
+  if not ui.game.mulligan then centered(coin and coin.name:upper() or ui.flip_animation and "DRAWING..." or
+    (not ui.game.mulligan and "NO COINS LEFT" or "MYSTERY COIN"), 330, 548, 880, ui.f32, C.face) end
+  if ui.game.mulligan then -- the hand floats over this part
+  elseif coin and result then
     local chance = result.probability
     color(C.blue)
     love.graphics.rectangle("fill", SX - 170, 596, 340 * chance, 10)
