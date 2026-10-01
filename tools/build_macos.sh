@@ -24,8 +24,9 @@ set_plist CFBundleName Tossup
 set_plist CFBundleDisplayName Tossup
 set_plist CFBundleIdentifier com.tossup.game
 set_plist CFBundleIconFile Tossup
-set_plist CFBundleShortVersionString 1.0
-set_plist CFBundleVersion 1
+VERSION="$(sed -n 's/.*number = "\([^"]*\)".*/\1/p' src/version.lua)"
+set_plist CFBundleShortVersionString "$VERSION"
+set_plist CFBundleVersion "$VERSION"
 /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$PLIST" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Delete :UTExportedTypeDeclarations" "$PLIST" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Delete :CFBundleDocumentTypes" "$PLIST" 2>/dev/null || true

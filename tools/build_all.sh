@@ -2,8 +2,9 @@
 # Build every platform; each lands in dist/<platform>/:
 #   dist/love/Tossup.love      dist/macos/Tossup.app      dist/windows/Tossup-windows.zip      dist/linux/Tossup.AppImage
 # A platform that fails does not stop the others; the summary at the end says which worked.
-# Run from anywhere:  ./tools/build_all.sh
+# Run from anywhere:  ./tools/build_all.sh      or      ./tools/build_all.sh release   (tags the version and publishes it on GitHub, see tools/release.sh)
 cd "$(dirname "$0")/.."   # always work from the repo root
+if [ "$1" = release ]; then shift; exec sh tools/release.sh "$@"; fi
 failed=""
 for platform in love macos windows linux; do
   echo "== $platform"
