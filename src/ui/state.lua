@@ -30,6 +30,9 @@ local state = {
   notice = "",
   f16 = nil, f20 = nil, f32 = nil, f48 = nil,
   coin_images = {},
+  item_images = {}, -- assets/items/<id>.png
+  relic_images = {}, -- assets/relics/<id>.png
+  ui_images = {}, -- assets/ui/<name>.png: next_round, reroll, gold, energy, coins_left
   character_images = {},
   hovered_coin = nil,
   hovered_text = nil,

@@ -85,6 +85,12 @@ local function coin_image(id, x, y, size)
   love.graphics.draw(image, x, y, 0, size / image:getWidth(), size / image:getHeight())
 end
 
+-- Draw any loaded image scaled to a square size.
+local function image_at(image, x, y, size)
+  color(C.white)
+  love.graphics.draw(image, x, y, 0, size / image:getWidth(), size / image:getHeight())
+end
+
 local function coin_name(id, x, y, w)
   local name = catalog[id].name:upper()
   if w then centered(name, x, y, w, ui.f20, C.face) else text(name, x, y, ui.f20, C.face) end
@@ -154,5 +160,5 @@ local function coin_face(cx, cy, radius, outcome, selected, id)
 end
 
 return {C = C, color = color, box = box, outline = outline, text = text, centered = centered,
-  button = button, coin_image = coin_image, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
+  button = button, coin_image = coin_image, image_at = image_at, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
   effects = effects, effect_description = effect_description, coin_tooltip = draw_coin_tooltip, text_hover = text_hover, text_tooltip = draw_text_tooltip}

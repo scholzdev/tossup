@@ -58,6 +58,17 @@ function app.load()
     image:setMipmapFilter("linear") -- smooth when a 512px coin is drawn small
     ui.coin_images[id] = image
   end
+  local function load_image(path)
+    local image = love.graphics.newImage(path, {mipmaps = true})
+    image:setFilter("linear", "linear")
+    image:setMipmapFilter("linear")
+    return image
+  end
+  for id in pairs(ui.item_catalog) do ui.item_images[id] = load_image("assets/items/" .. id .. ".png") end
+  for id in pairs(Game.relics()) do ui.relic_images[id] = load_image("assets/relics/" .. id .. ".png") end
+  for _, name in ipairs({"next_round", "reroll", "gold", "energy", "coins_left"}) do
+    ui.ui_images[name] = load_image("assets/ui/" .. name .. ".png")
+  end
   ui.coin_images.back = love.graphics.newImage("assets/coins/back.png", {mipmaps = true})
   ui.coin_images.back:setMipmapFilter("linear")
   ui.coin_images.back:setFilter("linear", "linear")

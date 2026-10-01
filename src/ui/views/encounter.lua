@@ -113,11 +113,13 @@ local function draw_encounter()
     {"GOLD", tostring(ui.game.player.gold), C.gold},
     {"ENERGY", tostring(ui.game.player.energy), C.blue},
   }
+  local stat_icons = {"coins_left", "gold", "energy"}
   for i, stat in ipairs(stats) do
     local x = 940 + (i - 1) * 100
     box(x, 38, 92, 62, C.panel)
     text(stat[1], x + 8, 43, ui.f16, C.muted)
     text(stat[2], x + 8, 64, ui.f32, stat[3])
+    D.image_at(ui.ui_images[stat_icons[i]], x + 60, 42, 26)
   end
   button("MENU", 1140, 108, 92, 30, C.panel_light, A.open_menu)
 
@@ -270,7 +272,12 @@ local function draw_encounter()
     local id = ui.game.items[slot]
     if id then
       local def = ui.item_catalog[id]
-      button(def.short, x, 692, 140, 64, C.orange, function() A.use_item(slot) end, usable)
+      local hover = usable and mx >= x and mx <= x + 140 and my >= 692 and my <= 756
+      box(x, 692 + (hover and -3 or 0), 140, 64, usable and C.panel_light or C.slot)
+      outline(x, 692 + (hover and -3 or 0), 140, 64, usable and C.orange or C.panel_light)
+      D.image_at(ui.item_images[id], x + 8, 702 + (hover and -3 or 0), 44)
+      text(def.short, x + 58, 716 + (hover and -3 or 0), ui.f16, usable and C.face or C.muted)
+      if usable then ui.buttons[#ui.buttons + 1] = {x = x, y = 692, w = 140, h = 64, action = function() A.use_item(slot) end} end
       if mx >= x and mx <= x + 140 and my >= 692 and my <= 756 then hint = def.description end
     else
       box(x, 692, 140, 64, C.slot)

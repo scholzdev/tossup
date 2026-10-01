@@ -22,13 +22,6 @@ local function price(amount, x, y, w, affordable)
   centered(tostring(amount), x, y, w, ui.f32, affordable and C.gold or C.red)
 end
 
--- a square plate for items and relics (they have no coin art): short name inside
-local function plate(label, x, y, size, tint)
-  box(x, y, size, size, tint)
-  outline(x, y, size, size, C.panel_light)
-  centered(label, x, y + size / 2 - 10, size, ui.f20, C.ink)
-end
-
 local function draw_shop()
   local g = ui.game
   box(0, 0, 1280, 800, C.felt_dark)
@@ -41,15 +34,16 @@ local function draw_shop()
     color(LETTER_COLORS[i])
     love.graphics.print(letter, 80 + (i - 1) * 62, 56, 0, 2, 2)
   end
-  text("GOLD", 1030, 56, ui.f20, C.muted)
-  centered(tostring(g.player.gold), 990, 78, 220, ui.f48, C.gold)
+  D.image_at(ui.ui_images.gold, 990, 62, 44)
+  centered(tostring(g.player.gold), 1040, 62, 170, ui.f48, C.gold)
   button("MENU", 1124, 140, 92, 30, C.panel_light, A.open_menu)
 
   -- reroll (coin offers only)
   local reroll_cost = g.reroll_cost or 4
   box(60, 260, 190, 150, {.06, .20, .23})
   outline(60, 260, 190, 150, C.panel_light)
-  centered("REROLL", 60, 272, 190, ui.f20, C.muted)
+  D.image_at(ui.ui_images.reroll, 70, 268, 36)
+  text("REROLL", 114, 275, ui.f20, C.muted)
   price(reroll_cost, 60, 300, 190, g.player.gold >= reroll_cost)
   button("REROLL", 80, 352, 150, 40, C.orange, function() Game.reroll_shop(g) end, g.player.gold >= reroll_cost)
 
@@ -79,7 +73,7 @@ local function draw_shop()
     if id then
       local def = ui.item_catalog[id]
       price(def.cost, x, 442, 110, g.player.gold >= def.cost and #g.items < Items.MAX)
-      plate(def.short, x + 7, 480, 96, C.orange)
+      D.image_at(ui.item_images[id], x + 7, 480, 96)
       D.text_hover(def.name, def.description, x + 7, 480, 96, 96)
       button("BUY", x, 588, 110, 34, C.blue, function() Game.buy_item(g, i) end,
         g.player.gold >= def.cost and #g.items < Items.MAX)
@@ -94,7 +88,7 @@ local function draw_shop()
   if relic then
     local x = 720
     price(25, x, 442, 110, g.player.gold >= 25)
-    plate(relic.name:sub(1, 7):upper(), x + 7, 480, 96, C.gold)
+    D.image_at(ui.relic_images[g.shop_relic], x + 7, 480, 96)
     D.text_hover(relic.name, relic.description, x + 7, 480, 96, 96)
     button("BUY", x, 588, 110, 34, C.blue, function() Game.buy_relic(g) end, g.player.gold >= 25)
   else
@@ -144,16 +138,7 @@ local function draw_shop()
   -- next round: the big red button
   local mx, my = ui.mouse()
   local over = (mx - 1130) ^ 2 + (my - 690) ^ 2 <= 62 ^ 2
-  color(C.black, .4)
-  love.graphics.circle("fill", 1130, 698, 62)
-  color(over and {1, .38, .33} or {.85, .18, .16})
-  love.graphics.circle("fill", 1130, 690 + (over and -2 or 0), 62)
-  color(C.white)
-  love.graphics.setLineWidth(3)
-  love.graphics.circle("line", 1130, 690 + (over and -2 or 0), 62)
-  love.graphics.setLineWidth(1)
-  centered("NEXT", 1068, 664, 124, ui.f32, C.white)
-  centered("ROUND", 1068, 694, 124, ui.f20, C.white)
+  D.image_at(ui.ui_images.next_round, 1070, 628 + (over and -3 or 0), 120)
   ui.buttons[#ui.buttons + 1] = {x = 1068, y = 628, w = 124, h = 124, action = function() Game.leave_shop(g) end}
 end
 
