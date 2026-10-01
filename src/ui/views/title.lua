@@ -1,13 +1,15 @@
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
-local C, box, outline, centered, button = D.C, D.box, D.outline, D.centered, D.button
+local C, color, box, outline, centered, button = D.C, D.color, D.box, D.outline, D.centered, D.button
 
 local function draw_title()
-  box(344, 67, 592, 670, C.ink)
+  box(344, 67, 592, 670, C.screen)
   outline(344, 67, 592, 670, C.gold)
-  centered("TOSSUP", 344, 120, 592, ui.f48, C.gold)
-  centered("BEAT THE QUOTA", 344, 182, 592, ui.f16, C.muted)
+  color(C.white)
+  local logo = ui.ui_images.logo
+  love.graphics.draw(logo, 640 - 180, 86, 0, 360 / logo:getWidth(), 360 / logo:getWidth())
+  centered("BEAT THE QUOTA", 344, 208, 592, ui.f16, C.muted)
 
   local entries = {}
   if ui.game then

@@ -21,9 +21,11 @@ local function arrow(label, x, delta)
 end
 
 local function draw_menu()
-  box(144, 67, 992, 670, C.ink)
+  box(144, 67, 992, 670, C.screen)
   outline(144, 67, 992, 670, C.gold)
-  centered("TOSSUP", 160, 80, 960, ui.f48, C.gold)
+  color(C.white)
+  local logo = ui.ui_images.logo
+  love.graphics.draw(logo, 640 - 110, 70, 0, 220 / logo:getWidth(), 220 / logo:getWidth())
   button("X", 164, 76, 60, 44, C.panel_light, function() A.go("title") end)
 
   arrow("<", 24, -1)
@@ -36,8 +38,8 @@ local function draw_menu()
   -- left: who you are
   box(172, 140, 346, 50, C.panel_light)
   centered(character.name:upper(), 172, 149, 346, ui.f32, C.face)
-  box(172, 200, 346, 300, C.panel)
-  outline(172, 200, 346, 300, C.panel_light)
+  box(172, 200, 346, 300, C.card)
+  outline(172, 200, 346, 300, C.line)
   local portrait = ui.character_images[ui.selected_character]
   local scale = math.min(334 / portrait:getWidth(), 288 / portrait:getHeight())
   local width, height = portrait:getWidth() * scale, portrait:getHeight() * scale
@@ -48,7 +50,7 @@ local function draw_menu()
   -- right: the coin set you will play
   text("COIN SET", 560, 148, ui.f16, C.gold)
   button("<", 560, 170, 56, 44, C.panel_light, function() A.cycle_active_set(-1) end)
-  box(626, 170, 300, 44, C.panel)
+  box(626, 170, 300, 44, C.card)
   centered(set.name .. "  /  " .. #A.loadout() .. " COINS", 626, 182, 300, ui.f20, C.face)
   button(">", 936, 170, 56, 44, C.panel_light, function() A.cycle_active_set(1) end)
 
@@ -58,8 +60,8 @@ local function draw_menu()
   for i = 1, Game.START_MAX do
     local x = x0 + ((i - 1) % columns) * (ICON + GAP)
     local y = 250 + math.floor((i - 1) / columns) * (ICON + GAP + 4)
-    box(x - 4, y - 4, ICON + 8, ICON + 8, C.slot)
-    outline(x - 4, y - 4, ICON + 8, ICON + 8, C.panel_light)
+    box(x - 4, y - 4, ICON + 8, ICON + 8, C.slot_dk)
+    outline(x - 4, y - 4, ICON + 8, ICON + 8, C.line)
     if coins[i] then
       coin_image(coins[i], x, y, ICON)
       coin_hover(coins[i], x, y, ICON, ICON)

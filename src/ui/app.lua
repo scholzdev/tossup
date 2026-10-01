@@ -3,7 +3,6 @@ local Game = require("src.game")
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
-local Common = require("src.ui.views.common")
 local views = {
   ENCOUNTER = require("src.ui.views.encounter"),
   SHOP = require("src.ui.views.shop"),
@@ -22,18 +21,9 @@ local app = {}
 
 local function draw_game()
   local game = ui.game
-  if game.phase == "ENCOUNTER" then
-    views.ENCOUNTER()
-  else
-    if game.phase == "SHOP" then
-      views.SHOP() -- the shop is a full-screen view
-    else
-      Common.sidebar()
-      box(280, 16, 984, 768, C.felt_dark)
-      D.outline(280, 16, 984, 768, C.panel_light)
-      draw_end()
-    end
-  end
+  if game.phase == "ENCOUNTER" then views.ENCOUNTER()
+  elseif game.phase == "SHOP" then views.SHOP()
+  else draw_end() end -- VICTORY and GAME_OVER
   if ui.notice ~= "" then text(ui.notice, 300, 762, ui.f16, C.red) end
   if ui.debug_visible then
     box(944, 177, 300, 101, C.ink)
@@ -67,7 +57,7 @@ function app.load()
   for id in pairs(ui.item_catalog) do ui.item_images[id] = load_image("assets/items/" .. id .. ".png") end
   for id in pairs(Game.relics()) do ui.relic_images[id] = load_image("assets/relics/" .. id .. ".png") end
   for _, name in ipairs({"next_round", "reroll", "gold", "energy", "coins_left", "open_shop", "exchange", "give_up",
-    "flip", "discard", "next_coin", "start_level", "shop_title"}) do
+    "flip", "discard", "next_coin", "start_level", "shop_title", "logo"}) do
     ui.ui_images[name] = load_image("assets/ui/" .. name .. ".png")
   end
   ui.coin_images.back = love.graphics.newImage("assets/coins/back.png", {mipmaps = true})

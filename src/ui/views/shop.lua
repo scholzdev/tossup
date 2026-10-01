@@ -21,6 +21,10 @@ local function price(amount, x, y, w, affordable)
   centered(tostring(amount), x, y, w, ui.f32, affordable and C.gold or C.red)
 end
 
+-- Grid: offer columns start at X0 with a fixed step, so every row lines up with the coin row.
+local X0, STEP = 340, 150
+local PANEL = {.06, .20, .23}
+
 local function draw_shop()
   local g = ui.game
   box(0, 0, 1280, 800, C.felt_dark)
@@ -29,115 +33,114 @@ local function draw_shop()
 
   -- title, gold, menu
   color(C.white)
-  love.graphics.draw(ui.ui_images.shop_title, 70, 40, 0, 120 / ui.ui_images.shop_title:getHeight(),
-    120 / ui.ui_images.shop_title:getHeight())
-  D.image_at(ui.ui_images.gold, 990, 62, 44)
-  centered(tostring(g.player.gold), 1040, 62, 170, ui.f48, C.gold)
-  button("MENU", 1124, 140, 92, 30, C.panel_light, A.open_menu)
+  love.graphics.draw(ui.ui_images.shop_title, 70, 44, 0, 110 / ui.ui_images.shop_title:getHeight(),
+    110 / ui.ui_images.shop_title:getHeight())
+  D.image_at(ui.ui_images.gold, 1000, 60, 48)
+  text(tostring(g.player.gold), 1060, 64, ui.f48, C.gold)
+  button("MENU", 1128, 124, 92, 30, C.panel_light, A.open_menu)
 
-  -- reroll (coin offers only)
+  -- reroll (coin offers only), level with the coin icons
   local reroll_cost = g.reroll_cost or 4
-  box(60, 260, 190, 150, {.06, .20, .23})
-  outline(60, 260, 190, 150, C.panel_light)
-  D.image_at(ui.ui_images.reroll, 70, 268, 36)
-  text("REROLL", 114, 275, ui.f20, C.muted)
-  price(reroll_cost, 60, 300, 190, g.player.gold >= reroll_cost)
-  button("REROLL", 80, 352, 150, 40, C.orange, function() Game.reroll_shop(g) end, g.player.gold >= reroll_cost)
+  box(70, 228, 190, 140, PANEL)
+  outline(70, 228, 190, 140, C.panel_light)
+  D.image_at(ui.ui_images.reroll, 82, 238, 34)
+  text("REROLL", 124, 245, ui.f20, C.muted)
+  price(reroll_cost, 70, 274, 190, g.player.gold >= reroll_cost)
+  button("REROLL", 90, 322, 150, 36, C.orange, function() Game.reroll_shop(g) end, g.player.gold >= reroll_cost)
 
   -- COIN row
   local full = #g.coins >= Game.DECK_MAX
-  vertical_label("Coin", 262, 232)
+  vertical_label("Coin", 290, 232)
   for i = 1, 4 do
-    local x = 330 + (i - 1) * 150
+    local x = X0 + (i - 1) * STEP
     local id = g.shop_offers[i]
     if id then
       local cost = catalog[id].cost or 15
-      price(cost, x, 222, 110, g.player.gold >= cost and not full)
-      coin_image(id, x + 7, 262, 96)
-      coin_hover(id, x, 262, 110, 96)
-      button(full and "FULL" or "BUY", x, 370, 110, 34, C.blue, function() Game.buy(g, i) end,
+      price(cost, x, 186, 110, g.player.gold >= cost and not full)
+      coin_image(id, x + 7, 228, 96)
+      coin_hover(id, x, 228, 110, 96)
+      button(full and "FULL" or "BUY", x, 336, 110, 34, C.blue, function() Game.buy(g, i) end,
         g.player.gold >= cost and not full)
     else
-      centered("SOLD", x, 300, 110, ui.f32, C.muted)
+      centered("SOLD", x, 268, 110, ui.f32, C.muted)
     end
   end
 
-  -- CHIP row (items)
-  vertical_label("Chip", 262, 452)
+  -- CHIP row (items), columns 1-2
+  vertical_label("Chip", 290, 436)
   for i = 1, 2 do
-    local x = 330 + (i - 1) * 150
+    local x = X0 + (i - 1) * STEP
     local id = g.shop_items[i]
     if id then
       local def = ui.item_catalog[id]
-      price(def.cost, x, 442, 110, g.player.gold >= def.cost and #g.items < Items.MAX)
-      D.image_at(ui.item_images[id], x + 7, 480, 96)
-      D.text_hover(def.name, def.description, x + 7, 480, 96, 96)
-      button("BUY", x, 588, 110, 34, C.blue, function() Game.buy_item(g, i) end,
+      price(def.cost, x, 392, 110, g.player.gold >= def.cost and #g.items < Items.MAX)
+      D.image_at(ui.item_images[id], x + 7, 434, 96)
+      D.text_hover(def.name, def.description, x + 7, 434, 96, 96)
+      button("BUY", x, 542, 110, 34, C.blue, function() Game.buy_item(g, i) end,
         g.player.gold >= def.cost and #g.items < Items.MAX)
     else
-      centered("SOLD", x, 520, 110, ui.f32, C.muted)
+      centered("SOLD", x, 474, 110, ui.f32, C.muted)
     end
   end
 
-  -- PRIZE row (relic)
-  vertical_label("Prize", 660, 442)
+  -- PRIZE row (relic), column 4 so it lines up with the last coin offer
+  local px = X0 + 3 * STEP
+  vertical_label("Prize", px - 50, 396)
   local relic = g.shop_relic and Game.relics()[g.shop_relic]
   if relic then
-    local x = 720
-    price(25, x, 442, 110, g.player.gold >= 25)
-    D.image_at(ui.relic_images[g.shop_relic], x + 7, 480, 96)
-    D.text_hover(relic.name, relic.description, x + 7, 480, 96, 96)
-    button("BUY", x, 588, 110, 34, C.blue, function() Game.buy_relic(g) end, g.player.gold >= 25)
+    price(25, px, 392, 110, g.player.gold >= 25)
+    D.image_at(ui.relic_images[g.shop_relic], px + 7, 434, 96)
+    D.text_hover(relic.name, relic.description, px + 7, 434, 96, 96)
+    button("BUY", px, 542, 110, 34, C.blue, function() Game.buy_relic(g) end, g.player.gold >= 25)
   else
-    centered("SOLD", 720, 520, 110, ui.f32, C.muted)
+    centered("SOLD", px, 474, 110, ui.f32, C.muted)
   end
 
   -- tune-ups for the selected coin
-  box(1000, 232, 216, 392, {.06, .20, .23})
-  outline(1000, 232, 216, 392, C.panel_light)
-  centered("TUNE-UPS", 1000, 244, 216, ui.f20, C.gold)
+  box(1000, 190, 220, 370, PANEL)
+  outline(1000, 190, 220, 370, C.panel_light)
+  centered("TUNE-UPS", 1000, 202, 220, ui.f20, C.gold)
   local selected = Game.get_coin(g, g.selected_uid)
-  centered("ODDS TUNER", 1000, 290, 216, ui.f20, C.face)
-  centered("+10% HEADS ON THE", 1000, 318, 216, ui.f16, C.muted)
-  centered("SELECTED COIN", 1000, 338, 216, ui.f16, C.muted)
-  price(10, 1000, 362, 216, g.player.gold >= 10)
-  button("UPGRADE", 1030, 410, 156, 36, C.gold, function() Game.upgrade(g, g.selected_uid) end,
+  centered("ODDS TUNER", 1000, 244, 220, ui.f20, C.face)
+  centered("+10% HEADS ON THE", 1000, 272, 220, ui.f16, C.muted)
+  centered("SELECTED COIN", 1000, 292, 220, ui.f16, C.muted)
+  price(10, 1000, 314, 220, g.player.gold >= 10)
+  button("UPGRADE", 1032, 358, 156, 36, C.gold, function() Game.upgrade(g, g.selected_uid) end,
     g.player.gold >= 10 and selected and Game.probability(g, selected) < 1)
-  centered("COIN REMOVAL", 1000, 480, 216, ui.f20, C.face)
-  centered("DROP THE SELECTED COIN", 1000, 508, 216, ui.f16, C.muted)
-  price(8, 1000, 530, 216, g.player.gold >= 8)
-  button("REMOVE", 1030, 578, 156, 36, C.red, function() Game.remove(g, g.selected_uid) end,
+  centered("COIN REMOVAL", 1000, 424, 220, ui.f20, C.face)
+  centered("DROP THE SELECTED COIN", 1000, 452, 220, ui.f16, C.muted)
+  price(8, 1000, 474, 220, g.player.gold >= 8)
+  button("REMOVE", 1032, 518, 156, 36, C.red, function() Game.remove(g, g.selected_uid) end,
     g.player.gold >= 8 and #g.coins > 1)
 
   -- your deck
-  text("YOUR DECK  " .. #g.coins .. " / " .. Game.DECK_MAX, 60, 640, ui.f20, C.gold)
-  text(full and "DECK FULL  -  REMOVE A COIN TO BUY ANOTHER" or "CLICK A COIN TO SELECT IT", 330, 646, ui.f16, full and C.orange or C.muted)
-  for i = 1, Game.DECK_MAX do
-    local x = 60 + (i - 1) * 92
-    local item = g.coins[i]
-    local chosen = item and item.uid == g.selected_uid
-    box(x, 672, 84, 76, item and {.06, .20, .23} or C.slot)
-    outline(x, 672, 84, 76, chosen and C.orange or C.panel_light)
-    if item then
-      coin_image(item.id, x + 18, 676, 48)
-      centered(math.floor(Game.probability(g, item) * 100 + .5) .. "% H", x, 726, 84, ui.f16, C.gold)
-      coin_hover(item.id, x, 672, 84, 76, Game.probability(g, item))
-      ui.buttons[#ui.buttons + 1] = {x = x, y = 672, w = 84, h = 76, action = function() A.coin_action(item) end}
-    end
-  end
-
-  -- held chips and prizes
+  text("YOUR DECK  " .. #g.coins .. " / " .. Game.DECK_MAX, 70, 612, ui.f20, C.gold)
+  text(full and "DECK FULL  -  REMOVE A COIN TO BUY ANOTHER" or "CLICK A COIN TO SELECT IT", 340, 618, ui.f16,
+    full and C.orange or C.muted)
   local held = {}
   for i, id in ipairs(g.items) do held[i] = ui.item_catalog[id].short end
   for _, id in ipairs(g.relics) do held[#held + 1] = Game.relics()[id].name:upper() end
-  if #held > 0 then text("HELD  " .. table.concat(held, ", "), 330, 626, ui.f16, C.orange) end
+  if #held > 0 then text("HELD  " .. table.concat(held, ", "), 340, 638, ui.f16, C.orange) end
+  for i = 1, Game.DECK_MAX do
+    local x = 70 + (i - 1) * 92
+    local item = g.coins[i]
+    local chosen = item and item.uid == g.selected_uid
+    box(x, 664, 84, 76, item and PANEL or C.slot)
+    outline(x, 664, 84, 76, chosen and C.orange or C.panel_light)
+    if item then
+      coin_image(item.id, x + 18, 668, 48)
+      centered(math.floor(Game.probability(g, item) * 100 + .5) .. "% H", x, 718, 84, ui.f16, C.gold)
+      coin_hover(item.id, x, 664, 84, 76, Game.probability(g, item))
+      ui.buttons[#ui.buttons + 1] = {x = x, y = 664, w = 84, h = 76, action = function() A.coin_action(item) end}
+    end
+  end
 
-  -- next round: the big red button
+  -- next round: the big red button, under the tune-ups
   local mx, my = ui.mouse()
-  local over = (mx - 1130) ^ 2 + (my - 690) ^ 2 <= 62 ^ 2
-  D.image_at(ui.ui_images.next_round, 1074, 616 + (over and -3 or 0), 112)
-  centered("NEXT ROUND", 1040, 736, 180, ui.f20, C.white)
-  ui.buttons[#ui.buttons + 1] = {x = 1068, y = 628, w = 124, h = 124, action = function() Game.leave_shop(g) end}
+  local over = mx >= 1054 and mx <= 1166 and my >= 586 and my <= 698
+  D.image_at(ui.ui_images.next_round, 1054, 586 + (over and -3 or 0), 112)
+  centered("NEXT ROUND", 1000, 706, 220, ui.f20, C.white)
+  ui.buttons[#ui.buttons + 1] = {x = 1054, y = 586, w = 112, h = 144, action = function() Game.leave_shop(g) end}
 end
 
 return draw_shop

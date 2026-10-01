@@ -1,22 +1,52 @@
+-- End of run: full-screen like the shop, with the outcome, what you reached and a way back in.
 local Game = require("src.game")
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
 local C, color, box, outline, text, centered, button = D.C, D.color, D.box, D.outline, D.text, D.centered, D.button
-local coin_image, coin_face, coin_hover, effects, effect_description =
-  D.coin_image, D.coin_face, D.coin_hover, D.effects, D.effect_description
-local catalog, characters = ui.catalog, ui.characters
+local coin_face, coin_hover = D.coin_face, D.coin_hover
+local characters = ui.characters
 
 local function draw_end()
-  box(292, 29, 964, 728, C.panel)
-  centered(ui.game.phase == "VICTORY" and "THE HOUSE FALLS" or "RUN OVER", 320, 126, 910,
-    ui.f48, ui.game.phase == "VICTORY" and C.green or C.red)
-  coin_face(774, 386, 138, nil, true, characters[ui.game.character_id].starter)
-  coin_hover(characters[ui.game.character_id].starter, 595, 200, 358, 358)
-  centered(ui.game.phase == "VICTORY" and "YOU WON THE RUN" or "TRY A NEW DECK", 320, 561, 910,
-    ui.f32, C.face)
-  centered(ui.game.cleared .. " LEVELS CLEARED", 320, 603, 910, ui.f20, C.gold)
-  button("NEW RUN", 626, 642, 300, 63, C.blue, function() A.start() end)
+  local g = ui.game
+  local won = g.phase == "VICTORY"
+  box(0, 0, 1280, 800, C.felt_dark)
+  box(36, 36, 1208, 728, C.screen)
+  outline(36, 36, 1208, 728, C.gold)
+
+  -- headline, drawn at double size in the outcome colour with a shadow
+  local headline = won and "THE HOUSE FALLS" or "RUN OVER"
+  love.graphics.setFont(ui.f48)
+  local width = ui.f48:getWidth(headline) * 2
+  color(C.black, .35)
+  love.graphics.print(headline, math.floor(640 - width / 2) + 4, 90 + 4, 0, 2, 2)
+  color(won and C.green or C.red)
+  love.graphics.print(headline, math.floor(640 - width / 2), 90, 0, 2, 2)
+
+  -- the character and their starting coin
+  local def = characters[g.character_id]
+  box(380, 250, 230, 300, C.panel_dk)
+  outline(380, 250, 230, 300, C.line)
+  local portrait = ui.character_images[g.character_id]
+  local scale = math.min(210 / portrait:getWidth(), 240 / portrait:getHeight())
+  color(C.white)
+  love.graphics.draw(portrait, 380 + (230 - portrait:getWidth() * scale) / 2, 258 + (250 - portrait:getHeight() * scale) / 2,
+    0, scale, scale)
+  centered(def.name:upper(), 380, 520, 230, ui.f20, C.gold)
+
+  -- what the run reached
+  box(650, 250, 250, 300, C.panel_dk)
+  outline(650, 250, 250, 300, C.line)
+  centered(won and "YOU WON THE RUN" or "TRY A NEW SET", 650, 266, 250, ui.f20, C.face)
+  centered(tostring(g.cleared), 650, 320, 250, ui.f48, won and C.green or C.gold)
+  centered("LEVELS CLEARED OF 4", 650, 380, 250, ui.f16, C.muted)
+  D.image_at(ui.ui_images.gold, 690, 430, 44)
+  text(tostring(g.player.gold), 746, 436, ui.f32, C.gold)
+  text("GOLD LEFT", 690, 484, ui.f16, C.muted)
+  text("SEED " .. g.seed, 690, 512, ui.f16, C.muted)
+
+  D.icon_button("NEW RUN", ui.ui_images.start_level, 470, 600, 340, 64, C.green, function() A.start() end)
+  button("MENU", 540, 684, 200, 40, C.panel_light, A.open_menu)
 end
 
 return draw_end

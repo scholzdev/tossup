@@ -48,8 +48,8 @@ local function draw_sets()
   local dirty = A.set_dirty()
 
   -- left: the set being edited
-  box(60, 175, 470, 540, C.ink)
-  outline(60, 175, 470, 540, C.panel_light)
+  box(60, 175, 470, 540, C.screen)
+  outline(60, 175, 470, 540, C.line)
   for i = 1, Profile.SET_COUNT do
     button(sets[i].name, 76 + (i - 1) * 146, 190, 138, 44, ui.sets_index == i and C.blue or C.panel_light,
       function() A.sets_pick_set(i) end)
@@ -59,8 +59,8 @@ local function draw_sets()
   for i = 1, Game.START_MAX do
     local x = x0 + ((i - 1) % 5) * (SLOT + SLOT_GAP)
     local y = 292 + math.floor((i - 1) / 5) * (SLOT + SLOT_GAP + 8)
-    box(x - 4, y - 4, SLOT + 8, SLOT + 8, C.slot)
-    outline(x - 4, y - 4, SLOT + 8, SLOT + 8, C.panel_light)
+    box(x - 4, y - 4, SLOT + 8, SLOT + 8, C.slot_dk)
+    outline(x - 4, y - 4, SLOT + 8, SLOT + 8, C.line)
     local id = set.coins[i]
     if id then
       coin_image(id, x, y, SLOT)
@@ -75,8 +75,8 @@ local function draw_sets()
   centered("MAX " .. Game.MAX_COPIES .. " OF THE SAME COIN  -  NORMAL: UP TO " .. Game.START_MAX, 60, 676, 470, ui.f16, C.muted)
 
   -- right: all of this character's coins
-  box(550, 175, 690, 540, C.ink)
-  outline(550, 175, 690, 540, C.panel_light)
+  box(550, 175, 690, 540, C.screen)
+  outline(550, 175, 690, 540, C.line)
   centered(def.name:upper() .. "  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP", 550, 188, 690, ui.f16, C.gold)
   local entries = {}
   for _, id in ipairs(def.pool) do entries[#entries + 1] = {id = id} end

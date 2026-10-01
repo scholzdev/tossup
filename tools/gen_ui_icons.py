@@ -8,7 +8,7 @@ Output (PNG, transparent background):
   assets/relics/<id>.png   256 px   round prizes with a double ring
   assets/ui/<name>.png     256 px   next_round (the big red button), reroll, gold, energy, coins_left,
                                     open_shop, exchange, give_up, flip, discard, next_coin, start_level
-  assets/ui/shop_title.png 544x256  the colourful "SHOP" title (drawn from the pixel font)
+  assets/ui/shop_title.png 544x256, assets/ui/logo.png 800x256  the colourful "SHOP" title (drawn from the pixel font)
 
 Run from the repo root:  python3 tools/gen_ui_icons.py   (needs Pillow).
 To add an icon: add a colour to ITEMS / RELICS and an emblem branch in emblem().
@@ -306,15 +306,30 @@ def shop_title():
     big.save(ROOT / "assets" / "ui" / "shop_title.png")
 
 
+def logo():
+    """The TOSSUP logo, same pixel-letter treatment as the SHOP title."""
+    font = ImageFont.truetype(str(ROOT / "assets" / "fonts" / "m6x11plus.ttf"), 48)
+    colours = [(255, 162, 0), (254, 95, 85), (0, 157, 255), (75, 194, 146), (255, 162, 0), (254, 95, 85)]
+    small = Image.new("RGBA", (200, 64), (0, 0, 0, 0))
+    d = ImageDraw.Draw(small)
+    x = 5
+    for i, (letter, colour) in enumerate(zip("TOSSUP", colours)):
+        y = 6 + (3 if i % 2 else 0)
+        d.text((x + 3, y + 3), letter, font=font, fill=(0, 0, 0, 120), stroke_width=2, stroke_fill=(0, 0, 0, 120))
+        d.text((x, y), letter, font=font, fill=colour + (255,), stroke_width=2, stroke_fill=DARK)
+        x += 31
+    small.resize((800, 256), Image.Resampling.NEAREST).save(ROOT / "assets" / "ui" / "logo.png")
+
+
 def main():
     for name, colour in ITEMS.items():
         make_icon("items", name, colour)
     for name, colour in RELICS.items():
         make_icon("relics", name, colour)
     for fn in (next_round, reroll, gold, energy, coins_left, open_shop, exchange, give_up, flip, discard,
-               next_coin, start_level, shop_title):
+               next_coin, start_level, shop_title, logo):
         fn()
-    print(f"generated {len(ITEMS)} item icons, {len(RELICS)} relic icons and 13 UI images in {ROOT / 'assets'}")
+    print(f"generated {len(ITEMS)} item icons, {len(RELICS)} relic icons and 14 UI images in {ROOT / 'assets'}")
 
 
 if __name__ == "__main__":
