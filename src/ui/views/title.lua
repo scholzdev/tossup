@@ -14,16 +14,17 @@ local function draw_title()
   local entries = {}
   if ui.game then
     entries[#entries + 1] = {"CONTINUE", C.blue, function() ui.game.paused = false end}
-    entries[#entries + 1] = {"NEW RUN", C.gold, function() A.go("select") end}
+    entries[#entries + 1] = {"NEW RUN", C.gold, A.play}
   else
-    entries[#entries + 1] = {"PLAY", C.blue, function() A.go("select") end}
+    entries[#entries + 1] = {"PLAY", C.blue, A.play}
   end
   entries[#entries + 1] = {"COIN SETS", C.gold, function() A.open_sets(ui.selected_character) end}
   entries[#entries + 1] = {"COLLECTION", C.green, function() A.go("collection") end}
+  entries[#entries + 1] = {"HOW TO PLAY", C.green, function() ui.help_next = nil A.go("help") end}
   entries[#entries + 1] = {"OPTIONS", C.panel_light, function() A.go("options") end}
-  entries[#entries + 1] = {"QUIT", C.red, function() love.event.quit() end}
+  entries[#entries + 1] = {ui.quit_armed and "SURE? THE RUN IS LOST" or "QUIT", C.red, A.quit}
   for i, entry in ipairs(entries) do
-    button(entry[1], 470, 262 + (i - 1) * 74, 340, 58, entry[2], entry[3])
+    button(entry[1], 470, 250 + (i - 1) * 68, 340, 54, entry[2], entry[3])
   end
 end
 

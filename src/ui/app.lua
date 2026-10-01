@@ -13,6 +13,7 @@ local screens = {
   collection = require("src.ui.views.collection"),
   sets = require("src.ui.views.sets"),
   options = require("src.ui.views.options"),
+  help = require("src.ui.views.help"),
 }
 local draw_end = require("src.ui.views.finish")
 local C, color, box, text = D.C, D.color, D.box, D.text
@@ -58,7 +59,7 @@ function app.load()
   for id in pairs(Game.relics()) do ui.relic_images[id] = load_image("assets/relics/" .. id .. ".png") end
   for _, name in ipairs({"next_round", "reroll", "gold", "energy", "coins_left", "open_shop", "exchange", "give_up",
     "flip", "discard", "next_coin", "start_level", "shop_title", "logo",
-    "title_play", "title_sets", "title_collection", "title_options"}) do
+    "title_play", "title_sets", "title_collection", "title_options", "title_help"}) do
     ui.ui_images[name] = load_image("assets/ui/" .. name .. ".png")
   end
   ui.coin_images.back = love.graphics.newImage("assets/coins/back.png", {mipmaps = true})

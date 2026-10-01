@@ -22,7 +22,34 @@ end
 
 function A.go(screen)
   ui.screen = screen
+  ui.quit_armed = false
   ui.collection_page = 1
+end
+
+-- "Play" / "New Run": the very first time, show How To Play before the character screen.
+function A.play()
+  if ui.profile.options.seen_help then A.go("select") return end
+  ui.profile.options.seen_help = true
+  save_profile()
+  ui.help_next = "select"
+  A.go("help")
+end
+
+-- Quit needs a second click while a run is in progress, because runs are not saved.
+function A.quit()
+  local g = ui.game
+  local running = g and g.phase ~= "GAME_OVER" and g.phase ~= "VICTORY"
+  if running and not ui.quit_armed then ui.quit_armed = true return end
+  love.event.quit()
+end
+
+-- One line per finished run, to match tester feedback with seeds (runs.log in the save folder).
+local function log_run(game)
+  local coins = {}
+  for i, owned in ipairs(game.coins) do coins[i] = owned.id end
+  love.filesystem.append("runs.log", string.format("%s seed=%d char=%s result=%s cleared=%d gold=%d why=%s coins=%s\n",
+    os.date("%Y-%m-%d %H:%M:%S"), game.seed, game.character_id, game.phase == "VICTORY" and "WIN" or "LOSS",
+    game.cleared, game.player.gold, game.lost_why or "-", table.concat(coins, ",")))
 end
 
 -- Pause the run (if any) and show the title screen.
@@ -250,6 +277,7 @@ function A.update(dt)
   end
   if game and (game.phase == "GAME_OVER" or game.phase == "VICTORY") and not game.tokens_paid then
     game.tokens_paid = Game.run_tokens(game)
+    log_run(game)
     ui.profile.tokens = ui.profile.tokens + game.tokens_paid
     save_profile()
   end
