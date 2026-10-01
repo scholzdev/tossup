@@ -1,8 +1,9 @@
 #!/bin/sh
 # Build dist/Tossup.app: a copy of LÖVE (/Applications/love.app) named Tossup, with our icon and the game inside.
 # The Dock and the app switcher then show "Tossup" and the coin icon instead of LÖVE. Needs the LÖVE app and `zip`.
-# Run from the repo root:  sh tools/build_macos.sh   then   open dist/Tossup.app
+# Run from anywhere:  sh tools/build_macos.sh   (or ./build_macos.sh inside tools/)   then   open dist/Tossup.app
 set -e
+cd "$(dirname "$0")/.."   # always work from the repo root
 LOVE_APP="${LOVE_APP:-/Applications/love.app}"
 [ -d "$LOVE_APP" ] || { echo "LÖVE not found at $LOVE_APP (set LOVE_APP)"; exit 1; }
 python3 tools/gen_app_icon.py >/dev/null   # makes assets/ui/icon.icns
