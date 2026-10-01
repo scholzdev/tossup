@@ -107,5 +107,10 @@ w(json({
   route = route,
   constants = constants,
   de = {coins = de.coins, items = de.items, relics = de.relics, modifiers = de.modifiers, characters = de.characters},
+  de_strings = (function() -- the flat English -> German table (effect texts, rarity names, ...)
+    local flat = {}
+    for k, v in pairs(de) do if type(v) == "string" then flat[k] = v end end
+    return flat
+  end)(),
 }))
 io.write(table.concat(out))
