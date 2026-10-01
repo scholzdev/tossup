@@ -12,7 +12,7 @@ local Game = {}
 Game.VISIBLE = 3 -- coins shown in the bank; the first one is the coin you are about to play
 Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may discard
 Game.START_MAX = 10 -- coins in a coin set you can take into a run
-Game.DECK_MAX = 10 -- the shop can never grow the deck past this (a full deck replaces a coin)
+Game.DECK_MAX = 10 -- the shop cannot grow the deck past this: buying is refused when it is full
 Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
 Game.MAX_COPIES = 3 -- copies of one coin in a set; the plain Normal coin is exempt (up to the set size)
 
@@ -45,14 +45,6 @@ end
 
 local function add_to_deck(game, id)
   local item = coin(game, id)
-  if #game.coins >= Game.DECK_MAX then
-    for index, owned in ipairs(game.coins) do
-      if owned.uid == game.selected_uid then
-        table.remove(game.coins, index)
-        break
-      end
-    end
-  end
   game.coins[#game.coins + 1] = item
   game.selected_uid = item.uid
   return item
@@ -501,6 +493,7 @@ end
 function Game.buy(game, index)
   local id = game.phase == "SHOP" and game.shop_offers[index]
   if not id or game.player.gold < (catalog[id].cost or 15) then return false end
+  if #game.coins >= Game.DECK_MAX then return false end -- a full deck must lose a coin before it can gain one
   game.shop_offers[index] = false
   game.player.gold = game.player.gold - (catalog[id].cost or 15)
   add_to_deck(game, id)

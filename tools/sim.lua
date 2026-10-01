@@ -235,8 +235,9 @@ bots.smart = {
           improved = Game.buy(g, best)
         else
           local worst, worst_value = worst_coin()
-          if best_value > worst_value * 1.3 + .1 then
-            Game.select(g, worst.uid)
+          local price = catalog[g.shop_offers[best]].cost or 15
+          -- a full deck must lose a coin first (removal costs 8 gold)
+          if best_value > worst_value * 1.3 + .1 and g.player.gold >= 8 + price and Game.remove(g, worst.uid) then
             improved = Game.buy(g, best)
           end
         end

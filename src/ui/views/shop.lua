@@ -50,8 +50,9 @@ local function draw_shop()
       text("T  " .. effects(offer.tails), x + 13, 402, ui.f16, C.red)
       coin_hover(id, x, 207, 220, 220)
       local cost = offer.cost or 15
-      button("BUY / " .. cost, x + 11, 435, 198, 37, C.blue,
-        function() Game.buy(ui.game, i) end, ui.game.player.gold >= cost)
+      local full = #ui.game.coins >= Game.DECK_MAX
+      button(full and "DECK FULL" or ("BUY / " .. cost), x + 11, 435, 198, 37, C.blue,
+        function() Game.buy(ui.game, i) end, ui.game.player.gold >= cost and not full)
     else
       centered("SOLD", x, 320, 220, ui.f32, C.muted)
     end
@@ -90,7 +91,7 @@ local function draw_shop()
     ui.game.player.gold >= 8 and #ui.game.coins > 1)
 
   text("YOUR DECK  /  " .. #ui.game.coins .. " OF " .. Game.DECK_MAX, 300, 657, ui.f20, C.gold)
-  text(#ui.game.coins >= Game.DECK_MAX and "SELECT A COIN TO REPLACE WHEN BUYING" or
+  text(#ui.game.coins >= Game.DECK_MAX and "DECK FULL  -  REMOVE A COIN TO BUY ANOTHER" or
     "SELECT A COIN TO UPGRADE OR REMOVE", 706, 663, ui.f16, C.muted)
   for i = 1, Game.DECK_MAX do
     local x = 300 + (i - 1) * 94

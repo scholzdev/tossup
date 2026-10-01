@@ -121,12 +121,15 @@ for i = 1, Game.DECK_MAX - 1 do
   assert(Game.buy(cap, 1))
 end
 equal(#cap.coins, Game.DECK_MAX, "deck cap")
-local replaced_uid = cap.coins[1].uid
-assert(Game.select(cap, replaced_uid))
+local gold_before = cap.player.gold
 cap.shop_offers = {"spark"}
-assert(Game.buy(cap, 1))
-equal(#cap.coins, Game.DECK_MAX, "buy replaces selected coin at cap")
-assert(not Game.get_coin(cap, replaced_uid), "old coin removed")
+assert(not Game.buy(cap, 1), "buying is refused when the deck is full")
+equal(#cap.coins, Game.DECK_MAX, "deck unchanged")
+equal(cap.player.gold, gold_before, "no gold spent")
+equal(cap.shop_offers[1], "spark", "the offer stays")
+assert(Game.remove(cap, cap.coins[1].uid), "removing a coin makes room")
+assert(Game.buy(cap, 1), "and now the purchase works")
+equal(#cap.coins, Game.DECK_MAX)
 assert(Game.leave_shop(cap))
 cap.encounter.quota = 10000
 cap.encounter.draws = 1000
