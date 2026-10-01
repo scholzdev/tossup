@@ -26,9 +26,14 @@ local function drive(seed, character)
     steps = steps + 1
     assert(steps < 120, "run did not terminate")
     if game.phase == "ENCOUNTER" then
-      assert(Game.flip(game))
-      assert(Game.resolve(game))
-      if game.encounter.cleared then Game.end_level(game) end
+      if game.dealt then
+        assert(Game.flip(game))
+        assert(Game.resolve(game))
+      else
+        assert(Game.can_exchange(game), "an empty stack can only be exchanged")
+        Game.exchange(game)
+      end
+      if game.phase == "ENCOUNTER" and game.encounter.cleared then Game.end_level(game) end
     elseif game.phase == "SHOP" then
       assert(Game.leave_shop(game))
     end
@@ -134,6 +139,7 @@ assert(Game.buy(cap, 1), "and now the purchase works")
 equal(#cap.coins, Game.DECK_MAX)
 assert(Game.leave_shop(cap))
 cap.encounter.quota = 10000
+cap.player.gold = 0 -- no gold: no exchange
 cap.player.energy = 99
 equal(Game.coins_left(cap), Game.DECK_MAX, "the level lasts as long as the stack")
 local seen = {}
@@ -145,11 +151,12 @@ for i = 1, Game.DECK_MAX do
   assert(Game.resolve(cap))
   equal(Game.coins_left(cap), Game.DECK_MAX - i)
 end
-equal(cap.phase, "GAME_OVER", "the stack ran out with the quota unmet and no exchange possible")
+equal(cap.phase, "GAME_OVER", "the stack ran out with the quota unmet and no gold for an exchange")
 
 -- a lost level: one coin, quota out of reach
 local loss = Game.new(2)
 loss.encounter.quota = 10000
+loss.player.gold = 0
 assert(Game.flip(loss) and Game.resolve(loss))
 equal(loss.phase, "GAME_OVER", "out of coins loses")
 
@@ -157,6 +164,7 @@ equal(loss.phase, "GAME_OVER", "out of coins loses")
 local lucky = Game.new(9)
 lucky.coins[1].id = "lucky"
 lucky.encounter.quota = 10000
+lucky.player.gold = 0
 lucky.player.energy = 100
 local plays = 0
 while lucky.dealt do
@@ -365,10 +373,12 @@ equal(k.player.gold, before, "ending pays nothing more")
 local d3 = Game.new(42, "blade")
 for _, c in ipairs(d3.coins) do c.id = "sword" end
 d3.encounter.quota, d3.encounter.max_quota = 2, 2
+d3.player.gold = 0
 local flips_made = 0
 while d3.phase == "ENCOUNTER" do
   d3.dealt.probability = 1
   assert(Game.flip(d3) and Game.resolve(d3))
+  d3.player.gold = 0 -- spend the level payout: no gold left for an exchange
   flips_made = flips_made + 1
   assert(flips_made <= #d3.coins, "terminates")
 end

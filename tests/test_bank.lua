@@ -47,7 +47,8 @@ while g.dealt do
 end
 equal(played, 8, "all eight coins were played once")
 equal(Game.coins_left(g), 0)
-equal(g.phase, "GAME_OVER", "stack empty, quota unmet, no Normal pair to exchange: the level is lost")
+equal(g.phase, "ENCOUNTER", "stack empty, quota unmet, gold for an exchange: the player decides")
+assert(g.exchange_open)
 
 -- manual mulligan: look at five, mark coins to discard (free), keep the rest
 local m = Game.new(2, "big", nil, nil, true)
@@ -148,7 +149,7 @@ fresh_px.player.energy = 3
 assert(Game.flip(fresh_px))
 equal(fresh_px.player.energy, 1, "Hammer cost 2 energy")
 
--- exchange: with an empty stack, burn 2 played Normal coins to get 3 played coins back
+-- exchange: with an empty stack, pay gold to get played coins back (price rises per exchange)
 Game.characters().exch = {name = "E", description = "", starter = "normal",
   deck = {"normal", "normal", "normal", "normal", "sword", "sword", "dagger"},
   pool = {"normal", "sword", "dagger"}, locked = {}}
@@ -160,55 +161,67 @@ local function play_out(g)
 end
 local ex = Game.new(11, "exch")
 ex.encounter.quota, ex.encounter.max_quota = 1e9, 1e9
+ex.player.gold = 100
 equal(Game.can_exchange(ex), false, "not while coins remain")
 play_out(ex)
 equal(Game.coins_left(ex), 0)
 equal(ex.phase, "ENCOUNTER", "the level is not lost yet: an exchange is possible")
 assert(ex.exchange_open, "the UI is asked to offer the exchange")
+equal(Game.exchange_cost(ex), Game.EXCHANGE_BASE, "first exchange costs the base price")
 assert(Game.can_exchange(ex))
-local discards_before = ex.encounter.discards
 assert(Game.exchange(ex))
-equal(ex.encounter.discards, discards_before + Game.EXCHANGE_COST, "two Normal coins burned for the level")
-equal(Game.coins_left(ex), Game.EXCHANGE_GAIN, "three coins came back")
+equal(ex.player.gold, 100 - Game.EXCHANGE_BASE, "gold was paid")
+equal(Game.coins_left(ex), Game.EXCHANGE_GAIN, "three played coins came back")
 assert(ex.dealt, "play continues")
 equal(ex.exchange_open, false)
-local burned = 0
-for _ in pairs(ex.encounter.discarded) do burned = burned + 1 end
-equal(burned, Game.EXCHANGE_COST)
-local seen_back = {}
-for _, uid in ipairs(ex.encounter.queue) do
-  assert(not ex.encounter.discarded[uid], "a burned coin never returns")
-  seen_back[uid] = true
-end
+equal(Game.exchange_cost(ex), Game.EXCHANGE_BASE + Game.EXCHANGE_STEP, "the next exchange costs more")
+equal(ex.encounter.discards, 0, "nothing is burned")
 play_out(ex)
--- 7 coins: 4 Normal. After one exchange the remaining played coins (7 - 2 burned - 3 back) may allow another
-if ex.phase == "ENCOUNTER" then
-  assert(ex.exchange_open)
-  assert(Game.give_up(ex), "or the player can give up")
-end
+assert(ex.exchange_open, "can exchange again")
+local gold_before = ex.player.gold
+assert(Game.exchange(ex))
+equal(ex.player.gold, gold_before - (Game.EXCHANGE_BASE + Game.EXCHANGE_STEP))
+play_out(ex)
+assert(Game.give_up(ex), "or give up instead")
 equal(ex.phase, "GAME_OVER")
 
--- no exchange without two played Normal coins: the level is lost the moment the stack is empty
-Game.characters().exch2 = {name = "E2", description = "", starter = "sword", deck = {"sword", "dagger", "normal"},
-  pool = {"normal", "sword", "dagger"}, locked = {}}
-local ex2 = Game.new(12, "exch2")
-ex2.encounter.quota, ex2.encounter.max_quota = 1e9, 1e9
-play_out(ex2)
-equal(ex2.phase, "GAME_OVER", "only one Normal coin was played: no exchange, level lost")
+-- discarded coins never come back
+local exd = Game.new(15, "exch")
+exd.encounter.quota, exd.encounter.max_quota = 1e9, 1e9
+exd.player.gold = 100
+local dropped = exd.encounter.queue[2]
+assert(Game.discard(exd, {dropped}) == 1)
+play_out(exd)
+assert(Game.exchange(exd))
+for _, uid in ipairs(exd.encounter.queue) do assert(uid ~= dropped, "a discarded coin does not return") end
 
--- a cleared level with an empty stack stays open when an exchange is possible, otherwise goes to the shop
+-- not enough gold: the level is lost the moment the stack is empty
+local poor = Game.new(12, "exch")
+poor.encounter.quota, poor.encounter.max_quota = 1e9, 1e9
+poor.player.gold = Game.EXCHANGE_BASE - 1
+play_out(poor)
+equal(poor.phase, "GAME_OVER", "cannot afford an exchange: level lost")
+
+-- a cleared level with an empty stack stays open when an exchange is affordable, otherwise goes to the shop
 local ex3 = Game.new(13, "exch")
 ex3.encounter.quota, ex3.encounter.max_quota = 1, 1
+ex3.player.gold = 100
 play_out(ex3)
 assert(ex3.encounter.cleared)
 equal(Game.coins_left(ex3), 0)
-if ex3.phase == "ENCOUNTER" then
-  assert(Game.can_exchange(ex3), "stays open only because an exchange is possible")
-  assert(Game.end_level(ex3), "and the player can still open the shop")
-end
+equal(ex3.phase, "ENCOUNTER", "stays open: an exchange is affordable")
+assert(Game.end_level(ex3), "and the player can still open the shop")
 equal(ex3.phase, "SHOP")
+local ex5 = Game.new(16, "exch")
+ex5.encounter.quota, ex5.encounter.max_quota = 1, 1
+while ex5.dealt do
+  ex5.player.energy = 99
+  assert(Game.flip(ex5) and Game.resolve(ex5))
+  ex5.player.gold = 0 -- spend the payout: no gold for an exchange
+end
+equal(ex5.phase, "SHOP", "cleared, stack empty, no gold for an exchange: straight to the shop")
 
--- give_up is refused while coins remain or after the quota was met
+-- give_up is refused while coins remain
 local ex4 = Game.new(14, "exch")
 equal(Game.give_up(ex4), false)
 

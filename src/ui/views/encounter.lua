@@ -288,7 +288,7 @@ local function draw_encounter()
   if empty_stack then
     -- no coins left: exchange two played Normal coins for some back, give up, or (cleared) open the shop
     if Game.can_exchange(ui.game) then
-      button("EXCHANGE " .. Game.EXCHANGE_COST .. " > " .. Game.EXCHANGE_GAIN, 510, 692, 260, 64, C.green, A.exchange)
+      button("PAY " .. Game.exchange_cost(ui.game) .. " > " .. Game.EXCHANGE_GAIN .. " COINS", 510, 692, 260, 64, C.green, A.exchange)
     end
     if not e.cleared then button("GIVE UP", 290, 692, 200, 64, C.red, A.give_up) end
   else

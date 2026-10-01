@@ -13,7 +13,8 @@ Game.VISIBLE = 3 -- coins shown in the bank; the first one is the coin you are a
 Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may discard
 Game.START_MAX = 10 -- coins in a coin set you can take into a run
 Game.DECK_MAX = 10 -- the shop cannot grow the deck past this: buying is refused when it is full
-Game.EXCHANGE_COST = 2 -- Normal coins burned for the level when you exchange with an empty stack
+Game.EXCHANGE_BASE = 10 -- gold for the first exchange of a level (empty stack): played coins come back
+Game.EXCHANGE_STEP = 5 -- every further exchange in the same level costs this much more
 Game.EXCHANGE_GAIN = 3 -- played coins that come back into the stack in exchange
 Game.RETURN_CAP = 3 -- "extra draw" effects (a coin returning to the pile) per level
 Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
@@ -515,42 +516,35 @@ local function lose_level(game, why)
   Signal.emit("encounter_end", {game = game, won = false})
 end
 
--- Normal coins that were played this level and could be burned in an exchange, and the other played
--- coins that could come back.
-local function exchange_candidates(game)
-  local e = game.encounter
-  local normals, others = {}, {}
-  for _, uid in ipairs(e.played) do
-    if not e.discarded[uid] then
-      if find_coin(game, uid).id == "normal" then normals[#normals + 1] = uid else others[#others + 1] = uid end
-    end
-  end
-  return normals, others
+-- Gold an exchange costs right now: it rises with every exchange already made this level.
+function Game.exchange_cost(game)
+  return Game.EXCHANGE_BASE + Game.EXCHANGE_STEP * (game.encounter.exchanges or 0)
 end
 
--- With an empty stack: burn EXCHANGE_COST played Normal coins (out for the level) and get up to
--- EXCHANGE_GAIN other played coins back into the stack. Needs at least one coin to come back.
+-- The coins that were played this level and could come back (discarded coins never do).
+local function returnable(game)
+  local e = game.encounter
+  local list = {}
+  for _, uid in ipairs(e.played) do
+    if not e.discarded[uid] then list[#list + 1] = uid end
+  end
+  return list
+end
+
+-- With an empty stack, pay gold to get up to EXCHANGE_GAIN of the coins you already played this level
+-- back into the stack.
 function Game.can_exchange(game)
   if game.phase ~= "ENCOUNTER" or game.pending or game.mulligan or game.dealt then return false end
   if Game.coins_left(game) > 0 then return false end
-  local normals, others = exchange_candidates(game)
-  return #normals >= Game.EXCHANGE_COST and (#normals - Game.EXCHANGE_COST) + #others >= 1
+  return game.player.gold >= Game.exchange_cost(game) and #returnable(game) >= 1
 end
 
 function Game.exchange(game)
   if not Game.can_exchange(game) then return false end
   local e = game.encounter
-  local normals, others = exchange_candidates(game)
-  local burned = {}
-  for i = 1, Game.EXCHANGE_COST do
-    local uid = table.remove(normals, 1)
-    burned[uid] = true
-    e.discarded[uid] = true
-    e.discards = e.discards + 1
-  end
-  local back = {}
-  for _, uid in ipairs(normals) do back[#back + 1] = uid end
-  for _, uid in ipairs(others) do back[#back + 1] = uid end
+  local cost = Game.exchange_cost(game)
+  game.player.gold = game.player.gold - cost
+  local back = returnable(game)
   for i = #back, 2, -1 do -- seeded shuffle, then take the first EXCHANGE_GAIN
     local j = RNG.int(game, 1, i)
     back[i], back[j] = back[j], back[i]
@@ -562,12 +556,12 @@ function Game.exchange(game)
   end
   local kept = {}
   for _, uid in ipairs(e.played) do
-    if not burned[uid] and not taken[uid] then kept[#kept + 1] = uid end
+    if not taken[uid] then kept[#kept + 1] = uid end
   end
   e.played = kept
   e.exchanges = (e.exchanges or 0) + 1
   game.exchange_open = false
-  log(game, "Exchanged " .. Game.EXCHANGE_COST .. " Normal coins for " .. #e.pile .. " coins.")
+  log(game, "Paid " .. cost .. " gold: " .. #e.pile .. " coins are back in the stack.")
   deal(game)
   return true
 end
