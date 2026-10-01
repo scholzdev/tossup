@@ -3,7 +3,8 @@ dist/
 *.png~
 src/build_id.lua
 wiki/
+wiki-github/
 dist-content.json
 # documentation is kept locally, not in the repository
 *.md
-!README.md
+!/README.md
