@@ -19,6 +19,7 @@ on:
       - assets/ui/icon.png
       - assets/fonts/**
       - tools/gen_wiki.py
+      - tools/wiki_guide.py
       - tools/dump_content.lua
       - tools/build_wiki.sh
       - .github/workflows/wiki.yml

@@ -68,6 +68,8 @@ Tossup $VERSION
 - **Linux:** \`chmod +x Tossup-$VERSION-linux.AppImage && ./Tossup-$VERSION-linux.AppImage\` (not tested on a real Linux machine).
 - **Any system with LÖVE 11.5:** \`Tossup-$VERSION.love\`.
 
+Educational use only, see the LICENSE file in the repository.
+
 NOTES_END
 PREVIOUS="$(git describe --tags --abbrev=0 2>/dev/null || true)"
 echo "**Changes**" >> "$NOTES"

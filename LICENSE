@@ -1,0 +1,58 @@
+Tossup - Educational Use License
+
+Copyright (c) 2026 Florian Scholz. All rights reserved.
+
+This is not an open source license. The source code is visible so that people can read it and learn from it. Everything else
+is reserved.
+
+1. What this covers
+
+   "The Software" means everything in this repository and in its releases: source code, game data, text, artwork, sound, music,
+   build scripts, documentation and the compiled builds. "The Author" means Florian Scholz.
+
+2. What you may do
+
+   You may read the source code, and you may run an unmodified copy of the Software on your own computer, for educational
+   purposes only: to study how it is built, to learn from it, or to teach with it in a non-commercial setting.
+
+3. What you may not do without the Author's prior written permission
+
+   a) Modify the Software, translate it, or create anything derived from it, including mods, patches, ports and forks that are
+      used or shared outside the GitHub platform.
+   b) Publish, upload, host, distribute, sublicense, sell, rent, lend or otherwise make the Software, or any part of it,
+      available to anyone else, in source or compiled form, including on other websites, stores, mirrors, archives or
+      package managers.
+   c) Use the Software commercially in any way: for money, for a business, in a product or a service, with advertising,
+      subscriptions or donations, or for any other commercial advantage.
+   d) Use the Software for anything other than the educational purposes in section 2. This includes private, personal and
+      recreational use, such as playing the game for entertainment.
+   e) Use the name "Tossup", its logo or its artwork to identify, promote or endorse another work.
+   f) Remove or change this notice or the copyright notice.
+
+4. Permission
+
+   Permission for anything not allowed above has to be asked for, and it has to be given in writing by the Author. Contact
+   the Author through the repository at https://github.com/scholzdev/tossup. Permission for one use is not permission for
+   another.
+
+5. GitHub
+
+   The Software is hosted on GitHub. Nothing in this license takes away rights that GitHub's Terms of Service give to GitHub
+   users, such as viewing a public repository and forking it on GitHub.
+
+6. Other people's work
+
+   The compiled builds contain the LOVE game framework (https://love2d.org), which is distributed under its own license (zlib).
+   That and any other third-party component keep their own licenses; this license covers only the Author's work.
+
+7. Termination
+
+   Your rights under this license end automatically if you break any of its terms. You then have to stop using the Software and
+   delete your copies.
+
+8. No warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+   WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE
+   FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

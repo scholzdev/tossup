@@ -105,6 +105,7 @@ w(json({
   modifiers = defs_of(Game.modifiers(), modifier_ids),
   characters = characters,
   route = route,
+  stakes = (function() local out = {} for i, stage in ipairs(Game.stakes()) do out[i] = {info = stage.info} end return out end)(),
   constants = constants,
   de = {coins = de.coins, items = de.items, relics = de.relics, modifiers = de.modifiers, characters = de.characters},
   de_strings = (function() -- the flat English -> German table (effect texts, rarity names, ...)

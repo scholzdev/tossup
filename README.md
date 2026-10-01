@@ -16,9 +16,10 @@ The game is in English and German.
 
 ## Playing
 
-Downloads for Windows, macOS and Linux are on the
-[releases page](https://github.com/scholzdev/tossup/releases). The Windows and Linux builds have not been tried on a
-real machine yet, and the macOS app is not notarized, so you have to open it with a right click the first time.
+Builds for Windows, macOS and Linux are on the
+[releases page](https://github.com/scholzdev/tossup/releases), for studying the game (see License below). The Windows and
+Linux builds have not been tried on a real machine yet, and the macOS app is not notarized, so you have to open it with a
+right click the first time.
 
 From source you need LÖVE 11.5:
 
@@ -73,3 +74,9 @@ tests/       plain Lua tests
 
 Adding a coin means adding a file to `content/coins/` and a line to `content/coin_order.lua`. A coin is a table with its
 odds, two effect lists and, if it needs one, a few hooks; `src/hooks.lua` explains them at the top.
+
+## License
+
+Tossup is not open source. You may read the code and run an unmodified copy for educational purposes. Modifying it,
+publishing it, any commercial use and any private use (playing it for fun, for example) need my written permission. The
+full text is in [LICENSE](LICENSE).
