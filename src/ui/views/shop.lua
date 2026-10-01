@@ -10,7 +10,6 @@ local coin_image, coin_hover = D.coin_image, D.coin_hover
 local catalog = ui.catalog
 
 local SCREEN = {.09, .27, .30}
-local LETTER_COLORS = {C.orange, C.red, C.blue, C.green}
 
 local function vertical_label(word, x, y)
   for i = 1, #word do
@@ -29,11 +28,9 @@ local function draw_shop()
   outline(36, 36, 1208, 728, C.gold)
 
   -- title, gold, menu
-  love.graphics.setFont(ui.f48)
-  for i, letter in ipairs({"S", "H", "O", "P"}) do
-    color(LETTER_COLORS[i])
-    love.graphics.print(letter, 80 + (i - 1) * 62, 56, 0, 2, 2)
-  end
+  color(C.white)
+  love.graphics.draw(ui.ui_images.shop_title, 70, 40, 0, 120 / ui.ui_images.shop_title:getHeight(),
+    120 / ui.ui_images.shop_title:getHeight())
   D.image_at(ui.ui_images.gold, 990, 62, 44)
   centered(tostring(g.player.gold), 1040, 62, 170, ui.f48, C.gold)
   button("MENU", 1124, 140, 92, 30, C.panel_light, A.open_menu)

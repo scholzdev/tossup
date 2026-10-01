@@ -7,7 +7,8 @@ Output (PNG, transparent background):
   assets/items/<id>.png    256 px   rounded-square chips
   assets/relics/<id>.png   256 px   round prizes with a double ring
   assets/ui/<name>.png     256 px   next_round (the big red button), reroll, gold, energy, coins_left,
-                                    open_shop, exchange, give_up
+                                    open_shop, exchange, give_up, flip, discard, next_coin, start_level
+  assets/ui/shop_title.png 544x256  the colourful "SHOP" title (drawn from the pixel font)
 
 Run from the repo root:  python3 tools/gen_ui_icons.py   (needs Pillow).
 To add an icon: add a colour to ITEMS / RELICS and an emblem branch in emblem().
@@ -15,7 +16,7 @@ To add an icon: add a colour to ITEMS / RELICS and an emblem branch in emblem().
 
 from pathlib import Path
 import math
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 SCALE = 4
@@ -241,14 +242,79 @@ def give_up():
     finish(image, ROOT / "assets" / "ui" / "give_up.png")
 
 
+def disc(colour):
+    image = canvas()
+    d = ImageDraw.Draw(image)
+    d.ellipse(box(10, 10, 118, 118), fill=colour + (255,), outline=blend(colour, (15, 20, 26), .66) + (255,), width=p(5))
+    return image, d
+
+
+def save_ui(image, name):
+    finish(image, ROOT / "assets" / "ui" / f"{name}.png")
+
+
+def flip():
+    """A coin turning edge-on with a curved arrow."""
+    image, d = disc((0, 157, 255))
+    d.ellipse(box(44, 34, 84, 94), fill=IVORY, outline=DARK, width=p(3))
+    d.ellipse(box(52, 44, 76, 84), outline=DARK, width=p(3))
+    d.arc(box(22, 22, 106, 106), 200, 290, fill=IVORY, width=p(7))
+    d.polygon(points([(70, 16), (90, 26), (70, 38)]), fill=IVORY)
+    save_ui(image, "flip")
+
+
+def discard():
+    """A bin."""
+    image, d = disc((254, 95, 85))
+    d.rectangle(box(40, 40, 88, 46), fill=IVORY)
+    d.rectangle(box(54, 32, 74, 42), fill=IVORY)
+    d.polygon(points([(44, 50), (84, 50), (80, 98), (48, 98)]), fill=IVORY)
+    for x in (56, 64, 72):
+        d.line(points([(x, 58), (x, 90)]), fill=blend((254, 95, 85), (13, 17, 24), .5) + (255,), width=p(3))
+    save_ui(image, "discard")
+
+
+def next_coin():
+    """Two chevrons to the right: on to the next coin."""
+    image, d = disc((0, 157, 255))
+    for x in (38, 62):
+        d.line(points([(x, 36), (x + 24, 64), (x, 92)]), fill=IVORY, width=p(10))
+    save_ui(image, "next_coin")
+
+
+def start_level():
+    """A play triangle."""
+    image, d = disc((75, 194, 146))
+    d.polygon(points([(48, 34), (48, 94), (98, 64)]), fill=IVORY)
+    save_ui(image, "start_level")
+
+
+def shop_title():
+    """The SHOP title: big pixel letters, each in its own colour, with a dark outline and a drop shadow."""
+    font = ImageFont.truetype(str(ROOT / "assets" / "fonts" / "m6x11plus.ttf"), 48)
+    letters = [("S", (255, 162, 0)), ("H", (254, 95, 85)), ("O", (0, 157, 255)), ("P", (75, 194, 146))]
+    small = Image.new("RGBA", (136, 64), (0, 0, 0, 0))
+    d = ImageDraw.Draw(small)
+    x = 5
+    for i, (letter, colour) in enumerate(letters):
+        y = 6 + (3 if i % 2 else 0)  # a slight bounce
+        d.text((x + 3, y + 3), letter, font=font, fill=(0, 0, 0, 120), stroke_width=2, stroke_fill=(0, 0, 0, 120))
+        d.text((x, y), letter, font=font, fill=colour + (255,), stroke_width=2, stroke_fill=DARK)
+        x += 31
+    big = small.resize((544, 256), Image.Resampling.NEAREST)  # keep the pixel look
+    (ROOT / "assets" / "ui").mkdir(parents=True, exist_ok=True)
+    big.save(ROOT / "assets" / "ui" / "shop_title.png")
+
+
 def main():
     for name, colour in ITEMS.items():
         make_icon("items", name, colour)
     for name, colour in RELICS.items():
         make_icon("relics", name, colour)
-    for fn in (next_round, reroll, gold, energy, coins_left, open_shop, exchange, give_up):
+    for fn in (next_round, reroll, gold, energy, coins_left, open_shop, exchange, give_up, flip, discard,
+               next_coin, start_level, shop_title):
         fn()
-    print(f"generated {len(ITEMS)} item icons, {len(RELICS)} relic icons and 8 UI icons in {ROOT / 'assets'}")
+    print(f"generated {len(ITEMS)} item icons, {len(RELICS)} relic icons and 13 UI images in {ROOT / 'assets'}")
 
 
 if __name__ == "__main__":

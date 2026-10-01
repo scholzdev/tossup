@@ -53,9 +53,9 @@ local function draw_mulligan()
   text("OPENING HAND", 45, 694, ui.f20, C.gold)
   text("Mark the coins you do not want.", 45, 728, ui.f16, C.muted)
   local marked_count = A.marked_count()
-  button(marked_count > 0 and ("DISCARD " .. marked_count) or "DISCARD", 290, 692, 200, 64, C.red,
-    A.discard_marked, marked_count > 0 and marked_count < #hand)
-  button("START LEVEL", 510, 692, 260, 64, C.green, function() Game.mulligan_done(g) end)
+  D.icon_button(marked_count > 0 and ("DISCARD " .. marked_count) or "DISCARD", ui.ui_images.discard, 290, 692, 200, 64,
+    C.red, A.discard_marked, marked_count > 0 and marked_count < #hand)
+  D.icon_button("START LEVEL", ui.ui_images.start_level, 510, 692, 260, 64, C.green, function() Game.mulligan_done(g) end)
 end
 
 local function draw_flip_animation()
@@ -288,7 +288,8 @@ local function draw_encounter()
   text(hint, 45, 728, ui.f16, C.muted)
   if ui.game.dealt and not ui.flip_animation and not ui.holding then
     local n = A.marked_count()
-    button(n > 0 and ("DISCARD " .. n) or "DISCARD", 290, 692, 200, 64, C.red, A.discard_marked, n > 0)
+    D.icon_button(n > 0 and ("DISCARD " .. n) or "DISCARD", ui.ui_images.discard, 290, 692, 200, 64, C.red,
+      A.discard_marked, n > 0)
   end
   local empty_stack = not ui.game.dealt and not ui.game.mulligan and not ui.game.pending
     and not ui.flip_animation and not ui.holding
@@ -306,7 +307,8 @@ local function draw_encounter()
       flip_label = "NEED " .. Game.flip_cost(ui.game, ui.game.dealt.uid) .. " ENERGY"
       can_act = false
     end
-    button(flip_label, 510, 692, 260, 64, C.blue, A.next_or_flip, can_act)
+    D.icon_button(flip_label, ui.holding and ui.ui_images.next_coin or ui.ui_images.flip, 510, 692, 260, 64, C.blue,
+      A.next_or_flip, can_act)
   end
   if ui.game.mulligan then draw_mulligan() end -- covers the play area and takes over the bottom bar
 end
