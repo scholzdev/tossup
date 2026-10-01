@@ -2,6 +2,7 @@
 return {
   name = "Snowball", description = "Grows +1 point every flip for the whole run (max +10).",
   rarity = "SR",
+  cost = 24,
   energy_cost = 1,
   probability = .5,
   heads = {{type = "score", amount = 3}},

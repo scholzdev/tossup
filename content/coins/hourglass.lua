@@ -2,6 +2,7 @@
 return {
   name = "Hourglass", description = "+30% Heads when 3 or fewer coins are left. Tails: goes back into the pile.",
   rarity = "R",
+  cost = 10,
   probability = .4,
   heads = {{type = "score", amount = 4}}, tails = {{type = "extra_draw", amount = 1}},
   on_odds = function(game, _, odds)
