@@ -59,7 +59,7 @@ end
 function A.unlock_coin(coin_id) return A.unlock_coin_for(ui.selected_character, coin_id) end
 
 -- The coins the selected character starts a run with (its active coin set).
-function A.loadout() return Profile.loadout(ui.profile, ui.selected_character, Game.START_MAX) end
+function A.loadout() return Profile.loadout(ui.profile, ui.selected_character, Game.START_MAX, Game.MAX_COPIES) end
 
 -- ---- coin set editor
 function A.open_sets(character_id)

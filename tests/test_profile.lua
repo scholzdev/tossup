@@ -72,4 +72,9 @@ equal(table.concat(Profile.loadout(fresh2, "blade", 10), ","), "normal,normal,no
 Profile.sets(fresh2, "blade")[3].coins = {"hammer", "sword"}
 equal(table.concat(Profile.loadout(fresh2, "blade", 10), ","), "sword", "locked coin filtered out")
 
+-- a save with too many copies (from before the limit existed) still yields a valid loadout
+local over = Profile.new()
+Profile.sets(over, "blade")[1].coins = {"sword", "sword", "sword", "normal", "normal", "normal", "dagger"}
+equal(table.concat(Profile.loadout(over, "blade", 10, 2), ","), "sword,sword,normal,normal,normal,dagger", "third sword dropped")
+
 print("profile tests passed")

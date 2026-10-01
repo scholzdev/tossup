@@ -102,15 +102,18 @@ function Profile.remove_from_set(profile, character_id, index, slot)
   return true
 end
 
--- The coins a new run starts with: the active set, limited to coins that are available and to max
--- entries. An empty (or unusable) set falls back to the character's default deck.
-function Profile.loadout(profile, character_id, max)
+-- The coins a new run starts with: the active set, limited to coins that are available, to max
+-- entries and to max_copies of a coin (Normal is exempt), so an old or hand-edited save can never
+-- produce a set the game would reject. An empty (or unusable) set falls back to the default deck.
+function Profile.loadout(profile, character_id, max, max_copies)
+  max_copies = max_copies or max
   local def = characters[character_id]
   local ok = available(profile, character_id)
   local function pick(source)
-    local list = {}
+    local list, copies = {}, {}
     for _, id in ipairs(source) do
-      if ok[id] and #list < max then list[#list + 1] = id end
+      copies[id] = (copies[id] or 0) + 1
+      if ok[id] and #list < max and (id == "normal" or copies[id] <= max_copies) then list[#list + 1] = id end
     end
     return list
   end
