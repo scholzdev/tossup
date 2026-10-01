@@ -5,7 +5,7 @@
 local ui = require("src.ui.state")
 local Game = require("src.game")
 
-local Pad = {active = false, focus = nil, key = nil, repeat_timer = 0, trigger_down = {}}
+local Pad = {device = "keyboard", active = false, focus = nil, key = nil, repeat_timer = 0, trigger_down = {}}
 
 local DIRECTIONS = {dpup = {0, -1}, dpdown = {0, 1}, dpleft = {-1, 0}, dpright = {1, 0}}
 
@@ -14,13 +14,14 @@ local function center(b) return b.x + b.w / 2, b.y + b.h / 2 end
 -- Where the focus starts on a screen: the main action.
 local function default_focus()
   local game = ui.game
-  if ui.confirm then return 640, 480 end
+  if ui.confirm then return ui.confirm.single and 640 or 760, 480 end -- Cancel, never the destructive OK
   if ui.tutorial then return 640, 400 end
   if game and not game.paused then
     if game.phase == "ENCOUNTER" then return 680, 708 end
     if game.phase == "SHOP" then return 1110, 658 end
     return 640, 614 -- run over: the first button
   end
+  if ui.screen == "select" then return 640, 694 end -- Start Run
   local first = ui.buttons[1]
   if first then return center(first) end
   return 640, 400
@@ -88,7 +89,11 @@ function Pad.step(direction, app)
   local screen = ui.screen
   if screen == "select" then app.cycle_character(direction)
   elseif screen == "collection" then app.change_collection_page(direction)
-  elseif screen == "options" then ui.options_tab = ui.options_tab == "game" and "sound" or "game"
+  elseif screen == "options" then
+    local tabs = {"game", "sound", "controls"}
+    for i, tab in ipairs(tabs) do
+      if tab == ui.options_tab then ui.options_tab = tabs[(i - 1 + direction) % #tabs + 1] break end
+    end
   elseif screen == "sets" then app.cycle_sets_character(direction) end
 end
 

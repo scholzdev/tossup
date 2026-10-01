@@ -175,7 +175,7 @@ function app.mousepressed(x, y, mouse_button)
   end
 end
 
-function app.gamepadpressed(_, button) Pad.pressed(button, app) end
+function app.gamepadpressed(_, button) Pad.device = "controller" Pad.pressed(button, app) end
 
 function app.mousemoved(x)
   Pad.mouse_used()
@@ -188,19 +188,25 @@ function app.mousereleased()
   if slider and slider.release then slider.release() end
 end
 
+-- Keyboard: arrows move the focus ring, Enter presses the focused button, Esc = back, Space = flip / next coin, D = discard,
+-- 1-3 = chips, O = open shop, Q / E = previous / next page, tab or character. They map onto the same actions as the controller.
+local KEYS = {up = "dpup", down = "dpdown", left = "dpleft", right = "dpright", ["return"] = "a", kpenter = "a",
+  q = "leftshoulder", e = "rightshoulder"}
+
 function app.keypressed(key)
   local game = ui.game
+  Pad.device = "keyboard"
   if key == "f3" then ui.debug_visible = not ui.debug_visible return end
   if ui.tutorial then
     if key == "escape" then Tutorial.finish() return end
     if (key == "space" or key == "return") and not Tutorial.interactive() then Tutorial.next() return end
   end
-  if ui.confirm then -- a popup is open: Esc cancels it (or confirms a notice that has only OK)
+  if ui.confirm then -- a popup is open: Esc cancels it (or confirms a notice that has only OK); arrows + Enter pick a button
     if key == "escape" or key == "return" and ui.confirm.single then
       local c = ui.confirm
       ui.confirm = nil
       if c.single then c.ok() end
-    end
+    elseif KEYS[key] then Pad.pressed(KEYS[key], app) end
     return
   end
   if key == "escape" then
@@ -209,25 +215,22 @@ function app.keypressed(key)
     elseif game then game.paused = false end
     return
   end
-  if not game or game.paused then
-    if ui.screen == "select" then
-      local choice = tonumber(key)
-      if choice and ui.character_order[choice] then A.select_character(ui.character_order[choice]) end
-      if key == "left" then A.cycle_character(-1) end
-      if key == "right" then A.cycle_character(1) end
-      if key == "return" then A.start() end
-    elseif ui.screen == "collection" then
-      if key == "left" then A.change_collection_page(-1) end
-      if key == "right" then A.change_collection_page(1) end
-    end
+  local in_run = game and not game.paused
+  if in_run and not ui.tutorial and game.phase == "ENCOUNTER" and not game.mulligan and not ui.flip_animation then
+    local slot = tonumber(key)
+    if slot and slot >= 1 and slot <= 3 and ui.game.items[slot] and not ui.holding then A.use_item(slot) return end
+    if key == "d" then Pad.pressed("y", app) return end
+    if key == "o" and game.encounter.cleared and not game.pending then A.open_shop() return end
+  end
+  if not in_run and ui.screen == "select" then
+    local choice = tonumber(key)
+    if choice and ui.character_order[choice] then A.select_character(ui.character_order[choice]) return end
+  end
+  if key == "space" and in_run and game.phase == "ENCOUNTER" and not ui.flip_animation then
+    A.next_or_flip()
     return
   end
-  if game.phase == "ENCOUNTER" and ui.flip_animation then return end
-  if key == "space" and game.phase == "ENCOUNTER" then
-    A.next_or_flip()
-  elseif key == "return" and game.phase == "SHOP" then
-    Game.leave_shop(game)
-  end
+  if KEYS[key] then Pad.pressed(KEYS[key], app) end
 end
 
 return app
