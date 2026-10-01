@@ -56,9 +56,28 @@ function A.unlock_coin(coin_id)
   return false
 end
 
+function A.loadout() return Profile.loadout(ui.profile, ui.selected_character, Game.START_MAX) end
+
+-- Add a copy of a coin to the starting loadout (if there is room).
+function A.add_to_loadout(coin_id)
+  local list = A.loadout()
+  if #list >= Game.START_MAX then return end
+  list[#list + 1] = coin_id
+  Profile.set_loadout(ui.profile, ui.selected_character, list)
+  save_profile()
+end
+
+function A.remove_from_loadout(index)
+  local list = A.loadout()
+  if #list <= 1 then return end -- a run needs at least one coin
+  table.remove(list, index)
+  Profile.set_loadout(ui.profile, ui.selected_character, list)
+  save_profile()
+end
+
 function A.start(seed)
   ui.game = Game.new(seed or (os.time() + math.floor(love.timer.getTime() * 1000000)),
-    ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character))
+    ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character), A.loadout(), true)
   ui.flip_animation = nil
   ui.resolve_timer = 0
   ui.holding = false
@@ -110,6 +129,7 @@ function A.flip_next_coin()
 end
 
 function A.next_or_flip()
+  if ui.game.mulligan then Game.mulligan_done(ui.game) return end
   if ui.holding then
     if ui.game.pending or ui.flip_animation then return end
     ui.holding = false

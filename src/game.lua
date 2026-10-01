@@ -9,6 +9,11 @@ local item_catalog = require("content.items")
 local characters = require("content.characters")
 local Game = {}
 
+Game.VISIBLE = 3 -- coins shown in the bank; the first one is the coin you are about to play
+Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may discard
+Game.START_MAX = 5 -- loadout size you can take into a run
+Game.DECK_MAX = 8 -- the shop can grow the deck up to this
+
 local route = {
   {name = "Opening", quota = 3, flips = 12, payout = 20},
   {name = "Second Chance", quota = 11, flips = 10, payout = 25},
@@ -38,7 +43,7 @@ end
 
 local function add_to_deck(game, id)
   local item = coin(game, id)
-  if #game.coins == 5 then
+  if #game.coins >= Game.DECK_MAX then
     for index, owned in ipairs(game.coins) do
       if owned.uid == game.selected_uid then
         table.remove(game.coins, index)
@@ -83,11 +88,17 @@ local function shop_stock(game)
   return stock
 end
 
+-- Draw pile: every owned coin that is not discarded this level and not already waiting in the bank.
 local function shuffle_deck(game)
   local pile = {}
-  local out = game.encounter and game.encounter.discarded or {}
+  local e = game.encounter
+  local out = e and e.discarded or {}
+  local held = {}
+  for _, uid in ipairs(e and e.queue or {}) do held[uid] = true end
+  for _, uid in ipairs(game.mulligan and game.mulligan.hand or {}) do held[uid] = true end
+  if game.pending then held[game.pending.uid] = true end -- still being flipped
   for _, item in ipairs(game.coins) do
-    if not out[item.uid] then pile[#pile + 1] = item.uid end
+    if not out[item.uid] and not held[item.uid] then pile[#pile + 1] = item.uid end
   end
   for i = #pile, 2, -1 do
     local j = RNG.int(game, 1, i)
@@ -105,12 +116,22 @@ end
 
 local deal
 
+-- Top the bank up to VISIBLE coins from the draw pile (reshuffling when it runs dry).
+local function refill(game)
+  local e = game.encounter
+  while #e.queue < Game.VISIBLE do
+    if #e.pile == 0 then e.pile = shuffle_deck(game) end
+    if #e.pile == 0 then return end
+    e.queue[#e.queue + 1] = table.remove(e.pile, 1)
+  end
+end
+
 local function start_encounter(game)
   local stage = route[game.encounter_index]
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = stage.quota, max_quota = stage.quota,
     draws = stage.flips, max_draws = stage.flips, boss = stage.boss or false, payout = stage.payout,
-    flips = 0, scored = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, bonus_draws = 0, pile = shuffle_deck(game)}
+    flips = 0, scored = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, bonus_draws = 0, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
   game.pending = nil
   game.last_result = nil
@@ -118,14 +139,21 @@ local function start_encounter(game)
   log(game, "Encounter " .. game.encounter_index .. ": " .. stage.name .. " (quota " .. stage.quota .. ")")
   for _, owned in ipairs(game.coins) do Hooks.grow(owned, "level") end
   Signal.emit("encounter_start", {game = game, encounter = game.encounter})
-  deal(game)
+  -- mulligan: draw a hand to look at; the UI lets the player discard before play starts
+  local hand = {}
+  for _ = 1, math.min(Game.MULLIGAN, #game.encounter.pile) do
+    hand[#hand + 1] = table.remove(game.encounter.pile, 1)
+  end
+  game.mulligan = {hand = hand}
+  game.dealt = nil
+  if not game.manual_mulligan then Game.mulligan_done(game) end
 end
 
--- Deal the next coin from the stack; the player may discard it or flip it.
+-- Deal the coin at the front of the bank; the player may discard it or flip it.
 function deal(game)
   local e = game.encounter
-  if #e.pile == 0 then e.pile = shuffle_deck(game) end
-  local uid = table.remove(e.pile, 1)
+  refill(game)
+  local uid = e.queue[1]
   local inst = find_coin(game, uid)
   game.dealt = {uid = uid}
   game.selected_uid = uid
@@ -136,8 +164,38 @@ function deal(game)
   game.dealt.probability = Game.probability(game, inst) -- on_deal may have changed the odds
 end
 
--- unlocked: optional list of extra coin ids bought with tokens in the main menu
-function Game.new(seed, character_id, unlocked)
+-- Discard one coin from the opening hand (1 energy). It stays out of play for the level.
+function Game.mulligan_discard(game, uid)
+  local m, e = game.mulligan, game.encounter
+  if not m or game.player.energy < 1 or #m.hand <= 1 then return false end
+  for index, held in ipairs(m.hand) do
+    if held == uid then
+      table.remove(m.hand, index)
+      game.player.energy = game.player.energy - 1
+      e.discarded[uid] = true
+      e.discards = e.discards + 1
+      log(game, catalog[find_coin(game, uid).id].name .. " #" .. uid .. " discarded from the opening hand.")
+      return true
+    end
+  end
+  return false
+end
+
+-- Keep the remaining hand as the bank and start the level.
+function Game.mulligan_done(game)
+  local m = game.mulligan
+  if not m then return false end
+  game.encounter.queue = m.hand
+  game.mulligan = nil
+  deal(game)
+  return true
+end
+
+-- unlocked: optional list of extra coin ids bought with tokens in the main menu.
+-- loadout: optional list of coin ids to start with (at most START_MAX, from the character's
+-- pool plus unlocked coins); defaults to the character's deck.
+-- manual_mulligan: the UI sets this and calls Game.mulligan_done itself.
+function Game.new(seed, character_id, unlocked, loadout, manual_mulligan)
   character_id = character_id or "blade"
   assert(characters[character_id], "unknown character: " .. tostring(character_id))
   local normalized = RNG.seed(seed)
@@ -147,7 +205,14 @@ function Game.new(seed, character_id, unlocked)
     coins = {}, relics = {}, items = {}, shop_items = {}, unlocked = unlocked or {}, cleared = 0, shop_relic = nil, next_uid = 0, encounter_index = 1, encounter = nil,
     pending = nil, shop_offers = {}, log = {}, selected_uid = nil}
   local def = characters[character_id]
-  for i, id in ipairs(def.deck or {def.starter}) do game.coins[i] = coin(game, id) end
+  game.manual_mulligan = manual_mulligan
+  if loadout then
+    assert(#loadout >= 1 and #loadout <= Game.START_MAX, "loadout must have 1-" .. Game.START_MAX .. " coins")
+    local allowed = {}
+    for _, id in ipairs(shop_pool(game)) do allowed[id] = true end
+    for _, id in ipairs(loadout) do assert(allowed[id], "coin not available to this character: " .. tostring(id)) end
+  end
+  for i, id in ipairs(loadout or def.deck or {def.starter}) do game.coins[i] = coin(game, id) end
   game.selected_uid = game.coins[1].uid
   log(game, "Seed: " .. normalized)
   Relics.bind(game)
@@ -175,6 +240,8 @@ function Game.flip(game)
   local item = find_coin(game, uid)
   game.pending = {uid = uid, probability = probability}
   game.dealt = nil
+  table.remove(game.encounter.queue, 1) -- a flipped coin leaves the bank at once
+  refill(game)
   roll(game, item, game.pending)
   log(game, catalog[item.id].name .. " #" .. uid .. " rolled " .. game.pending.raw ..
     (game.pending.result ~= game.pending.raw and " → " .. game.pending.result or "") .. ".")
@@ -188,6 +255,7 @@ function Game.discard(game, free)
     or (not free and game.player.energy < 1) or #game.coins - e.discards <= 1 then return false end
   local uid = game.dealt.uid
   if not free then game.player.energy = game.player.energy - 1 end
+  table.remove(e.queue, 1)
   e.discarded[uid] = true
   e.discards = e.discards + 1
   local inst = find_coin(game, uid)

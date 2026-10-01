@@ -80,14 +80,16 @@ equal(s.player.energy, energy, "swap is free")
 assert(s.dealt.uid ~= first, "new coin dealt")
 assert(s.encounter.discarded[first], "old coin discarded for the level")
 
--- peek shows the next coins without consuming them
+-- peek shows the top of the draw pile (what refills the bank next) without consuming it
 local p = fresh({"peek"})
-local next_uid = p.encounter.pile[1]
+for uid = 70, 72 do p.coins[#p.coins + 1] = {uid = uid, id = "normal", bonus = 0} end
+p.encounter.pile = {70, 71, 72}
 assert(Game.use_item(p, 1))
-equal(p.peek[1], next_uid, "peek shows the next coin")
+equal(p.peek[1], 70, "peek shows the next draw")
+equal(p.peek[2], 71)
 flip_resolve(p)
 equal(p.peek, nil, "peek cleared on the next deal")
-equal(p.dealt.uid, next_uid, "peeked coin is what gets dealt")
+equal(p.encounter.queue[Game.VISIBLE], 70, "the peeked coin refilled the bank")
 
 -- extra draw is capped at 3 per level and refuses (is not consumed) past the cap
 local e = fresh({"extra_draw", "extra_draw", "extra_draw", "extra_draw"})

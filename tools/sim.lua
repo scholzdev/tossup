@@ -129,7 +129,10 @@ end
 local bots = {}
 
 -- Floor: flips whatever is dealt and buys random affordable things.
+local function keep_everything(g) Game.mulligan_done(g) end
+
 bots.random = {
+  mulligan = keep_everything,
   encounter = function(g) finish_flip(g) end,
   shop = function(g)
     for _ = 1, 8 do
@@ -141,9 +144,10 @@ bots.random = {
 
 -- Buys the most expensive coin it can afford until the bank is full; never discards or uses items.
 bots.greedy = {
+  mulligan = keep_everything,
   encounter = function(g) finish_flip(g) end,
   shop = function(g)
-    while #g.coins < 5 do
+    while #g.coins < Game.DECK_MAX do
       local best, best_cost = nil, -1
       for index, id in ipairs(g.shop_offers) do
         local cost = id and (catalog[id].cost or 15)
@@ -156,6 +160,24 @@ bots.greedy = {
 
 -- Uses measured coin values: discards weak coins, plays items when behind pace, buys the best coins.
 bots.smart = {
+  -- discard the weakest coins of the opening hand while it stays at three or more and energy is left
+  mulligan = function(g)
+    local hand = g.mulligan.hand
+    local sum = 0
+    for _, uid in ipairs(hand) do sum = sum + coin_value(Game.get_coin(g, uid).id) end
+    local mean = sum / #hand
+    while #hand > 3 and g.player.energy > 1 do
+      local worst, worst_value = nil, math.huge
+      for _, uid in ipairs(hand) do
+        local v = coin_value(Game.get_coin(g, uid).id)
+        if v < worst_value then worst, worst_value = uid, v end
+      end
+      if worst_value >= mean * .6 then break end
+      Game.mulligan_discard(g, worst)
+    end
+    Game.mulligan_done(g)
+  end,
+
   encounter = function(g)
     local e = g.encounter
     local coin = Game.get_coin(g, g.dealt.uid)
@@ -205,7 +227,7 @@ bots.smart = {
         end
       end
       if best then
-        if #g.coins < 5 then
+        if #g.coins < Game.DECK_MAX then
           improved = Game.buy(g, best)
         else
           local worst, worst_value = worst_coin()
@@ -243,11 +265,12 @@ local function unlocked_for(character)
 end
 
 local function play(seed, character, bot)
-  local g = Game.new(seed, character, unlocked_for(character))
+  local g = Game.new(seed, character, unlocked_for(character), nil, true)
   local guard = 0
   while g.phase ~= "VICTORY" and g.phase ~= "GAME_OVER" and guard < 2000 do
     guard = guard + 1
-    if g.phase == "ENCOUNTER" then
+    if g.mulligan then bot.mulligan(g)
+    elseif g.phase == "ENCOUNTER" then
       if g.dealt then bot.encounter(g) end
     elseif g.phase == "SHOP" then
       bot.shop(g)

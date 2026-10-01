@@ -5,6 +5,7 @@ local C, color, box, outline, text, centered, button = D.C, D.color, D.box, D.ou
 local coin_image, coin_hover = D.coin_image, D.coin_hover
 local characters = ui.characters
 
+local Game = require("src.game")
 local ICON, GAP, COLUMNS = 52, 10, 9
 local GRID_X = 566
 
@@ -28,7 +29,7 @@ local function padlock(cx, cy)
 end
 
 -- Draw coin icons in rows. Locked entries get a padlock, their token cost, and unlock on click.
-local function grid(entries, y)
+local function grid(entries, y, on_click)
   local rows = math.max(1, math.ceil(#entries / COLUMNS))
   local row_height = ICON + GAP + 16
   box(GRID_X - 8, y, COLUMNS * (ICON + GAP) + 6, rows * row_height + 10, C.slot)
@@ -44,6 +45,9 @@ local function grid(entries, y)
         ui.profile.tokens >= entry.cost and C.gold or C.muted)
       ui.buttons[#ui.buttons + 1] = {x = x, y = top, w = ICON, h = ICON,
         action = function() A.unlock_coin(entry.id) end}
+    end
+    if on_click and not entry.locked then
+      ui.buttons[#ui.buttons + 1] = {x = x, y = top, w = ICON, h = ICON, action = function() on_click(entry.id) end}
     end
     coin_hover(entry.id, x, top, ICON, ICON, nil, entry.locked and entry.cost or nil)
   end
@@ -70,24 +74,30 @@ local function draw_menu()
   color(C.white)
   love.graphics.draw(portrait, 172 + (346 - width) / 2, 205 + (240 - height) / 2, 0, scale, scale)
   centered(character.description:upper(), 172, 462, 346, ui.f16, C.muted)
-  centered("STARTING DECK", 172, 500, 346, ui.f16, C.gold)
-  local deck = character.deck or {character.starter}
-  local x0 = 172 + (346 - (#deck * (ICON + GAP) - GAP)) / 2
-  for i, id in ipairs(deck) do
+  local deck = A.loadout()
+  centered("YOUR LOADOUT  " .. #deck .. " / " .. Game.START_MAX, 172, 500, 346, ui.f16, C.gold)
+  local x0 = 172 + (346 - (Game.START_MAX * (ICON + GAP) - GAP)) / 2
+  for i = 1, Game.START_MAX do
     local x = x0 + (i - 1) * (ICON + GAP)
     box(x - 4, 524, ICON + 8, ICON + 8, C.slot)
-    coin_image(id, x, 528, ICON)
-    coin_hover(id, x, 528, ICON, ICON)
+    outline(x - 4, 524, ICON + 8, ICON + 8, C.panel_light)
+    local id = deck[i]
+    if id then
+      coin_image(id, x, 528, ICON)
+      coin_hover(id, x, 528, ICON, ICON)
+      ui.buttons[#ui.buttons + 1] = {x = x, y = 528, w = ICON, h = ICON, action = function() A.remove_from_loadout(i) end}
+    end
   end
+  centered("CLICK A SLOT TO REMOVE IT", 172, 590, 346, ui.f16, C.muted)
 
   -- right: what you can find
   local available, locked = {}, {}
   for _, entry in ipairs(A.menu_coins(ui.selected_character)) do
     if entry.locked then locked[#locked + 1] = entry else available[#available + 1] = entry end
   end
-  text("IN THE SHOP", GRID_X - 8, 148, ui.f16, C.gold)
+  text("COINS YOU CAN TAKE  /  CLICK TO ADD", GRID_X - 8, 148, ui.f16, C.gold)
   centered("TOKENS  " .. ui.profile.tokens, 850, 148, 252, ui.f16, C.gold)
-  local used = grid(available, 170)
+  local used = grid(available, 170, A.add_to_loadout)
   local top = 170 + used + 22
   text("LOCKED  /  SPEND TOKENS IN THE MENU", GRID_X - 8, top, ui.f16, C.gold)
   grid(locked, top + 22)

@@ -89,24 +89,23 @@ local function draw_shop()
     function() Game.remove(ui.game, ui.game.selected_uid) end,
     ui.game.player.gold >= 8 and #ui.game.coins > 1)
 
-  text("YOUR DECK  /  " .. #ui.game.coins .. " OF 5", 300, 657, ui.f20, C.gold)
-  text(#ui.game.coins == 5 and "SELECT A COIN TO REPLACE WHEN BUYING" or
+  text("YOUR DECK  /  " .. #ui.game.coins .. " OF " .. Game.DECK_MAX, 300, 657, ui.f20, C.gold)
+  text(#ui.game.coins >= Game.DECK_MAX and "SELECT A COIN TO REPLACE WHEN BUYING" or
     "SELECT A COIN TO UPGRADE OR REMOVE", 706, 663, ui.f16, C.muted)
-  for i = 1, 5 do
-    local x = 300 + (i - 1) * 188
+  for i = 1, Game.DECK_MAX do
+    local x = 300 + (i - 1) * 118
     local item = ui.game.coins[i]
     local chosen = item and item.uid == ui.game.selected_uid
-    box(x, 688, 176, 73, item and C.panel or C.slot)
-    outline(x, 688, 176, 73, chosen and C.orange or C.panel_light)
+    box(x, 688, 112, 73, item and C.panel or C.slot)
+    outline(x, 688, 112, 73, chosen and C.orange or C.panel_light)
     if item then
-      coin_image(item.id, x + 3, 691, 65)
-      text(catalog[item.id].name:upper(), x + 65, 699, ui.f20, C.face)
-      text(math.floor(Game.probability(ui.game, item) * 100 + .5) .. "% H", x + 66, 729, ui.f16, C.gold)
-      coin_hover(item.id, x, 688, 176, 73, Game.probability(ui.game, item))
-      ui.buttons[#ui.buttons + 1] = {x = x, y = 688, w = 176, h = 73,
+      coin_image(item.id, x + 28, 691, 56)
+      centered(math.floor(Game.probability(ui.game, item) * 100 + .5) .. "% H", x, 745, 112, ui.f16, C.gold)
+      coin_hover(item.id, x, 688, 112, 73, Game.probability(ui.game, item))
+      ui.buttons[#ui.buttons + 1] = {x = x, y = 688, w = 112, h = 73,
         action = function() A.coin_action(item) end}
     else
-      centered("EMPTY", x, 711, 176, ui.f20, C.muted)
+      centered("EMPTY", x, 715, 112, ui.f16, C.muted)
     end
   end
 end

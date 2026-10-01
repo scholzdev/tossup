@@ -8,15 +8,48 @@ local coin_image, coin_face, coin_hover, effects, effect_description =
 local Items = require("src.items")
 local catalog, characters = ui.catalog, ui.characters
 
-local function remaining_coins()
-  local in_pile = {}
-  for _, uid in ipairs(ui.game.encounter.pile) do in_pile[uid] = true end
-  if ui.game.dealt then in_pile[ui.game.dealt.uid] = true end -- dealt but not flipped yet
-  local remaining = {}
-  for _, owned in ipairs(ui.game.coins) do
-    if in_pile[owned.uid] then remaining[#remaining + 1] = owned end
+-- The coins shown in the left panel: the next VISIBLE coins of the bank (or the opening hand).
+local function bank_coins()
+  local g = ui.game
+  local uids = g.mulligan and g.mulligan.hand or g.encounter.queue
+  local list = {}
+  for i = 1, math.min(Game.VISIBLE, #uids) do list[i] = Game.get_coin(g, uids[i]) end
+  return list
+end
+
+-- Opening hand: look at the coins, discard the ones you do not want (1 energy each), then start.
+local function draw_mulligan()
+  local g = ui.game
+  local hand = g.mulligan.hand
+  box(292, 160, 960, 504, C.panel)
+  outline(292, 160, 960, 504, C.gold)
+  centered("OPENING HAND", 292, 178, 960, ui.f32, C.gold)
+  centered("DISCARD COINS YOU DO NOT WANT  -  1 ENERGY EACH  -  THEY STAY OUT FOR THE LEVEL", 292, 220, 960, ui.f16, C.muted)
+  local w, gap = 168, 16
+  local x0 = 292 + (960 - (#hand * w + (#hand - 1) * gap)) / 2
+  for i, uid in ipairs(hand) do
+    local owned = Game.get_coin(g, uid)
+    local def = catalog[owned.id]
+    local x, y = x0 + (i - 1) * (w + gap), 262
+    box(x, y, w, 330, C.ink)
+    outline(x, y, w, 330, i <= Game.VISIBLE and C.gold or C.panel_light)
+    coin_image(owned.id, x + 34, y + 12, 100)
+    centered(def.name:upper(), x, y + 118, w, ui.f20, C.face)
+    centered(math.floor(Game.probability(g, owned) * 100 + .5) .. "% HEADS", x, y + 146, w, ui.f16, C.gold)
+    text("H " .. effects(def.heads), x + 10, y + 180, ui.f16, C.blue)
+    text("T " .. effects(def.tails), x + 10, y + 204, ui.f16, C.red)
+    if i <= Game.VISIBLE then centered("PLAYS NEXT", x, y + 236, w, ui.f16, C.gold) end
+    coin_hover(owned.id, x, y, w, 240, Game.probability(g, owned))
+    button("DISCARD", x + 12, y + 272, w - 24, 44, C.red,
+      function() Game.mulligan_discard(g, uid) end, g.player.energy >= 1 and #hand > 1)
   end
-  return remaining
+  centered("GOLD FRAMES SHOW THE FIRST THREE COINS YOU WILL PLAY", 292, 612, 960, ui.f16, C.muted)
+
+  box(28, 680, 1224, 90, C.ink)
+  outline(28, 680, 1224, 90, C.panel_light)
+  text("OPENING HAND", 45, 694, ui.f20, C.gold)
+  text("ENERGY " .. g.player.energy .. "  -  keep what you want", 45, 728, ui.f16, C.muted)
+  button("START LEVEL", 510, 692, 260, 64, C.green, function() Game.mulligan_done(g) end)
 end
 
 local function draw_flip_animation()
@@ -78,13 +111,14 @@ local function draw_encounter()
   end
   button("MENU", 1140, 108, 92, 30, C.panel_light, A.open_menu)
 
-  local remaining = remaining_coins()
+  local remaining = bank_coins()
+  local deck_total = #ui.game.coins
+  local queue_count = #(ui.game.mulligan and ui.game.mulligan.hand or e.queue)
   box(28, 160, 250, 504, C.ink)
   outline(28, 160, 250, 504, C.panel_light)
-  text("COIN STACK", 42, 175, ui.f20, C.gold)
-  text(#remaining .. " LEFT / " .. #ui.game.coins .. " IN DECK", 43, 207, ui.f16, C.face)
-  text("RESHUFFLES WHEN EMPTY", 43, 232, ui.f16, C.muted)
-  for i = 1, 5 do
+  text("COIN BANK", 42, 175, ui.f20, C.gold)
+  text("NEXT " .. #remaining .. " COINS", 43, 207, ui.f16, C.face)
+  for i = 1, Game.VISIBLE do
     local x, y = 41, 265 + (i - 1) * 75
     local owned = remaining[i] -- flipped and discarded coins drop off the list
     local current = owned and ui.game.dealt and owned.uid == ui.game.dealt.uid
@@ -104,6 +138,11 @@ local function draw_encounter()
       centered("EMPTY SLOT", x, y + 20, 224, ui.f16, C.muted)
     end
   end
+  local y = 265 + Game.VISIBLE * 75 + 8
+  text("IN BANK      " .. queue_count, 43, y, ui.f16, C.face)
+  text("DRAW PILE    " .. #e.pile, 43, y + 24, ui.f16, C.face)
+  text("DISCARDED    " .. e.discards, 43, y + 48, ui.f16, C.muted)
+  text("DECK         " .. deck_total .. " / " .. Game.DECK_MAX, 43, y + 72, ui.f16, C.muted)
 
   box(292, 160, 654, 504, C.panel)
   outline(292, 160, 654, 504, C.gold)
@@ -209,11 +248,12 @@ local function draw_encounter()
   end
   text(hint, 45, 728, ui.f16, C.muted)
   if ui.game.dealt and not ui.flip_animation and not ui.holding then
-    button("DISCARD / 1", 290, 692, 200, 64, C.red, function() Game.discard(ui.game) end,
+    button("DISCARD", 290, 692, 200, 64, C.red, function() Game.discard(ui.game) end,
       ui.game.player.energy >= 1 and #ui.game.coins - e.discards > 1)
   end
   button(ui.flip_animation and "FLIPPING..." or ui.holding and "NEXT COIN" or "FLIP", 510, 692, 260, 64, C.blue,
     A.next_or_flip, ui.game.dealt ~= nil and not ui.flip_animation and (ui.holding or not ui.game.pending))
+  if ui.game.mulligan then draw_mulligan() end -- covers the play area and takes over the bottom bar
 end
 
 return draw_encounter

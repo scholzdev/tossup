@@ -9,7 +9,7 @@ local DEFAULT_OPTIONS = {screen_shake = true, fast_flip = false, fullscreen = fa
 function Profile.new()
   local options = {}
   for key, value in pairs(DEFAULT_OPTIONS) do options[key] = value end
-  return {tokens = 0, unlocked = {}, collected = {}, options = options}
+  return {tokens = 0, unlocked = {}, collected = {}, loadouts = {}, options = options}
 end
 
 -- Mark a coin as seen in the collection. Returns true if it was new.
@@ -45,6 +45,35 @@ function Profile.unlock(profile, character_id, coin_id)
   return false
 end
 
+-- Coins this character may bring or buy: its base pool plus tokens-unlocked coins.
+local function available(profile, character_id)
+  local set = {}
+  for _, id in ipairs(characters[character_id].pool) do set[id] = true end
+  for id in pairs(profile.unlocked[character_id] or {}) do set[id] = true end
+  return set
+end
+
+-- The coins a new run starts with: the saved loadout (or the character's deck), limited to coins
+-- that are available and to max entries.
+function Profile.loadout(profile, character_id, max)
+  local def = characters[character_id]
+  local ok = available(profile, character_id)
+  local function pick(source)
+    local list = {}
+    for _, id in ipairs(source) do
+      if ok[id] and #list < max then list[#list + 1] = id end
+    end
+    return list
+  end
+  local list = pick(profile.loadouts[character_id] or {})
+  if #list == 0 then list = pick(def.deck or {def.starter}) end
+  return list
+end
+
+function Profile.set_loadout(profile, character_id, list)
+  profile.loadouts[character_id] = list
+end
+
 function Profile.encode(profile)
   local lines = {"return {tokens = " .. profile.tokens .. ", unlocked = {"}
   local chars = {}
@@ -60,6 +89,15 @@ function Profile.encode(profile)
   for id in pairs(profile.collected) do ids[#ids + 1] = id end
   table.sort(ids)
   for _, id in ipairs(ids) do lines[#lines + 1] = "  " .. id .. " = true," end
+  lines[#lines + 1] = "}, loadouts = {"
+  local loadout_chars = {}
+  for character_id in pairs(profile.loadouts) do loadout_chars[#loadout_chars + 1] = character_id end
+  table.sort(loadout_chars)
+  for _, character_id in ipairs(loadout_chars) do
+    local quoted = {}
+    for i, id in ipairs(profile.loadouts[character_id]) do quoted[i] = string.format("%q", id) end
+    lines[#lines + 1] = "  " .. character_id .. " = {" .. table.concat(quoted, ", ") .. "},"
+  end
   lines[#lines + 1] = "}, options = {"
   local keys = {}
   for key in pairs(profile.options) do keys[#keys + 1] = key end
@@ -79,6 +117,7 @@ function Profile.decode(text)
   -- fill what older save files lack
   local fresh = Profile.new()
   data.collected = type(data.collected) == "table" and data.collected or fresh.collected
+  data.loadouts = type(data.loadouts) == "table" and data.loadouts or fresh.loadouts
   data.options = type(data.options) == "table" and data.options or {}
   for key, value in pairs(DEFAULT_OPTIONS) do
     if type(data.options[key]) ~= type(value) then data.options[key] = value end

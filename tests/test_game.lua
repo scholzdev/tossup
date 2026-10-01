@@ -109,22 +109,22 @@ equal(win.phase, "ENCOUNTER")
 
 local cap = Game.new(5)
 cap.phase = "SHOP"
-cap.player.gold = 100
-for _, id in ipairs({"dagger", "hammer", "blood", "focus"}) do
-  cap.shop_offers = {id}
+cap.player.gold = 1000
+for i = 1, Game.DECK_MAX - 1 do
+  cap.shop_offers = {({"dagger", "hammer", "blood", "focus", "spark", "lucky", "loaded"})[i]}
   assert(Game.buy(cap, 1))
 end
-equal(#cap.coins, 5, "small deck cap")
+equal(#cap.coins, Game.DECK_MAX, "deck cap")
 local replaced_uid = cap.coins[1].uid
 assert(Game.select(cap, replaced_uid))
 cap.shop_offers = {"spark"}
 assert(Game.buy(cap, 1))
-equal(#cap.coins, 5, "buy replaces selected coin at cap")
+equal(#cap.coins, Game.DECK_MAX, "buy replaces selected coin at cap")
 assert(not Game.get_coin(cap, replaced_uid), "old coin removed")
 assert(Game.leave_shop(cap))
 cap.encounter.quota = 10000
 local seen = {}
-for _ = 1, 5 do
+for _ = 1, Game.DECK_MAX do
   assert(Game.flip(cap))
   assert(not seen[cap.pending.uid], "each deck coin drawn once before reshuffle")
   seen[cap.pending.uid] = true

@@ -36,4 +36,18 @@ equal(old.tokens, 3)
 equal(old.options.screen_shake, true, "old save gets default options")
 assert(next(old.collected) == nil)
 
+-- saved loadouts survive a round trip; old saves have none
+p.loadouts.blade = {"normal", "sword", "normal"}
+local with_loadout = Profile.decode(Profile.encode(p))
+equal(table.concat(with_loadout.loadouts.blade, ","), "normal,sword,normal")
+assert(next(old.loadouts) == nil)
+
+-- Profile.loadout: saved list, filtered to coins you can use and capped
+local fresh2 = Profile.new()
+equal(table.concat(Profile.loadout(fresh2, "blade", 5), ","), "normal,normal,normal", "default deck")
+Profile.set_loadout(fresh2, "blade", {"sword", "hammer", "normal", "normal", "normal", "dagger"})
+equal(table.concat(Profile.loadout(fresh2, "blade", 5), ","), "sword,normal,normal,normal,dagger", "hammer is locked, capped at 5")
+Profile.set_loadout(fresh2, "blade", {"hammer"})
+equal(table.concat(Profile.loadout(fresh2, "blade", 5), ","), "normal,normal,normal", "nothing usable falls back to the deck")
+
 print("profile tests passed")
