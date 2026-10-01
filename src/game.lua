@@ -227,11 +227,24 @@ function Game.select(game, uid)
 end
 
 -- Roll the dice for a pending flip, then let on_flip hooks change the outcome.
+-- The side that will count is decided here, before the UI animates it: relics may change the
+-- outcome, then the boss inverts every 5th flip (an encounter rule, so it comes last).
+local function finalize(game, item, flip)
+  local e = game.encounter
+  local nth = e.flips + 1
+  local outcome = {game = game, inst = item, flips = nth, result = flip.result}
+  Signal.emit("coin_outcome", outcome)
+  local final = outcome.result
+  if e.boss and nth % 5 == 0 then final = final == "Heads" and "Tails" or "Heads" end
+  flip.result = final
+end
+
 local function roll(game, item, flip)
   flip.raw = RNG.random(game) < flip.probability and "Heads" or "Tails"
   flip.result = flip.raw
   flip.forced = nil
   Signal.emit("coin_flip", {game = game, inst = item, flip = flip})
+  finalize(game, item, flip)
 end
 
 function Game.flip(game)
@@ -282,6 +295,7 @@ function Game.force(game, side)
   game.player.energy = game.player.energy - 2
   result.result = side
   result.forced = true
+  finalize(game, find_coin(game, result.uid), result)
   log(game, catalog[find_coin(game, result.uid).id].name .. " forced to " .. side)
   return true
 end
@@ -340,13 +354,7 @@ function Game.resolve(game)
   local result = game.pending
   local item = find_coin(game, result.uid)
   e.flips = e.flips + 1
-  -- relics may change the outcome here; the boss inversion is an encounter rule and comes after
-  local outcome = {game = game, inst = item, flips = e.flips, result = result.result}
-  Signal.emit("coin_outcome", outcome)
-  local final = outcome.result
-  if e.boss and e.flips % 5 == 0 then
-    final = final == "Heads" and "Tails" or "Heads"
-  end
+  local final = result.result -- already decided (relics, boss inversion) when the coin was flipped
   result.final = final
   e.streak = final == "Heads" and e.streak + 1 or 0
   -- hooks get a private copy of the effect list so they can edit it without touching the def

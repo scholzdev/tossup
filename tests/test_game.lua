@@ -163,9 +163,10 @@ assert(Game.resolve(boss))
 equal(boss.last_result.final, "Tails", "fifth boss draw inverts")
 equal(boss.encounter.quota, boss_hp, "inverted Sword Heads scores nothing")
 
+-- raw roll is forced by setting the odds to 0 or 1, so relics and the boss rule still apply
 local function play(game, side)
+  game.dealt.probability = side == "Heads" and 1 or 0
   assert(Game.flip(game))
-  game.pending.result = side
   assert(Game.resolve(game))
 end
 
@@ -264,5 +265,27 @@ Game.apply_effect(pen, nil, {type = "penalty", amount = 4})
 equal(pen.encounter.quota, 14, "penalty raises the remaining quota")
 equal(pen.encounter.max_quota, 14, "and the total")
 equal(pen.player.hp, nil, "player has no HP")
+
+-- the side decided at flip time is the side that counts (what the UI animates is what is scored)
+local fate = Game.new(31, "blade")
+Game.add_relic(fate, "penny")
+fate.encounter.quota = 1000
+fate.dealt.probability = 0
+assert(Game.flip(fate))
+equal(fate.pending.raw, "Tails")
+equal(fate.pending.result, "Heads", "Lucky Penny already applied when the coin is flipped")
+assert(Game.resolve(fate))
+equal(fate.last_result.final, "Heads", "and it is scored as the same side")
+
+local house = Game.new(32, "blade")
+house.encounter.boss = true
+house.encounter.flips = 4
+house.encounter.quota = 1000
+house.dealt.probability = 1
+assert(Game.flip(house))
+equal(house.pending.raw, "Heads")
+equal(house.pending.result, "Tails", "boss inversion already applied when the coin is flipped")
+assert(Game.resolve(house))
+equal(house.last_result.final, "Tails")
 
 print("game tests passed")
