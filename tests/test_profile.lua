@@ -36,18 +36,40 @@ equal(old.tokens, 3)
 equal(old.options.screen_shake, true, "old save gets default options")
 assert(next(old.collected) == nil)
 
--- saved loadouts survive a round trip; old saves have none
-p.loadouts.blade = {"normal", "sword", "normal"}
-local with_loadout = Profile.decode(Profile.encode(p))
-equal(table.concat(with_loadout.loadouts.blade, ","), "normal,sword,normal")
-assert(next(old.loadouts) == nil)
+-- coin sets: three per character, set 1 is the default deck; edits, active set and copy limits
+local sp = Profile.new()
+local sets = Profile.sets(sp, "blade")
+equal(#sets, 3)
+equal(table.concat(sets[1].coins, ","), "normal,normal,normal", "set 1 is the default deck")
+equal(#sets[2].coins, 0, "other sets start empty")
+assert(Profile.add_to_set(sp, "blade", 2, "sword", 10, 2))
+assert(Profile.add_to_set(sp, "blade", 2, "sword", 10, 2))
+assert(not Profile.add_to_set(sp, "blade", 2, "sword", 10, 2), "copy limit")
+for _ = 1, 8 do assert(Profile.add_to_set(sp, "blade", 2, "normal", 10, 2), "normal has no copy limit") end
+assert(not Profile.add_to_set(sp, "blade", 2, "normal", 10, 2), "set is full")
+assert(not Profile.add_to_set(sp, "blade", 3, "hammer", 10, 2), "locked coins cannot be added")
+assert(Profile.remove_from_set(sp, "blade", 2, 1))
+equal(#Profile.sets(sp, "blade")[2].coins, 9)
+Profile.set_active(sp, "blade", 2)
+equal(Profile.active(sp, "blade"), 2)
+equal(#Profile.loadout(sp, "blade", 10), 9, "the active set is what a run starts with")
+Profile.set_active(sp, "blade", 9)
+equal(Profile.active(sp, "blade"), 2, "invalid set index ignored")
+local saved = Profile.decode(Profile.encode(sp))
+equal(#saved.sets.blade[2].coins, 9, "sets survive a save")
+equal(saved.sets.blade[2].name, "SET 2")
+equal(saved.active_set.blade, 2)
 
--- Profile.loadout: saved list, filtered to coins you can use and capped
+-- an old save with a single loadout becomes set 1
+local legacy = Profile.decode('return {tokens = 1, unlocked = {}, loadouts = {blade = {"sword", "normal"}}}')
+equal(table.concat(Profile.sets(legacy, "blade")[1].coins, ","), "sword,normal")
+equal(legacy.loadouts, nil)
+
+-- Profile.loadout: empty set falls back to the default deck; locked coins are filtered out
 local fresh2 = Profile.new()
-equal(table.concat(Profile.loadout(fresh2, "blade", 5), ","), "normal,normal,normal", "default deck")
-Profile.set_loadout(fresh2, "blade", {"sword", "hammer", "normal", "normal", "normal", "dagger"})
-equal(table.concat(Profile.loadout(fresh2, "blade", 5), ","), "sword,normal,normal,normal,dagger", "hammer is locked, capped at 5")
-Profile.set_loadout(fresh2, "blade", {"hammer"})
-equal(table.concat(Profile.loadout(fresh2, "blade", 5), ","), "normal,normal,normal", "nothing usable falls back to the deck")
+Profile.set_active(fresh2, "blade", 3)
+equal(table.concat(Profile.loadout(fresh2, "blade", 10), ","), "normal,normal,normal", "empty set falls back")
+Profile.sets(fresh2, "blade")[3].coins = {"hammer", "sword"}
+equal(table.concat(Profile.loadout(fresh2, "blade", 10), ","), "sword", "locked coin filtered out")
 
 print("profile tests passed")

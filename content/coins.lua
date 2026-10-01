@@ -1,5 +1,6 @@
 -- Coin registry. Each coin lives in content/coins/<id>.lua and returns its def table.
--- Data fields: name, description, rarity (N/R/SR/UR), probability, heads, tails (effect lists).
+-- Data fields: name, description, rarity (N/R/SR/UR), probability, heads, tails (effect lists),
+-- optional energy_cost (energy paid to flip it; default 0).
 -- Optional hooks (see src/hooks.lua): on_deal, on_odds, on_flip, on_resolve, on_discard,
 -- grow, register.
 local ORDER = require("content.coin_order")

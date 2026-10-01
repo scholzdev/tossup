@@ -3,6 +3,7 @@
 return {
   name = "Martyr", description = "Tails: quota +3. Heads: 4 points, +1 per Tails so far this level.",
   rarity = "SR",
+  energy_cost = 1,
   probability = .5,
   heads = {{type = "score", amount = 4}}, tails = {{type = "penalty", amount = 3}},
   grow = function(inst, event)

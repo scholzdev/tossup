@@ -2,6 +2,7 @@
 return {
   name = "Capacitor", description = "Heads: 2 points per energy you hold. Tails: +1 energy.",
   rarity = "R",
+  energy_cost = 1,
   probability = .5,
   heads = {}, tails = {{type = "energy", amount = 1}},
   on_resolve = function(game, _, res)

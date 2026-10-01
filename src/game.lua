@@ -11,8 +11,9 @@ local Game = {}
 
 Game.VISIBLE = 3 -- coins shown in the bank; the first one is the coin you are about to play
 Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may discard
-Game.START_MAX = 5 -- loadout size you can take into a run
-Game.DECK_MAX = 8 -- the shop can grow the deck up to this
+Game.START_MAX = 10 -- coins in a coin set you can take into a run
+Game.DECK_MAX = 10 -- the shop can never grow the deck past this (a full deck replaces a coin)
+Game.MAX_COPIES = 2 -- copies of one coin in a set; the plain Normal coin is exempt
 
 local route = {
   {name = "Opening", quota = 3, flips = 12, payout = 20},
@@ -164,21 +165,25 @@ function deal(game)
   game.dealt.probability = Game.probability(game, inst) -- on_deal may have changed the odds
 end
 
--- Discard one coin from the opening hand (1 energy). It stays out of play for the level.
-function Game.mulligan_discard(game, uid)
+-- Discard coins from the opening hand (free). They stay out of play for the level, and at least
+-- one coin must be kept. uids is a list of coin uids; returns how many were discarded.
+function Game.mulligan_discard(game, uids)
   local m, e = game.mulligan, game.encounter
-  if not m or game.player.energy < 1 or #m.hand <= 1 then return false end
-  for index, held in ipairs(m.hand) do
-    if held == uid then
-      table.remove(m.hand, index)
-      game.player.energy = game.player.energy - 1
-      e.discarded[uid] = true
-      e.discards = e.discards + 1
-      log(game, catalog[find_coin(game, uid).id].name .. " #" .. uid .. " discarded from the opening hand.")
-      return true
+  if not m then return 0 end
+  local count = 0
+  for _, uid in ipairs(uids) do
+    for index, held in ipairs(m.hand) do
+      if held == uid and #m.hand > 1 then
+        table.remove(m.hand, index)
+        e.discarded[uid] = true
+        e.discards = e.discards + 1
+        log(game, catalog[find_coin(game, uid).id].name .. " #" .. uid .. " discarded from the opening hand.")
+        count = count + 1
+        break
+      end
     end
   end
-  return false
+  return count
 end
 
 -- Keep the remaining hand as the bank and start the level.
@@ -210,7 +215,12 @@ function Game.new(seed, character_id, unlocked, loadout, manual_mulligan)
     assert(#loadout >= 1 and #loadout <= Game.START_MAX, "loadout must have 1-" .. Game.START_MAX .. " coins")
     local allowed = {}
     for _, id in ipairs(shop_pool(game)) do allowed[id] = true end
-    for _, id in ipairs(loadout) do assert(allowed[id], "coin not available to this character: " .. tostring(id)) end
+    local copies = {}
+    for _, id in ipairs(loadout) do
+      assert(allowed[id], "coin not available to this character: " .. tostring(id))
+      copies[id] = (copies[id] or 0) + 1
+      assert(id == "normal" or copies[id] <= Game.MAX_COPIES, "too many copies of " .. id)
+    end
   end
   for i, id in ipairs(loadout or def.deck or {def.starter}) do game.coins[i] = coin(game, id) end
   game.selected_uid = game.coins[1].uid
@@ -232,10 +242,15 @@ end
 local function finalize(game, item, flip)
   local e = game.encounter
   local nth = e.flips + 1
-  local outcome = {game = game, inst = item, flips = nth, result = flip.result}
+  local before = flip.result
+  local outcome = {game = game, inst = item, flips = nth, result = before}
   Signal.emit("coin_outcome", outcome)
   local final = outcome.result
-  if e.boss and nth % 5 == 0 then final = final == "Heads" and "Tails" or "Heads" end
+  flip.altered = final ~= before and "RELIC" or nil -- shown in the UI so a changed side is never a mystery
+  if e.boss and nth % 5 == 0 then
+    final = final == "Heads" and "Tails" or "Heads"
+    flip.altered = (flip.altered and flip.altered .. " + " or "") .. "THE HOUSE"
+  end
   flip.result = final
 end
 
@@ -243,14 +258,17 @@ local function roll(game, item, flip)
   flip.raw = RNG.random(game) < flip.probability and "Heads" or "Tails"
   flip.result = flip.raw
   flip.forced = nil
+  flip.altered = nil
   Signal.emit("coin_flip", {game = game, inst = item, flip = flip})
   finalize(game, item, flip)
 end
 
 function Game.flip(game)
   if game.phase ~= "ENCOUNTER" or game.pending or not game.dealt then return false end
+  if not Game.can_flip(game) then return false end
   local uid, probability = game.dealt.uid, game.dealt.probability
   local item = find_coin(game, uid)
+  game.player.energy = game.player.energy - math.min(Game.flip_cost(game, uid), game.player.energy)
   game.pending = {uid = uid, probability = probability}
   game.dealt = nil
   table.remove(game.encounter.queue, 1) -- a flipped coin leaves the bank at once
@@ -261,23 +279,52 @@ function Game.flip(game)
   return true
 end
 
--- Discard the dealt coin for the rest of the level (1 energy unless free); the next one is dealt.
-function Game.discard(game, free)
+-- Energy a coin costs to flip (0 for most coins).
+function Game.flip_cost(game, uid)
+  return catalog[find_coin(game, uid).id].energy_cost or 0
+end
+
+-- Can the dealt coin be flipped right now? A coin you cannot pay for must be discarded (free) --
+-- unless it is the last usable coin, which always flips so a level can never dead-end.
+function Game.can_flip(game)
+  if game.phase ~= "ENCOUNTER" or game.pending or not game.dealt then return false end
   local e = game.encounter
-  if game.phase ~= "ENCOUNTER" or game.pending or not game.dealt
-    or (not free and game.player.energy < 1) or #game.coins - e.discards <= 1 then return false end
-  local uid = game.dealt.uid
-  if not free then game.player.energy = game.player.energy - 1 end
-  table.remove(e.queue, 1)
-  e.discarded[uid] = true
-  e.discards = e.discards + 1
-  local inst = find_coin(game, uid)
-  log(game, catalog[inst.id].name .. " #" .. uid .. " discarded for this level.")
-  Signal.emit("coin_discard", {game = game, inst = inst})
+  return Game.flip_cost(game, game.dealt.uid) <= game.player.energy or #game.coins - e.discards <= 1
+end
+
+-- Discard coins from the bank for the rest of the level. Free. uids is a list of bank coins; with
+-- no list the front coin goes. At least one coin must stay usable. Returns how many were discarded.
+function Game.discard(game, uids)
+  local e = game.encounter
+  if game.phase ~= "ENCOUNTER" or game.pending or game.mulligan or not game.dealt then return 0 end
+  local in_bank = {}
+  for _, uid in ipairs(e.queue) do in_bank[uid] = true end
+  local targets, seen = {}, {}
+  for _, uid in ipairs(uids or {game.dealt.uid}) do
+    if in_bank[uid] and not seen[uid] then targets[#targets + 1] = uid seen[uid] = true end
+  end
+  if #targets == 0 or #game.coins - e.discards - #targets < 1 then return 0 end
+  local front = game.dealt.uid
   Hooks.unbind()
-  Hooks.grow(inst, "discard")
-  deal(game)
-  return true
+  for _, uid in ipairs(targets) do
+    for index, queued in ipairs(e.queue) do
+      if queued == uid then table.remove(e.queue, index) break end
+    end
+    e.discarded[uid] = true
+    e.discards = e.discards + 1
+    local inst = find_coin(game, uid)
+    log(game, catalog[inst.id].name .. " #" .. uid .. " discarded for this level.")
+    Hooks.bind(game, inst) -- so the coin's own on_discard hook runs even if it was not the front coin
+    Signal.emit("coin_discard", {game = game, inst = inst})
+    Hooks.unbind()
+    Hooks.grow(inst, "discard")
+  end
+  if seen[front] then
+    deal(game)
+  else
+    Hooks.bind(game, find_coin(game, front)) -- the dealt coin stays dealt; restore its hooks
+  end
+  return #targets
 end
 
 function Game.reroll(game)

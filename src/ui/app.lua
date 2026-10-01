@@ -12,6 +12,7 @@ local screens = {
   title = require("src.ui.views.title"),
   select = require("src.ui.views.menu"),
   collection = require("src.ui.views.collection"),
+  sets = require("src.ui.views.sets"),
   options = require("src.ui.views.options"),
 }
 local draw_end = require("src.ui.views.finish")

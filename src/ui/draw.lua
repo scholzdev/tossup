@@ -105,7 +105,8 @@ local function draw_coin_tooltip()
   text(coin.name:upper(), x + 78, y + 12, ui.f20, C.face)
   text(coin.description, x + 78, y + 40, ui.f16, C.muted)
   local heads = math.floor(ui.hovered_coin.probability * 100 + .5)
-  text("HEADS " .. heads .. "%  /  TAILS " .. (100 - heads) .. "%", x + 14, y + 78, ui.f16, C.gold)
+  text("HEADS " .. heads .. "%  /  TAILS " .. (100 - heads) .. "%" ..
+    ((coin.energy_cost or 0) > 0 and ("  -  COSTS " .. coin.energy_cost .. " ENERGY") or ""), x + 14, y + 78, ui.f16, C.gold)
   text("HEADS  " .. effect_description(coin.heads), x + 14, y + 108, ui.f16, C.blue)
   text("TAILS  " .. effect_description(coin.tails), x + 14, y + 137, ui.f16, C.red)
   if ui.hovered_coin.locked_cost then

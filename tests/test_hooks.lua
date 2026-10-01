@@ -77,7 +77,7 @@ equal(r.player.gold, gold + 7, "hook-added effect applied")
 r.coins[2] = {uid = 60, id = "sword", bonus = 0}
 r.encounter.pile = {60}
 calls = {}
-assert(Game.discard(r)) -- t_reg discarded, sword dealt: t_reg handlers must be gone
+equal(Game.discard(r), 1) -- t_reg discarded, sword dealt: t_reg handlers must be gone
 equal(r.dealt.uid, 60)
 play(r, "Heads")
 equal(#calls, 0, "handlers unbound once another coin is dealt")
@@ -90,7 +90,7 @@ catalog.t_disc = {name = "D", description = "", probability = .5, heads = {}, ta
 local d = fresh("t_disc")
 d.coins[2] = {uid = 70, id = "sword", bonus = 0}
 log = {}
-assert(Game.discard(d))
+equal(Game.discard(d), 1)
 equal(table.concat(log, ","), "discard,grow:discard", "discard hooks")
 
 -- global events: encounter_start / encounter_end / effect_applied

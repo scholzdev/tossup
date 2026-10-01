@@ -111,7 +111,7 @@ local cap = Game.new(5)
 cap.phase = "SHOP"
 cap.player.gold = 1000
 for i = 1, Game.DECK_MAX - 1 do
-  cap.shop_offers = {({"dagger", "hammer", "blood", "focus", "spark", "lucky", "loaded"})[i]}
+  cap.shop_offers = {({"dagger", "hammer", "blood", "focus", "spark", "lucky", "loaded"})[(i - 1) % 7 + 1]}
   assert(Game.buy(cap, 1))
 end
 equal(#cap.coins, Game.DECK_MAX, "deck cap")
@@ -123,6 +123,7 @@ equal(#cap.coins, Game.DECK_MAX, "buy replaces selected coin at cap")
 assert(not Game.get_coin(cap, replaced_uid), "old coin removed")
 assert(Game.leave_shop(cap))
 cap.encounter.quota = 10000
+cap.encounter.draws = 1000
 local seen = {}
 for _ = 1, Game.DECK_MAX do
   assert(Game.flip(cap))
@@ -203,18 +204,21 @@ assert(Game.buy_relic(shop))
 equal(shop.relics[1], "magnet", "relic bought")
 assert(not Game.buy_relic(shop), "one relic per shop slot")
 
+-- discarding is free, never takes the last usable coin, and discarded coins stay out for the level
 local d = Game.new(11)
-assert(not Game.discard(d), "cannot discard the only coin")
+equal(Game.discard(d), 0, "cannot discard the only coin")
 local d2 = Game.new(12)
 d2.coins[2] = {uid = 99, id = "copper", bonus = 0}
 d2.encounter.pile = {}
+d2.encounter.queue = {99, d2.coins[1].uid}
 d2.encounter.discarded = {}
 d2.encounter.quota = 1000
 d2.dealt = {uid = 99, probability = .5}
-assert(Game.discard(d2))
-equal(d2.player.energy, 2, "discard costs energy")
+local energy = d2.player.energy
+equal(Game.discard(d2), 1)
+equal(d2.player.energy, energy, "discarding costs nothing")
 equal(d2.dealt.uid, d2.coins[1].uid, "next coin dealt")
-assert(not Game.discard(d2), "cannot discard last remaining coin")
+equal(Game.discard(d2), 0, "cannot discard last remaining coin")
 assert(Game.flip(d2) and Game.resolve(d2))
 equal(d2.dealt.uid, d2.coins[1].uid, "discarded coin never returns")
 

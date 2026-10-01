@@ -16,11 +16,12 @@ local function draw_title()
   else
     entries[#entries + 1] = {"PLAY", C.blue, function() A.go("select") end}
   end
+  entries[#entries + 1] = {"COIN SETS", C.gold, function() A.open_sets(ui.selected_character) end}
   entries[#entries + 1] = {"COLLECTION", C.green, function() A.go("collection") end}
   entries[#entries + 1] = {"OPTIONS", C.panel_light, function() A.go("options") end}
   entries[#entries + 1] = {"QUIT", C.red, function() love.event.quit() end}
   for i, entry in ipairs(entries) do
-    button(entry[1], 470, 240 + (i - 1) * 84, 340, 60, entry[2], entry[3])
+    button(entry[1], 470, 235 + (i - 1) * 78, 340, 58, entry[2], entry[3])
   end
 end
 

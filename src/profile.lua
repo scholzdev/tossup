@@ -1,15 +1,17 @@
--- Meta progression that survives between runs: tokens and per-character coin unlocks.
+-- Meta progression that survives between runs: tokens, coin unlocks, coin sets and options.
 -- Pure data + (de)serialization; the LÖVE layer decides where the string is stored.
 local characters = require("content.characters")
 
 local Profile = {}
+
+Profile.SET_COUNT = 3 -- coin sets per character
 
 local DEFAULT_OPTIONS = {screen_shake = true, fast_flip = false, fullscreen = false}
 
 function Profile.new()
   local options = {}
   for key, value in pairs(DEFAULT_OPTIONS) do options[key] = value end
-  return {tokens = 0, unlocked = {}, collected = {}, loadouts = {}, options = options}
+  return {tokens = 0, unlocked = {}, collected = {}, sets = {}, active_set = {}, options = options}
 end
 
 -- Mark a coin as seen in the collection. Returns true if it was new.
@@ -53,8 +55,55 @@ local function available(profile, character_id)
   return set
 end
 
--- The coins a new run starts with: the saved loadout (or the character's deck), limited to coins
--- that are available and to max entries.
+local function copy(list)
+  local out = {}
+  for i, id in ipairs(list) do out[i] = id end
+  return out
+end
+
+-- The character's coin sets, created on first use: set 1 is the default deck, the others start
+-- empty. Returns a list of {name, coins}.
+function Profile.sets(profile, character_id)
+  local sets = profile.sets[character_id]
+  if not sets then
+    local def = characters[character_id]
+    sets = {{name = "SET 1", coins = copy(def.deck or {def.starter})}}
+    for i = 2, Profile.SET_COUNT do sets[i] = {name = "SET " .. i, coins = {}} end
+    profile.sets[character_id] = sets
+  end
+  return sets
+end
+
+function Profile.active(profile, character_id)
+  local index = profile.active_set[character_id] or 1
+  return math.max(1, math.min(Profile.SET_COUNT, index))
+end
+
+function Profile.set_active(profile, character_id, index)
+  if index >= 1 and index <= Profile.SET_COUNT then profile.active_set[character_id] = index end
+end
+
+-- Add one coin to a set if it is available, the set has room, and the copy limit allows it.
+-- max_copies does not apply to the plain Normal coin.
+function Profile.add_to_set(profile, character_id, index, coin_id, max, max_copies)
+  local coins = Profile.sets(profile, character_id)[index].coins
+  if #coins >= max or not available(profile, character_id)[coin_id] then return false end
+  local copies = 0
+  for _, id in ipairs(coins) do if id == coin_id then copies = copies + 1 end end
+  if coin_id ~= "normal" and copies >= max_copies then return false end
+  coins[#coins + 1] = coin_id
+  return true
+end
+
+function Profile.remove_from_set(profile, character_id, index, slot)
+  local coins = Profile.sets(profile, character_id)[index].coins
+  if not coins[slot] then return false end
+  table.remove(coins, slot)
+  return true
+end
+
+-- The coins a new run starts with: the active set, limited to coins that are available and to max
+-- entries. An empty (or unusable) set falls back to the character's default deck.
 function Profile.loadout(profile, character_id, max)
   local def = characters[character_id]
   local ok = available(profile, character_id)
@@ -65,44 +114,50 @@ function Profile.loadout(profile, character_id, max)
     end
     return list
   end
-  local list = pick(profile.loadouts[character_id] or {})
+  local sets = Profile.sets(profile, character_id)
+  local list = pick(sets[Profile.active(profile, character_id)].coins)
   if #list == 0 then list = pick(def.deck or {def.starter}) end
   return list
 end
 
-function Profile.set_loadout(profile, character_id, list)
-  profile.loadouts[character_id] = list
+local function quote_list(list)
+  local quoted = {}
+  for i, id in ipairs(list) do quoted[i] = string.format("%q", id) end
+  return table.concat(quoted, ", ")
+end
+
+local function sorted_keys(t)
+  local keys = {}
+  for key in pairs(t) do keys[#keys + 1] = key end
+  table.sort(keys)
+  return keys
 end
 
 function Profile.encode(profile)
   local lines = {"return {tokens = " .. profile.tokens .. ", unlocked = {"}
-  local chars = {}
-  for character_id in pairs(profile.unlocked) do chars[#chars + 1] = character_id end
-  table.sort(chars)
-  for _, character_id in ipairs(chars) do
+  for _, character_id in ipairs(sorted_keys(profile.unlocked)) do
     local ids = {}
     for _, id in ipairs(Profile.unlocked_list(profile, character_id)) do ids[#ids + 1] = id .. " = true" end
     lines[#lines + 1] = "  " .. character_id .. " = {" .. table.concat(ids, ", ") .. "},"
   end
   lines[#lines + 1] = "}, collected = {"
-  local ids = {}
-  for id in pairs(profile.collected) do ids[#ids + 1] = id end
-  table.sort(ids)
-  for _, id in ipairs(ids) do lines[#lines + 1] = "  " .. id .. " = true," end
-  lines[#lines + 1] = "}, loadouts = {"
-  local loadout_chars = {}
-  for character_id in pairs(profile.loadouts) do loadout_chars[#loadout_chars + 1] = character_id end
-  table.sort(loadout_chars)
-  for _, character_id in ipairs(loadout_chars) do
-    local quoted = {}
-    for i, id in ipairs(profile.loadouts[character_id]) do quoted[i] = string.format("%q", id) end
-    lines[#lines + 1] = "  " .. character_id .. " = {" .. table.concat(quoted, ", ") .. "},"
+  for _, id in ipairs(sorted_keys(profile.collected)) do lines[#lines + 1] = "  " .. id .. " = true," end
+  lines[#lines + 1] = "}, sets = {"
+  for _, character_id in ipairs(sorted_keys(profile.sets)) do
+    lines[#lines + 1] = "  " .. character_id .. " = {"
+    for _, set in ipairs(profile.sets[character_id]) do
+      lines[#lines + 1] = string.format("    {name = %q, coins = {%s}},", set.name, quote_list(set.coins))
+    end
+    lines[#lines + 1] = "  },"
+  end
+  lines[#lines + 1] = "}, active_set = {"
+  for _, character_id in ipairs(sorted_keys(profile.active_set)) do
+    lines[#lines + 1] = "  " .. character_id .. " = " .. profile.active_set[character_id] .. ","
   end
   lines[#lines + 1] = "}, options = {"
-  local keys = {}
-  for key in pairs(profile.options) do keys[#keys + 1] = key end
-  table.sort(keys)
-  for _, key in ipairs(keys) do lines[#lines + 1] = "  " .. key .. " = " .. tostring(profile.options[key]) .. "," end
+  for _, key in ipairs(sorted_keys(profile.options)) do
+    lines[#lines + 1] = "  " .. key .. " = " .. tostring(profile.options[key]) .. ","
+  end
   lines[#lines + 1] = "}}"
   return table.concat(lines, "\n")
 end
@@ -117,7 +172,17 @@ function Profile.decode(text)
   -- fill what older save files lack
   local fresh = Profile.new()
   data.collected = type(data.collected) == "table" and data.collected or fresh.collected
-  data.loadouts = type(data.loadouts) == "table" and data.loadouts or fresh.loadouts
+  data.sets = type(data.sets) == "table" and data.sets or fresh.sets
+  data.active_set = type(data.active_set) == "table" and data.active_set or fresh.active_set
+  -- older saves kept a single loadout per character: it becomes set 1
+  if type(data.loadouts) == "table" then
+    for character_id, list in pairs(data.loadouts) do
+      if characters[character_id] and not data.sets[character_id] and type(list) == "table" then
+        Profile.sets(data, character_id)[1].coins = copy(list)
+      end
+    end
+    data.loadouts = nil
+  end
   data.options = type(data.options) == "table" and data.options or {}
   for key, value in pairs(DEFAULT_OPTIONS) do
     if type(data.options[key]) ~= type(value) then data.options[key] = value end

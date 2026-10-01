@@ -93,19 +93,19 @@ local function draw_shop()
   text(#ui.game.coins >= Game.DECK_MAX and "SELECT A COIN TO REPLACE WHEN BUYING" or
     "SELECT A COIN TO UPGRADE OR REMOVE", 706, 663, ui.f16, C.muted)
   for i = 1, Game.DECK_MAX do
-    local x = 300 + (i - 1) * 118
+    local x = 300 + (i - 1) * 94
     local item = ui.game.coins[i]
     local chosen = item and item.uid == ui.game.selected_uid
-    box(x, 688, 112, 73, item and C.panel or C.slot)
-    outline(x, 688, 112, 73, chosen and C.orange or C.panel_light)
+    box(x, 688, 88, 73, item and C.panel or C.slot)
+    outline(x, 688, 88, 73, chosen and C.orange or C.panel_light)
     if item then
-      coin_image(item.id, x + 28, 691, 56)
-      centered(math.floor(Game.probability(ui.game, item) * 100 + .5) .. "% H", x, 745, 112, ui.f16, C.gold)
-      coin_hover(item.id, x, 688, 112, 73, Game.probability(ui.game, item))
-      ui.buttons[#ui.buttons + 1] = {x = x, y = 688, w = 112, h = 73,
+      coin_image(item.id, x + 20, 691, 48)
+      centered(math.floor(Game.probability(ui.game, item) * 100 + .5) .. "% H", x, 742, 88, ui.f16, C.gold)
+      coin_hover(item.id, x, 688, 88, 73, Game.probability(ui.game, item))
+      ui.buttons[#ui.buttons + 1] = {x = x, y = 688, w = 88, h = 73,
         action = function() A.coin_action(item) end}
     else
-      centered("EMPTY", x, 715, 112, ui.f16, C.muted)
+      centered("EMPTY", x, 715, 88, ui.f16, C.muted)
     end
   end
 end

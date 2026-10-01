@@ -39,27 +39,25 @@ local seen = {}
 for _ = 1, 40 do
   assert(g.dealt, "always something to play")
   seen[g.dealt.uid] = true
+  g.player.energy = 99
   assert(Game.flip(g) and Game.resolve(g))
 end
 local count = 0
 for _ in pairs(seen) do count = count + 1 end
 equal(count, 8, "all eight coins were played")
 
--- manual mulligan: look at five, discard for energy, keep the rest
+-- manual mulligan: look at five, mark coins to discard (free), keep the rest
 local m = Game.new(2, "big", nil, nil, true)
 assert(m.mulligan, "mulligan open")
 equal(#m.mulligan.hand, 5)
 equal(m.dealt, nil, "nothing dealt during the mulligan")
 assert(not Game.flip(m), "cannot flip before the mulligan is done")
-local first, second = m.mulligan.hand[1], m.mulligan.hand[2]
-assert(Game.mulligan_discard(m, first))
-equal(m.player.energy, 2, "discard costs one energy")
-equal(#m.mulligan.hand, 4)
-assert(not Game.mulligan_discard(m, first), "already gone")
-assert(Game.mulligan_discard(m, second))
-assert(Game.mulligan_discard(m, m.mulligan.hand[1]))
-equal(m.player.energy, 0)
-assert(not Game.mulligan_discard(m, m.mulligan.hand[1]), "no energy left")
+local first, second, third = m.mulligan.hand[1], m.mulligan.hand[2], m.mulligan.hand[3]
+equal(Game.mulligan_discard(m, {}), 0, "nothing marked, nothing discarded")
+equal(Game.mulligan_discard(m, {first, second, third}), 3, "several coins at once")
+equal(m.player.energy, 3, "discarding is free")
+equal(#m.mulligan.hand, 2)
+equal(Game.mulligan_discard(m, {first}), 0, "already gone")
 local kept = {table.unpack(m.mulligan.hand)}
 assert(Game.mulligan_done(m))
 equal(m.mulligan, nil)
@@ -68,14 +66,28 @@ equal(#m.encounter.queue, 3, "bank refilled to three")
 m.encounter.quota, m.encounter.max_quota, m.encounter.draws = 1e9, 1e9, 1e9
 for _ = 1, 40 do
   assert(m.encounter.discarded[m.dealt.uid] == nil, "discarded coin never comes back")
+  m.player.energy = 99 -- some coins in this deck cost energy; this loop is about the bank
   assert(Game.flip(m) and Game.resolve(m))
 end
 
 -- cannot throw away the whole hand
 local solo = Game.new(3, "big", nil, nil, true)
-solo.player.energy = 99
-for _ = 1, 10 do Game.mulligan_discard(solo, solo.mulligan.hand[1]) end
+local everything = {table.unpack(solo.mulligan.hand)}
+equal(Game.mulligan_discard(solo, everything), 4, "all but one")
 equal(#solo.mulligan.hand, 1, "at least one coin is kept")
+
+-- discarding from the bank mid-level: any visible coins, free, front coin is replaced
+local lv = Game.new(6, "big")
+lv.encounter.quota, lv.encounter.max_quota, lv.encounter.draws = 1e9, 1e9, 1e9
+local q1, q2, q3 = lv.encounter.queue[1], lv.encounter.queue[2], lv.encounter.queue[3]
+equal(Game.discard(lv, {}), 0, "nothing marked")
+equal(Game.discard(lv, {q2}), 1, "a non-front coin")
+equal(lv.dealt.uid, q1, "front coin stays dealt")
+assert(lv.encounter.discarded[q2])
+equal(Game.discard(lv, {q1, q3}), 2)
+assert(lv.dealt.uid ~= q1 and lv.dealt.uid ~= q3, "new front coin dealt")
+equal(lv.player.energy, 3, "no energy spent")
+assert(Game.flip(lv) and Game.resolve(lv))
 
 -- next level starts with a fresh mulligan
 local lvl = Game.new(4, "big", nil, nil, true)
@@ -87,13 +99,49 @@ assert(Game.leave_shop(lvl))
 assert(lvl.mulligan, "mulligan again on the next level")
 equal(lvl.player.energy, lvl.player.max_energy, "energy refilled")
 
--- loadouts: at most START_MAX coins, only coins the character can use
+-- coin sets: at most START_MAX coins, at most MAX_COPIES of a coin (Normal is exempt), only usable coins
 local ok = Game.new(5, "blade", nil, {"normal", "sword", "dagger", "normal"})
 equal(#ok.coins, 4)
 equal(ok.coins[2].id, "sword")
-assert(not pcall(Game.new, 5, "blade", nil, {"normal", "normal", "normal", "normal", "normal", "normal"}), "too many")
+local ten = {}
+for i = 1, Game.START_MAX do ten[i] = "normal" end
+equal(#Game.new(5, "blade", nil, ten).coins, Game.START_MAX, "a full set of Normal coins is fine")
+ten[#ten + 1] = "normal"
+assert(not pcall(Game.new, 5, "blade", nil, ten), "too many coins")
 assert(not pcall(Game.new, 5, "blade", nil, {}), "empty")
 assert(not pcall(Game.new, 5, "blade", nil, {"hammer"}), "locked coin")
 assert(pcall(Game.new, 5, "blade", {"hammer"}, {"hammer", "normal"}), "unlocked coin is allowed")
+assert(pcall(Game.new, 5, "blade", nil, {"sword", "sword", "normal"}), "two copies are fine")
+assert(not pcall(Game.new, 5, "blade", nil, {"sword", "sword", "sword"}), "three copies are not")
+
+-- energy cost: a coin you cannot pay for cannot be flipped (discard it instead); the last coin always flips
+Game.characters().pricey = {name = "P", description = "", starter = "normal", deck = {"hammer", "normal", "normal"},
+  pool = {"normal", "hammer"}, locked = {}}
+local px = Game.new(7, "pricey")
+px.encounter.queue = {px.coins[1].uid, px.coins[2].uid, px.coins[3].uid}
+Game.discard(px, {}) -- no-op; refresh nothing
+px.dealt = {uid = px.coins[1].uid, probability = .5}
+px.encounter.quota, px.encounter.max_quota, px.encounter.draws = 1e9, 1e9, 1e9
+equal(Game.flip_cost(px, px.dealt.uid), 2, "Hammer costs 2")
+px.player.energy = 1
+assert(not Game.can_flip(px), "cannot afford it")
+assert(not Game.flip(px), "flip refused")
+equal(px.player.energy, 1, "nothing was charged")
+equal(Game.discard(px), 1, "but discarding is free")
+px.encounter.queue = {px.coins[1].uid} -- put the Hammer back as the only usable coin
+px.encounter.discarded = {[px.coins[2].uid] = true, [px.coins[3].uid] = true}
+px.encounter.discards = 2
+px.dealt = {uid = px.coins[1].uid, probability = .5}
+assert(Game.can_flip(px), "the last usable coin always flips")
+assert(Game.flip(px))
+equal(px.player.energy, 0, "pays what it can")
+px.player.energy = 3
+Game.resolve(px)
+local fresh_px = Game.new(8, "pricey")
+fresh_px.encounter.queue = {fresh_px.coins[1].uid, fresh_px.coins[2].uid}
+fresh_px.dealt = {uid = fresh_px.coins[1].uid, probability = .5}
+fresh_px.player.energy = 3
+assert(Game.flip(fresh_px))
+equal(fresh_px.player.energy, 1, "Hammer cost 2 energy")
 
 print("bank tests passed")

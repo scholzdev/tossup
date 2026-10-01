@@ -45,6 +45,7 @@ end
 -- ---------------------------------------------------------------- coin strength
 -- Value of a coin = points it scores per flip, minus quota penalties, plus a discount on the rest.
 local function value_of(points, gold, penalty, energy) return points - penalty + .5 * gold + .3 * energy end
+local ENERGY_WORTH = .5 -- what one energy is worth in points when a coin charges for it
 
 -- Flip a coin many times in a neutral deck (X, sword, dagger, normal, normal) and total what its
 -- own effects did. Context-dependent coins (Echo, Chain, Capacitor...) are measured in that context.
@@ -68,14 +69,17 @@ local function measure(id, games, flips)
     g.player.gold = 30
     for _ = 1, flips do
       g.encounter.quota, g.encounter.max_quota, g.encounter.draws = 1e9, 1e9, 1e9
+      g.player.energy = math.max(g.player.energy, 3) -- measuring the coin, not the energy economy
       if g.dealt then Game.flip(g) Game.resolve(g) end
     end
   end
   for _, h in ipairs(handles) do Signal.off(h) end
   characters.sim = nil
   local n = math.max(1, totals.flips)
+  local cost = catalog[id].energy_cost or 0
   return {points = totals.points / n, gold = totals.gold / n, penalty = totals.penalty / n,
-    energy = totals.energy / n, value = value_of(totals.points / n, totals.gold / n, totals.penalty / n, totals.energy / n)}
+    energy = totals.energy / n, cost = cost,
+    value = value_of(totals.points / n, totals.gold / n, totals.penalty / n, totals.energy / n) - ENERGY_WORTH * cost}
 end
 
 local measured = {}
@@ -117,9 +121,12 @@ local function deck_mean(g)
   return sum / math.max(1, #g.coins)
 end
 
+-- Flip the dealt coin; one we cannot pay for is discarded instead (discarding is free).
 local function finish_flip(g)
-  Game.flip(g)
-  Game.resolve(g)
+  if not Game.can_flip(g) then
+    if Game.discard(g) > 0 then return end
+  end
+  if Game.flip(g) then Game.resolve(g) end
 end
 
 local function have_item(g, id)
@@ -160,21 +167,17 @@ bots.greedy = {
 
 -- Uses measured coin values: discards weak coins, plays items when behind pace, buys the best coins.
 bots.smart = {
-  -- discard the weakest coins of the opening hand while it stays at three or more and energy is left
+  -- discard the weak coins of the opening hand (free) while at least three stay
   mulligan = function(g)
     local hand = g.mulligan.hand
     local sum = 0
     for _, uid in ipairs(hand) do sum = sum + coin_value(Game.get_coin(g, uid).id) end
     local mean = sum / #hand
-    while #hand > 3 and g.player.energy > 1 do
-      local worst, worst_value = nil, math.huge
-      for _, uid in ipairs(hand) do
-        local v = coin_value(Game.get_coin(g, uid).id)
-        if v < worst_value then worst, worst_value = uid, v end
-      end
-      if worst_value >= mean * .6 then break end
-      Game.mulligan_discard(g, worst)
+    local marked = {}
+    for _, uid in ipairs(hand) do
+      if #hand - #marked > 3 and coin_value(Game.get_coin(g, uid).id) < mean * .6 then marked[#marked + 1] = uid end
     end
+    Game.mulligan_discard(g, marked)
     Game.mulligan_done(g)
   end,
 
@@ -185,7 +188,7 @@ bots.smart = {
     local v, mean = coin_value(coin.id), deck_mean(g)
     local behind = e.quota > e.draws * mean * .9
 
-    if g.player.energy >= 1 and v < mean * .6 and #g.coins - e.discards > 1 and Game.discard(g) then return end
+    if v < mean * .6 and #g.coins - e.discards > 1 and Game.discard(g) > 0 then return end
     local swap = have_item(g, "swap")
     if swap and v < mean * .5 and Game.use_item(g, swap) then return end
 

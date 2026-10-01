@@ -1,3 +1,7 @@
+-- Play screen: pick a character and one of its coin sets, then start. Sets are edited in the
+-- Coin Sets screen.
+local Game = require("src.game")
+local Profile = require("src.profile")
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
@@ -5,9 +9,7 @@ local C, color, box, outline, text, centered, button = D.C, D.color, D.box, D.ou
 local coin_image, coin_hover = D.coin_image, D.coin_hover
 local characters = ui.characters
 
-local Game = require("src.game")
-local ICON, GAP, COLUMNS = 52, 10, 9
-local GRID_X = 566
+local ICON, GAP = 56, 12
 
 local function arrow(label, x, delta)
   local mx, my = ui.mouse()
@@ -18,91 +20,57 @@ local function arrow(label, x, delta)
   ui.buttons[#ui.buttons + 1] = {x = x, y = 300, w = 100, h = 140, action = function() A.cycle_character(delta) end}
 end
 
-local function padlock(cx, cy)
-  color(C.face)
-  love.graphics.setLineWidth(3)
-  love.graphics.arc("line", "open", cx, cy - 2, 6, math.pi, 2 * math.pi)
-  love.graphics.setLineWidth(1)
-  love.graphics.rectangle("fill", cx - 9, cy - 2, 18, 14, 2)
-  color(C.ink)
-  love.graphics.circle("fill", cx, cy + 5, 2)
-end
-
--- Draw coin icons in rows. Locked entries get a padlock, their token cost, and unlock on click.
-local function grid(entries, y, on_click)
-  local rows = math.max(1, math.ceil(#entries / COLUMNS))
-  local row_height = ICON + GAP + 16
-  box(GRID_X - 8, y, COLUMNS * (ICON + GAP) + 6, rows * row_height + 10, C.slot)
-  for i, entry in ipairs(entries) do
-    local x = GRID_X + ((i - 1) % COLUMNS) * (ICON + GAP)
-    local top = y + 8 + math.floor((i - 1) / COLUMNS) * row_height
-    coin_image(entry.id, x, top, ICON)
-    if entry.locked then
-      color(C.slot, .7)
-      love.graphics.circle("fill", x + ICON / 2, top + ICON / 2, ICON / 2)
-      padlock(x + ICON / 2, top + ICON / 2 - 4)
-      centered(tostring(entry.cost), x, top + ICON + 1, ICON, ui.f16,
-        ui.profile.tokens >= entry.cost and C.gold or C.muted)
-      ui.buttons[#ui.buttons + 1] = {x = x, y = top, w = ICON, h = ICON,
-        action = function() A.unlock_coin(entry.id) end}
-    end
-    if on_click and not entry.locked then
-      ui.buttons[#ui.buttons + 1] = {x = x, y = top, w = ICON, h = ICON, action = function() on_click(entry.id) end}
-    end
-    coin_hover(entry.id, x, top, ICON, ICON, nil, entry.locked and entry.cost or nil)
-  end
-  return rows * row_height + 10
-end
-
 local function draw_menu()
   box(144, 67, 992, 670, C.ink)
   outline(144, 67, 992, 670, C.gold)
   centered("TOSSUP", 160, 80, 960, ui.f48, C.gold)
+  button("X", 164, 76, 60, 44, C.panel_light, function() A.go("title") end)
 
   arrow("<", 24, -1)
   arrow(">", 1156, 1)
 
-  -- left: who you are
   local character = characters[ui.selected_character]
+  local active = Profile.active(ui.profile, ui.selected_character)
+  local set = Profile.sets(ui.profile, ui.selected_character)[active]
+
+  -- left: who you are
   box(172, 140, 346, 50, C.panel_light)
   centered(character.name:upper(), 172, 149, 346, ui.f32, C.face)
-  box(172, 200, 346, 250, C.panel)
-  outline(172, 200, 346, 250, C.panel_light)
+  box(172, 200, 346, 300, C.panel)
+  outline(172, 200, 346, 300, C.panel_light)
   local portrait = ui.character_images[ui.selected_character]
-  local scale = math.min(334 / portrait:getWidth(), 238 / portrait:getHeight())
+  local scale = math.min(334 / portrait:getWidth(), 288 / portrait:getHeight())
   local width, height = portrait:getWidth() * scale, portrait:getHeight() * scale
   color(C.white)
-  love.graphics.draw(portrait, 172 + (346 - width) / 2, 205 + (240 - height) / 2, 0, scale, scale)
-  centered(character.description:upper(), 172, 462, 346, ui.f16, C.muted)
-  local deck = A.loadout()
-  centered("YOUR LOADOUT  " .. #deck .. " / " .. Game.START_MAX, 172, 500, 346, ui.f16, C.gold)
-  local x0 = 172 + (346 - (Game.START_MAX * (ICON + GAP) - GAP)) / 2
+  love.graphics.draw(portrait, 172 + (346 - width) / 2, 205 + (290 - height) / 2, 0, scale, scale)
+  centered(character.description:upper(), 172, 512, 346, ui.f16, C.muted)
+  centered("TOKENS  " .. ui.profile.tokens, 172, 540, 346, ui.f16, C.gold)
+
+  -- right: the coin set you will play
+  text("COIN SET", 560, 148, ui.f16, C.gold)
+  button("<", 560, 170, 56, 44, C.panel_light, function() A.cycle_active_set(-1) end)
+  box(626, 170, 300, 44, C.panel)
+  centered(set.name .. "  /  " .. #A.loadout() .. " COINS", 626, 182, 300, ui.f20, C.face)
+  button(">", 936, 170, 56, 44, C.panel_light, function() A.cycle_active_set(1) end)
+
+  local coins = A.loadout()
+  local columns = 5
+  local x0 = 560 + (432 - (columns * (ICON + GAP) - GAP)) / 2
   for i = 1, Game.START_MAX do
-    local x = x0 + (i - 1) * (ICON + GAP)
-    box(x - 4, 524, ICON + 8, ICON + 8, C.slot)
-    outline(x - 4, 524, ICON + 8, ICON + 8, C.panel_light)
-    local id = deck[i]
-    if id then
-      coin_image(id, x, 528, ICON)
-      coin_hover(id, x, 528, ICON, ICON)
-      ui.buttons[#ui.buttons + 1] = {x = x, y = 528, w = ICON, h = ICON, action = function() A.remove_from_loadout(i) end}
+    local x = x0 + ((i - 1) % columns) * (ICON + GAP)
+    local y = 250 + math.floor((i - 1) / columns) * (ICON + GAP + 4)
+    box(x - 4, y - 4, ICON + 8, ICON + 8, C.slot)
+    outline(x - 4, y - 4, ICON + 8, ICON + 8, C.panel_light)
+    if coins[i] then
+      coin_image(coins[i], x, y, ICON)
+      coin_hover(coins[i], x, y, ICON, ICON)
     end
   end
-  centered("CLICK A SLOT TO REMOVE IT", 172, 590, 346, ui.f16, C.muted)
-
-  -- right: what you can find
-  local available, locked = {}, {}
-  for _, entry in ipairs(A.menu_coins(ui.selected_character)) do
-    if entry.locked then locked[#locked + 1] = entry else available[#available + 1] = entry end
+  if #set.coins == 0 then
+    centered("THIS SET IS EMPTY  -  THE DEFAULT DECK IS USED", 560, 400, 432, ui.f16, C.orange)
   end
-  text("COINS YOU CAN TAKE  /  CLICK TO ADD", GRID_X - 8, 148, ui.f16, C.gold)
-  centered("TOKENS  " .. ui.profile.tokens, 850, 148, 252, ui.f16, C.gold)
-  local used = grid(available, 170, A.add_to_loadout)
-  local top = 170 + used + 22
-  text("LOCKED  /  SPEND TOKENS IN THE MENU", GRID_X - 8, top, ui.f16, C.gold)
-  grid(locked, top + 22)
+  button("EDIT COIN SETS", 626, 440, 300, 50, C.gold, function() A.open_sets(ui.selected_character) end)
 
-  button("X", 164, 76, 60, 44, C.panel_light, function() A.go("title") end)
   button("START RUN", 472, 666, 338, 55, C.blue, function() A.start() end)
 end
 
