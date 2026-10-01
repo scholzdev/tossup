@@ -39,7 +39,7 @@ DE = {
     "Energy to flip": "Energie zum Werfen", "gold": "Gold", "Nothing": "Nichts", "Depends on its special rule (see the description)": "Hängt von ihrer Sonderregel ab (siehe Beschreibung)",
     "Who can use it": "Wer sie nutzen kann", "Starts in the deck of:": "Startet im Deck von:", "Usable in coin sets from the start:": "Von Anfang an in Münzsets nutzbar:",
     "Found in the shop and unlocked by buying it once:": "Im Shop zu finden, durch einmaliges Kaufen freigeschaltet:", "none": "keine",
-    "Notes": "Hinweise (auf Englisch)", "Related coins": "Ähnliche Münzen", "How to use it": "Anwendung (auf Englisch)", "Tips": "Tipps (auf Englisch)",
+    "Notes": "Hinweise", "Related coins": "Ähnliche Münzen", "How to use it": "Anwendung", "Tips": "Tipps",
     "Effect": "Effekt", "Modifier": "Modifikator", "English": "Englisch",
     "Special rules": "Sonderregeln", "this coin has a hook": "diese Münze hat eine Sonderregel", "that changes the rules beyond its two sides.": "die über ihre zwei Seiten hinaus die Regeln ändert.",
     "One-use helpers bought in the shop (two offers per visit, you can hold three). Use one in a level while a coin is in play.": "Einweg-Helfer aus dem Shop (zwei Angebote pro Besuch, du kannst drei halten). Benutze einen im Level, während eine Münze im Spiel ist.",
@@ -50,13 +50,14 @@ DE = {
     "Unlocked by winning a run with": "Wird durch einen gewonnenen Lauf mit", "Available from the start.": "Von Anfang an verfügbar.",
     "Starting deck": "Startdeck", "Usable in coin sets from the start": "Von Anfang an in Münzsets nutzbar", "Found in the shop (unlocked by buying)": "Im Shop zu finden (durch Kauf freigeschaltet)",
     "The design and rules documents of the game, rendered here.": "Die Design- und Regeldokumente des Spiels, hier dargestellt.",
-    "These guides exist in English only.": "Diese Anleitungen gibt es nur auf Englisch.",
+    "These guides exist in English only.": "Diese Entwickler-Anleitung gibt es nur auf Englisch.",
+    "Guides marked (EN) exist in English only.": "Mit (EN) markierte Anleitungen gibt es nur auf Englisch.",
     "Tossup is a roguelike about flipping coins: build a small deck, flip one coin at a time, and score points against a quota before your stack runs out. This wiki lists everything in the game.": "Tossup ist ein Roguelike über Münzwürfe: Baue ein kleines Deck, wirf eine Münze nach der anderen und erziele Punkte gegen ein Ziel, bevor dein Stapel leer ist. Dieses Wiki listet alles im Spiel auf.",
     "Modifiers": "Modifikatoren", "The run in one table": "Der Lauf in einer Tabelle", "Level": "Level", "Quota per coin": "Ziel pro Münze", "Payout (gold)": "Prämie (Gold)", "ends the run": "beendet den Lauf",
     "The quota is the per-coin value times the number of coins in your deck. After the boss,": "Das Ziel ist der Wert pro Münze mal der Anzahl der Münzen in deinem Deck. Nach dem Boss fügt der",
     "Endless Mode": "Endlosmodus", "adds levels that ask 0.5 more per coin each time.": "Level hinzu, die jedes Mal 0,5 mehr pro Münze verlangen.",
     "Key numbers": "Wichtige Zahlen", "Starting gold": "Startgold", "Deck slots": "Deckplätze", "Exchange": "Tausch", "Combo": "Serie", "Bank": "Bank",
-    "Start with the": "Beginne mit der", "gameplay guide": "Spielanleitung (englisch)", "or browse the": "oder stöbere in den", "coins": "Münzen",
+    "Start with the": "Beginne mit der", "gameplay guide": "Spielanleitung", "or browse the": "oder stöbere in den", "coins": "Münzen",
 }
 
 
@@ -197,18 +198,25 @@ def guide_link(url):
     return f"{m.group(1)}.html{m.group(2) or ''}" if m else url
 
 
-# notes for the coin pages: the "### Name (...)" sections of docs/coins.md
-COIN_NOTES = {}
-text = (DOCS / "coins.md").read_text()
-for m in re.finditer(r"^### ([^\n(]+?) \([^\n]*\n(.*?)(?=^###|^---|^## |\Z)", text, re.M | re.S):
-    COIN_NOTES[m.group(1).strip().lower()] = m.group(2).strip()
-ITEM_NOTES, RELIC_NOTES = {}, {}
-for line in (DOCS / "items-and-relics.md").read_text().split("\n"):
-    cells = [c.strip() for c in line.strip().strip("|").split("|")]
-    m = re.match(r"^\*\*(.+?)\*\*$", cells[0]) if cells else None
-    if line.startswith("|") and m:
-        if len(cells) == 4: ITEM_NOTES[m.group(1).lower()] = cells[3]   # chip: name | cost | effect | notes
-        elif len(cells) == 3: RELIC_NOTES[m.group(1).lower()] = cells[2]  # prize: name | effect | notes
+# notes for the coin / chip / prize pages: the "### Name (...)" sections of docs/coins.md and the tables of docs/items-and-relics.md,
+# once from the English docs and once from the German ones in docs/de/ (keyed by the name in that language)
+def read_notes(folder):
+    coins, items, relics = {}, {}, {}
+    text = (folder / "coins.md").read_text()
+    for m in re.finditer(r"^### ([^\n(]+?) \([^\n]*\n(.*?)(?=^###|^---|^## |\Z)", text, re.M | re.S):
+        coins[m.group(1).strip().lower()] = m.group(2).strip()
+    for line in (folder / "items-and-relics.md").read_text().split("\n"):
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        m = re.match(r"^\*\*(.+?)\*\*$", cells[0]) if cells else None
+        if line.startswith("|") and m:
+            if len(cells) == 4: items[m.group(1).lower()] = cells[3]   # chip: name | cost | effect | notes
+            elif len(cells) == 3: relics[m.group(1).lower()] = cells[2]  # prize: name | effect | notes
+    return coins, items, relics
+
+
+COIN_NOTES, ITEM_NOTES, RELIC_NOTES = read_notes(DOCS)
+COIN_NOTES_DE, ITEM_NOTES_DE, RELIC_NOTES_DE = read_notes(DOCS / "de")
+
 
 # ---------------------------------------------------------------- images
 def make_images():
@@ -337,7 +345,7 @@ def coin_pages():
         usable = sorted(set(start + pool + locked))
         SEARCH.append({"name": name, "alt": coin["name"], "type": t("Coins"), "url": f"coins/{cid}.html", "icon": f"img/coins/{cid}.png"})
         hooks = ", ".join(coin["hooks"]) if coin["hooks"] else ""
-        notes = COIN_NOTES.get(coin["name"].lower())
+        notes = (COIN_NOTES_DE.get(name.lower()) if LANG == "de" else None) or COIN_NOTES.get(coin["name"].lower())
         related = [c for c in DATA["coins"] if c["id"] != cid and {e["type"] for e in c["heads"] + c["tails"]} & {e["type"] for e in coin["heads"] + coin["tails"]} - {"score"}][:8]
         hook_note = f'<p class="note">{esc(t("Special rules"))}: {esc(t("this coin has a hook"))} ({esc(hooks)}) {esc(t("that changes the rules beyond its two sides."))}</p>' if hooks else ""
         body = f"""<h1>{esc(name)} {badge(coin["rarity"])}</h1>
@@ -373,7 +381,7 @@ def coin_pages():
     write_page("coins/index.html", t("Coins"), body, 1, "coins")
 
 
-def simple_pages(kind, label, entries, notes_map, group, dirname_, notes_header):
+def simple_pages(kind, label, entries, notes_map, notes_map_de, group, dirname_, notes_header):
     cards = []
     for e in entries:
         eid = e["id"]
@@ -382,7 +390,7 @@ def simple_pages(kind, label, entries, notes_map, group, dirname_, notes_header)
         facts = []
         if kind == "items": facts.append(f"<tr><th>{t('Price')}</th><td>{e['cost']} {t('gold')}</td></tr>")
         if kind == "relics": facts.append(f"<tr><th>{t('Price')}</th><td>{t('25 gold (one prize per shop visit)') if LANG == 'de' else '25 gold (one prize per shop visit)'}</td></tr>")
-        note = notes_map.get(e["name"].lower())
+        note = (notes_map_de.get(name.lower()) if LANG == "de" else None) or notes_map.get(e["name"].lower())
         body = f"""<h1>{esc(name)}</h1><div class="hero"><img class="big" src="@A/img/{kind}/{eid}.png" alt="">
 <table class="stats">{"".join(facts)}<tr><th>{t("Effect")}</th><td>{esc(ddesc(group, e))}</td></tr></table></div>
 {de_line(group, eid)}{f'<h2>{notes_header}</h2><p>{inline(note, guide_link)}</p>' if note else ""}"""
@@ -393,9 +401,9 @@ def simple_pages(kind, label, entries, notes_map, group, dirname_, notes_header)
 
 
 def other_pages():
-    cards = simple_pages("items", t("Chips"), DATA["items"], ITEM_NOTES, "items", "chips", t("How to use it"))
+    cards = simple_pages("items", t("Chips"), DATA["items"], ITEM_NOTES, ITEM_NOTES_DE, "items", "chips", t("How to use it"))
     write_page("chips/index.html", t("Chips"), f"<h1>{t('Chips')}</h1><p>{t('One-use helpers bought in the shop (two offers per visit, you can hold three). Use one in a level while a coin is in play.')}</p><div class=\"cards\">" + "".join(cards) + "</div>", 1, "chips")
-    cards = simple_pages("relics", t("Prizes"), DATA["relics"], RELIC_NOTES, "relics", "prizes", t("Tips"))
+    cards = simple_pages("relics", t("Prizes"), DATA["relics"], RELIC_NOTES, RELIC_NOTES_DE, "relics", "prizes", t("Tips"))
     write_page("prizes/index.html", t("Prizes"), f"<h1>{t('Prizes')}</h1><p>{t('Passive relics that last the whole run: one offer per shop visit, 25 gold each.')}</p><div class=\"cards\">" + "".join(cards) + "</div>", 1, "prizes")
     # modifiers
     other_col = t("English") if LANG == "de" else "Deutsch"
@@ -431,12 +439,20 @@ def other_pages():
 
 def guide_pages():
     cards = []
-    notice = f'<p class="note">{esc(t("These guides exist in English only."))}</p>' if LANG == "de" else ""
     for slug_, title, path in GUIDES:
-        SEARCH.append({"name": title, "alt": "", "type": t("Guides"), "url": f"guide/{slug_}.html", "icon": "img/icon.png"})
-        write_page(f"guide/{slug_}.html", title, notice + md(path.read_text(), guide_link), 1, "guide")
-        cards.append(f'<a class="card wide" href="{slug_}.html"><span><strong>{esc(title)}</strong></span></a>')
-    write_page("guide/index.html", t("Guides"), f"<h1>{t('Guides')}</h1><p>{t('The design and rules documents of the game, rendered here.')}</p>{notice}<div class=\"cards\">" + "".join(cards) + "</div>", 1, "guide")
+        german = ROOT / "docs" / "de" / ("play.md" if slug_ == "play" else f"{slug_}.md")
+        use_de = LANG == "de" and german.exists()
+        source = german if use_de else path
+        shown = re.search(r"^# (.+)$", source.read_text(), re.M)
+        shown = shown.group(1) if shown else title
+        english_only = LANG == "de" and not use_de
+        notice = f'<p class="note">{esc(t("These guides exist in English only."))}</p>' if english_only else ""
+        SEARCH.append({"name": shown, "alt": title if use_de else "", "type": t("Guides"), "url": f"guide/{slug_}.html", "icon": "img/icon.png"})
+        write_page(f"guide/{slug_}.html", shown, notice + md(source.read_text(), guide_link), 1, "guide")
+        mark = " (EN)" if english_only else ""
+        cards.append(f'<a class="card wide" href="{slug_}.html"><span><strong>{esc(shown)}{mark}</strong></span></a>')
+    note = f'<p class="note">{esc(t("Guides marked (EN) exist in English only."))}</p>' if LANG == "de" else ""
+    write_page("guide/index.html", t("Guides"), f"<h1>{t('Guides')}</h1><p>{t('The design and rules documents of the game, rendered here.')}</p>{note}<div class=\"cards\">" + "".join(cards) + "</div>", 1, "guide")
 
 
 def home():
