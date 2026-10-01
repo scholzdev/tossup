@@ -150,6 +150,10 @@ local function draw_encounter()
     outline(x, y, 214, 84, marked and C.red or current and C.gold or owned and C.line or C.ink)
     if owned then
       local tab_x = x + 130
+      if picking then -- Crystal Ball: any of the three can go (outline first, the tabs sit on top of it)
+        outline(x, y, 214, 84, C.orange)
+        ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = 214, h = 84, action = function() A.discard_bank(owned.uid) end}
+      end
       if marked then
         color(C.red)
         love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
@@ -159,10 +163,6 @@ local function draw_encounter()
         color(C.gold)
         love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
         centered("CURRENT", tab_x, y - 9, 76, ui.f16, C.ink)
-      end
-      if picking then -- Crystal Ball: any of the three can go
-        outline(x, y, 214, 84, C.orange)
-        ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = 214, h = 84, action = function() A.discard_bank(owned.uid) end}
       end
       coin_hover(owned.id, x, y, 214, 84, Game.probability(ui.game, owned)) -- read what the next coins do
       coin_image(owned.id, x + 8, y + 10, 64)
