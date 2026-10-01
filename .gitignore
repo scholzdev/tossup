@@ -8,3 +8,5 @@ dist-content.json
 # documentation is kept locally, not in the repository
 *.md
 !/README.md
+__pycache__/
+*.pyc
