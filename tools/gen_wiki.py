@@ -94,9 +94,8 @@ def effect_text(e):
     if t_ not in one:
         return t_
     template, numbers = one[t_]
-    if LANG == "de":
-        return de_fmt(DESTR.get(template, template), *numbers)
-    return de_fmt(template, *numbers)
+    text = de_fmt(DESTR.get(template, template) if LANG == "de" else template, *numbers)
+    return re.sub(r"\b1 points\b", "1 point", text).replace("1 Punkte", "1 Punkt")
 
 
 def effects_html(effects, side, coin=None):
@@ -126,7 +125,7 @@ def slug(text):
 
 
 def md(text, rewrite=lambda u: u):
-    lines = text.split("\n")
+    lines = [l for l in text.split("\n") if not l.startswith("<!-- ")]   # GEN markers of tools/gen_docs.py
     out, i = [], 0
     while i < len(lines):
         line = lines[i]
