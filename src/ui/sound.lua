@@ -1,6 +1,6 @@
 -- Sound effects (assets/sfx/*.wav, made by tools/gen_sounds.py). The rules never play sound: watch() looks at the
 -- game state every frame and plays what changed, so a new sound only needs a line here.
-local Sound = {enabled = true, sources = {}, last = {}}
+local Sound = {volume = {master = .8, sfx = .8, music = .4}, sources = {}, last = {}}
 
 local NAMES = {"click", "flip", "land_heads", "land_tails", "score", "penalty", "combo", "discard", "buy", "shop",
   "levelup", "win", "lose"}
@@ -10,15 +10,28 @@ function Sound.load()
     local ok, source = pcall(love.audio.newSource, "assets/sfx/" .. name .. ".wav", "static")
     if ok then Sound.sources[name] = source end -- no audio device or file: the game just stays quiet
   end
+  local ok, music = pcall(love.audio.newSource, "assets/music/theme.wav", "stream")
+  if ok then
+    Sound.music = music
+    music:setLooping(true)
+    music:play()
+  end
+end
+
+-- Volumes (0-100 in the profile options): master scales everything, then sfx or music.
+function Sound.apply(options)
+  Sound.volume.master = (options.volume_master or 80) / 100
+  Sound.volume.sfx = (options.volume_sfx or 80) / 100
+  Sound.volume.music = (options.volume_music or 40) / 100
+  if Sound.music then Sound.music:setVolume(Sound.volume.master * Sound.volume.music * .6) end
 end
 
 function Sound.play(name, pitch, volume)
-  if not Sound.enabled then return end
   local source = Sound.sources[name]
   if not source then return end
   source = source:clone() -- clones overlap, so quick events do not cut each other off
   source:setPitch(pitch or 1)
-  source:setVolume(volume or .7)
+  source:setVolume((volume or .7) * Sound.volume.master * Sound.volume.sfx)
   source:play()
 end
 

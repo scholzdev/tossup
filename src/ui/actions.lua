@@ -13,7 +13,7 @@ local PROFILE_FILE = "profile.lua"
 local function apply_options()
   love.window.setFullscreen(ui.profile.options.fullscreen)
   Lang.set(ui.profile.options.language)
-  Sound.enabled = ui.profile.options.sound
+  Sound.apply(ui.profile.options)
 end
 
 function A.load_profile()
@@ -68,9 +68,17 @@ end
 
 function A.toggle_option(key)
   ui.profile.options[key] = not ui.profile.options[key]
-  if key == "fullscreen" or key == "sound" then apply_options() end
+  if key == "fullscreen" then apply_options() end
   save_profile()
 end
+
+-- A volume slider (0-100). Saved when the mouse is released (A.save_options).
+function A.set_volume(key, value)
+  ui.profile.options[key] = math.max(0, math.min(100, math.floor(value + .5)))
+  Sound.apply(ui.profile.options)
+end
+
+function A.save_options() save_profile() end
 
 -- Cycle through the available languages (English, Deutsch).
 function A.cycle_language()

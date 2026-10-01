@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the sound effects as 16-bit mono WAV files with plain Python (no dependencies).
 
-Output: assets/sfx/<name>.wav
+Output: assets/sfx/<name>.wav  and  assets/music/theme.wav (a 32 s chiptune loop)
   click, flip, land_heads, land_tails, score, penalty, combo, discard, buy, shop, levelup, win, lose
 Run from the repo root:  python3 tools/gen_sounds.py
 To change a sound: edit its function below and run again.
@@ -144,13 +144,51 @@ def lose():
     return seq(*parts)
 
 
+# ---------------------------------------------------------------- music
+BPM = 120
+BAR = 60 / BPM * 4  # seconds per 4/4 bar
+CHORDS = [  # (bass, arpeggio notes, melody notes) in A minor: Am F C G
+    (110.0, [220.0, 261.63, 329.63], [659.25, 523.25, 440.0]),
+    (87.31, [174.61, 220.0, 261.63], [523.25, 440.0, 349.23]),
+    (130.81, [261.63, 329.63, 392.0], [783.99, 659.25, 523.25]),
+    (98.0, [196.0, 246.94, 293.66], [587.33, 493.88, 392.0]),
+]
+BARS = 16
+
+
+def place(buffer, track, start):
+    i = int(start * RATE)
+    for k, v in enumerate(track):
+        if i + k < len(buffer):
+            buffer[i + k] += v
+
+
+def music():
+    buffer = [0.0] * int(RATE * BAR * BARS)
+    beat = BAR / 4
+    for bar in range(BARS):
+        bass, arp, melody = CHORDS[bar % 4]
+        t0 = bar * BAR
+        for b in range(4):  # steady square bass on the beat, an octave jump on the off-beats
+            place(buffer, tone(bass, beat * .9, 0.22, "square", decay=3), t0 + b * beat)
+        for step in range(16):  # 16th-note arpeggio, softer in the first half of the piece
+            note = arp[step % 3] * (2 if step % 8 >= 4 else 1)
+            place(buffer, tone(note, beat / 4 * .9, 0.09 if bar < 8 else 0.12, "tri", decay=4), t0 + step * beat / 4)
+        if bar >= 8:  # the melody enters for the second half
+            for k, hit in enumerate((0, 1.5, 2.5)):
+                place(buffer, tone(melody[k], beat * 1.4, 0.16, "square", decay=2.5), t0 + hit * beat)
+        for b in range(8):  # quiet hi-hat
+            place(buffer, noise(0.03, 0.05, 10, 0.95), t0 + b * beat / 2)
+    return buffer
+
+
 SOUNDS = [click, flip, land_heads, land_tails, score, penalty, combo, discard, buy, shop, levelup, win, lose]
 
 
-def write(name, samples):
+def write(name, samples, folder=None):
     peak = max(1e-6, max(abs(s) for s in samples))
     gain = min(1.0, 0.9 / peak)  # normalise loud sounds down, keep quiet ones as authored
-    with wave.open(str(OUT / f"{name}.wav"), "wb") as w:
+    with wave.open(str((folder or OUT) / f"{name}.wav"), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(RATE)
@@ -161,7 +199,10 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for fn in SOUNDS:
         write(fn.__name__, fn())
-    print(f"generated {len(SOUNDS)} sounds in {OUT}")
+    music_dir = ROOT / "assets" / "music"
+    music_dir.mkdir(parents=True, exist_ok=True)
+    write("theme", music(), music_dir)
+    print(f"generated {len(SOUNDS)} sounds in {OUT} and the music loop")
 
 
 if __name__ == "__main__":

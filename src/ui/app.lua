@@ -132,9 +132,20 @@ function app.mousepressed(x, y, mouse_button)
       ui.notice = ""
       Sound.play("click")
       b.action()
+      if b.drag then ui.dragging = b b.drag(x) end -- sliders follow the mouse until it is released
       return
     end
   end
+end
+
+function app.mousemoved(x)
+  if ui.dragging then ui.dragging.drag((ui.to_canvas(x, 0))) end
+end
+
+function app.mousereleased()
+  local slider = ui.dragging
+  ui.dragging = nil
+  if slider and slider.release then slider.release() end
 end
 
 function app.keypressed(key)
