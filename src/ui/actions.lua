@@ -7,6 +7,7 @@ local A = {}
 
 local Lang = require("src.lang")
 local Sound = require("src.ui.sound")
+local Tutorial = require("src.ui.tutorial")
 
 local PROFILE_FILE = "profile.lua"
 
@@ -36,8 +37,7 @@ function A.play()
   if ui.profile.options.seen_help then A.go("select") return end
   ui.profile.options.seen_help = true
   save_profile()
-  ui.help_next = "select"
-  A.go("help")
+  Tutorial.start()
 end
 
 -- Quitting asks first (popup) while a run is in progress, because runs are not saved.
@@ -288,6 +288,10 @@ end
 function A.flip_next_coin()
   local game = ui.game
   if not Game.flip(game) then return end
+  if game.tutorial and (game.tutorial_heads or 0) > 0 then -- the scripted tutorial run always shows Heads first
+    game.tutorial_heads = game.tutorial_heads - 1
+    game.pending.result = "Heads"
+  end
   ui.flip_animation = {id = Game.get_coin(game, game.pending.uid).id,
     outcome = game.pending.result, elapsed = 0,
     duration = ui.profile.options.fast_flip and .8 or 1.6}
@@ -320,20 +324,21 @@ function A.update(dt)
     game.purchased = {}
     if unlocked_now then save_profile() end
   end
-  if game then -- anything that has been in your deck counts as collected
+  local record = game and not game.tutorial and game -- a tutorial run is a throwaway: nothing is saved or logged
+  if record then -- anything that has been in your deck counts as collected
     local fresh = false
-    for _, owned in ipairs(game.coins) do fresh = Profile.collect(ui.profile, owned.id) or fresh end
+    for _, owned in ipairs(record.coins) do fresh = Profile.collect(ui.profile, owned.id) or fresh end
     if fresh then save_profile() end
   end
-  if game and (game.phase == "GAME_OVER" or game.phase == "VICTORY") and not game.tokens_paid then
-    game.tokens_paid = Game.run_tokens(game)
-    log_run(game)
-    ui.profile.tokens = ui.profile.tokens + game.tokens_paid
+  if record and (record.phase == "GAME_OVER" or record.phase == "VICTORY") and not record.tokens_paid then
+    record.tokens_paid = Game.run_tokens(record)
+    log_run(record)
+    ui.profile.tokens = ui.profile.tokens + record.tokens_paid
     save_profile()
   end
-  if game and game.endless and game.phase == "GAME_OVER" and not game.endless_logged then
-    game.endless_logged = true
-    log_run(game) -- an endless run is logged again when it ends, with the levels cleared beyond the boss
+  if record and record.endless and record.phase == "GAME_OVER" and not record.endless_logged then
+    record.endless_logged = true
+    log_run(record) -- an endless run is logged again when it ends, with the levels cleared beyond the boss
   end
   if ui.resolve_timer > 0 and game and not game.paused then
     ui.resolve_timer = ui.resolve_timer - dt

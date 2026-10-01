@@ -40,6 +40,7 @@ local state = {
   hovered_text = nil,
   dragging = nil, -- the slider being dragged (a button with a drag function)
   options_tab = "game", -- Options screen tab: game | sound
+  tutorial = nil, -- {step} while the interactive tutorial is running (src/ui/tutorial.lua)
   confirm = nil, -- a modal popup {title, text, ok}: Clear Progress, Quit during a run
   help_next = nil, -- where the How To Play "continue" button goes on a first run
   cursors = nil, -- {arrow, click} LÖVE cursors, created in app.load

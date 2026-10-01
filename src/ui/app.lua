@@ -4,6 +4,7 @@ local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
 local Sound = require("src.ui.sound")
+local Tutorial = require("src.ui.tutorial")
 local views = {
   ENCOUNTER = require("src.ui.views.encounter"),
   SHOP = require("src.ui.views.shop"),
@@ -108,6 +109,7 @@ function app.draw()
   if not ui.game or ui.game.paused then screens[ui.screen]() else draw_game() end
   D.coin_tooltip()
   D.text_tooltip()
+  if ui.tutorial then Tutorial.draw() end
   D.confirm_dialog()
   love.graphics.pop()
   love.graphics.pop()
@@ -115,6 +117,7 @@ end
 
 function app.update(dt)
   A.update(dt)
+  Tutorial.update()
   Sound.watch(ui)
   if ui.cursors then -- pick the cursor from what the last frame drew under the mouse
     local mx, my = ui.mouse()
@@ -158,6 +161,10 @@ end
 function app.keypressed(key)
   local game = ui.game
   if key == "f3" then ui.debug_visible = not ui.debug_visible return end
+  if ui.tutorial then
+    if key == "escape" then Tutorial.finish() return end
+    if (key == "space" or key == "return") and not Tutorial.interactive() then Tutorial.next() return end
+  end
   if ui.confirm then -- a popup is open: Esc cancels it (or confirms a notice that has only OK)
     if key == "escape" or key == "return" and ui.confirm.single then
       local c = ui.confirm
