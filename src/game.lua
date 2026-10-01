@@ -16,6 +16,7 @@ Game.DECK_MAX = 10 -- the shop cannot grow the deck past this: buying is refused
 Game.EXCHANGE_BASE = 10 -- gold for the first exchange of a level (empty stack): played coins come back
 Game.EXCHANGE_STEP = 5 -- every further exchange in the same level costs this much more
 Game.EXCHANGE_GAIN = 3 -- played coins that come back into the stack in exchange
+Game.COMBO_STEP, Game.COMBO_CAP = 0.25, 3 -- combo: x1 + 0.25 per extra same result in a row, up to x3
 Game.RETURN_CAP = 3 -- "extra draw" effects (a coin returning to the pile) per level
 Game.START_GOLD = 25
 Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
@@ -24,8 +25,8 @@ Game.MAX_COPIES = 3 -- copies of one coin in a set; the plain Normal coin is exe
 local route = {
   {name = "Opening", per_coin = 0.6, payout = 25},
   {name = "Second Chance", per_coin = 0.9, payout = 30},
-  {name = "High Stakes", per_coin = 1.5, payout = 35},
-  {name = "The House", per_coin = 2.6, boss = true},
+  {name = "High Stakes", per_coin = 1.6, payout = 35},
+  {name = "The House", per_coin = 3.0, boss = true},
 }
 
 local function log(game, message)
@@ -154,7 +155,7 @@ local function start_encounter(game)
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = quota, max_quota = quota,
     boss = stage.boss or false, payout = stage.payout,
-    flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {},
+    flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {}, combo_side = nil, combo_len = 0, shield = 0, combo_step = Game.COMBO_STEP, combo_cap = Game.COMBO_CAP,
     returned = 0, played = {}, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
   game.pending = nil
@@ -415,6 +416,12 @@ local function apply_effect(game, item, effect)
   elseif effect.type == "energy" then
     p.energy = p.energy + effect.amount
     return "+" .. effect.amount .. " energy"
+  elseif effect.type == "combo_bonus" then
+    e.combo_len = e.combo_len + effect.amount
+    return "combo +" .. effect.amount
+  elseif effect.type == "combo_shield" then
+    e.shield = e.shield + effect.amount
+    return "combo shield"
   elseif effect.type == "next_mult" then
     Game.add_buff(game, "mult", effect.amount, effect.coins)
     return "next " .. effect.coins .. " coins x" .. effect.amount
@@ -503,6 +510,10 @@ function Game.resolve(game)
   local final = result.result -- already decided (relics, boss inversion) when the coin was flipped
   result.final = final
   e.streak = final == "Heads" and e.streak + 1 or 0
+  -- combo: consecutive identical results. A shield (Anchor) lets one different result pass without breaking it.
+  if e.combo_side == final then e.combo_len = e.combo_len + 1
+  elseif e.combo_side and e.shield > 0 then e.shield = e.shield - 1
+  else e.combo_side, e.combo_len = final, 1 end
   -- hooks get a private copy of the effect list so they can edit it without touching the def
   local res = {result = final, raw = result.raw, effects = {}}
   local side = buff_active(game, "swap") and (final == "Heads" and "tails" or "heads") or string.lower(final)
@@ -514,11 +525,16 @@ function Game.resolve(game)
   for _, buff in ipairs(e.buffs) do
     if buff.kind == "mult" and not buff.fresh then multiplier = multiplier * buff.amount end
   end
-  if multiplier ~= 1 then -- a "next coins pay double" buff doubles points and gold
+  local combo = math.min(e.combo_cap, 1 + e.combo_step * (math.max(e.combo_len, 1) - 1))
+  if res.cash_out then combo = combo * combo end -- Cash Out spends the combo twice (then resets it)
+  result.combo = {len = e.combo_len, mult = combo, side = e.combo_side}
+  multiplier = multiplier * combo
+  if multiplier ~= 1 then -- buffs ("next coins pay double") and the combo multiply points and gold
     for _, effect in ipairs(res.effects) do
-      if effect.type == "score" or effect.type == "gold" then effect.amount = math.floor(effect.amount * multiplier) end
+      if effect.type == "score" or effect.type == "gold" then effect.amount = math.floor(effect.amount * multiplier + .5) end
     end
   end
+  if res.cash_out then e.combo_side, e.combo_len = nil, 0 end
   local messages = {}
   local scored_before, quota_total_before = e.scored, e.max_quota
   for _, effect in ipairs(res.effects) do

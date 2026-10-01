@@ -405,7 +405,7 @@ equal(bossy.phase, "VICTORY")
 -- quotas scale with the number of coins in the deck (a level lasts as long as the stack)
 equal(Game.quota_for(1, 5), 3)
 equal(Game.quota_for(1, 10), 6)
-equal(Game.quota_for(4, 10), 26)
+equal(Game.quota_for(4, 10), 30)
 equal(Game.quota_for(2, 1), 1, "never below 1")
 equal(Game.new(51, "blade").encounter.quota, Game.quota_for(1, 5), "a level's quota comes from the deck size at level start")
 

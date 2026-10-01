@@ -51,6 +51,8 @@ local function effects(effects_list)
   for _, e in ipairs(effects_list) do
     if e.type == "next_mult" then parts[#parts + 1] = L("NEXT %d x%d", e.coins, e.amount) goto continue end
     if e.type == "next_odds" then parts[#parts + 1] = L("NEXT %d +%d%%", e.coins, math.floor(e.amount * 100 + .5)) goto continue end
+    if e.type == "combo_bonus" then parts[#parts + 1] = L("COMBO +%d", e.amount) goto continue end
+    if e.type == "combo_shield" then parts[#parts + 1] = L("COMBO SHIELD") goto continue end
     if e.type == "next_swap" then parts[#parts + 1] = L("NEXT: SWAP") goto continue end
     if e.type == "next_heads" then parts[#parts + 1] = L("NEXT: HEADS") goto continue end
     local amount = e.type == "probability" and math.floor(e.amount * 100 + .5) or e.amount
@@ -80,6 +82,8 @@ local function effect_description(effects_list)
     elseif effect.type == "next_odds" then
       local pct = math.floor(amount * 100 + .5)
       parts[#parts + 1] = effect.coins == 1 and L("Next coin: +%d%% Heads", pct) or L("Next %d coins: +%d%% Heads", effect.coins, pct)
+    elseif effect.type == "combo_bonus" then parts[#parts + 1] = L("Combo grows %d extra step", amount)
+    elseif effect.type == "combo_shield" then parts[#parts + 1] = L("The next combo break is prevented")
     elseif effect.type == "next_swap" then parts[#parts + 1] = L("Next coin uses its other side")
     elseif effect.type == "next_heads" then parts[#parts + 1] = L("Next coin lands Heads")
     end

@@ -54,6 +54,11 @@ COLORS = {
     "twin": "7a6fb3",
     "pot": "a67c4b",
     "domino": "5c6b7a",
+    "hot_hand": "d9552e",
+    "anchor": "4a7aa8",
+    "bettor": "9a4f7a",
+    "cash_out": "4f9a58",
+    "cold_streak": "6fa8c9",
 }
 
 
@@ -230,6 +235,26 @@ def emblem(image, coin_id):
         d.line(points([(48, 64), (80, 64)]), fill=dark, width=p(3))
         for x, y in ((58, 44), (70, 54), (58, 78), (70, 88)):
             d.ellipse(box(x - 4, y - 4, x + 4, y + 4), fill=dark)
+    elif coin_id == "hot_hand":  # a flame
+        d.polygon(points([(64, 28), (80, 52), (86, 70), (78, 92), (64, 98), (50, 92), (42, 72), (50, 56), (56, 66), (58, 46)]), fill=ivory)
+        d.polygon(points([(64, 66), (72, 80), (64, 92), (56, 80)]), fill=dark)
+    elif coin_id == "anchor":  # an anchor
+        d.ellipse(box(57, 30, 71, 44), outline=ivory, width=p(4))
+        d.line(points([(64, 44), (64, 92)]), fill=ivory, width=p(6))
+        d.line(points([(50, 56), (78, 56)]), fill=ivory, width=p(5))
+        d.arc(box(40, 58, 88, 100), 20, 160, fill=ivory, width=p(6))
+    elif coin_id == "bettor":  # a stack of poker chips
+        for y in (84, 70, 56, 42):
+            d.ellipse(box(42, y, 86, y + 18), fill=ivory, outline=dark, width=p(2))
+            d.line(points([(54, y + 9), (74, y + 9)]), fill=dark, width=p(2))
+    elif coin_id == "cash_out":  # a big arrow up on a base line
+        d.polygon(points([(64, 30), (88, 58), (72, 58), (72, 84), (56, 84), (56, 58), (40, 58)]), fill=ivory)
+        d.line(points([(42, 94), (86, 94)]), fill=ivory, width=p(6))
+    elif coin_id == "cold_streak":  # a snowflake
+        for ang in (0, 60, 120):
+            a = math.radians(ang)
+            d.line(points([(64 - 30 * math.cos(a), 64 - 30 * math.sin(a)), (64 + 30 * math.cos(a), 64 + 30 * math.sin(a))]), fill=ivory, width=p(5))
+        d.ellipse(box(57, 57, 71, 71), fill=ivory)
     elif coin_id == "back":
         d.arc(box(44, 37, 84, 76), 190, 350, fill=ivory, width=p(8))
         d.line(points([(83, 59), (64, 77), (64, 82)]), fill=ivory, width=p(8))

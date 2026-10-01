@@ -9,6 +9,7 @@ local function level(ids, seed)
   local game = Game.new(seed or 1, "test", require("content.coin_order"), ids, false)
   local e = game.encounter
   e.quota, e.max_quota = 1000, 1000
+  e.combo_step = 0 -- the combo has its own tests (test_combo.lua)
   local by_id = {}
   for _, coin in ipairs(game.coins) do by_id[#by_id + 1] = coin.uid end
   e.queue, e.pile = {}, {}

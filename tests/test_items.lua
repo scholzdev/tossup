@@ -11,6 +11,7 @@ end
 local function fresh(items, seed)
   local game = Game.new(seed or 1, "blade")
   game.encounter.quota = 1000
+  game.encounter.combo_step = 0 -- the combo has its own tests (test_combo.lua)
   game.reshuffle = true
   game.items = items
   return game

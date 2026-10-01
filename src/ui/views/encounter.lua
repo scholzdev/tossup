@@ -208,6 +208,19 @@ local function draw_encounter()
   end
   draw_flip_animation()
 
+  -- combo meter: consecutive identical results multiply points; drawn in the stage's top right corner
+  do
+    local len, side = e.combo_len, e.combo_side
+    local mult = math.min(e.combo_cap, 1 + e.combo_step * (math.max(len, 1) - 1))
+    local tint = len < 2 and C.muted or side == "Heads" and C.blue or C.red
+    local label = len >= 1 and D.L("COMBO  %s x%d", D.L(side == "Heads" and "HEADS" or "TAILS"), len) or D.L("COMBO")
+    local face = ui.f16
+    text(label, 1190 - face:getWidth(D.L(label)), 184, face, tint)
+    local big = string.format("x%.2f", mult)
+    text(big, 1190 - ui.f32:getWidth(big), 202, ui.f32, len < 2 and C.muted or C.gold)
+    if e.shield > 0 then text(D.L("SHIELD %d", e.shield), 1190 - face:getWidth(D.L("SHIELD %d", e.shield)), 238, face, C.green) end
+  end
+
   -- the two effects
   local coin = item and catalog[item.id] or ui.flip_animation and catalog[ui.flip_animation.id]
   for k, side in ipairs({"HEADS", "TAILS"}) do
@@ -227,6 +240,7 @@ local function draw_encounter()
     if ui.game.dealt and not ui.holding then note = "FLIP IT OR DISCARD"
     elseif ui.game.pending then note = "APPLYING..."
     elseif result.gained and result.gained > 0 then note, note_color = D.L("+%d POINTS", result.gained), C.green
+      if result.combo and result.combo.mult > 1.001 then note = D.L("+%d POINTS  (x%.2f)", result.gained, result.combo.mult) end
     elseif result.penalty and result.penalty > 0 then note, note_color = D.L("QUOTA +%d", result.penalty), C.red
     elseif result.gained then note = "NO POINTS" end
     if not (ui.game.dealt and not ui.holding) then

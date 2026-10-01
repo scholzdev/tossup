@@ -43,6 +43,7 @@ RELICS = {
     "penny": "b9784a",
     "clock": "c4a13a",
     "metronome": "6f8fc4",
+    "baton": "b0689a",
 }
 
 
@@ -143,6 +144,9 @@ def emblem(d, name):
         d.polygon(points([(48, 92), (80, 92), (72, 38), (56, 38)]), fill=IVORY)
         d.line(points([(64, 84), (80, 42)]), fill=DARK, width=p(4))
         d.ellipse(box(74, 40, 86, 52), fill=DARK)
+    elif name == "baton":  # a conductor's baton
+        d.line(points([(44, 90), (88, 38)]), fill=IVORY, width=p(7))
+        d.ellipse(box(36, 84, 50, 98), fill=IVORY)
     else:
         raise ValueError(name)
 
