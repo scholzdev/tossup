@@ -221,6 +221,9 @@ def fix_headings(text, de):
 
 
 def process(path, edit):
+    if not path.exists():   # the markdown is kept locally, not in the repository
+        print(f"skipped {path.relative_to(ROOT)} (not there)")
+        return
     text = path.read_text()
     new = edit(text)
     if new != text:

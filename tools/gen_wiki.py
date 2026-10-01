@@ -57,7 +57,7 @@ DE = {
     "The quota is the per-coin value times the number of coins in your deck. After the boss,": "Das Ziel ist der Wert pro Münze mal der Anzahl der Münzen in deinem Deck. Nach dem Boss fügt der",
     "Endless Mode": "Endlosmodus", "adds levels that ask 0.5 more per coin each time.": "Level hinzu, die jedes Mal 0,5 mehr pro Münze verlangen.",
     "Key numbers": "Wichtige Zahlen", "Starting gold": "Startgold", "Deck slots": "Deckplätze", "Exchange": "Tausch", "Combo": "Serie", "Bank": "Bank",
-    "Start with the": "Beginne mit der", "gameplay guide": "Spielanleitung", "or browse the": "oder stöbere in den", "coins": "Münzen",
+    "Start with the": "Beginne mit der", "Browse the": "Stöbere in den", "gameplay guide": "Spielanleitung", "or browse the": "oder stöbere in den", "coins": "Münzen",
 }
 
 
@@ -185,8 +185,9 @@ for path in sorted(DOCS.glob("*.md")):
         continue
     title = re.search(r"^# (.+)$", path.read_text(), re.M)
     GUIDES.append((path.stem, title.group(1) if title else path.stem.title(), path))
-GUIDES.append(("play", "Quick start (PLAY.md)", ROOT / "PLAY.md"))
-GUIDES.append(("spec", "Complete reference (GAME_SPEC.md)", ROOT / "GAME_SPEC.md"))
+# the markdown is not part of the repository (it is kept locally); without it the wiki has no guides and no notes
+if (ROOT / "PLAY.md").exists(): GUIDES.append(("play", "Quick start (PLAY.md)", ROOT / "PLAY.md"))
+if (ROOT / "GAME_SPEC.md").exists(): GUIDES.append(("spec", "Complete reference (GAME_SPEC.md)", ROOT / "GAME_SPEC.md"))
 LINK_MAP = {"../PLAY.md": "play.html", "../GAME_SPEC.md": "spec.html", "../readme.md": "#", "../impl.md": "#", "README.md": "index.html"}
 
 
@@ -201,6 +202,8 @@ def guide_link(url):
 # once from the English docs and once from the German ones in docs/de/ (keyed by the name in that language)
 def read_notes(folder):
     coins, items, relics = {}, {}, {}
+    if not (folder / "coins.md").exists() or not (folder / "items-and-relics.md").exists():
+        return coins, items, relics
     text = (folder / "coins.md").read_text()
     for m in re.finditer(r"^### ([^\n(]+?) \([^\n]*\n(.*?)(?=^###|^---|^## |\Z)", text, re.M | re.S):
         coins[m.group(1).strip().lower()] = m.group(2).strip()
@@ -262,7 +265,7 @@ def frame(title, body, depth, active, path):
     nav = [("index.html", t("Home"), "home"), ("coins/index.html", f"{t('Coins')} ({len(DATA['coins'])})", "coins"),
            ("chips/index.html", f"{t('Chips')} ({len(DATA['items'])})", "chips"), ("prizes/index.html", f"{t('Prizes')} ({len(DATA['relics'])})", "prizes"),
            ("modifiers/index.html", t("Level modifiers"), "modifiers"), ("characters/index.html", t("Characters"), "characters"),
-           ("guide/index.html", t("Guides"), "guide")]
+           ("guide/index.html", t("Guides"), "guide")][:6 if GUIDES else 5]
     side = "".join(f'<a class="{"on" if key == active else ""}" href="{base}{href}">{esc(label)}</a>' for href, label, key in nav)
     en_href = f"{assets}{path}"
     de_href = f"{assets}de/{path}"
@@ -437,6 +440,8 @@ def other_pages():
 
 
 def guide_pages():
+    if not GUIDES:
+        return
     cards = []
     for slug_, title, path in GUIDES:
         german = ROOT / "docs" / "de" / ("play.md" if slug_ == "play" else f"{slug_}.md")
@@ -458,7 +463,7 @@ def home():
     c = DATA["constants"]
     route = "".join(f"<tr><td>{i + 1}</td><td>{esc(t(s['name']) if LANG == 'en' else DESTR.get(s['name'], s['name']))}</td><td>{s['per_coin']}</td><td>{s.get('payout') or t('ends the run')}</td></tr>" for i, s in enumerate(DATA["route"]))
     counts = [(t("Coins"), "coins/index.html", len(DATA["coins"])), (t("Chips"), "chips/index.html", len(DATA["items"])), (t("Prizes"), "prizes/index.html", len(DATA["relics"])),
-              (t("Modifiers"), "modifiers/index.html", len(DATA["modifiers"])), (t("Characters"), "characters/index.html", len(DATA["characters"])), (t("Guides"), "guide/index.html", len(GUIDES))]
+              (t("Modifiers"), "modifiers/index.html", len(DATA["modifiers"])), (t("Characters"), "characters/index.html", len(DATA["characters"]))] + ([(t("Guides"), "guide/index.html", len(GUIDES))] if GUIDES else [])
     tiles = "".join(f'<a class="tile" href="{u}"><strong>{n}</strong><span>{l}</span></a>' for l, u, n in counts)
     if LANG == "de":
         intro = t("Tossup is a roguelike about flipping coins: build a small deck, flip one coin at a time, and score points against a quota before your stack runs out. This wiki lists everything in the game.")
@@ -467,7 +472,7 @@ def home():
                    f"<tr><th>{t('Exchange')}</th><td>{c['EXCHANGE_BASE']} Gold zahlen (+{c['EXCHANGE_STEP']} jedes Mal), um {c['EXCHANGE_GAIN']} gespielte Münzen zurückzubekommen, höchstens {c['EXCHANGE_MAX']}-mal pro Level</td></tr>"
                    f"<tr><th>{t('Combo')}</th><td>+{c['COMBO_STEP']} Multiplikator je gleiches Ergebnis in Folge, bis x{c['COMBO_CAP']}</td></tr>"
                    f"<tr><th>{t('Bank')}</th><td>du siehst die nächsten {c['VISIBLE']} Münzen; die Starthand hat {c['MULLIGAN']}</td></tr>")
-        outro = f"{t('Start with the')} <a href=\"guide/gameplay.html\">{t('gameplay guide')}</a> {t('or browse the')} <a href=\"coins/index.html\">{t('coins')}</a>."
+        outro = (f"{t('Start with the')} <a href=\"guide/gameplay.html\">{t('gameplay guide')}</a> {t('or browse the')} " if GUIDES else f"{t('Browse the')} ") + f"<a href=\"coins/index.html\">{t('coins')}</a>."
     else:
         intro = "Tossup is a roguelike about flipping coins: build a small deck, flip one coin at a time, and score points against a quota before your stack runs out. This wiki lists everything in the game."
         quota = "The quota is the per-coin value times the number of coins in your deck. After the boss, <strong>Endless Mode</strong> adds levels that ask 0.5 more per coin each time."
@@ -475,7 +480,7 @@ def home():
                    f"<tr><th>Exchange</th><td>pay {c['EXCHANGE_BASE']} gold (+{c['EXCHANGE_STEP']} each time) to get {c['EXCHANGE_GAIN']} played coins back, at most {c['EXCHANGE_MAX']} times per level</td></tr>"
                    f"<tr><th>Combo</th><td>+{c['COMBO_STEP']} multiplier per same result in a row, up to x{c['COMBO_CAP']}</td></tr>"
                    f"<tr><th>Bank</th><td>you see the next {c['VISIBLE']} coins; the opening hand has {c['MULLIGAN']}</td></tr>")
-        outro = 'Start with the <a href="guide/gameplay.html">gameplay guide</a> or browse the <a href="coins/index.html">coins</a>.'
+        outro = ('Start with the <a href="guide/gameplay.html">gameplay guide</a> or browse the ' if GUIDES else 'Browse the ') + '<a href="coins/index.html">coins</a>.'
     body = f"""<h1>Tossup Wiki</h1>
 <p class="lead">{intro}</p>
 <div class="tiles">{tiles}</div>

@@ -10,9 +10,6 @@ on:
     paths:
       - content/**
       - locales/**
-      - docs/**
-      - GAME_SPEC.md
-      - PLAY.md
       - src/game.lua
       - assets/coins/**
       - assets/items/**
