@@ -233,15 +233,13 @@ equal(d2.dealt.uid, d2.coins[1].uid, "discarded coin never returns")
 
 for id, r in pairs(real) do chars[id].starter, chars[id].deck, chars[id].pool, chars[id].locked = r[1], r[2], r[3], r[4] end
 
--- real content: every character starts with a full 10-coin set, and a win opens the shop
-for id, def in pairs(Game.characters()) do
-  if real[id] then equal(#real[id][2], Game.START_MAX, id .. " default deck has ten coins") end
+-- real content: every character starts with 5 Normal coins (5 free slots), and a win opens the shop
+for id in pairs(Game.characters()) do
+  equal(#real[id][2], 5, id .. " default deck has five coins")
+  for _, coin_id in ipairs(real[id][2]) do equal(coin_id, "normal", id .. " starts with Normal coins") end
 end
 local blade = Game.new(3, "blade")
-equal(#blade.coins, Game.START_MAX)
-local normals = 0
-for _, c in ipairs(blade.coins) do if c.id == "normal" then normals = normals + 1 end end
-assert(normals < Game.START_MAX, "the default deck is not all Normal coins")
+equal(#blade.coins, 5)
 blade.encounter.quota = 1
 assert(Game.flip(blade))
 blade.pending.result = "Heads"
@@ -280,9 +278,8 @@ local shopper = Game.new(5, "blade")
 shopper.phase = "SHOP"
 shopper.shop_offers = {"hammer"}
 shopper.player.gold = 60
-assert(not Game.buy(shopper, 1), "the starting deck is full")
-assert(Game.remove(shopper, shopper.coins[1].uid))
-assert(Game.buy(shopper, 1))
+assert(Game.buy(shopper, 1), "the starting deck has free slots")
+equal(#shopper.coins, 6)
 assert(shopper.purchased.hammer, "purchase recorded")
 
 -- reroll gets 2 gold dearer each time within one visit and resets in the next shop
