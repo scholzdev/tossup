@@ -160,6 +160,9 @@ local function draw_coin_tooltip()
   local coin = catalog[ui.hovered_coin.id]
   local mx, my = ui.mouse()
   local w, h = 390, ui.hovered_coin.locked and 204 or 172
+  local _, lines = ui.f16:getWrap(coin.description, w - 92) -- long descriptions wrap and push the rest down
+  local extra = math.max(0, #lines - 1) * 18
+  h = h + extra
   local x = math.min(mx + 18, 1280 - w - 12)
   local y = my + 18
   if y + h > 788 then y = my - h - 18 end
@@ -168,14 +171,16 @@ local function draw_coin_tooltip()
   outline(x, y, w, h, C.gold)
   coin_image(ui.hovered_coin.id, x + 9, y + 9, 62)
   text(coin.name:upper(), x + 78, y + 12, ui.f20, C.face)
-  text(coin.description, x + 78, y + 40, ui.f16, C.muted)
+  love.graphics.setFont(ui.f16)
+  color(C.muted)
+  love.graphics.printf(coin.description, x + 78, y + 40, w - 92)
   local heads = math.floor(ui.hovered_coin.probability * 100 + .5)
   text(L("HEADS %d%%  /  TAILS %d%%", heads, 100 - heads) ..
-    ((coin.energy_cost or 0) > 0 and L("  -  COSTS %d ENERGY", coin.energy_cost) or ""), x + 14, y + 78, ui.f16, C.gold)
-  text(L("HEADS") .. "  " .. effect_description(coin.heads), x + 14, y + 108, ui.f16, C.blue)
-  text(L("TAILS") .. "  " .. effect_description(coin.tails), x + 14, y + 137, ui.f16, C.red)
+    ((coin.energy_cost or 0) > 0 and L("  -  COSTS %d ENERGY", coin.energy_cost) or ""), x + 14, y + 78 + extra, ui.f16, C.gold)
+  text(L("HEADS") .. "  " .. effect_description(coin.heads), x + 14, y + 108 + extra, ui.f16, C.blue)
+  text(L("TAILS") .. "  " .. effect_description(coin.tails), x + 14, y + 137 + extra, ui.f16, C.red)
   if ui.hovered_coin.locked then
-    text("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK", x + 14, y + 172, ui.f16, C.orange)
+    text("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK", x + 14, y + 172 + extra, ui.f16, C.orange)
   end
 end
 
