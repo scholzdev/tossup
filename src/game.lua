@@ -511,6 +511,7 @@ local function lose_level(game, why)
   game.phase = "GAME_OVER"
   game.exchange_open = false
   game.dealt = nil
+  game.lost_why = why
   log(game, "Defeat: " .. why)
   Hooks.unbind()
   Items.clear()
@@ -577,7 +578,7 @@ function Game.stack_empty(game)
   elseif can_exchange then
     game.exchange_open = true
   else
-    lose_level(game, "out of coins.")
+    lose_level(game, "out of coins, and not enough gold to exchange.")
   end
 end
 

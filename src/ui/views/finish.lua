@@ -44,8 +44,14 @@ local function draw_end()
   text(tostring(g.player.gold), 746, 436, ui.f32, C.gold)
   text("GOLD LEFT", 690, 484, ui.f16, C.muted)
   text("SEED " .. g.seed, 690, 512, ui.f16, C.muted)
+  if not won and g.lost_why then
+    love.graphics.setFont(ui.f16)
+    color(C.red)
+    love.graphics.printf(g.lost_why:sub(1, 1):upper() .. g.lost_why:sub(2), 380, 570, 520, "center")
+  end
 
   D.icon_button("NEW RUN", ui.ui_images.start_level, 470, 600, 340, 64, C.green, function() A.start() end)
+  button("BACK TO MENU", 520, 686, 240, 44, C.panel_light, A.open_menu)
   button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu)
 end
 

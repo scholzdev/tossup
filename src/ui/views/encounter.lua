@@ -231,7 +231,7 @@ local function draw_encounter()
   if ui.game.mulligan then hint = "Mark the coins you do not want." end
   if e.cleared then hint = "Keep going for gold, or open the shop." end
   if not ui.game.dealt and not ui.game.mulligan and not ui.game.pending and not ui.flip_animation and not ui.holding then
-    hint = Game.can_exchange(ui.game) and "No coins left: exchange?" or "No coins left."
+    hint = not Game.can_exchange(ui.game) and "No coins left." or nil
   end
   if ui.game.dealt and not ui.holding and not Game.can_flip(ui.game) then hint = "Too little energy: discard it." end
   if ui.game.peek then
@@ -271,13 +271,25 @@ local function draw_encounter()
   end
   local empty_stack = not ui.game.dealt and not ui.game.mulligan and not ui.game.pending
     and not ui.flip_animation and not ui.holding
-  if empty_stack then
-    -- no coins left: exchange two played Normal coins for some back, give up, or (cleared) open the shop
+  local out_of_coins = empty_stack and not e.cleared and Game.can_exchange(ui.game)
+  if out_of_coins then
+    -- the run is about to end: a notice over the stage with the three ways on
+    color(C.ink, .72)
+    love.graphics.rectangle("fill", 330, 170, 880, 480, 6)
+    box(500, 250, 540, 320, C.panel_dk)
+    outline(500, 250, 540, 320, C.red)
+    centered("OUT OF COINS", 500, 272, 540, ui.f32, C.red)
+    centered(e.quota .. " POINTS SHORT OF THE QUOTA", 500, 316, 540, ui.f16, C.muted)
+    D.icon_button("BUY MORE COINS  " .. Game.exchange_cost(ui.game) .. " GOLD > " .. Game.EXCHANGE_GAIN,
+      ui.ui_images.exchange, 530, 356, 480, 56, C.green, A.exchange)
+    D.icon_button("START AGAIN", ui.ui_images.start_level, 530, 424, 480, 56, C.gold, function() A.start() end)
+    D.icon_button("BACK TO MENU", ui.ui_images.give_up, 530, 492, 480, 56, C.panel_light, A.open_menu)
+  elseif empty_stack then
+    -- cleared with an empty stack: exchange for more gold, or open the shop
     if Game.can_exchange(ui.game) then
       D.icon_button("PAY " .. Game.exchange_cost(ui.game) .. " > " .. Game.EXCHANGE_GAIN .. " COINS", ui.ui_images.exchange,
         550, 676, 260, 64, C.green, A.exchange)
     end
-    if not e.cleared then D.icon_button("GIVE UP", ui.ui_images.give_up, 330, 676, 200, 64, C.red, A.give_up) end
   else
     local flip_label = ui.flip_animation and "FLIPPING..." or ui.holding and "NEXT COIN" or "FLIP"
     local can_act = ui.game.dealt ~= nil and not ui.flip_animation and (ui.holding or not ui.game.pending)
