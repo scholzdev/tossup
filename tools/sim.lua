@@ -50,7 +50,7 @@ local function value_of(points, gold, penalty, energy) return points - penalty +
 local ENERGY_WORTH = .5 -- what one energy is worth in points when a coin charges for it
 
 -- Flip a coin many times in a neutral deck (X, sword, dagger, normal, normal) and total what its
--- own effects did. Context-dependent coins (Echo, Chain, Capacitor...) are measured in that context.
+-- own effects did. Context-dependent coins (Echo, Chain, Flux Capacitor...) are measured in that context.
 local function measure(id, games, flips)
   characters.sim = {name = "Sim", description = "", starter = "normal", pool = {"normal", "sword", "dagger", "hammer"},
     deck = {id, "sword", "dagger", "normal", "normal"}, locked = {}}

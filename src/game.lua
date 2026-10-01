@@ -367,6 +367,17 @@ function Game.can_flip(game)
   return Game.flip_cost(game, game.dealt.uid) <= game.player.energy or #game.coins - e.discards <= 1
 end
 
+-- Spend one "bank_discard" (Crystal Ball Tails): throw away any of the visible bank coins, free. Returns true if it worked.
+function Game.discard_bank(game, uid)
+  local e = game.encounter
+  if not e or (e.bank_discards or 0) < 1 then return false end
+  local visible = false
+  for i = 1, math.min(Game.VISIBLE, #e.queue) do if e.queue[i] == uid then visible = true end end
+  if not visible or Game.discard(game, {uid}) == 0 then return false end
+  e.bank_discards = e.bank_discards - 1
+  return true
+end
+
 -- Discard coins from the bank for the rest of the level. Free. uids is a list of bank coins; with
 -- no list the front coin goes. At least one coin must stay usable. Returns how many were discarded.
 function Game.discard(game, uids)
@@ -443,6 +454,9 @@ local function apply_effect(game, item, effect)
     for i = 1, 2 do if e.pile[i] then peek[#peek + 1] = e.pile[i] end end
     if #peek > 0 then game.peek_next = peek end -- shown once the next coin is dealt (deal clears the old peek)
     return "peek"
+  elseif effect.type == "bank_discard" then
+    e.bank_discards = (e.bank_discards or 0) + effect.amount -- spent by Game.discard_bank
+    return "discard one"
   elseif effect.type == "extra_exchange" then
     e.extra_exchanges = (e.extra_exchanges or 0) + effect.amount
     return "+" .. effect.amount .. " exchange"

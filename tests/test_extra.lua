@@ -90,11 +90,14 @@ scored(horo, "Heads")
 assert(math.abs(horo.encounter.magnet - .07) < 1e-9)
 assert(math.abs(Game.probability(horo, horo.coins[2]) - .57) < 1e-9)
 
--- Crystal Ball shows the next two coins of the pile
-local ball = level({"crystal_ball", "normal", "normal", "normal"})
-ball.encounter.pile = {ball.coins[3].uid, ball.coins[4].uid}
-scored(ball, "Heads")
-equal(#ball.peek, 2)
+-- Crystal Ball: Heads 5 points; Tails lets you discard one of the next three bank coins (once)
+local ball = level({"crystal_ball", "sword", "dagger", "normal", "normal"})
+scored(ball, "Tails")
+equal(ball.encounter.bank_discards, 1)
+local victim = ball.encounter.queue[2]
+assert(Game.discard_bank(ball, victim))
+assert(ball.encounter.discarded[victim])
+assert(not Game.discard_bank(ball, ball.encounter.queue[2]), "only one discard per Tails")
 
 -- chips
 local chips = level({"normal", "normal", "normal"})

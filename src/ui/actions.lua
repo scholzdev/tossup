@@ -269,6 +269,12 @@ function A.discard_current()
   ui.marked = {}
 end
 
+-- Crystal Ball Tails: click a bank coin to discard it.
+function A.discard_bank(uid)
+  Game.discard_bank(ui.game, uid)
+  ui.marked = {}
+end
+
 function A.start(seed)
   saved_key = nil
   if not Profile.character_unlocked(ui.profile, ui.selected_character) then return end -- win a run with the one before first

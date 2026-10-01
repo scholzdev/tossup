@@ -1,6 +1,6 @@
 -- Turns the energy stat into points (makes energy worth saving instead of discarding).
 return {
-  name = "Capacitor", description = "Heads: 2 points per energy you hold. Tails: +1 energy.",
+  name = "Flux Capacitor", description = "Heads: 2 points per energy you hold. Tails: +1 energy.",
   rarity = "R",
   energy_cost = 1,
   probability = .5,

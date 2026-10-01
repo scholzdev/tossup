@@ -6,5 +6,5 @@ return {
   energy_cost = 1,
   probability = .6,
   heads = {{type = "score", amount = 11}},
-  tails = {{type = "penalty", amount = 3}},
+  tails = {{type = "penalty", amount = 6}},
 }

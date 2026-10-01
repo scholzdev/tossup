@@ -90,7 +90,7 @@ def effect_text(e):
            "next_swap": ("Next coin uses its other side", []), "next_heads": ("Next coin lands Heads", []),
            "combo_bonus": ("Combo grows %d extra step", [a]), "combo_shield": ("The next combo break is prevented", []),
            "amplify": ("Buffs last 1 coin longer and get stronger", []), "all_odds": ("All coins +%d%% Heads this level", [pc]),
-           "peek": ("Look at the next two coins", []), "extra_exchange": ("One more exchange this level", [])}
+           "peek": ("Look at the next two coins", []), "bank_discard": ("Discard one of the next three coins", []), "extra_exchange": ("One more exchange this level", [])}
     if t_ not in one:
         return t_
     template, numbers = one[t_]

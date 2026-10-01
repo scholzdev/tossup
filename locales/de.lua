@@ -81,7 +81,7 @@ return {
   ["Next %d coins pay x%d"] = "Die nächsten %d Münzen zahlen x%d", ["Next coin: +%d%% Heads"] = "Nächste Münze: +%d %% Kopf",
   ["Next %d coins: +%d%% Heads"] = "Nächste %d Münzen: +%d %% Kopf", ["Next coin uses its other side"] = "Nächste Münze nutzt ihre andere Seite",
   ["Next coin lands Heads"] = "Nächste Münze landet auf Kopf", ["BUFF"] = "BONUS", ["MODIFIER"] = "MODIFIKATOR", ["ALL +%d%%"] = "ALLE +%d %%", ["PEEK"] = "SPÄHEN", ["+%d EXCHANGE"] = "+%d TAUSCH",
-  ["All coins +%d%% Heads this level"] = "Alle Münzen +%d %% Kopf in diesem Level", ["Look at the next two coins"] = "Blick auf die nächsten zwei Münzen",
+  ["All coins +%d%% Heads this level"] = "Alle Münzen +%d %% Kopf in diesem Level", ["Look at the next two coins"] = "Blick auf die nächsten zwei Münzen", ["Discard one of the next three coins"] = "Wirf eine der nächsten drei Münzen ab", ["DISCARD 1 OF NEXT 3"] = "1 VON 3 ABWERFEN", ["CLICK A COIN TO DISCARD IT"] = "KLICKE EINE MÜNZE ZUM ABWERFEN",
   ["One more exchange this level"] = "Ein Tausch mehr in diesem Level", ["AMPLIFY"] = "VERSTÄRKEN", ["Buffs last 1 coin longer and get stronger"] = "Boni halten 1 Münze länger und werden stärker",
   ["ENDLESS"] = "ENDLOS", ["ENDLESS %d"] = "ENDLOS %d", ["LEVEL %d"] = "LEVEL %d", ["ENDLESS MODE"] = "ENDLOSMODUS", ["ENDLESS RUN OVER"] = "ENDLOSLAUF VORBEI",
   ["ENDLESS LEVELS CLEARED"] = "ENDLOS-LEVEL GESCHAFFT", ["NO LIMIT  -  EVERY 5TH FLIP IS INVERTED"] = "KEINE GRENZE  -  JEDER 5. WURF WIRD UMGEDREHT",
@@ -138,8 +138,8 @@ return {
   ["First you see an OPENING HAND: click coins to mark them and press Discard to throw them away for free. Then the bank shows your next 3 coins. Flip the first one, or Discard it."] =
     "Zuerst siehst du eine STARTHAND: Klicke Münzen zum Markieren und drücke Abwerfen, um sie kostenlos wegzuwerfen. Dann zeigt die Bank deine nächsten 3 Münzen. Wirf die erste oder wirf sie ab.",
   ["ENERGY"] = "ENERGIE",
-  ["Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Capacitor give more. A coin you cannot pay for can only be discarded."] =
-    "Starke Münzen kosten ENERGIE zum Werfen (angezeigt als E1, E2). Du bekommst 3 pro Level; Funke, Kupfer und Kondensator geben mehr. Eine Münze, die du nicht bezahlen kannst, kann nur abgeworfen werden.",
+  ["Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Flux Capacitor give more. A coin you cannot pay for can only be discarded."] =
+    "Starke Münzen kosten ENERGIE zum Werfen (angezeigt als E1, E2). Du bekommst 3 pro Level; Funke, Kupfer und Flux-Kondensator geben mehr. Eine Münze, die du nicht bezahlen kannst, kann nur abgeworfen werden.",
   ["QUOTA MET"] = "ZIEL ERREICHT",
   ["You are paid gold at once and the level stays open: every 2 extra points pay 1 more gold. Press OPEN SHOP (top right) when you want to move on."] =
     "Du wirst sofort mit Gold bezahlt und das Level bleibt offen: Je 2 Extrapunkte zahlen 1 weiteres Gold. Drücke SHOP ÖFFNEN (oben rechts), wenn du weiter willst.",
@@ -183,7 +183,7 @@ return {
     bank = {name = "Bank", description = "Kopf: +3 Gold, plus 1 je 10 gehaltene Gold (max. +3)."},
     lucky_seven = {name = "Glückssieben", description = "1 von 7: landet auf Kopf und zahlt dreifache Punkte."},
     hourglass = {name = "Sanduhr", description = "+30 % Kopf bei 3 oder weniger übrigen Münzen. Zahl: kommt zurück auf den Stapel."},
-    capacitor = {name = "Kondensator", description = "Kopf: 2 Punkte je gehaltener Energie. Zahl: +1 Energie."},
+    capacitor = {name = "Flux-Kondensator", description = "Kopf: 2 Punkte je gehaltener Energie. Zahl: +1 Energie."},
     martyr = {name = "Märtyrer", description = "Zahl: Ziel +3. Kopf: 4 Punkte, +1 je Zahl in diesem Level."},
     bounty = {name = "Kopfgeld", description = "Zahlt 1 Gold für je 2 Punkte, die sie erzielt."},
     jester = {name = "Narr", description = "Kopf oder Zahl, sie tut etwas Zufälliges."},
@@ -206,7 +206,7 @@ return {
     orchestra = {name = "Orchester", description = "Kopf: 2 Punkte je verschiedenem Münztyp in deinem Deck."},
     lifeline = {name = "Rettungsring", description = "Kopf: 1 Punkt, und du darfst in diesem Level einmal mehr tauschen."},
     horoscope = {name = "Horoskop", description = "Kopf: 1 Punkt, alle Münzen +7 % Kopf in diesem Level. Zahl: alle Münzen +3 %."},
-    crystal_ball = {name = "Kristallkugel", description = "Kopf: 3 Punkte und ein Blick auf die nächsten zwei Münzen des Stapels. Zahl: 1 Punkt."},
+    crystal_ball = {name = "Kristallkugel", description = "Kopf: 5 Punkte. Zahl: wirf eine der nächsten drei Münzen ab."},
     flock = {name = "Schwarm", description = "+10 % Kopf für jeden anderen Schwarm in deiner Bank."},
   },
   items = {

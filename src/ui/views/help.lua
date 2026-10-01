@@ -8,7 +8,7 @@ local SECTIONS = {
   {"THE GOAL", "Score points to beat the level's QUOTA before your coins run out. There is no HP: coins score points, and bad flips raise the quota. Four levels; the last one is The House."},
   {"YOUR COINS", "You play with a small stack of coins. Each coin has a Heads chance and a Heads and a Tails effect. Every coin is played once per level; nothing is reshuffled."},
   {"EACH LEVEL", "First you see an OPENING HAND: click coins to mark them and press Discard to throw them away for free. Then the bank shows your next 3 coins. Flip the first one, or Discard it."},
-  {"ENERGY", "Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Capacitor give more. A coin you cannot pay for can only be discarded."},
+  {"ENERGY", "Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Flux Capacitor give more. A coin you cannot pay for can only be discarded."},
   {"QUOTA MET", "You are paid gold at once and the level stays open: every 2 extra points pay 1 more gold. Press OPEN SHOP (top right) when you want to move on."},
   {"OUT OF COINS", "If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back (at most 3 times per level). If you cannot, the run is over."},
   {"THE SHOP", "Buy COINS (a bigger deck means a bigger quota, so buy better coins), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Odds Tuner adds Heads chance; Coin Removal drops a weak coin."},

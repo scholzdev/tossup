@@ -139,6 +139,8 @@ local function draw_encounter()
   box(70, 170, 240, 480, C.panel_dk)
   outline(70, 170, 240, 480, C.line)
   text("COIN BANK", 84, 184, ui.f20, C.gold)
+  local picking = (e.bank_discards or 0) > 0 and ui.game.dealt and not ui.game.pending and not ui.game.mulligan and not ui.flip_animation
+  if picking then text(D.L("CLICK A COIN TO DISCARD IT"), 84, 630, ui.f16, C.orange) end
   for i = 1, Game.VISIBLE do
     local x, y = 83, 236 + (i - 1) * 112
     local owned = remaining[i] -- flipped and discarded coins drop off the list
@@ -157,6 +159,10 @@ local function draw_encounter()
         color(C.gold)
         love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
         centered("CURRENT", tab_x, y - 9, 76, ui.f16, C.ink)
+      end
+      if picking then -- Crystal Ball: any of the three can go
+        outline(x, y, 214, 84, C.orange)
+        ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = 214, h = 84, action = function() A.discard_bank(owned.uid) end}
       end
       coin_hover(owned.id, x, y, 214, 84, Game.probability(ui.game, owned)) -- read what the next coins do
       coin_image(owned.id, x + 8, y + 10, 64)
