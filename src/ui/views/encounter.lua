@@ -334,8 +334,9 @@ local function draw_encounter()
         550, 676, 260, 64, C.green, A.exchange)
     end
   else
-    local flip_label = ui.flip_animation and "FLIPPING..." or ui.holding and "NEXT COIN" or "FLIP"
-    local can_act = ui.game.dealt ~= nil and not ui.flip_animation and (ui.holding or not ui.game.pending)
+    -- after the last coin there is nothing left to deal, but the result is still shown: the button must still work
+    local flip_label = ui.flip_animation and "FLIPPING..." or ui.holding and (ui.game.dealt and "NEXT COIN" or "CONTINUE") or "FLIP"
+    local can_act = not ui.flip_animation and not ui.game.pending and (ui.holding or ui.game.dealt ~= nil)
     if can_act and not ui.holding and not Game.can_flip(ui.game) then
       flip_label = D.L("NEED %d ENERGY", Game.flip_cost(ui.game, ui.game.dealt.uid))
       can_act = false
