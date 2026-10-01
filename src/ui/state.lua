@@ -20,6 +20,7 @@ local state = {
   marked = {}, -- coins marked for discarding (uid -> true), in the opening hand or the bank
   collection_page = 1,
   collection_filter = "ALL",
+  collection_sort = "rarity",
   coin_order = require("content.coin_order"),
   game = nil,
   profile = nil, -- meta progression (tokens, unlocks), loaded in app.load
