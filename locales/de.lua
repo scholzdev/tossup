@@ -16,7 +16,7 @@ return {
   ["Move the focus"] = "Fokus bewegen", ["Press the focused button"] = "Fokussierten Knopf drücken", ["Back, close, menu"] = "Zurück, schließen, Menü",
   ["Previous / next page, tab, character"] = "Vorige / nächste Seite, Tab, Charakter", ["Choose a character (play screen)"] = "Charakter wählen (Spielbildschirm)",
   ["Flip / next coin"] = "Werfen / nächste Münze", ["Discard the coin in play"] = "Münze im Spiel abwerfen", ["Use chip 1 / 2 / 3"] = "Chip 1 / 2 / 3 benutzen",
-  ["Open the shop (quota met)"] = "Shop öffnen (Ziel erreicht)", ["Debug info"] = "Debug-Infos", ["Use a chip or open the shop"] = "Chip benutzen oder Shop öffnen", ["Menu"] = "Menü",
+  ["Open the shop (quota met)"] = "Shop öffnen (Ziel erreicht)", ["Debug info"] = "Debug-Infos", ["Inspect: show the details of the focused item"] = "Untersuchen: Details des fokussierten Elements zeigen", ["Use a chip or open the shop"] = "Chip benutzen oder Shop öffnen", ["Menu"] = "Menü",
   ["LANGUAGE"] = "SPRACHE", ["RESTORE DEFAULTS"] = "STANDARD WIEDERHERSTELLEN", ["LOCKED"] = "GESPERRT", ["WIN A RUN WITH: %s"] = "GEWINNE EINEN LAUF MIT: %s", ["BEST ENDLESS: %d"] = "BESTER ENDLOSLAUF: %d", ["NEW RECORD!"] = "NEUER REKORD!",
   ["NEW CHARACTER UNLOCKED: %s"] = "NEUER CHARAKTER FREIGESCHALTET: %s", ["SOUND"] = "TON", ["GAME"] = "SPIEL", ["MASTER VOLUME"] = "GESAMTLAUTSTÄRKE", ["MUSIC"] = "MUSIK", ["SOUND EFFECTS"] = "SOUNDEFFEKTE",
   ["Everything at once."] = "Alles auf einmal.", ["The background loop."] = "Die Hintergrundmusik.", ["Flips, scores, buttons."] = "Würfe, Punkte, Knöpfe.", ["CLEAR PROGRESS"] = "FORTSCHRITT LÖSCHEN", ["Resets unlocks, collection, sets and tokens. Options stay."] = "Setzt Freischaltungen, Sammlung, Sets und Tokens zurück.",

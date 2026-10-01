@@ -97,6 +97,8 @@ function app.draw()
   ui.buttons = {}
   ui.hovered_coin = nil
   ui.hovered_text = nil
+  ui.regions = {}
+  ui.hover_anchor = nil
   local scale, ox, oy = ui.layout()
   love.graphics.clear(C.felt[1], C.felt[2], C.felt[3]) -- fills the bars around the 16:10 canvas
   love.graphics.push()
@@ -109,6 +111,7 @@ function app.draw()
   color(C.felt)
   love.graphics.rectangle("fill", 0, 0, 1280, 800)
   if not ui.game or ui.game.paused then screens[ui.screen]() else draw_game() end
+  Pad.inspect() -- controller / keyboard: show the details of the focused item
   D.coin_tooltip()
   D.text_tooltip()
   if ui.tutorial then Tutorial.draw() end
@@ -127,7 +130,7 @@ function app.update(dt)
     local mx, my = ui.mouse()
     local over = false
     for _, b in ipairs(ui.buttons) do
-      if mx >= b.x and mx <= b.x + b.w and my >= b.y and my <= b.y + b.h then over = true break end
+      if not b.disabled and mx >= b.x and mx <= b.x + b.w and my >= b.y and my <= b.y + b.h then over = true break end
     end
     local want = over and ui.cursors.click or ui.cursors.arrow
     if want ~= ui.cursor_current then
@@ -139,6 +142,7 @@ end
 
 -- Press a button (mouse or controller): click sound, its action, and sliders start following the mouse.
 function app.activate(b, x)
+  if b.disabled then return end -- focusable for Inspect, but not pressable
   ui.notice = ""
   Sound.play("click")
   b.action()
@@ -191,7 +195,7 @@ end
 -- Keyboard: arrows move the focus ring, Enter presses the focused button, Esc = back, Space = flip / next coin, D = discard,
 -- 1-3 = chips, O = open shop, Q / E = previous / next page, tab or character. They map onto the same actions as the controller.
 local KEYS = {up = "dpup", down = "dpdown", left = "dpleft", right = "dpright", ["return"] = "a", kpenter = "a",
-  q = "leftshoulder", e = "rightshoulder"}
+  q = "leftshoulder", e = "rightshoulder", i = "inspect"}
 
 function app.keypressed(key)
   local game = ui.game

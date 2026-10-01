@@ -40,9 +40,8 @@ local function button(str, x, y, w, h, tint, action, enabled)
   outline(x, y + (hover and -3 or 0), w, h, active and C.face or C.slot)
   centered(str, x, y + (h - ui.f20:getHeight()) / 2 - (hover and 3 or 0), w, ui.f20,
     active and C.ink or C.muted)
-  if active then
-    ui.buttons[#ui.buttons + 1] = {x = x, y = y - (hover and 3 or 0), w = w, h = h, action = action}
-  end
+  -- a disabled button is still in the list (the controller can focus it, e.g. to inspect a coin you cannot buy), but pressing it does nothing
+  ui.buttons[#ui.buttons + 1] = {x = x, y = y - (hover and 3 or 0), w = w, h = h, action = action, disabled = not active}
 end
 
 local function effects(effects_list)
@@ -100,11 +99,10 @@ local function effect_description(effects_list)
 end
 
 local function coin_hover(id, x, y, w, h, probability, locked)
+  local info = {id = id, probability = probability or catalog[id].probability, locked = locked}
+  ui.regions[#ui.regions + 1] = {x = x, y = y, w = w, h = h, coin = info}
   local mx, my = ui.mouse()
-  if mx >= x and mx <= x + w and my >= y and my <= y + h then
-    ui.hovered_coin = {id = id, probability = probability or catalog[id].probability,
-      locked = locked}
-  end
+  if mx >= x and mx <= x + w and my >= y and my <= y + h then ui.hovered_coin = info end
 end
 
 local function coin_image(id, x, y, size)
@@ -131,7 +129,7 @@ local function icon_button(label, icon, x, y, w, h, tint, action, enabled)
   if active then color(C.white) else love.graphics.setColor(1, 1, 1, .45) end
   love.graphics.draw(icon, x + 8, top + 6, 0, size / icon:getWidth(), size / icon:getHeight())
   centered(label, x + size + 8, top + (h - ui.f20:getHeight()) / 2, w - size - 8, ui.f20, active and C.ink or C.muted)
-  if active then ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = h, action = action} end
+  ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = h, action = action, disabled = not active}
 end
 
 -- The shared full-screen look (the shop's): felt backdrop, a teal screen with a gold border, a pixel
@@ -193,14 +191,16 @@ end
 
 -- Plain title + text tooltip (items, relics). Register while drawing; drawn once per frame on top.
 local function text_hover(title, body, x, y, w, h)
+  local info = {title = title, body = body}
+  ui.regions[#ui.regions + 1] = {x = x, y = y, w = w, h = h, text = info}
   local mx, my = ui.mouse()
-  if mx >= x and mx <= x + w and my >= y and my <= y + h then ui.hovered_text = {title = title, body = body} end
+  if mx >= x and mx <= x + w and my >= y and my <= y + h then ui.hovered_text = info end
 end
 
 local function draw_text_tooltip()
   local tip = ui.hovered_text
   if not tip then return end
-  local mx, my = ui.mouse()
+  local mx, my = ui.pointer()
   local w, h = 330, 92
   local x = math.min(mx + 18, 1280 - w - 12)
   local y = math.max(12, math.min(my + 18, 788 - h))
@@ -215,7 +215,7 @@ end
 local function draw_coin_tooltip()
   if not ui.hovered_coin then return end
   local coin = catalog[ui.hovered_coin.id]
-  local mx, my = ui.mouse()
+  local mx, my = ui.pointer()
   local w, h = 390, ui.hovered_coin.locked and 204 or 172
   local _, lines = ui.f16:getWrap(coin.description, w - 92) -- long descriptions wrap and push the rest down
   local extra = math.max(0, #lines - 1) * 18

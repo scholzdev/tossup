@@ -39,6 +39,8 @@ local state = {
   character_images = {},
   hovered_coin = nil,
   hovered_text = nil,
+  regions = {}, -- every hover area drawn this frame {x, y, w, h, coin = {...} | text = {...}}, for the controller's Inspect
+  hover_anchor = nil, -- where a tooltip is placed when it is shown by Inspect instead of by the mouse
   dragging = nil, -- the slider being dragged (a button with a drag function)
   options_tab = "game", -- Options screen tab: game | sound | controls
   controls_view = nil, -- Controls tab: "keyboard" | "controller" (nil: whichever was used last)
@@ -62,5 +64,11 @@ function state.to_canvas(x, y)
 end
 
 function state.mouse() return state.to_canvas(love.mouse.getPosition()) end
+
+-- Where tooltips attach: the mouse, or the inspected element when the controller / keyboard inspects.
+function state.pointer()
+  if state.hover_anchor then return state.hover_anchor[1], state.hover_anchor[2] end
+  return state.mouse()
+end
 
 return state

@@ -5,7 +5,7 @@
 local ui = require("src.ui.state")
 local Game = require("src.game")
 
-local Pad = {device = "keyboard", active = false, focus = nil, key = nil, repeat_timer = 0, trigger_down = {}}
+local Pad = {inspecting = false, device = "keyboard", active = false, focus = nil, key = nil, repeat_timer = 0, trigger_down = {}}
 
 local DIRECTIONS = {dpup = {0, -1}, dpdown = {0, 1}, dpleft = {-1, 0}, dpright = {1, 0}}
 
@@ -96,7 +96,7 @@ end
 function Pad.step(direction, app)
   Pad.active = true
   if ui.confirm or ui.tutorial then return end
-  if ui.game and not ui.game.paused then return end
+  if ui.game and not ui.game.paused then Pad.inspecting = not Pad.inspecting return end -- in a run the shoulder buttons inspect
   local screen = ui.screen
   if screen == "select" then app.cycle_character(direction)
   elseif screen == "collection" then app.change_collection_page(direction)
@@ -114,6 +114,7 @@ function Pad.update(dt, app)
   if key ~= Pad.key then -- a new screen: pick the start focus one frame later, when its buttons exist
     Pad.key = key
     Pad.need_default = true
+    Pad.inspecting = false
   elseif Pad.need_default then
     Pad.need_default = false
     local x, y = default_focus()
@@ -159,6 +160,8 @@ function Pad.pressed(button, app)
       and not game.mulligan and not ui.tutorial and not ui.confirm then
       app.discard_current()
     end
+  elseif button == "inspect" then
+    if not ui.confirm and not ui.tutorial then Pad.inspecting = not Pad.inspecting end
   elseif button == "leftshoulder" then
     Pad.step(-1, app)
   elseif button == "rightshoulder" then
@@ -167,7 +170,28 @@ function Pad.pressed(button, app)
 end
 
 -- Mouse use hides the focus ring.
-function Pad.mouse_used() Pad.active = false end
+function Pad.mouse_used() Pad.active = false Pad.inspecting = false end
+
+-- Inspect: show the tooltip of the focused item. The hover area belonging to a button is the one it contains or the nearest
+-- one above it in the same column (a shop Buy button sits right under the coin art it sells).
+function Pad.inspect()
+  if not Pad.inspecting or ui.confirm or ui.tutorial then return end
+  local b = Pad.focused()
+  if not b then return end
+  local fx, fy = center(b)
+  local best, best_gap
+  for _, r in ipairs(ui.regions) do
+    if fx >= r.x and fx <= r.x + r.w then
+      local gap
+      if fy >= r.y and fy <= r.y + r.h then gap = 0
+      elseif r.y + r.h <= fy then gap = fy - (r.y + r.h) end
+      if gap and gap < 160 and (not best_gap or gap < best_gap) then best, best_gap = r, gap end
+    end
+  end
+  if not best then return end
+  ui.hovered_coin, ui.hovered_text = best.coin, best.text
+  ui.hover_anchor = {best.x + best.w * .5, best.y + best.h}
+end
 
 function Pad.draw()
   if not Pad.active then return end
