@@ -2,9 +2,29 @@
 # One-time setup: repository Settings > Pages > Source: GitHub Actions.
 name: wiki
 
+# Only wiki inputs trigger a build: the game data (content, locales, game.lua for the constants and the route), the art the wiki
+# copies, the docs and the generator. Changes elsewhere in src/ do not. "Run workflow" in the Actions tab builds on demand.
 on:
   push:
     branches: [main]
+    paths:
+      - content/**
+      - locales/**
+      - docs/**
+      - GAME_SPEC.md
+      - PLAY.md
+      - src/game.lua
+      - assets/coins/**
+      - assets/items/**
+      - assets/relics/**
+      - assets/characters/**
+      - assets/ui/logo.png
+      - assets/ui/icon.png
+      - assets/fonts/**
+      - tools/gen_wiki.py
+      - tools/dump_content.lua
+      - tools/build_wiki.sh
+      - .github/workflows/wiki.yml
   workflow_dispatch:
 
 permissions:
