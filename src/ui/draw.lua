@@ -169,6 +169,17 @@ local function confirm_dialog()
   end
 end
 
+-- A small padlock centred on (cx, cy): locked coins and deck slots.
+local function padlock(cx, cy)
+  color(C.face)
+  love.graphics.setLineWidth(3)
+  love.graphics.arc("line", "open", cx, cy - 2, 6, math.pi, 2 * math.pi)
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle("fill", cx - 9, cy - 2, 18, 14, 2)
+  color(C.ink)
+  love.graphics.circle("fill", cx, cy + 5, 2)
+end
+
 local function coin_name(id, x, y, w)
   local name = catalog[id].name:upper()
   if w then centered(name, x, y, w, ui.f20, C.face) else text(name, x, y, ui.f20, C.face) end
@@ -243,5 +254,5 @@ local function coin_face(cx, cy, radius, outcome, selected, id)
 end
 
 return {C = C, color = color, box = box, outline = outline, text = text, centered = centered,
-  button = button, coin_image = coin_image, image_at = image_at, icon_button = icon_button, frame = frame, title = title, confirm_dialog = confirm_dialog, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
+  button = button, coin_image = coin_image, image_at = image_at, icon_button = icon_button, frame = frame, title = title, padlock = padlock, confirm_dialog = confirm_dialog, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
   effects = effects, effect_description = effect_description, coin_tooltip = draw_coin_tooltip, L = L, text_hover = text_hover, text_tooltip = draw_text_tooltip}

@@ -28,7 +28,8 @@ return {
   ["SOLD"] = "WEG", ["TUNE-UPS"] = "UPGRADES", ["ODDS TUNER"] = "CHANCEN-TUNER", ["+10% HEADS ON THE"] = "+10 % KOPF FÜR DIE",
   ["SELECTED COIN"] = "GEWÄHLTE MÜNZE", ["UPGRADE"] = "UPGRADE", ["COIN REMOVAL"] = "MÜNZ-ENTFERNUNG",
   ["DROP THE SELECTED COIN"] = "GEWÄHLTE MÜNZE ENTFERNEN", ["REMOVE"] = "ENTFERNEN", ["YOUR DECK  %d / %d"] = "DEIN DECK  %d / %d",
-  ["DECK FULL  -  REMOVE A COIN TO BUY ANOTHER"] = "DECK VOLL  -  ENTFERNE EINE MÜNZE, UM EINE NEUE ZU KAUFEN",
+  ["DECK FULL  -  BUY A SLOT OR REMOVE A COIN"] = "DECK VOLL  -  KAUFE EINEN PLATZ ODER ENTFERNE EINE MÜNZE",
+  ["+%d GOLD"] = "+%d GOLD", ["EXTRA SLOT"] = "ZUSATZPLATZ", ["Buy one more deck slot. A bigger deck means a bigger quota."] = "Kaufe einen weiteren Deckplatz. Ein größeres Deck bedeutet ein größeres Ziel.",
   ["CLICK A COIN TO SELECT IT"] = "KLICKE EINE MÜNZE ZUM AUSWÄHLEN", ["HELD  %s"] = "IM BESITZ  %s", ["NEXT ROUND"] = "NÄCHSTE RUNDE",
   ["%d%% H"] = "%d%% K",
   -- coin sets
@@ -109,7 +110,7 @@ return {
   ["Between levels you buy COINS (a bigger deck means a bigger quota, so buy better coins), CHIPS (one-use helpers) and a PRIZE (lasts the run). REROLL refreshes the coins."] = "Zwischen den Leveln kaufst du MÜNZEN (ein größeres Deck bedeutet ein größeres Ziel, also kaufe bessere), CHIPS (Einweg-Helfer) und eine PRÄMIE (hält den ganzen Lauf). NEU WÜRFELN erneuert die Münzen.",
   ["TUNE-UPS"] = "UPGRADES",
   ["With a coin selected below: the ODDS TUNER adds Heads chance, COIN REMOVAL drops a weak coin."] = "Mit einer unten gewählten Münze: Der CHANCEN-TUNER erhöht die Kopf-Chance, die MÜNZ-ENTFERNUNG wirft eine schwache Münze raus.",
-  ["YOUR DECK"] = "DEIN DECK", ["Your coins, at most ten. Click one to select it for the tune-ups."] = "Deine Münzen, höchstens zehn. Klicke eine an, um sie für die Upgrades zu wählen.",
+  ["YOUR DECK"] = "DEIN DECK", ["Your coins. Click one to select it for the tune-ups. The dark slots on the right are extra deck slots: 5 gold each, up to ten."] = "Deine Münzen. Klicke eine an, um sie für die Upgrades zu wählen. Die dunklen Plätze rechts sind zusätzliche Deckplätze: 5 Gold pro Platz, bis zu zehn.",
   ["NEXT ROUND"] = "NÄCHSTE RUNDE", ["Press the red button when you are ready for the next level."] = "Drücke den roten Knopf, wenn du für das nächste Level bereit bist.",
   ["THAT'S IT"] = "DAS WAR'S",
   ["Beat four levels and the boss. Build a deck that scores, keep your combos going, and spend your gold well. Good luck!"] = "Schlage vier Level und den Boss. Baue ein Deck, das punktet, halte deine Serien am Laufen und gib dein Gold klug aus. Viel Glück!",

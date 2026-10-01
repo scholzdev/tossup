@@ -123,8 +123,29 @@ equal(win.phase, "ENCOUNTER")
 local cap = Game.new(5)
 cap.phase = "SHOP"
 cap.player.gold = 1000
-for i = 1, Game.DECK_MAX - 1 do
-  cap.shop_offers = {({"dagger", "hammer", "blood", "focus", "spark", "lucky", "loaded"})[(i - 1) % 7 + 1]}
+-- deck slots: the deck starts with START_MAX slots and the shop sells the rest one by one
+equal(cap.slots, Game.START_MAX)
+for _ = #cap.coins + 1, Game.START_MAX do
+  cap.shop_offers = {"dagger"}
+  assert(Game.buy(cap, 1))
+end
+equal(#cap.coins, Game.START_MAX)
+cap.shop_offers = {"dagger"}
+assert(not Game.buy(cap, 1), "no free slot: buying a coin is refused")
+local gold_slots = cap.player.gold
+for i = Game.START_MAX + 1, Game.DECK_MAX do
+  assert(Game.buy_slot(cap), "buy slot " .. i)
+  equal(cap.slots, i)
+end
+equal(cap.player.gold, gold_slots - (Game.DECK_MAX - Game.START_MAX) * Game.SLOT_COST, "each slot costs SLOT_COST")
+assert(not Game.buy_slot(cap), "no slot beyond DECK_MAX")
+local poor = Game.new(6)
+poor.phase = "SHOP"
+poor.player.gold = Game.SLOT_COST - 1
+assert(not Game.buy_slot(poor), "not enough gold")
+equal(poor.slots, Game.START_MAX)
+for i = Game.START_MAX + 1, Game.DECK_MAX do
+  cap.shop_offers = {({"dagger", "hammer", "blood", "focus", "spark", "sword", "loaded"})[(i - 1) % 7 + 1]}
   assert(Game.buy(cap, 1))
 end
 equal(#cap.coins, Game.DECK_MAX, "deck cap")
@@ -300,7 +321,9 @@ local shopper = Game.new(5, "blade")
 shopper.phase = "SHOP"
 shopper.shop_offers = {"hammer"}
 shopper.player.gold = 60
-assert(Game.buy(shopper, 1), "the starting deck has free slots")
+assert(not Game.buy(shopper, 1), "the starting deck fills its slots: buy a slot first")
+assert(Game.buy_slot(shopper))
+assert(Game.buy(shopper, 1), "now there is a free slot")
 equal(#shopper.coins, 6)
 assert(shopper.purchased.hammer, "purchase recorded")
 

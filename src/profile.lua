@@ -5,6 +5,7 @@ local characters = require("content.characters")
 local Profile = {}
 
 Profile.SET_COUNT = 3 -- coin sets per character
+Profile.SET_SIZE = 5 -- coins in a set (Game.START_MAX); older, longer sets are cut to this when loaded
 
 local DEFAULT_OPTIONS = {screen_shake = true, fast_flip = false, fullscreen = false, seen_help = false, language = "en", volume_master = 80, volume_music = 40, volume_sfx = 80}
 
@@ -179,6 +180,11 @@ function Profile.decode(text)
   local fresh = Profile.new()
   data.collected = type(data.collected) == "table" and data.collected or fresh.collected
   data.sets = type(data.sets) == "table" and data.sets or fresh.sets
+  for _, list in pairs(data.sets) do -- sets used to hold 10 coins
+    for _, set in ipairs(type(list) == "table" and list or {}) do
+      while type(set.coins) == "table" and #set.coins > Profile.SET_SIZE do table.remove(set.coins) end
+    end
+  end
   data.active_set = type(data.active_set) == "table" and data.active_set or fresh.active_set
   -- older saves kept a single loadout per character: it becomes set 1
   if type(data.loadouts) == "table" then

@@ -44,7 +44,7 @@ local STEPS = {
   {title = "TUNE-UPS", rect = {1000, 190, 220, 370},
    text = "With a coin selected below: the ODDS TUNER adds Heads chance, COIN REMOVAL drops a weak coin."},
   {title = "YOUR DECK", rect = {70, 600, 920, 150},
-   text = "Your coins, at most ten. Click one to select it for the tune-ups."},
+   text = "Your coins. Click one to select it for the tune-ups. The dark slots on the right are extra deck slots: 5 gold each, up to ten."},
   {title = "NEXT ROUND", rect = {1000, 586, 220, 170},
    text = "Press the red button when you are ready for the next level.",
    wait = function(g) return g.phase == "ENCOUNTER" end, hint = "PRESS NEXT ROUND"},

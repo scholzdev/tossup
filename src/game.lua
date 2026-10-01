@@ -11,8 +11,9 @@ local Game = {}
 
 Game.VISIBLE = 3 -- coins shown in the bank; the first one is the coin you are about to play
 Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may discard
-Game.START_MAX = 10 -- coins in a coin set you can take into a run
-Game.DECK_MAX = 10 -- the shop cannot grow the deck past this: buying is refused when it is full
+Game.START_MAX = 5 -- coins in a coin set = the deck slots a run starts with
+Game.DECK_MAX = 10 -- the most deck slots; the shop sells the extra ones one by one
+Game.SLOT_COST = 5 -- gold for one more deck slot
 Game.EXCHANGE_BASE = 10 -- gold for the first exchange of a level (empty stack): played coins come back
 Game.EXCHANGE_STEP = 5 -- every further exchange in the same level costs this much more
 Game.EXCHANGE_GAIN = 3 -- played coins that come back into the stack in exchange
@@ -246,7 +247,7 @@ function Game.new(seed, character_id, unlocked, loadout, manual_mulligan)
     character_id = character_id,
     phase = "ENCOUNTER", player = {gold = Game.START_GOLD, energy = 3, max_energy = 3},
     coins = {}, relics = {}, items = {}, shop_items = {}, unlocked = unlocked or {}, purchased = {}, cleared = 0, shop_relic = nil, next_uid = 0, encounter_index = 1, encounter = nil,
-    pending = nil, shop_offers = {}, log = {}, selected_uid = nil}
+    pending = nil, shop_offers = {}, log = {}, selected_uid = nil, slots = Game.START_MAX}
   local def = characters[character_id]
   game.manual_mulligan = manual_mulligan
   if loadout then
@@ -708,10 +709,19 @@ function Game.buy_relic(game)
   return true
 end
 
+-- One more deck slot (the deck starts with START_MAX and can grow to DECK_MAX).
+function Game.buy_slot(game)
+  if game.phase ~= "SHOP" or game.slots >= Game.DECK_MAX or game.player.gold < Game.SLOT_COST then return false end
+  game.player.gold = game.player.gold - Game.SLOT_COST
+  game.slots = game.slots + 1
+  log(game, "Bought deck slot " .. game.slots .. " for " .. Game.SLOT_COST .. " gold.")
+  return true
+end
+
 function Game.buy(game, index)
   local id = game.phase == "SHOP" and game.shop_offers[index]
   if not id or game.player.gold < (catalog[id].cost or 15) then return false end
-  if #game.coins >= Game.DECK_MAX then return false end -- a full deck must lose a coin before it can gain one
+  if #game.coins >= game.slots then return false end -- a full deck needs a free slot (buy one) or must lose a coin
   game.shop_offers[index] = false
   game.purchased[id] = true -- the UI turns purchases of locked coins into permanent unlocks
   game.player.gold = game.player.gold - (catalog[id].cost or 15)

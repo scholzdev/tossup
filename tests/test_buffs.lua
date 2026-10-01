@@ -6,7 +6,10 @@ local function equal(a, b, message) assert(a == b, (message or "values differ") 
 -- a level whose bank holds the given coins in order; quota is huge so nothing ends
 local function level(ids, seed)
   Game.characters().test = {name = "Test", description = "", starter = "normal", pool = {}}
+  local keep = Game.START_MAX
+  Game.START_MAX = 10 -- tests use decks bigger than the start size
   local game = Game.new(seed or 1, "test", require("content.coin_order"), ids, false)
+  Game.START_MAX = keep
   local e = game.encounter
   e.quota, e.max_quota = 1000, 1000
   e.combo_step = 0 -- the combo has its own tests (test_combo.lua)

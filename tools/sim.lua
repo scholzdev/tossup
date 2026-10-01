@@ -158,7 +158,8 @@ bots.greedy = {
   mulligan = keep_everything,
   encounter = function(g) finish_flip(g) end,
   shop = function(g)
-    while #g.coins < Game.DECK_MAX do
+    while true do
+      if #g.coins >= g.slots and not Game.buy_slot(g) then break end -- a full deck: buy a slot first
       local best, best_cost = nil, -1
       for index, id in ipairs(g.shop_offers) do
         local cost = id and (catalog[id].cost or 15)
@@ -235,11 +236,13 @@ bots.smart = {
         end
       end
       if best then
-        if #g.coins < Game.DECK_MAX then
+        local price = catalog[g.shop_offers[best]].cost or 15
+        if #g.coins < g.slots then
           improved = Game.buy(g, best)
+        elseif g.slots < Game.DECK_MAX and g.player.gold >= Game.SLOT_COST + price and best_value > .5 then
+          improved = Game.buy_slot(g) and Game.buy(g, best) -- a new slot is cheaper than dropping a coin
         else
           local worst, worst_value = worst_coin()
-          local price = catalog[g.shop_offers[best]].cost or 15
           -- a full deck must lose a coin first (removal costs 8 gold)
           if best_value > worst_value * 1.3 + .1 and g.player.gold >= 8 + price and Game.remove(g, worst.uid) then
             improved = Game.buy(g, best)

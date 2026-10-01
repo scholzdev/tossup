@@ -167,7 +167,7 @@ local function draw_encounter()
       centered("EMPTY SLOT", x, y + 34, 214, ui.f16, C.muted)
     end
   end
-  text(D.L("PILE %d   OUT %d   DECK %d/%d", #e.pile, e.discards, #ui.game.coins, Game.DECK_MAX),
+  text(D.L("PILE %d   OUT %d   DECK %d/%d", #e.pile, e.discards, #ui.game.coins, ui.game.slots),
     84, 590, ui.f16, C.muted)
 
   -- active buffs ("next N coins ...") so they are never invisible

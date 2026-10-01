@@ -8,7 +8,10 @@ local function level(ids, seed)
   Game.characters().test = {name = "Test", description = "", starter = "normal", pool = {}}
   local plain = {}
   for i = 1, #ids do plain[i] = "normal" end
+  local keep = Game.START_MAX
+  Game.START_MAX = 10 -- tests use decks bigger than the start size
   local game = Game.new(seed or 1, "test", require("content.coin_order"), plain, false)
+  Game.START_MAX = keep
   for i, id in ipairs(ids) do game.coins[i].id = id end -- the copy limit only applies when a deck is built
   local e = game.encounter
   e.quota, e.max_quota = 1000, 1000

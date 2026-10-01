@@ -59,7 +59,8 @@ equal(#Profile.loadout(sp, "blade", 10), 9, "the active set is what a run starts
 Profile.set_active(sp, "blade", 9)
 equal(Profile.active(sp, "blade"), 2, "invalid set index ignored")
 local saved = Profile.decode(Profile.encode(sp))
-equal(#saved.sets.blade[2].coins, 9, "sets survive a save")
+equal(#saved.sets.blade[2].coins, Profile.SET_SIZE, "sets survive a save; older, longer sets are cut to SET_SIZE")
+equal(Profile.SET_SIZE, require("src.game").START_MAX, "a set holds exactly the starting slots")
 equal(saved.sets.blade[2].name, "SET 2")
 equal(saved.active_set.blade, 2)
 

@@ -50,7 +50,7 @@ local function draw_shop()
   button("REROLL", 90, 322, 150, 36, C.orange, function() Game.reroll_shop(g) end, g.player.gold >= reroll_cost)
 
   -- COIN row
-  local full = #g.coins >= Game.DECK_MAX
+  local full = #g.coins >= g.slots
   vertical_label("Coin", 290, 232)
   for i = 1, 4 do
     local x = X0 + (i - 1) * STEP
@@ -115,8 +115,8 @@ local function draw_shop()
     g.player.gold >= 8 and #g.coins > 1)
 
   -- your deck
-  text(D.L("YOUR DECK  %d / %d", #g.coins, Game.DECK_MAX), 70, 612, ui.f20, C.gold)
-  text(full and "DECK FULL  -  REMOVE A COIN TO BUY ANOTHER" or "CLICK A COIN TO SELECT IT", 340, 618, ui.f16,
+  text(D.L("YOUR DECK  %d / %d", #g.coins, g.slots), 70, 612, ui.f20, C.gold)
+  text(full and "DECK FULL  -  BUY A SLOT OR REMOVE A COIN" or "CLICK A COIN TO SELECT IT", 340, 618, ui.f16,
     full and C.orange or C.muted)
   local held = {}
   for i, id in ipairs(g.items) do held[i] = ui.item_catalog[id].short end
@@ -126,6 +126,19 @@ local function draw_shop()
     local x = 70 + (i - 1) * 92
     local item = g.coins[i]
     local chosen = item and item.uid == g.selected_uid
+    if i > g.slots then
+      -- a slot you have not bought yet: the next one can be bought, the others are just locked
+      local next_slot = i == g.slots + 1
+      box(x, 664, 84, 76, C.slot_dk)
+      outline(x, 664, 84, 76, next_slot and C.gold or C.line)
+      D.padlock(x + 42, next_slot and 692 or 702)
+      if next_slot then
+        centered(D.L("+%d GOLD", Game.SLOT_COST), x, 716, 84, ui.f16, g.player.gold >= Game.SLOT_COST and C.gold or C.red)
+        D.text_hover("EXTRA SLOT", "Buy one more deck slot. A bigger deck means a bigger quota.", x, 664, 84, 76)
+        ui.buttons[#ui.buttons + 1] = {x = x, y = 664, w = 84, h = 76, action = function() Game.buy_slot(g) end}
+      end
+      goto continue
+    end
     box(x, 664, 84, 76, item and PANEL or C.slot)
     outline(x, 664, 84, 76, chosen and C.orange or C.panel_light)
     if item then
@@ -134,6 +147,7 @@ local function draw_shop()
       coin_hover(item.id, x, 664, 84, 76, Game.probability(g, item))
       ui.buttons[#ui.buttons + 1] = {x = x, y = 664, w = 84, h = 76, action = function() A.coin_action(item) end}
     end
+    ::continue::
   end
 
   -- next round: the big red button, under the tune-ups
