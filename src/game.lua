@@ -417,6 +417,7 @@ function Game.run_tokens(game)
   return game.cleared + (game.phase == "VICTORY" and 3 or 0)
 end
 
+Game.route = route -- level quotas, draws and payouts; tools/sim.lua overrides them for balance sweeps
 Game.apply_effect = apply_effect -- for hooks: apply an effect table to the running game
 Game.log = log
 function Game.catalog() return catalog end
