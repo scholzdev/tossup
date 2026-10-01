@@ -18,6 +18,7 @@ Game.EXCHANGE_BASE = 10 -- gold for the first exchange of a level (empty stack):
 Game.EXCHANGE_STEP = 5 -- every further exchange in the same level costs this much more
 Game.EXCHANGE_GAIN = 3 -- played coins that come back into the stack in exchange
 Game.COMBO_STEP, Game.COMBO_CAP = 0.25, 3 -- combo: x1 + 0.25 per extra same result in a row, up to x3
+Game.EXCHANGE_MAX = 3 -- exchanges per level; after the third one an empty stack loses the level
 Game.RETURN_CAP = 3 -- "extra draw" effects (a coin returning to the pile) per level
 Game.START_GOLD = 25
 Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
@@ -630,6 +631,7 @@ end
 function Game.can_exchange(game)
   if game.phase ~= "ENCOUNTER" or game.pending or game.mulligan or game.dealt then return false end
   if Game.coins_left(game) > 0 then return false end
+  if (game.encounter.exchanges or 0) >= Game.EXCHANGE_MAX then return false end
   return game.player.gold >= Game.exchange_cost(game) and #returnable(game) >= 1
 end
 
@@ -670,7 +672,8 @@ function Game.stack_empty(game)
   elseif can_exchange then
     game.exchange_open = true
   else
-    lose_level(game, "out of coins, and not enough gold to exchange.")
+    lose_level(game, (e.exchanges or 0) >= Game.EXCHANGE_MAX and "out of coins, and all exchanges are used."
+      or "out of coins, and not enough gold to exchange.")
   end
 end
 

@@ -322,7 +322,8 @@ local function draw_encounter()
     box(500, 250, 540, 320, C.panel_dk)
     outline(500, 250, 540, 320, C.red)
     centered("OUT OF COINS", 500, 272, 540, ui.f32, C.red)
-    centered(D.L("%d POINTS SHORT OF THE QUOTA", e.quota), 500, 316, 540, ui.f16, C.muted)
+    centered(D.L("%d POINTS SHORT OF THE QUOTA", e.quota) .. "  -  " .. D.L("EXCHANGES LEFT: %d", Game.EXCHANGE_MAX - (e.exchanges or 0)),
+      500, 316, 540, ui.f16, C.muted)
     D.icon_button(D.L("BUY MORE COINS  %d GOLD > %d", Game.exchange_cost(ui.game), Game.EXCHANGE_GAIN),
       ui.ui_images.exchange, 530, 356, 480, 56, C.green, A.exchange)
     D.icon_button("START AGAIN", ui.ui_images.start_level, 530, 424, 480, 56, C.gold, function() A.start() end)

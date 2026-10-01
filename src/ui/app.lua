@@ -30,7 +30,7 @@ local function draw_game()
     -- the last coin is gone and nothing can be exchanged: say so on the round screen before the run-over screen
     views.ENCOUNTER()
     if not ui.confirm then
-      ui.confirm = {title = "GAME OVER", text = "NO COINS LEFT AND NOT ENOUGH GOLD TO EXCHANGE. THE RUN IS OVER.", single = true,
+      ui.confirm = {title = "GAME OVER", text = "NO COINS LEFT AND NO EXCHANGE POSSIBLE. THE RUN IS OVER.", single = true,
         ok = function() game.over_seen = true end}
     end
   else draw_end() end -- VICTORY and the run-over screen

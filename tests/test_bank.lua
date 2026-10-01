@@ -185,6 +185,20 @@ play_out(ex)
 assert(Game.give_up(ex), "or give up instead")
 equal(ex.phase, "GAME_OVER")
 
+-- at most EXCHANGE_MAX exchanges per level: the next empty stack loses the level even with plenty of gold
+local lim = Game.new(21, "exch")
+lim.encounter.quota, lim.encounter.max_quota = 1e9, 1e9
+lim.player.gold = 1000
+play_out(lim)
+for n = 1, Game.EXCHANGE_MAX do
+  assert(Game.can_exchange(lim), "exchange " .. n .. " is allowed")
+  assert(Game.exchange(lim))
+  play_out(lim)
+end
+equal(Game.can_exchange(lim), false, "no fourth exchange")
+equal(lim.phase, "GAME_OVER", "the stack is empty and the exchanges are used up: level lost")
+equal(lim.lost_why, "out of coins, and all exchanges are used.")
+
 -- discarded coins never come back
 local exd = Game.new(15, "exch")
 exd.encounter.quota, exd.encounter.max_quota = 1e9, 1e9

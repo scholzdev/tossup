@@ -14,7 +14,7 @@ return {
   ["FULLSCREEN"] = "VOLLBILD", ["Switch between windowed and fullscreen."] = "Wechselt zwischen Fenster und Vollbild.",
   ["LANGUAGE"] = "SPRACHE", ["SOUND"] = "TON", ["GAME"] = "SPIEL", ["MASTER VOLUME"] = "GESAMTLAUTSTÄRKE", ["MUSIC"] = "MUSIK", ["SOUND EFFECTS"] = "SOUNDEFFEKTE",
   ["Everything at once."] = "Alles auf einmal.", ["The background loop."] = "Die Hintergrundmusik.", ["Flips, scores, buttons."] = "Würfe, Punkte, Knöpfe.", ["CLEAR PROGRESS"] = "FORTSCHRITT LÖSCHEN", ["Resets unlocks, collection, sets and tokens. Options stay."] = "Setzt Freischaltungen, Sammlung, Sets und Tokens zurück.",
-  ["CLEAR"] = "LÖSCHEN", ["GAME OVER"] = "SPIEL VORBEI", ["NO COINS LEFT AND NOT ENOUGH GOLD TO EXCHANGE. THE RUN IS OVER."] = "KEINE MÜNZEN MEHR UND ZU WENIG GOLD ZUM TAUSCHEN. DER LAUF IST VORBEI.", ["OK"] = "OK", ["CANCEL"] = "ABBRECHEN", ["YOUR DATA WILL BE PERMANENTLY DELETED."] = "DEINE DATEN WERDEN DAUERHAFT GELÖSCHT.",
+  ["CLEAR"] = "LÖSCHEN", ["GAME OVER"] = "SPIEL VORBEI", ["NO COINS LEFT AND NO EXCHANGE POSSIBLE. THE RUN IS OVER."] = "KEINE MÜNZEN MEHR UND KEIN TAUSCH MÖGLICH. DER LAUF IST VORBEI.", ["OK"] = "OK", ["CANCEL"] = "ABBRECHEN", ["YOUR DATA WILL BE PERMANENTLY DELETED."] = "DEINE DATEN WERDEN DAUERHAFT GELÖSCHT.",
   ["THE CURRENT RUN WILL BE LOST."] = "DER AKTUELLE LAUF GEHT VERLOREN.", ["Language of all texts."] = "Sprache aller Texte.", ["ON"] = "AN", ["OFF"] = "AUS",
   ["F3 SHOWS DEBUG INFO IN A RUN"] = "F3 ZEIGT DEBUG-INFOS IM LAUF",
   -- end of run
@@ -22,7 +22,8 @@ return {
   ["TRY A NEW SET"] = "PROBIERE EIN NEUES SET", ["LEVELS CLEARED OF 4"] = "VON 4 LEVELN GESCHAFFT", ["GOLD LEFT"] = "GOLD ÜBRIG",
   ["SEED %s"] = "SEED %s",
   ["out of coins, and not enough gold to exchange."] = "Keine Münzen mehr und zu wenig Gold zum Tauschen.",
-  ["gave up."] = "Aufgegeben.",
+  ["gave up."] = "Aufgegeben.", ["out of coins, and all exchanges are used."] = "Keine Münzen mehr, und alle Tausche sind aufgebraucht.",
+  ["EXCHANGES LEFT: %d"] = "TAUSCHE ÜBRIG: %d",
   -- shop
   ["Coin"] = "Münze", ["Chip"] = "Chip", ["Prize"] = "Prämie", ["REROLL"] = "NEU WÜRFELN", ["BUY"] = "KAUFEN", ["FULL"] = "VOLL",
   ["SOLD"] = "WEG", ["TUNE-UPS"] = "UPGRADES", ["ODDS TUNER"] = "CHANCEN-TUNER", ["+10% HEADS ON THE"] = "+10 % KOPF FÜR DIE",
@@ -131,8 +132,8 @@ return {
   ["QUOTA MET"] = "ZIEL ERREICHT",
   ["You are paid gold at once and the level stays open: every 2 extra points pay 1 more gold. Press OPEN SHOP (top right) when you want to move on."] =
     "Du wirst sofort mit Gold bezahlt und das Level bleibt offen: Je 2 Extrapunkte zahlen 1 weiteres Gold. Drücke SHOP ÖFFNEN (oben rechts), wenn du weiter willst.",
-  ["If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back. If you cannot, the run is over."] =
-    "Wenn das Ziel nicht erreicht ist, zahle Gold zum TAUSCHEN: 3 deiner gespielten Münzen kommen zurück. Wenn du das nicht kannst, ist der Lauf vorbei.",
+  ["If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back (at most 3 times per level). If you cannot, the run is over."] =
+    "Wenn das Ziel nicht erreicht ist, zahle Gold zum TAUSCHEN: 3 deiner gespielten Münzen kommen zurück (höchstens 3-mal pro Level). Wenn du das nicht kannst, ist der Lauf vorbei.",
   ["THE SHOP"] = "DER SHOP",
   ["Buy COINS (a bigger deck means a bigger quota, so buy better coins), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Odds Tuner adds Heads chance; Coin Removal drops a weak coin."] =
     "Kaufe MÜNZEN (ein größeres Deck bedeutet ein größeres Ziel, also kaufe bessere Münzen), CHIPS (Einweg-Helfer, im Level benutzbar) und eine PRÄMIE (hält den ganzen Lauf). Der Chancen-Tuner erhöht die Kopf-Chance; die Münz-Entfernung wirft eine schwache Münze raus.",
