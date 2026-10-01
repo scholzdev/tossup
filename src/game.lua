@@ -17,14 +17,15 @@ Game.EXCHANGE_BASE = 10 -- gold for the first exchange of a level (empty stack):
 Game.EXCHANGE_STEP = 5 -- every further exchange in the same level costs this much more
 Game.EXCHANGE_GAIN = 3 -- played coins that come back into the stack in exchange
 Game.RETURN_CAP = 3 -- "extra draw" effects (a coin returning to the pile) per level
+Game.START_GOLD = 25
 Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
 Game.MAX_COPIES = 3 -- copies of one coin in a set; the plain Normal coin is exempt (up to the set size)
 
 local route = {
-  {name = "Opening", per_coin = 0.6, payout = 20},
-  {name = "Second Chance", per_coin = 1.0, payout = 25},
-  {name = "High Stakes", per_coin = 1.6, payout = 30},
-  {name = "The House", per_coin = 2.4, boss = true},
+  {name = "Opening", per_coin = 0.6, payout = 25},
+  {name = "Second Chance", per_coin = 0.9, payout = 30},
+  {name = "High Stakes", per_coin = 1.5, payout = 35},
+  {name = "The House", per_coin = 2.6, boss = true},
 }
 
 local function log(game, message)
@@ -228,7 +229,7 @@ function Game.new(seed, character_id, unlocked, loadout, manual_mulligan)
   local normalized = RNG.seed(seed)
   local game = {seed = normalized, rng_state = normalized, last_rng = nil,
     character_id = character_id,
-    phase = "ENCOUNTER", player = {gold = 10, energy = 3, max_energy = 3},
+    phase = "ENCOUNTER", player = {gold = Game.START_GOLD, energy = 3, max_energy = 3},
     coins = {}, relics = {}, items = {}, shop_items = {}, unlocked = unlocked or {}, purchased = {}, cleared = 0, shop_relic = nil, next_uid = 0, encounter_index = 1, encounter = nil,
     pending = nil, shop_offers = {}, log = {}, selected_uid = nil}
   local def = characters[character_id]

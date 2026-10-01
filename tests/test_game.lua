@@ -101,7 +101,7 @@ assert(Game.resolve(win))
 assert(win.encounter.cleared, "quota met")
 assert(Game.end_level(win))
 equal(win.phase, "SHOP", "enemy death wins")
-equal(win.player.gold, 32, "level payout 20 plus 2 gold for 4 points beyond the quota")
+equal(win.player.gold, Game.START_GOLD + Game.route[1].payout + 2, "level payout plus 2 gold for 4 points beyond the quota")
 equal(#win.coins, 1, "no free coin")
 equal(#win.shop_offers, 4)
 win.player.gold = 100
@@ -251,10 +251,16 @@ equal(d2.dealt.uid, d2.coins[1].uid, "discarded coin never returns")
 
 for id, r in pairs(real) do chars[id].starter, chars[id].deck, chars[id].pool, chars[id].locked = r[1], r[2], r[3], r[4] end
 
--- real content: every character starts with 5 Normal coins (5 free slots), and a win opens the shop
+-- real content: every character starts with 5 coins (5 free slots); Blade has plain Normal coins, the
+-- others start with a couple of their own
 for id in pairs(Game.characters()) do
   equal(#real[id][2], 5, id .. " default deck has five coins")
-  for _, coin_id in ipairs(real[id][2]) do equal(coin_id, "normal", id .. " starts with Normal coins") end
+end
+for _, coin_id in ipairs(real.blade[2]) do equal(coin_id, "normal", "Blade starts with Normal coins") end
+for _, id in ipairs({"seer", "trader"}) do
+  local specials = 0
+  for _, coin_id in ipairs(real[id][2]) do if coin_id ~= "normal" then specials = specials + 1 end end
+  assert(specials >= 1, id .. " starts with at least one coin of its own")
 end
 local blade = Game.new(3, "blade")
 equal(#blade.coins, 5)
@@ -359,10 +365,10 @@ assert(Game.flip(k) and Game.resolve(k))
 equal(k.phase, "ENCOUNTER", "level stays open after clearing")
 assert(k.encounter.cleared)
 equal(k.cleared, 1, "counts as cleared right away")
-equal(k.player.gold, gold + 20 + 1, "level payout plus 1 gold for the 3 extra points")
+equal(k.player.gold, gold + Game.route[1].payout + 1, "level payout plus 1 gold for the 3 extra points")
 k.dealt.probability = 1
 assert(Game.flip(k) and Game.resolve(k))
-equal(k.player.gold, gold + 20 + 4, "8 extra points in total pay 4 gold, of which 1 was already paid")
+equal(k.player.gold, gold + Game.route[1].payout + 4, "8 extra points in total pay 4 gold, of which 1 was already paid")
 equal(k.cleared, 1, "cleared is counted once")
 local before = k.player.gold
 assert(Game.end_level(k))
@@ -401,7 +407,7 @@ equal(bossy.phase, "VICTORY")
 -- quotas scale with the number of coins in the deck (a level lasts as long as the stack)
 equal(Game.quota_for(1, 5), 3)
 equal(Game.quota_for(1, 10), 6)
-equal(Game.quota_for(4, 10), 24)
+equal(Game.quota_for(4, 10), 26)
 equal(Game.quota_for(2, 1), 1, "never below 1")
 equal(Game.new(51, "blade").encounter.quota, Game.quota_for(1, 5), "a level's quota comes from the deck size at level start")
 
