@@ -48,29 +48,35 @@ local function draw_encounter()
 
   box(28, 28, 1224, 118, C.ink)
   outline(28, 28, 1224, 118, C.panel_light)
+  -- left: where you are
   text("TOSSUP", 43, 37, ui.f32, C.gold)
-  text("RUN " .. ui.game.encounter_index .. " / 4", 44, 110, ui.f16, C.muted)
-  text(e.boss and "THE HOUSE" or e.name:upper(), 267, 37, ui.f32,
-    e.boss and C.red or C.face)
-  text(e.boss and "EVERY 5TH DRAW INVERTS THE RESULT" or
-    "REACH THE QUOTA BEFORE DRAWS RUN OUT", 268, 75, ui.f16, C.muted)
-  text("QUOTA  " .. e.quota .. " LEFT / " .. e.max_quota, 268, 100, ui.f16, C.gold)
+  text("LEVEL " .. ui.game.encounter_index .. " / 4", 44, 78, ui.f16, C.muted)
+  text(e.boss and "THE HOUSE" or e.name:upper(), 44, 100, ui.f20, e.boss and C.red or C.face)
+  -- centre: the number that matters, points scored against the quota
+  local met = e.quota <= 0
+  centered("POINTS", 300, 34, 640, ui.f16, C.muted)
+  centered(e.scored .. " / " .. e.max_quota, 300, 50, 640, ui.f48, met and C.green or C.gold)
   color(C.slot)
-  love.graphics.rectangle("fill", 459, 105, 406, 13, 2)
-  color(C.green)
-  love.graphics.rectangle("fill", 459, 105, 406 * (1 - e.quota / e.max_quota), 13, 2)
+  love.graphics.rectangle("fill", 330, 108, 580, 22, 4)
+  color(met and C.green or C.gold)
+  love.graphics.rectangle("fill", 330, 108, 580 * math.min(1, e.scored / e.max_quota), 22, 4)
+  outline(330, 108, 580, 22, C.panel_light, 4)
+  if e.boss then
+    centered("EVERY 5TH DRAW INVERTS THE RESULT", 330, 133, 580, ui.f16, C.red)
+  end
+  -- right: what you have left
   local stats = {
+    {"DRAWS", tostring(e.draws), e.draws <= 3 and C.red or C.face},
     {"GOLD", tostring(ui.game.player.gold), C.gold},
     {"ENERGY", tostring(ui.game.player.energy), C.blue},
   }
   for i, stat in ipairs(stats) do
-    local x = 1005 + (i - 1) * 116
-    box(x, 39, 106, 66, C.panel)
-    text(stat[1], x + 9, 44, ui.f16, C.muted)
-    text(stat[2], x + 9, 67, ui.f20, stat[3])
+    local x = 940 + (i - 1) * 100
+    box(x, 38, 92, 62, C.panel)
+    text(stat[1], x + 8, 43, ui.f16, C.muted)
+    text(stat[2], x + 8, 64, ui.f32, stat[3])
   end
-  text("DRAWS " .. e.draws, 1006, 114, ui.f16, C.gold)
-  button("MENU", 1135, 109, 102, 30, C.panel_light, A.open_menu)
+  button("MENU", 1140, 108, 92, 30, C.panel_light, A.open_menu)
 
   local remaining = remaining_coins()
   box(28, 160, 250, 504, C.ink)
@@ -152,7 +158,13 @@ local function draw_encounter()
     box(973, 527, 266, 124, C.panel)
     outline(973, 527, 266, 124, result_color)
     centered(outcome and outcome:upper() or "READY", 980, 546, 252, ui.f32, result_color)
-    centered(ui.game.dealt and not ui.holding and "FLIP IT OR DISCARD" or ui.game.pending and "APPLYING..." or "EFFECT APPLIED", 980, 608, 252, ui.f16, C.muted)
+    local note, note_color = "EFFECT APPLIED", C.muted
+    if ui.game.dealt and not ui.holding then note = "FLIP IT OR DISCARD"
+    elseif ui.game.pending then note = "APPLYING..."
+    elseif result and result.gained and result.gained > 0 then note, note_color = "+" .. result.gained .. " POINTS", C.green
+    elseif result and result.penalty and result.penalty > 0 then note, note_color = "QUOTA +" .. result.penalty, C.red
+    elseif result and result.gained then note = "NO POINTS" end
+    centered(note, 980, 600, 252, ui.f20, note_color)
   else
     text(ui.flip_animation and "FLIPPING..." or "UNKNOWN", 975, 213, ui.f32, C.face)
     text("Flip to reveal a coin", 975, 261, ui.f16, C.muted)

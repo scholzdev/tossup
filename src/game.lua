@@ -110,7 +110,7 @@ local function start_encounter(game)
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = stage.quota, max_quota = stage.quota,
     draws = stage.flips, max_draws = stage.flips, boss = stage.boss or false, payout = stage.payout,
-    flips = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, bonus_draws = 0, pile = shuffle_deck(game)}
+    flips = 0, scored = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, bonus_draws = 0, pile = shuffle_deck(game)}
   game.player.energy = game.player.max_energy
   game.pending = nil
   game.last_result = nil
@@ -225,6 +225,7 @@ local function apply_effect(game, item, effect)
     return "+" .. effect.amount .. " gold"
   elseif effect.type == "score" then
     e.quota = math.max(0, e.quota - effect.amount) -- quota is what is still missing
+    e.scored = e.scored + effect.amount -- points earned this level (may overshoot on the last flip)
     return "+" .. effect.amount .. " points"
   elseif effect.type == "energy" then
     p.energy = p.energy + effect.amount
@@ -287,11 +288,14 @@ function Game.resolve(game)
   end
   Signal.emit("coin_resolve", {game = game, inst = item, res = res})
   local messages = {}
+  local scored_before, quota_total_before = e.scored, e.max_quota
   for _, effect in ipairs(res.effects) do
     local text = apply_effect(game, item, effect)
     messages[#messages + 1] = text
     Signal.emit("effect_applied", {game = game, inst = item, effect = effect, text = text})
   end
+  result.gained = e.scored - scored_before -- for the UI: what this flip was worth
+  result.penalty = e.max_quota - quota_total_before
   Signal.emit("coin_resolved", {game = game, inst = item, res = res})
   Hooks.unbind()
   Hooks.grow(item, "flip")
