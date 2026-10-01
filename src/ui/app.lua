@@ -1,5 +1,6 @@
 -- LÖVE callbacks: load, draw, update, input. Views live in src/ui/views/.
 local Game = require("src.game")
+local Profile = require("src.profile")
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
@@ -145,6 +146,21 @@ function app.activate(b, x)
 end
 
 function app.discard_current() A.discard_current() end
+function app.cycle_character(direction) A.cycle_character(direction) end
+function app.change_collection_page(direction) A.change_collection_page(direction) end
+
+-- Coin Sets: the next / previous character tab that is unlocked.
+function app.cycle_sets_character(direction)
+  local order = ui.character_order
+  for i, id in ipairs(order) do
+    if id == ui.sets_character then
+      for step = 1, #order do
+        local candidate = order[(i - 1 + direction * step) % #order + 1]
+        if Profile.character_unlocked(ui.profile, candidate) then A.sets_pick_character(candidate) return end
+      end
+    end
+  end
+end
 
 function app.mousepressed(x, y, mouse_button)
   if mouse_button ~= 1 then return end

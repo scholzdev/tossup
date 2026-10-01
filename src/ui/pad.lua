@@ -5,7 +5,7 @@
 local ui = require("src.ui.state")
 local Game = require("src.game")
 
-local Pad = {active = false, focus = nil, key = nil, repeat_timer = 0}
+local Pad = {active = false, focus = nil, key = nil, repeat_timer = 0, trigger_down = {}}
 
 local DIRECTIONS = {dpup = {0, -1}, dpdown = {0, 1}, dpleft = {-1, 0}, dpright = {1, 0}}
 
@@ -60,7 +60,36 @@ local function move(dx, dy)
       end
     end
   end
+  if not best then
+    -- nothing lies in that direction (a vertical menu has no left / right): step through the buttons in reading order instead,
+    -- and up / down wrap around to the other end
+    local order = {}
+    for _, b in ipairs(ui.buttons) do order[#order + 1] = b end
+    table.sort(order, function(a, b)
+      if math.abs(a.y - b.y) > 12 then return a.y < b.y end
+      return a.x < b.x
+    end)
+    for i, b in ipairs(order) do
+      if b == current then
+        local step = (dx + dy) > 0 and 1 or -1
+        best = order[(i - 1 + step) % #order + 1]
+        break
+      end
+    end
+  end
   if best then Pad.focus = {center(best)} end
+end
+
+-- LB / RB / LT / RT: the previous / next page, tab or character of the current screen.
+function Pad.step(direction, app)
+  Pad.active = true
+  if ui.confirm or ui.tutorial then return end
+  if ui.game and not ui.game.paused then return end
+  local screen = ui.screen
+  if screen == "select" then app.cycle_character(direction)
+  elseif screen == "collection" then app.change_collection_page(direction)
+  elseif screen == "options" then ui.options_tab = ui.options_tab == "game" and "sound" or "game"
+  elseif screen == "sets" then app.cycle_sets_character(direction) end
 end
 
 -- Call every frame after the UI was drawn (the button list is then complete).
@@ -82,6 +111,14 @@ function Pad.update(dt, app)
     if math.abs(ax) > .6 or math.abs(ay) > .6 then
       Pad.pressed(math.abs(ax) > math.abs(ay) and (ax > 0 and "dpright" or "dpleft") or (ay > 0 and "dpdown" or "dpup"), app)
       Pad.repeat_timer = .22
+    end
+  end
+  -- the triggers are analog axes, not buttons: a press is the moment they pass half way
+  if pad and pad:isGamepad() then
+    for name, direction in pairs({triggerleft = -1, triggerright = 1}) do
+      local down = pad:getGamepadAxis(name) > .5
+      if down and not Pad.trigger_down[name] then Pad.step(direction, app) end
+      Pad.trigger_down[name] = down
     end
   end
 end
@@ -107,9 +144,9 @@ function Pad.pressed(button, app)
       app.discard_current()
     end
   elseif button == "leftshoulder" then
-    app.keypressed("left")
+    Pad.step(-1, app)
   elseif button == "rightshoulder" then
-    app.keypressed("right")
+    Pad.step(1, app)
   end
 end
 
