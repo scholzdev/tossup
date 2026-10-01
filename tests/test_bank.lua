@@ -1,4 +1,5 @@
 local Game = require("src.game")
+Game.use_modifiers = false -- modifiers have their own tests (test_modifiers.lua)
 
 local function equal(a, b, message)
   assert(a == b, (message or "values differ") .. ": " .. tostring(a) .. " ~= " .. tostring(b))

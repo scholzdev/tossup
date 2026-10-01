@@ -2,7 +2,7 @@
 return {
   name = "Cursed", description = "A powerful, dangerous wager.",
   rarity = "SR",
-  probability = .25,
+  probability = .30,
   heads = {{type = "score", amount = 15}},
   tails = {{type = "penalty", amount = 2}},
 }

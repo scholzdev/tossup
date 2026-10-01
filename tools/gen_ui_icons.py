@@ -37,6 +37,10 @@ ITEMS = {
     "swap": "3f9bb0",
     "peek": "4f9a6a",
     "extra_draw": "e0902a",
+    "energy_drink": "2f9bd0",
+    "shortcut": "c9a227",
+    "safety_net": "5a8f6f",
+    "lucky_charm": "57a77a",
 }
 RELICS = {
     "magnet": "c0463c",
@@ -125,6 +129,21 @@ def emblem(d, name):
     elif name == "extra_draw":  # a coin coming back around
         d.arc(box(34, 34, 94, 94), 40, 320, fill=IVORY, width=p(8))
         d.polygon(points([(88, 26), (104, 52), (76, 52)]), fill=IVORY)
+    elif name == "energy_drink":  # a lightning bolt
+        d.polygon(points([(70, 28), (46, 68), (62, 68), (56, 100), (84, 56), (68, 56)]), fill=IVORY)
+    elif name == "shortcut":  # skip forward
+        d.polygon(points([(34, 42), (60, 64), (34, 86)]), fill=IVORY)
+        d.polygon(points([(62, 42), (88, 64), (62, 86)]), fill=IVORY)
+        d.rectangle(box(92, 42, 100, 86), fill=IVORY)
+    elif name == "safety_net":  # a net
+        for x in (40, 56, 72, 88):
+            d.line(points([(x, 40), (x, 88)]), fill=IVORY, width=p(4))
+        for y in (40, 56, 72, 88):
+            d.line(points([(36, y), (92, y)]), fill=IVORY, width=p(4))
+    elif name == "lucky_charm":  # a four-leaf clover
+        for x, y in ((48, 40), (66, 40), (48, 58), (66, 58)):
+            d.ellipse(box(x, y, x + 18, y + 18), fill=IVORY)
+        d.line(points([(66, 74), (72, 92)]), fill=IVORY, width=p(5))
     elif name == "magnet":  # a horseshoe magnet, tips pointing up
         d.arc(box(36, 46, 92, 102), 0, 180, fill=IVORY, width=p(14))
         d.rectangle(box(36, 28, 50, 76), fill=IVORY)

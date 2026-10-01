@@ -15,6 +15,7 @@ check("coins", Game.catalog())
 check("items", Game.item_catalog())
 check("relics", Game.relics())
 check("characters", Game.characters())
+check("modifiers", Game.modifiers())
 
 Lang.set("de")
 assert(Lang.t("BACK") == "ZURÜCK")

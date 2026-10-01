@@ -6,6 +6,8 @@ local Items = require("src.items")
 local catalog = require("content.coins")
 local relic_catalog = require("content.relics")
 local item_catalog = require("content.items")
+local modifier_catalog = require("content.modifiers")
+local MODIFIER_ORDER = {"lucky_day", "cold_snap", "power_surge", "blackout", "gold_rush", "high_stakes", "good_rhythm", "bonus_exchange"}
 local characters = require("content.characters")
 local Game = {}
 
@@ -168,6 +170,12 @@ local function start_encounter(game)
     flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {}, combo_side = nil, combo_len = 0, shield = 0, combo_step = Game.COMBO_STEP, combo_cap = Game.COMBO_CAP,
     returned = 0, played = {}, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
+  if Game.use_modifiers ~= false and game.encounter_index >= 2 then -- every level from the second on has a modifier (tests can switch this off)
+    local id = MODIFIER_ORDER[RNG.int(game, 1, #MODIFIER_ORDER)]
+    game.encounter.modifier = id
+    modifier_catalog[id].apply(game, game.encounter)
+    quota = game.encounter.quota
+  end
   game.pending = nil
   game.last_result = nil
   game.phase = "ENCOUNTER"
@@ -199,7 +207,7 @@ function deal(game)
   game.dealt = {uid = uid}
   game.selected_uid = uid
   log(game, catalog[inst.id].name .. " #" .. uid .. " dealt.")
-  game.peek = nil
+  game.peek, game.peek_next = game.peek_next, nil
   Hooks.bind(game, inst)
   Signal.emit("coin_deal", {game = game, inst = inst})
   game.dealt.probability = Game.probability(game, inst) -- on_deal may have changed the odds
@@ -297,9 +305,9 @@ end
 -- Buffs: "the next N coins ..." effects. kind: "mult" (x amount on score and gold), "odds" (+amount Heads),
 -- "swap" (use the other side's effects), "heads" (guaranteed Heads). A buff made while a coin resolves is
 -- "fresh" and starts with the following coin; every resolved coin uses up one of the remaining coins.
-function Game.add_buff(game, kind, amount, coins)
+function Game.add_buff(game, kind, amount, coins, immediate)
   local list = game.encounter.buffs
-  list[#list + 1] = {kind = kind, amount = amount, left = coins or 1, fresh = true}
+  list[#list + 1] = {kind = kind, amount = amount, left = coins or 1, fresh = not immediate} -- immediate: a chip, active from the coin in play
 end
 
 local function buff_active(game, kind)
@@ -417,8 +425,9 @@ end
 local function apply_effect(game, item, effect)
   local p, e = game.player, game.encounter
   if effect.type == "gold" then
-    p.gold = p.gold + effect.amount
-    return "+" .. effect.amount .. " gold"
+    local amount = effect.amount * (e.gold_mult or 1)
+    p.gold = p.gold + amount
+    return "+" .. amount .. " gold"
   elseif effect.type == "score" then
     e.quota = math.max(0, e.quota - effect.amount) -- quota is what is still missing
     e.scored = e.scored + effect.amount -- points earned this level (may overshoot on the last flip)
@@ -426,6 +435,17 @@ local function apply_effect(game, item, effect)
   elseif effect.type == "energy" then
     p.energy = p.energy + effect.amount
     return "+" .. effect.amount .. " energy"
+  elseif effect.type == "all_odds" then
+    e.magnet = e.magnet + effect.amount
+    return "all coins +" .. math.floor(effect.amount * 100 + .5) .. "% Heads"
+  elseif effect.type == "peek" then
+    local peek = {}
+    for i = 1, 2 do if e.pile[i] then peek[#peek + 1] = e.pile[i] end end
+    if #peek > 0 then game.peek_next = peek end -- shown once the next coin is dealt (deal clears the old peek)
+    return "peek"
+  elseif effect.type == "extra_exchange" then
+    e.extra_exchanges = (e.extra_exchanges or 0) + effect.amount
+    return "+" .. effect.amount .. " exchange"
   elseif effect.type == "amplify" then
     -- every active buff lasts one coin longer and gets stronger (x2 -> x3, +20% -> +40% Heads)
     for _, buff in ipairs(e.buffs) do
@@ -626,12 +646,18 @@ local function returnable(game)
   return list
 end
 
+-- Exchanges still allowed this level (EXCHANGE_MAX, plus extras from Lifeline coins and the Bonus Exchange modifier).
+function Game.exchanges_left(game)
+  local e = game.encounter
+  return Game.EXCHANGE_MAX + (e.extra_exchanges or 0) - (e.exchanges or 0)
+end
+
 -- With an empty stack, pay gold to get up to EXCHANGE_GAIN of the coins you already played this level
 -- back into the stack.
 function Game.can_exchange(game)
   if game.phase ~= "ENCOUNTER" or game.pending or game.mulligan or game.dealt then return false end
   if Game.coins_left(game) > 0 then return false end
-  if (game.encounter.exchanges or 0) >= Game.EXCHANGE_MAX then return false end
+  if Game.exchanges_left(game) <= 0 then return false end
   return game.player.gold >= Game.exchange_cost(game) and #returnable(game) >= 1
 end
 
@@ -672,7 +698,7 @@ function Game.stack_empty(game)
   elseif can_exchange then
     game.exchange_open = true
   else
-    lose_level(game, (e.exchanges or 0) >= Game.EXCHANGE_MAX and "out of coins, and all exchanges are used."
+    lose_level(game, Game.exchanges_left(game) <= 0 and "out of coins, and all exchanges are used."
       or "out of coins, and not enough gold to exchange.")
   end
 end
@@ -806,6 +832,7 @@ Game.apply_effect = apply_effect -- for hooks: apply an effect table to the runn
 Game.log = log
 function Game.catalog() return catalog end
 function Game.relics() return relic_catalog end
+function Game.modifiers() return modifier_catalog end
 function Game.item_catalog() return item_catalog end
 function Game.characters() return characters end
 function Game.active_count(game) return active_count(game) end

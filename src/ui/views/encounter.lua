@@ -220,6 +220,16 @@ local function draw_encounter()
     if e.shield > 0 then text(D.L("SHIELD %d", e.shield), 1190 - face:getWidth(D.L("SHIELD %d", e.shield)), 238, face, C.green) end
   end
 
+  -- this level's modifier (from level 2 on)
+  if e.modifier then
+    local m = ui.modifier_catalog[e.modifier]
+    text("MODIFIER", 346, 556, ui.f16, C.muted)
+    text(m.name:upper(), 346, 576, ui.f20, C.orange)
+    love.graphics.setFont(ui.f16)
+    color(C.muted)
+    love.graphics.printf(D.L(m.description), 346, 602, 250)
+  end
+
   -- the two effects
   local coin = item and catalog[item.id] or ui.flip_animation and catalog[ui.flip_animation.id]
   for k, side in ipairs({"HEADS", "TAILS"}) do
@@ -323,7 +333,7 @@ local function draw_encounter()
     box(500, 250, 540, 320, C.panel_dk)
     outline(500, 250, 540, 320, C.red)
     centered("OUT OF COINS", 500, 272, 540, ui.f32, C.red)
-    centered(D.L("%d POINTS SHORT OF THE QUOTA", e.quota) .. "  -  " .. D.L("EXCHANGES LEFT: %d", Game.EXCHANGE_MAX - (e.exchanges or 0)),
+    centered(D.L("%d POINTS SHORT OF THE QUOTA", e.quota) .. "  -  " .. D.L("EXCHANGES LEFT: %d", Game.exchanges_left(ui.game)),
       500, 316, 540, ui.f16, C.muted)
     D.icon_button(D.L("BUY MORE COINS  %d GOLD > %d", Game.exchange_cost(ui.game), Game.EXCHANGE_GAIN),
       ui.ui_images.exchange, 530, 356, 480, 56, C.green, A.exchange)

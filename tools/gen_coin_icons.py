@@ -62,6 +62,12 @@ COLORS = {
     "amplifier": "e0a030",
     "true_echo": "6a7ec9",
     "doubler": "c9a82a",
+    "jackpot": "d4a017",
+    "mimic": "8a5fa0",
+    "orchestra": "5a8f6f",
+    "lifeline": "d9534f",
+    "horoscope": "4a5fa8",
+    "crystal_ball": "6f9fd0",
 }
 
 
@@ -270,6 +276,36 @@ def emblem(image, coin_id):
         d.line(points([(36, 48), (60, 80)]), fill=ivory, width=p(8))
         d.line(points([(60, 48), (36, 80)]), fill=ivory, width=p(8))
         d.line(points([(70, 52), (92, 52), (92, 64), (70, 76), (70, 80), (94, 80)]), fill=ivory, width=p(6), joint="curve")
+    elif coin_id == "jackpot":  # a star over a big number sign: three 7s
+        for x in (34, 54, 74):
+            d.polygon(points([(x, 46), (x + 18, 46), (x + 8, 84), (x + 2, 84), (x + 10, 56), (x, 56)]), fill=ivory)
+    elif coin_id == "mimic":  # a smiling mask
+        d.ellipse(box(38, 36, 90, 92), fill=ivory)
+        d.ellipse(box(48, 54, 58, 64), fill=dark)
+        d.ellipse(box(70, 54, 80, 64), fill=dark)
+        d.arc(box(48, 62, 80, 84), 20, 160, fill=dark, width=p(4))
+    elif coin_id == "orchestra":  # a musical note
+        d.ellipse(box(38, 72, 62, 90), fill=ivory)
+        d.line(points([(60, 80), (60, 36)]), fill=ivory, width=p(5))
+        d.polygon(points([(60, 36), (86, 46), (86, 58), (60, 48)]), fill=ivory)
+    elif coin_id == "lifeline":  # a life ring
+        d.ellipse(box(36, 36, 92, 92), outline=ivory, width=p(12))
+        for a in (45, 135, 225, 315):
+            r = math.radians(a)
+            d.line(points([(64 + 22 * math.cos(r), 64 + 22 * math.sin(r)), (64 + 30 * math.cos(r), 64 + 30 * math.sin(r))]), fill=dark, width=p(5))
+    elif coin_id == "horoscope":  # a crescent and a star
+        d.ellipse(box(36, 36, 84, 84), fill=ivory)
+        d.ellipse(box(48, 32, 96, 80), fill=(74, 95, 168, 255))
+        star = []
+        for i in range(10):
+            r = 14 if i % 2 == 0 else 6
+            a = -math.pi / 2 + i * math.pi / 5
+            star.append((84 + r * math.cos(a), 78 + r * math.sin(a)))
+        d.polygon(points(star), fill=ivory)
+    elif coin_id == "crystal_ball":  # a ball on a stand with a shine
+        d.ellipse(box(36, 34, 92, 90), outline=ivory, width=p(6))
+        d.polygon(points([(46, 92), (82, 92), (90, 102), (38, 102)]), fill=ivory)
+        d.arc(box(46, 44, 70, 68), 200, 280, fill=ivory, width=p(5))
     elif coin_id == "back":
         d.arc(box(44, 37, 84, 76), 190, 350, fill=ivory, width=p(8))
         d.line(points([(83, 59), (64, 77), (64, 82)]), fill=ivory, width=p(8))

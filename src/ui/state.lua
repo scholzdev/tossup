@@ -13,6 +13,7 @@ local state = {
   catalog = Lang.wrap("coins", Game.catalog()), -- names/descriptions follow the language
   item_catalog = Lang.wrap("items", Game.item_catalog()),
   relic_catalog = Lang.wrap("relics", Game.relics()),
+  modifier_catalog = Lang.wrap("modifiers", Game.modifiers()),
   characters = Lang.wrap("characters", Game.characters()),
   character_order = {"blade", "seer", "trader"},
   selected_character = "blade",
