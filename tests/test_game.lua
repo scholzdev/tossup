@@ -251,13 +251,11 @@ equal(d2.dealt.uid, d2.coins[1].uid, "discarded coin never returns")
 
 for id, r in pairs(real) do chars[id].starter, chars[id].deck, chars[id].pool, chars[id].locked = r[1], r[2], r[3], r[4] end
 
--- real content: every character starts with 5 coins (5 free slots); Blade has plain Normal coins, the
--- others start with a couple of their own
+-- real content: every character starts with 5 coins (5 free slots), mostly Normal plus a coin or two of its own
 for id in pairs(Game.characters()) do
   equal(#real[id][2], 5, id .. " default deck has five coins")
 end
-for _, coin_id in ipairs(real.blade[2]) do equal(coin_id, "normal", "Blade starts with Normal coins") end
-for _, id in ipairs({"seer", "trader"}) do
+for _, id in ipairs({"blade", "seer", "trader"}) do
   local specials = 0
   for _, coin_id in ipairs(real[id][2]) do if coin_id ~= "normal" then specials = specials + 1 end end
   assert(specials >= 1, id .. " starts with at least one coin of its own")

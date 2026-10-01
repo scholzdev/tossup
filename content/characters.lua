@@ -5,7 +5,7 @@ return {
   blade = {
     name = "The Blade", description = "Reliable points",
     starter = "normal",
-    deck = {"normal", "normal", "normal", "normal", "normal"},
+    deck = {"normal", "normal", "normal", "normal", "sword"},
     pool = {"normal", "sword", "dagger"},
     locked = {{"hammer", 3}, {"blood", 4}, {"vampire", 4}, {"chain", 5}, {"cursed", 5}, {"fuse", 5},
       {"focus", 6}, {"martyr", 6}, {"snowball", 8}},
