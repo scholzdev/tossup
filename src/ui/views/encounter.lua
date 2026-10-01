@@ -29,34 +29,43 @@ end
 local function draw_mulligan()
   local g = ui.game
   local hand = g.mulligan.hand
-  local w, h, gap = 150, 176, 14
-  local x0 = 770 - (#hand * w + (#hand - 1) * gap) / 2
+  local w, h, gap = 170, 220, 16
+  local x0 = 640 - (#hand * w + (#hand - 1) * gap) / 2
   local now = love.timer.getTime()
+  color(C.ink, .78) -- dim everything behind the hand
+  love.graphics.rectangle("fill", 0, 0, 1280, 800)
+  centered("OPENING HAND", 0, 214, 1280, ui.f32, C.gold)
+  centered("DISCARD COINS YOU DO NOT WANT  -  FREE  -  THEY STAY OUT FOR THE LEVEL", 0, 254, 1280, ui.f16, C.muted)
   for i, uid in ipairs(hand) do
     local owned = Game.get_coin(g, uid)
     local def = catalog[owned.id]
     local marked = ui.marked[uid]
     local x = x0 + (i - 1) * (w + gap)
-    local y = 472 + math.floor(math.sin(now * 2 + i) * 3 + .5) - (marked and 12 or 0)
-    color(C.black, .35)
-    love.graphics.rectangle("fill", x + 4, y + 8, w, h, 6) -- shadow: the cards float
+    local y = 300 + math.floor(math.sin(now * 2 + i) * 3 + .5) - (marked and 14 or 0)
+    color(C.black, .4)
+    love.graphics.rectangle("fill", x + 4, y + 10, w, h, 6) -- shadow: the cards float
     box(x, y, w, h, marked and C.marked or C.card)
     outline(x, y, w, h, marked and C.red or uid == first_unmarked(g) and C.gold or C.line)
-    coin_image(owned.id, x + (w - 64) / 2, y + 8, 64)
-    centered(def.name:upper(), x, y + 76, w, ui.f20, C.face)
-    centered(math.floor(Game.probability(g, owned) * 100 + .5) .. "% HEADS", x, y + 100, w, ui.f16, C.gold)
-    text("H " .. effects(def.heads), x + 10, y + 122, ui.f16, C.blue)
-    text("T " .. effects(def.tails), x + 10, y + 142, ui.f16, C.red)
+    coin_image(owned.id, x + (w - 80) / 2, y + 12, 80)
+    centered(def.name:upper(), x, y + 102, w, ui.f20, C.face)
+    centered(math.floor(Game.probability(g, owned) * 100 + .5) .. "% HEADS", x, y + 128, w, ui.f16, C.gold)
+    text("H " .. effects(def.heads), x + 12, y + 156, ui.f16, C.blue)
+    text("T " .. effects(def.tails), x + 12, y + 180, ui.f16, C.red)
     if marked then
       color(C.red)
-      love.graphics.rectangle("fill", x + 37, y - 9, 76, 18, 4)
-      centered("DISCARD", x + 37, y - 9, 76, ui.f16, C.ink)
+      love.graphics.rectangle("fill", x + (w - 76) / 2, y - 9, 76, 18, 4)
+      centered("DISCARD", x + (w - 76) / 2, y - 9, 76, ui.f16, C.ink)
+    elseif uid == first_unmarked(g) then
+      color(C.gold)
+      love.graphics.rectangle("fill", x + (w - 76) / 2, y - 9, 76, 18, 4)
+      centered("PLAYS FIRST", x + (w - 76) / 2, y - 9, 76, ui.f16, C.ink)
     end
     local cost = def.energy_cost or 0
-    if cost > 0 then text("E" .. cost, x + w - 28, y + 8, ui.f16, C.orange) end
+    if cost > 0 then text("E" .. cost, x + w - 30, y + 10, ui.f16, C.orange) end
     coin_hover(owned.id, x, y, w, h, Game.probability(g, owned))
     ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = h, action = function() A.toggle_mark(uid) end}
   end
+  centered("CLICK COINS TO MARK THEM, THEN PRESS DISCARD", 0, 560, 1280, ui.f16, C.muted)
   local marked_count = A.marked_count()
   D.icon_button(marked_count > 0 and ("DISCARD " .. marked_count) or "DISCARD", ui.ui_images.discard, 330, 676, 200, 64,
     C.red, A.discard_marked, marked_count > 0 and marked_count < #hand)
