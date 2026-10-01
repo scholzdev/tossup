@@ -4,7 +4,7 @@ local app = require("src.ui.app")
 local default_errorhandler = love.errorhandler
 function love.errorhandler(message)
   pcall(function()
-    love.filesystem.append("crash.log", os.date("%Y-%m-%d %H:%M:%S") .. "\n" .. debug.traceback(tostring(message), 2) .. "\n\n")
+    love.filesystem.append("crash.log", os.date("%Y-%m-%d %H:%M:%S") .. " v" .. require("src.version").number .. "-" .. require("src.version").build .. "\n" .. debug.traceback(tostring(message), 2) .. "\n\n")
   end)
   return default_errorhandler(message)
 end

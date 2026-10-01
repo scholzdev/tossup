@@ -831,6 +831,29 @@ Game.route = route -- level quotas, draws and payouts; tools/sim.lua overrides t
 Game.apply_effect = apply_effect -- for hooks: apply an effect table to the running game
 Game.log = log
 function Game.catalog() return catalog end
+-- A run as plain data (for saving): the whole game table, with the long log trimmed.
+function Game.snapshot(game)
+  local copy = {}
+  for k, v in pairs(game) do copy[k] = v end
+  local log_tail = {}
+  for i = math.max(1, #game.log - 40), #game.log do log_tail[#log_tail + 1] = game.log[i] end
+  copy.log = log_tail
+  copy.paused, copy.tutorial = nil, nil
+  return copy
+end
+
+-- Rebuild a game from a snapshot. Only safe points are saved (the opening hand of a level, the shop), where no coin is
+-- mid-flip, so only the owned relics need binding again. Returns nil for data that is not a run.
+function Game.restore(data)
+  if type(data) ~= "table" or type(data.coins) ~= "table" or type(data.player) ~= "table" or not characters[data.character_id] then return nil end
+  if data.phase ~= "SHOP" and not (data.phase == "ENCOUNTER" and data.mulligan and data.encounter) then return nil end
+  Hooks.unbind()
+  Items.clear()
+  data.paused = false
+  Relics.bind(data)
+  return data
+end
+
 function Game.relics() return relic_catalog end
 function Game.modifiers() return modifier_catalog end
 function Game.item_catalog() return item_catalog end

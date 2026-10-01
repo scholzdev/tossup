@@ -7,9 +7,13 @@ local A = {}
 
 local Lang = require("src.lang")
 local Sound = require("src.ui.sound")
+local Serialize = require("src.serialize")
+local Version = require("src.version")
 local Tutorial = require("src.ui.tutorial")
 
 local PROFILE_FILE = "profile.lua"
+local RUN_FILE = "run.lua" -- the saved run (autosaved at the start of every level and in the shop)
+local saved_key = nil
 
 local function apply_options()
   love.window.setFullscreen(ui.profile.options.fullscreen)
@@ -24,6 +28,28 @@ end
 
 local function save_profile()
   love.filesystem.write(PROFILE_FILE, Profile.encode(ui.profile))
+end
+
+-- ---- run saving: the opening hand of a level and the shop are safe points (no coin is mid-flip)
+function A.has_saved_run() return love.filesystem.getInfo(RUN_FILE) ~= nil end
+
+local function delete_run()
+  if A.has_saved_run() then love.filesystem.remove(RUN_FILE) end
+end
+
+local function save_run(game)
+  love.filesystem.write(RUN_FILE, Serialize.encode({version = 1, build = Version.build, game = Game.snapshot(game)}))
+end
+
+-- Continue the saved run (at the start of its level or in its shop). False when there is none or it cannot be read.
+function A.load_run()
+  local data = A.has_saved_run() and Serialize.decode(love.filesystem.read(RUN_FILE))
+  local game = type(data) == "table" and data.version == 1 and Game.restore(data.game)
+  if not game then delete_run() return false end
+  ui.game, ui.selected_character = game, game.character_id
+  ui.flip_animation, ui.holding, ui.marked, ui.resolve_timer, ui.notice = nil, false, {}, 0, ""
+  saved_key = nil
+  return true
 end
 
 function A.go(screen)
@@ -43,9 +69,9 @@ end
 -- Quitting asks first (popup) while a run is in progress, because runs are not saved.
 function A.quit()
   local g = ui.game
-  local running = g and g.phase ~= "GAME_OVER" and g.phase ~= "VICTORY"
+  local running = g and g.phase == "ENCOUNTER" and not g.mulligan and not g.tutorial -- the level in progress is not saved; levels and the shop are
   if running then
-    ui.confirm = {title = "QUIT", text = "THE CURRENT RUN WILL BE LOST.", ok = love.event.quit}
+    ui.confirm = {title = "QUIT", text = "THIS LEVEL STARTS OVER WHEN YOU CONTINUE.", ok = love.event.quit}
     return
   end
   love.event.quit()
@@ -55,8 +81,8 @@ end
 local function log_run(game)
   local coins = {}
   for i, owned in ipairs(game.coins) do coins[i] = owned.id end
-  love.filesystem.append("runs.log", string.format("%s seed=%d char=%s result=%s cleared=%d gold=%d why=%s coins=%s\n",
-    os.date("%Y-%m-%d %H:%M:%S"), game.seed, game.character_id, game.endless and "ENDLESS" or game.phase == "VICTORY" and "WIN" or "LOSS",
+  love.filesystem.append("runs.log", string.format("%s v=%s seed=%d char=%s result=%s cleared=%d gold=%d why=%s coins=%s\n",
+    os.date("%Y-%m-%d %H:%M:%S"), Version.number .. "-" .. Version.build, game.seed, game.character_id, game.endless and "ENDLESS" or game.phase == "VICTORY" and "WIN" or "LOSS",
     game.cleared, game.player.gold, game.lost_why or "-", table.concat(coins, ",")))
 end
 
@@ -244,6 +270,7 @@ function A.discard_current()
 end
 
 function A.start(seed)
+  saved_key = nil
   if not Profile.character_unlocked(ui.profile, ui.selected_character) then return end -- win a run with the one before first
   ui.game = Game.new(seed or (os.time() + math.floor(love.timer.getTime() * 1000000)),
     ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character), A.loadout(), true)
@@ -336,6 +363,17 @@ function A.update(dt)
     end
     game.purchased = {}
     if unlocked_now then save_profile() end
+  end
+  do -- autosave at the safe points; drop the save when the run is over
+    local safe = game and not game.tutorial and (game.phase == "SHOP" or (game.phase == "ENCOUNTER" and game.mulligan))
+    if safe then
+      local key = game.phase .. game.encounter_index .. (game.endless and "e" or "") .. ":" .. game.player.gold .. ":" ..
+        #game.coins .. ":" .. game.slots .. ":" .. #game.items .. ":" .. #game.relics .. ":" .. (game.reroll_cost or 0)
+      if key ~= saved_key then saved_key = key save_run(game) end -- every shop purchase is saved too (no reroll scumming)
+    elseif game and not game.tutorial and (game.phase == "GAME_OVER" or game.phase == "VICTORY") and saved_key ~= "over" then
+      saved_key = "over"
+      delete_run()
+    end
   end
   local record = game and not game.tutorial and game -- a tutorial run is a throwaway: nothing is saved or logged
   if record then -- anything that has been in your deck counts as collected
