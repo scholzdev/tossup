@@ -13,6 +13,7 @@ while game.phase ~= "VICTORY" and game.phase ~= "GAME_OVER" do
   if game.phase == "ENCOUNTER" then
     Game.flip(game)
     Game.resolve(game)
+    if game.encounter.cleared then Game.end_level(game) end
   elseif game.phase == "SHOP" then
     Game.leave_shop(game)
   end

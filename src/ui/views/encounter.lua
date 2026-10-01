@@ -100,7 +100,11 @@ local function draw_encounter()
   color(met and C.green or C.gold)
   love.graphics.rectangle("fill", 330, 108, 580 * math.min(1, e.scored / e.max_quota), 22, 4)
   outline(330, 108, 580, 22, C.panel_light, 4)
-  if e.boss then
+  if e.cleared then
+    centered("QUOTA MET  -  EXTRA POINTS PAY GOLD", 330, 133, 580, ui.f16, C.green)
+    button("OPEN SHOP", 925, 106, 200, 34, C.green, A.open_shop,
+      not ui.flip_animation and not ui.game.pending and not ui.game.mulligan)
+  elseif e.boss then
     centered("EVERY 5TH DRAW INVERTS THE RESULT", 330, 133, 580, ui.f16, C.red)
   end
   -- right: what you have left
@@ -249,6 +253,7 @@ local function draw_encounter()
   text(ui.flip_animation and "COIN IN MOTION" or ui.game.pending and "COIN FLIPPED" or
     "YOUR MOVE", 45, 694, ui.f20, C.gold)
   local hint = ui.holding and "Click for the next coin." or "Flip it, or mark coins and discard."
+  if e.cleared then hint = "Keep going for gold, or open the shop." end
   if ui.game.dealt and not ui.holding and not Game.can_flip(ui.game) then hint = "Too little energy: discard it." end
   if ui.game.peek then
     local names = {}

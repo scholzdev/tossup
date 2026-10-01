@@ -170,6 +170,11 @@ function A.coin_action(item)
   Game.select(ui.game, item.uid)
 end
 
+-- Leave the level for the shop; only possible once the quota is met.
+function A.open_shop()
+  if not ui.flip_animation then Game.end_level(ui.game) end
+end
+
 function A.use_item(slot)
   if not ui.flip_animation then Game.use_item(ui.game, slot) end
 end

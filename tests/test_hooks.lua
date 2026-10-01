@@ -104,7 +104,9 @@ local ev = fresh("sword", 5)
 ev.encounter.quota = 1
 events = {}
 play(ev, "Heads")
-equal(table.concat(events, ","), "score,won", "global events")
+equal(table.concat(events, ","), "score", "quota met, level still open")
+assert(Game.end_level(ev))
+equal(table.concat(events, ","), "score,won", "encounter_end fires when the level ends")
 for _, h in ipairs(handles) do Signal.off(h) end
 
 -- determinism with hooks: same seed, same log
@@ -112,7 +114,11 @@ local function run(seed)
   local g = Game.new(seed, "seer")
   g.coins[1].id = "gambler"
   local n = 0
-  while g.phase == "ENCOUNTER" and n < 30 do n = n + 1 if g.dealt then play(g) end end
+  while g.phase == "ENCOUNTER" and n < 30 do
+    n = n + 1
+    g.player.energy = 99 -- Gambler costs energy; this test is about determinism
+    if g.dealt then play(g) end
+  end
   return table.concat(g.log, "\n")
 end
 equal(run(9), run(9), "hooked run deterministic")

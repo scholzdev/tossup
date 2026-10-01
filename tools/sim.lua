@@ -167,6 +167,7 @@ bots.greedy = {
 
 -- Uses measured coin values: discards weak coins, plays items when behind pace, buys the best coins.
 bots.smart = {
+  keep_playing = true, -- extra points pay gold, so it flips until the draws run out
   -- discard the weak coins of the opening hand (free) while at least three stay
   mulligan = function(g)
     local hand = g.mulligan.hand
@@ -275,6 +276,8 @@ local function play(seed, character, bot)
     if g.mulligan then bot.mulligan(g)
     elseif g.phase == "ENCOUNTER" then
       if g.dealt then bot.encounter(g) end
+      -- once the quota is met a bot either keeps flipping for gold or opens the shop at once
+      if g.phase == "ENCOUNTER" and g.encounter.cleared and not bot.keep_playing then Game.end_level(g) end
     elseif g.phase == "SHOP" then
       bot.shop(g)
       Game.leave_shop(g)

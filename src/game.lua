@@ -13,6 +13,7 @@ Game.VISIBLE = 3 -- coins shown in the bank; the first one is the coin you are a
 Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may discard
 Game.START_MAX = 10 -- coins in a coin set you can take into a run
 Game.DECK_MAX = 10 -- the shop can never grow the deck past this (a full deck replaces a coin)
+Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
 Game.MAX_COPIES = 3 -- copies of one coin in a set; the plain Normal coin is exempt (up to the set size)
 
 local route = {
@@ -132,7 +133,7 @@ local function start_encounter(game)
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = stage.quota, max_quota = stage.quota,
     draws = stage.flips, max_draws = stage.flips, boss = stage.boss or false, payout = stage.payout,
-    flips = 0, scored = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, bonus_draws = 0, pile = shuffle_deck(game), queue = {}}
+    flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, bonus_draws = 0, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
   game.pending = nil
   game.last_result = nil
@@ -394,6 +395,19 @@ local function enter_shop(game)
   game.shop_items = offers(game, item_ids, 2)
 end
 
+-- The level is over for good: the player opened the shop (or the boss fell). Only possible once the
+-- quota is met. The payout was already given when the quota was met.
+function Game.end_level(game)
+  local e = game.encounter
+  if game.phase ~= "ENCOUNTER" or not e.cleared or game.pending or game.mulligan then return false end
+  Hooks.unbind()
+  game.dealt = nil
+  Items.clear()
+  Signal.emit("encounter_end", {game = game, won = true})
+  if e.boss then game.phase = "VICTORY" else enter_shop(game) end
+  return true
+end
+
 function Game.resolve(game)
   if game.phase ~= "ENCOUNTER" or not game.pending then return false end
   local e = game.encounter
@@ -427,18 +441,25 @@ function Game.resolve(game)
     " → " .. (#messages > 0 and table.concat(messages, ", ") or "nothing"))
   game.last_result = result
   game.pending = nil
-  if e.quota <= 0 then
-    log(game, "Quota met! " .. e.name .. " cleared.")
+  if e.quota <= 0 and not e.cleared then
+    e.cleared = true
     game.cleared = game.cleared + 1
-    Items.clear()
-    Signal.emit("encounter_end", {game = game, won = true})
-    if e.boss then
-      game.phase = "VICTORY"
-    else
+    log(game, "Quota met! " .. e.name .. " cleared.")
+    if not e.boss then
       game.player.gold = game.player.gold + e.payout
       log(game, "+" .. e.payout .. " gold level payout.")
-      enter_shop(game)
     end
+  end
+  if e.cleared then -- keep flipping after the quota: every 1/SURPLUS_RATE extra points pay one gold
+    local owed = math.floor(math.max(0, e.scored - e.max_quota) * Game.SURPLUS_RATE)
+    if owed > e.surplus_paid then
+      game.player.gold = game.player.gold + owed - e.surplus_paid
+      log(game, "+" .. (owed - e.surplus_paid) .. " gold for extra points.")
+      e.surplus_paid = owed
+    end
+  end
+  if e.cleared and (e.boss or e.draws <= 0) then
+    Game.end_level(game) -- the boss ends the run; out of draws sends you to the shop
   elseif e.draws <= 0 then
     game.phase = "GAME_OVER"
     log(game, "Defeat: out of draws.")

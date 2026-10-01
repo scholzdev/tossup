@@ -28,6 +28,7 @@ local function drive(seed, character)
     if game.phase == "ENCOUNTER" then
       assert(Game.flip(game))
       assert(Game.resolve(game))
+      if game.encounter.cleared then Game.end_level(game) end
     elseif game.phase == "SHOP" then
       assert(Game.leave_shop(game))
     end
@@ -77,7 +78,10 @@ equal(trader.coins[1].id, "dagger")
 assert(Game.flip(seer))
 seer.encounter.quota = 0
 assert(Game.resolve(seer))
-equal(seer.phase, "SHOP", "win goes straight to the shop")
+equal(seer.phase, "ENCOUNTER", "quota met: the level stays open")
+assert(seer.encounter.cleared)
+assert(Game.end_level(seer))
+equal(seer.phase, "SHOP", "opening the shop ends the level")
 local pool = {}
 for _, id in ipairs(Game.characters().seer.pool) do pool[id] = true end
 for _, id in ipairs(seer.shop_offers) do assert(pool[id] or id == "normal", "offer must be in character pool") end
@@ -87,8 +91,10 @@ assert(Game.flip(win))
 win.encounter.quota = 1
 assert(Game.force(win, "Heads"))
 assert(Game.resolve(win))
+assert(win.encounter.cleared, "quota met")
+assert(Game.end_level(win))
 equal(win.phase, "SHOP", "enemy death wins")
-equal(win.player.gold, 30, "level payout")
+equal(win.player.gold, 31, "level payout 20 + 1 gold for the extra points")
 equal(#win.coins, 1, "no free coin")
 equal(#win.shop_offers, 4)
 win.player.gold = 100
@@ -232,6 +238,7 @@ blade.encounter.quota = 1
 assert(Game.flip(blade))
 blade.pending.result = "Heads"
 assert(Game.resolve(blade))
+assert(Game.end_level(blade))
 equal(blade.phase, "SHOP", "win opens the shop")
 equal(blade.cleared, 1)
 equal(blade.shop_offers[1], "normal", "normal coin always offered first")
@@ -291,5 +298,51 @@ equal(house.pending.raw, "Heads")
 equal(house.pending.result, "Tails", "boss inversion already applied when the coin is flipped")
 assert(Game.resolve(house))
 equal(house.last_result.final, "Tails")
+
+-- clearing the quota does not end the level: keep flipping for extra gold, open the shop when you like
+local k = Game.new(41, "blade")
+equal(Game.end_level(k), false, "cannot leave before the quota is met")
+for _, c in ipairs(k.coins) do c.id = "sword" end -- heads = 5 points
+k.encounter.quota, k.encounter.max_quota = 2, 2
+k.encounter.draws = 6
+local gold = k.player.gold
+k.dealt.probability = 1
+assert(Game.flip(k) and Game.resolve(k))
+equal(k.phase, "ENCOUNTER", "level stays open after clearing")
+assert(k.encounter.cleared)
+equal(k.cleared, 1, "counts as cleared right away")
+equal(k.player.gold, gold + 20 + 1, "level payout plus 1 gold for the 3 extra points")
+k.dealt.probability = 1
+assert(Game.flip(k) and Game.resolve(k))
+equal(k.player.gold, gold + 20 + 4, "8 extra points in total pay 4 gold, of which 1 was already paid")
+equal(k.cleared, 1, "cleared is counted once")
+local before = k.player.gold
+assert(Game.end_level(k))
+equal(k.phase, "SHOP")
+equal(k.player.gold, before, "ending pays nothing more")
+
+-- running out of draws after the quota is met still goes to the shop (not game over)
+local d3 = Game.new(42, "blade")
+for _, c in ipairs(d3.coins) do c.id = "sword" end
+d3.encounter.quota, d3.encounter.max_quota = 2, 2
+d3.encounter.draws = 2
+d3.dealt.probability = 1
+assert(Game.flip(d3) and Game.resolve(d3))
+equal(d3.phase, "ENCOUNTER")
+d3.dealt.probability = 1
+assert(Game.flip(d3) and Game.resolve(d3))
+equal(d3.phase, "SHOP", "last draw spent after clearing -> shop")
+
+-- the boss ends the run the moment its quota is met
+local bossy = Game.new(43, "blade")
+bossy.encounter.boss = true
+bossy.encounter.flips = 0
+for _, c in ipairs(bossy.coins) do c.id = "sword" end
+bossy.encounter.quota, bossy.encounter.max_quota = 2, 2
+bossy.dealt.probability = 1
+assert(Game.flip(bossy))
+equal(bossy.pending.result, "Heads")
+assert(Game.resolve(bossy))
+equal(bossy.phase, "VICTORY")
 
 print("game tests passed")
