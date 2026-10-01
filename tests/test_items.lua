@@ -11,7 +11,7 @@ end
 local function fresh(items, seed)
   local game = Game.new(seed or 1, "blade")
   game.encounter.quota = 1000
-  game.encounter.draws = 1000
+  game.reshuffle = true
   game.items = items
   return game
 end
@@ -93,13 +93,16 @@ flip_resolve(p)
 equal(p.peek, nil, "peek cleared on the next deal")
 equal(p.encounter.queue[Game.VISIBLE], 70, "the peeked coin refilled the bank")
 
--- extra draw is capped at 3 per level and refuses (is not consumed) past the cap
-local e = fresh({"extra_draw", "extra_draw", "extra_draw", "extra_draw"})
-local draws = e.encounter.draws
-for _ = 1, 3 do assert(Game.use_item(e, 1)) end
-equal(e.encounter.draws, draws + 3)
+-- extra draw: a played coin returns to the pile (max RETURN_CAP per level); refuses when none played / at the cap
+local e = fresh({"extra_draw", "extra_draw", "extra_draw", "extra_draw", "extra_draw"})
+assert(not Game.use_item(e, 1), "nothing has been played yet: refused")
+equal(#e.items, 5, "refused item is kept")
+for _ = 1, 4 do flip_resolve(e) end
+local left = Game.coins_left(e)
+assert(Game.use_item(e, 1))
+equal(Game.coins_left(e), left + 1, "a coin came back")
+for _ = 1, Game.RETURN_CAP - 1 do assert(Game.use_item(e, 1)) end
 assert(not Game.use_item(e, 1), "cap reached")
-equal(#e.items, 1, "refused item is kept")
 
 -- shop: buy with gold, slot limit, cost
 local shop = Game.new(2, "blade")

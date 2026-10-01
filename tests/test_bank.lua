@@ -17,7 +17,7 @@ equal(#g.coins, 8)
 equal(#g.encounter.queue, 5, "opening hand")
 equal(#g.encounter.pile, 3, "rest of the deck is the draw pile")
 equal(g.dealt.uid, g.encounter.queue[1], "front of the bank is the dealt coin")
-g.encounter.quota, g.encounter.max_quota, g.encounter.draws = 1e9, 1e9, 1e9
+g.encounter.quota, g.encounter.max_quota = 1e9, 1e9
 
 -- playing a coin removes it from the bank; the bank only refills once fewer than three are left
 local front = g.dealt.uid
@@ -34,17 +34,20 @@ equal(#g.encounter.queue, 3)
 equal(g.encounter.queue[3], pile_top, "refilled from the top of the pile")
 assert(Game.resolve(g))
 
--- every coin shows up before the pile reshuffles; the bank never runs empty
+-- every coin is played exactly once (no reshuffle); then the stack is empty and the level ends
 local seen = {}
-for _ = 1, 40 do
-  assert(g.dealt, "always something to play")
+local played = 3 -- three coins were already flipped above
+for uid in pairs({}) do seen[uid] = true end
+while g.dealt do
+  assert(not seen[g.dealt.uid], "no coin is played twice")
   seen[g.dealt.uid] = true
   g.player.energy = 99
   assert(Game.flip(g) and Game.resolve(g))
+  played = played + 1
 end
-local count = 0
-for _ in pairs(seen) do count = count + 1 end
-equal(count, 8, "all eight coins were played")
+equal(played, 8, "all eight coins were played once")
+equal(Game.coins_left(g), 0)
+equal(g.phase, "GAME_OVER", "stack empty, quota unmet, no Normal pair to exchange: the level is lost")
 
 -- manual mulligan: look at five, mark coins to discard (free), keep the rest
 local m = Game.new(2, "big", nil, nil, true)
@@ -63,7 +66,8 @@ assert(Game.mulligan_done(m))
 equal(m.mulligan, nil)
 equal(m.dealt.uid, kept[1], "first kept coin is dealt")
 equal(#m.encounter.queue, 3, "bank refilled to three")
-m.encounter.quota, m.encounter.max_quota, m.encounter.draws = 1e9, 1e9, 1e9
+m.encounter.quota, m.encounter.max_quota = 1e9, 1e9
+m.reshuffle = true
 for _ = 1, 40 do
   assert(m.encounter.discarded[m.dealt.uid] == nil, "discarded coin never comes back")
   m.player.energy = 99 -- some coins in this deck cost energy; this loop is about the bank
@@ -78,7 +82,7 @@ equal(#solo.mulligan.hand, 1, "at least one coin is kept")
 
 -- discarding from the bank mid-level: any visible coins, free, front coin is replaced
 local lv = Game.new(6, "big")
-lv.encounter.quota, lv.encounter.max_quota, lv.encounter.draws = 1e9, 1e9, 1e9
+lv.encounter.quota, lv.encounter.max_quota = 1e9, 1e9
 local q1, q2, q3 = lv.encounter.queue[1], lv.encounter.queue[2], lv.encounter.queue[3]
 equal(Game.discard(lv, {}), 0, "nothing marked")
 equal(Game.discard(lv, {q2}), 1, "a non-front coin")
@@ -121,7 +125,7 @@ local px = Game.new(7, "pricey")
 px.encounter.queue = {px.coins[1].uid, px.coins[2].uid, px.coins[3].uid}
 Game.discard(px, {}) -- no-op; refresh nothing
 px.dealt = {uid = px.coins[1].uid, probability = .5}
-px.encounter.quota, px.encounter.max_quota, px.encounter.draws = 1e9, 1e9, 1e9
+px.encounter.quota, px.encounter.max_quota = 1e9, 1e9
 equal(Game.flip_cost(px, px.dealt.uid), 2, "Hammer costs 2")
 px.player.energy = 1
 assert(not Game.can_flip(px), "cannot afford it")
@@ -143,5 +147,69 @@ fresh_px.dealt = {uid = fresh_px.coins[1].uid, probability = .5}
 fresh_px.player.energy = 3
 assert(Game.flip(fresh_px))
 equal(fresh_px.player.energy, 1, "Hammer cost 2 energy")
+
+-- exchange: with an empty stack, burn 2 played Normal coins to get 3 played coins back
+Game.characters().exch = {name = "E", description = "", starter = "normal",
+  deck = {"normal", "normal", "normal", "normal", "sword", "sword", "dagger"},
+  pool = {"normal", "sword", "dagger"}, locked = {}}
+local function play_out(g)
+  while g.dealt do
+    g.player.energy = 99
+    assert(Game.flip(g) and Game.resolve(g))
+  end
+end
+local ex = Game.new(11, "exch")
+ex.encounter.quota, ex.encounter.max_quota = 1e9, 1e9
+equal(Game.can_exchange(ex), false, "not while coins remain")
+play_out(ex)
+equal(Game.coins_left(ex), 0)
+equal(ex.phase, "ENCOUNTER", "the level is not lost yet: an exchange is possible")
+assert(ex.exchange_open, "the UI is asked to offer the exchange")
+assert(Game.can_exchange(ex))
+local discards_before = ex.encounter.discards
+assert(Game.exchange(ex))
+equal(ex.encounter.discards, discards_before + Game.EXCHANGE_COST, "two Normal coins burned for the level")
+equal(Game.coins_left(ex), Game.EXCHANGE_GAIN, "three coins came back")
+assert(ex.dealt, "play continues")
+equal(ex.exchange_open, false)
+local burned = 0
+for _ in pairs(ex.encounter.discarded) do burned = burned + 1 end
+equal(burned, Game.EXCHANGE_COST)
+local seen_back = {}
+for _, uid in ipairs(ex.encounter.queue) do
+  assert(not ex.encounter.discarded[uid], "a burned coin never returns")
+  seen_back[uid] = true
+end
+play_out(ex)
+-- 7 coins: 4 Normal. After one exchange the remaining played coins (7 - 2 burned - 3 back) may allow another
+if ex.phase == "ENCOUNTER" then
+  assert(ex.exchange_open)
+  assert(Game.give_up(ex), "or the player can give up")
+end
+equal(ex.phase, "GAME_OVER")
+
+-- no exchange without two played Normal coins: the level is lost the moment the stack is empty
+Game.characters().exch2 = {name = "E2", description = "", starter = "sword", deck = {"sword", "dagger", "normal"},
+  pool = {"normal", "sword", "dagger"}, locked = {}}
+local ex2 = Game.new(12, "exch2")
+ex2.encounter.quota, ex2.encounter.max_quota = 1e9, 1e9
+play_out(ex2)
+equal(ex2.phase, "GAME_OVER", "only one Normal coin was played: no exchange, level lost")
+
+-- a cleared level with an empty stack stays open when an exchange is possible, otherwise goes to the shop
+local ex3 = Game.new(13, "exch")
+ex3.encounter.quota, ex3.encounter.max_quota = 1, 1
+play_out(ex3)
+assert(ex3.encounter.cleared)
+equal(Game.coins_left(ex3), 0)
+if ex3.phase == "ENCOUNTER" then
+  assert(Game.can_exchange(ex3), "stays open only because an exchange is possible")
+  assert(Game.end_level(ex3), "and the player can still open the shop")
+end
+equal(ex3.phase, "SHOP")
+
+-- give_up is refused while coins remain or after the quota was met
+local ex4 = Game.new(14, "exch")
+equal(Game.give_up(ex4), false)
 
 print("bank tests passed")

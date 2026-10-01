@@ -109,7 +109,7 @@ local function draw_encounter()
   end
   -- right: what you have left
   local stats = {
-    {"DRAWS", tostring(e.draws), e.draws <= 3 and C.red or C.face},
+    {"COINS", tostring(Game.coins_left(ui.game)), Game.coins_left(ui.game) <= 2 and C.red or C.face},
     {"GOLD", tostring(ui.game.player.gold), C.gold},
     {"ENERGY", tostring(ui.game.player.energy), C.blue},
   }
@@ -187,7 +187,7 @@ local function draw_encounter()
   local shown_cost = item and catalog[item.id].energy_cost or 0
   if shown_cost > 0 and not ui.flip_animation then text("ENERGY COST " .. shown_cost, 310, 179, ui.f16, C.orange) end
   centered(item and catalog[item.id].name:upper() or ui.flip_animation and "DRAWING..." or
-    "MYSTERY COIN", 310, 578, 618, ui.f32, C.face)
+    (not ui.game.mulligan and "NO COINS LEFT" or "MYSTERY COIN"), 310, 578, 618, ui.f32, C.face)
   centered(item and ((outcome and outcome:upper() .. " / " or "") ..
     math.floor(result.probability * 100 + .5) .. "% HEADS") or
     "ONE COIN AT A TIME", 310, 617, 618, ui.f16,
@@ -254,6 +254,9 @@ local function draw_encounter()
     "YOUR MOVE", 45, 694, ui.f20, C.gold)
   local hint = ui.holding and "Click for the next coin." or "Flip it, or mark coins and discard."
   if e.cleared then hint = "Keep going for gold, or open the shop." end
+  if not ui.game.dealt and not ui.game.mulligan and not ui.game.pending and not ui.flip_animation and not ui.holding then
+    hint = Game.can_exchange(ui.game) and "No coins left: exchange?" or "No coins left."
+  end
   if ui.game.dealt and not ui.holding and not Game.can_flip(ui.game) then hint = "Too little energy: discard it." end
   if ui.game.peek then
     local names = {}
@@ -280,13 +283,23 @@ local function draw_encounter()
     local n = A.marked_count()
     button(n > 0 and ("DISCARD " .. n) or "DISCARD", 290, 692, 200, 64, C.red, A.discard_marked, n > 0)
   end
-  local flip_label = ui.flip_animation and "FLIPPING..." or ui.holding and "NEXT COIN" or "FLIP"
-  local can_act = ui.game.dealt ~= nil and not ui.flip_animation and (ui.holding or not ui.game.pending)
-  if can_act and not ui.holding and not Game.can_flip(ui.game) then
-    flip_label = "NEED " .. Game.flip_cost(ui.game, ui.game.dealt.uid) .. " ENERGY"
-    can_act = false
+  local empty_stack = not ui.game.dealt and not ui.game.mulligan and not ui.game.pending
+    and not ui.flip_animation and not ui.holding
+  if empty_stack then
+    -- no coins left: exchange two played Normal coins for some back, give up, or (cleared) open the shop
+    if Game.can_exchange(ui.game) then
+      button("EXCHANGE " .. Game.EXCHANGE_COST .. " > " .. Game.EXCHANGE_GAIN, 510, 692, 260, 64, C.green, A.exchange)
+    end
+    if not e.cleared then button("GIVE UP", 290, 692, 200, 64, C.red, A.give_up) end
+  else
+    local flip_label = ui.flip_animation and "FLIPPING..." or ui.holding and "NEXT COIN" or "FLIP"
+    local can_act = ui.game.dealt ~= nil and not ui.flip_animation and (ui.holding or not ui.game.pending)
+    if can_act and not ui.holding and not Game.can_flip(ui.game) then
+      flip_label = "NEED " .. Game.flip_cost(ui.game, ui.game.dealt.uid) .. " ENERGY"
+      can_act = false
+    end
+    button(flip_label, 510, 692, 260, 64, C.blue, A.next_or_flip, can_act)
   end
-  button(flip_label, 510, 692, 260, 64, C.blue, A.next_or_flip, can_act)
   if ui.game.mulligan then draw_mulligan() end -- covers the play area and takes over the bottom bar
 end
 

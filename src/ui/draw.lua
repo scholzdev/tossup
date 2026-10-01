@@ -47,7 +47,7 @@ local function effects(effects_list)
   for _, e in ipairs(effects_list) do
     local amount = e.type == "probability" and math.floor(e.amount * 100 + .5) or e.amount
     local labels = {score = "PTS", gold = "GOLD", energy = "NRG", penalty = "QUOTA",
-      extra_draw = "DRAW", probability = "% HEADS"}
+      extra_draw = "REPLAY", probability = "% HEADS"}
     local prefix = "+"
     parts[#parts + 1] = prefix .. amount .. " " .. (labels[e.type] or e.type)
   end
@@ -63,7 +63,7 @@ local function effect_description(effects_list)
     elseif effect.type == "gold" then parts[#parts + 1] = "Gain " .. amount .. " gold"
     elseif effect.type == "energy" then parts[#parts + 1] = "Gain " .. amount .. " energy"
     elseif effect.type == "penalty" then parts[#parts + 1] = "Quota +" .. amount
-    elseif effect.type == "extra_draw" then parts[#parts + 1] = "Gain " .. amount .. " extra draw"
+    elseif effect.type == "extra_draw" then parts[#parts + 1] = "Goes back into the pile"
     elseif effect.type == "probability" then
       parts[#parts + 1] = "Gain " .. math.floor(amount * 100 + .5) .. "% Heads this level"
     end

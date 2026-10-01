@@ -13,14 +13,17 @@ Game.VISIBLE = 3 -- coins shown in the bank; the first one is the coin you are a
 Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may discard
 Game.START_MAX = 10 -- coins in a coin set you can take into a run
 Game.DECK_MAX = 10 -- the shop cannot grow the deck past this: buying is refused when it is full
+Game.EXCHANGE_COST = 2 -- Normal coins burned for the level when you exchange with an empty stack
+Game.EXCHANGE_GAIN = 3 -- played coins that come back into the stack in exchange
+Game.RETURN_CAP = 3 -- "extra draw" effects (a coin returning to the pile) per level
 Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
 Game.MAX_COPIES = 3 -- copies of one coin in a set; the plain Normal coin is exempt (up to the set size)
 
 local route = {
-  {name = "Opening", quota = 4, flips = 12, payout = 20},
-  {name = "Second Chance", quota = 22, flips = 10, payout = 25},
-  {name = "High Stakes", quota = 28, flips = 10, payout = 30},
-  {name = "The House", quota = 40, flips = 12, boss = true},
+  {name = "Opening", per_coin = 0.6, payout = 20},
+  {name = "Second Chance", per_coin = 1.0, payout = 25},
+  {name = "High Stakes", per_coin = 1.6, payout = 30},
+  {name = "The House", per_coin = 2.4, boss = true},
 }
 
 local function log(game, message)
@@ -115,28 +118,41 @@ function Game.probability(game, item)
 end
 
 local deal
-
--- Top the bank up to VISIBLE coins from the draw pile (reshuffling when it runs dry).
+-- Top the bank up to VISIBLE coins from the draw pile. The pile is never reshuffled: a level lasts
+-- exactly as long as the coins in your stack (bank + pile).
 local function refill(game)
   local e = game.encounter
   while #e.queue < Game.VISIBLE do
-    if #e.pile == 0 then e.pile = shuffle_deck(game) end
+    if #e.pile == 0 and game.reshuffle then e.pile = shuffle_deck(game) end -- tests / coin simulator only
     if #e.pile == 0 then return end
     e.queue[#e.queue + 1] = table.remove(e.pile, 1)
   end
 end
 
+function Game.coins_left(game)
+  local e = game.encounter
+  return #e.queue + #e.pile
+end
+
+-- A level's quota scales with the size of your deck (points per coin), because a level lasts exactly as
+-- long as your stack: a bigger deck means more flips.
+function Game.quota_for(level, coin_count)
+  return math.max(1, math.floor(route[level].per_coin * coin_count + .5))
+end
+
 local function start_encounter(game)
   local stage = route[game.encounter_index]
+  local quota = Game.quota_for(game.encounter_index, #game.coins)
   game.encounter = nil -- discards from the previous level must not carry over
-  game.encounter = {name = stage.name, quota = stage.quota, max_quota = stage.quota,
-    draws = stage.flips, max_draws = stage.flips, boss = stage.boss or false, payout = stage.payout,
-    flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, bonus_draws = 0, pile = shuffle_deck(game), queue = {}}
+  game.encounter = {name = stage.name, quota = quota, max_quota = quota,
+    boss = stage.boss or false, payout = stage.payout,
+    flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0,
+    returned = 0, played = {}, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
   game.pending = nil
   game.last_result = nil
   game.phase = "ENCOUNTER"
-  log(game, "Encounter " .. game.encounter_index .. ": " .. stage.name .. " (quota " .. stage.quota .. ")")
+  log(game, "Encounter " .. game.encounter_index .. ": " .. stage.name .. " (quota " .. quota .. ")")
   for _, owned in ipairs(game.coins) do Hooks.grow(owned, "level") end
   Signal.emit("encounter_start", {game = game, encounter = game.encounter})
   -- mulligan: draw a hand to look at; the UI lets the player discard before play starts
@@ -154,6 +170,12 @@ function deal(game)
   local e = game.encounter
   refill(game)
   local uid = e.queue[1]
+  if not uid then
+    game.dealt = nil
+    Hooks.unbind()
+    Game.stack_empty(game)
+    return
+  end
   local inst = find_coin(game, uid)
   game.dealt = {uid = uid}
   game.selected_uid = uid
@@ -271,6 +293,7 @@ function Game.flip(game)
   game.pending = {uid = uid, probability = probability}
   game.dealt = nil
   table.remove(game.encounter.queue, 1) -- a flipped coin leaves the bank at once
+  game.encounter.played[#game.encounter.played + 1] = uid
   refill(game)
   roll(game, item, game.pending)
   log(game, catalog[item.id].name .. " #" .. uid .. " rolled " .. game.pending.raw ..
@@ -363,10 +386,28 @@ local function apply_effect(game, item, effect)
     e.max_quota = e.max_quota + effect.amount
     return "quota +" .. effect.amount
   elseif effect.type == "extra_draw" then
-    local gained = math.min(effect.amount, 3 - e.bonus_draws)
-    e.bonus_draws = e.bonus_draws + gained
-    e.draws = e.draws + gained
-    return gained > 0 and ("+" .. gained .. " draw") or "extra draw limit reached"
+    -- "extra draw": a played coin goes back into the draw pile (the flipping coin itself, or a random
+    -- played one when no coin is flipping), so it can be played again. Capped per level.
+    local back = 0
+    for _ = 1, effect.amount do
+      if e.returned >= Game.RETURN_CAP then break end
+      local uid = item and item.uid
+      if not uid then
+        local candidates = {}
+        for _, played in ipairs(e.played) do
+          if not e.discarded[played] then candidates[#candidates + 1] = played end
+        end
+        if #candidates == 0 then break end
+        uid = candidates[RNG.int(game, 1, #candidates)]
+      end
+      for index, played in ipairs(e.played) do
+        if played == uid then table.remove(e.played, index) break end
+      end
+      table.insert(e.pile, RNG.int(game, 1, #e.pile + 1), uid)
+      e.returned = e.returned + 1
+      back = back + 1
+    end
+    return back > 0 and (back .. " coin back in the pile") or "no coin could return"
   elseif effect.type == "probability" then
     e.bonus[item.uid] = (e.bonus[item.uid] or 0) + effect.amount
     return "+" .. math.floor(effect.amount * 100 + .5) .. "% Heads this encounter"
@@ -410,7 +451,6 @@ end
 function Game.resolve(game)
   if game.phase ~= "ENCOUNTER" or not game.pending then return false end
   local e = game.encounter
-  e.draws = e.draws - 1
   local result = game.pending
   local item = find_coin(game, result.uid)
   e.flips = e.flips + 1
@@ -457,16 +497,100 @@ function Game.resolve(game)
       e.surplus_paid = owed
     end
   end
-  if e.cleared and (e.boss or e.draws <= 0) then
-    Game.end_level(game) -- the boss ends the run; out of draws sends you to the shop
-  elseif e.draws <= 0 then
-    game.phase = "GAME_OVER"
-    log(game, "Defeat: out of draws.")
-    Items.clear()
-    Signal.emit("encounter_end", {game = game, won = false})
+  if e.cleared and e.boss then
+    Game.end_level(game) -- the boss ends the run the moment its quota is met
   else
-    deal(game)
+    deal(game) -- deals the next coin, or handles an empty stack
   end
+  return true
+end
+
+local function lose_level(game, why)
+  game.phase = "GAME_OVER"
+  game.exchange_open = false
+  game.dealt = nil
+  log(game, "Defeat: " .. why)
+  Hooks.unbind()
+  Items.clear()
+  Signal.emit("encounter_end", {game = game, won = false})
+end
+
+-- Normal coins that were played this level and could be burned in an exchange, and the other played
+-- coins that could come back.
+local function exchange_candidates(game)
+  local e = game.encounter
+  local normals, others = {}, {}
+  for _, uid in ipairs(e.played) do
+    if not e.discarded[uid] then
+      if find_coin(game, uid).id == "normal" then normals[#normals + 1] = uid else others[#others + 1] = uid end
+    end
+  end
+  return normals, others
+end
+
+-- With an empty stack: burn EXCHANGE_COST played Normal coins (out for the level) and get up to
+-- EXCHANGE_GAIN other played coins back into the stack. Needs at least one coin to come back.
+function Game.can_exchange(game)
+  if game.phase ~= "ENCOUNTER" or game.pending or game.mulligan or game.dealt then return false end
+  if Game.coins_left(game) > 0 then return false end
+  local normals, others = exchange_candidates(game)
+  return #normals >= Game.EXCHANGE_COST and (#normals - Game.EXCHANGE_COST) + #others >= 1
+end
+
+function Game.exchange(game)
+  if not Game.can_exchange(game) then return false end
+  local e = game.encounter
+  local normals, others = exchange_candidates(game)
+  local burned = {}
+  for i = 1, Game.EXCHANGE_COST do
+    local uid = table.remove(normals, 1)
+    burned[uid] = true
+    e.discarded[uid] = true
+    e.discards = e.discards + 1
+  end
+  local back = {}
+  for _, uid in ipairs(normals) do back[#back + 1] = uid end
+  for _, uid in ipairs(others) do back[#back + 1] = uid end
+  for i = #back, 2, -1 do -- seeded shuffle, then take the first EXCHANGE_GAIN
+    local j = RNG.int(game, 1, i)
+    back[i], back[j] = back[j], back[i]
+  end
+  local taken = {}
+  for i = 1, math.min(Game.EXCHANGE_GAIN, #back) do
+    taken[back[i]] = true
+    e.pile[#e.pile + 1] = back[i]
+  end
+  local kept = {}
+  for _, uid in ipairs(e.played) do
+    if not burned[uid] and not taken[uid] then kept[#kept + 1] = uid end
+  end
+  e.played = kept
+  e.exchanges = (e.exchanges or 0) + 1
+  game.exchange_open = false
+  log(game, "Exchanged " .. Game.EXCHANGE_COST .. " Normal coins for " .. #e.pile .. " coins.")
+  deal(game)
+  return true
+end
+
+-- The stack ran dry. Cleared level: the shop is the only way on (unless an exchange is possible, then
+-- the player chooses). Uncleared: exchange if possible (the player decides), otherwise the run ends.
+function Game.stack_empty(game)
+  local e = game.encounter
+  local can_exchange = Game.can_exchange(game)
+  if e.cleared then
+    if not can_exchange then Game.end_level(game) end
+  elseif can_exchange then
+    game.exchange_open = true
+  else
+    lose_level(game, "out of coins.")
+  end
+end
+
+-- Give up instead of exchanging (only while the stack is empty and the quota is unmet).
+function Game.give_up(game)
+  if game.phase ~= "ENCOUNTER" or game.encounter.cleared or game.dealt or game.pending or game.mulligan
+    or Game.coins_left(game) > 0 then return false end
+  lose_level(game, "gave up.")
   return true
 end
 

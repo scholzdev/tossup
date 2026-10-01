@@ -20,7 +20,7 @@ local function fresh(id, seed)
   characters.test = {name = "Test", description = "", starter = id, pool = {"sword", "dagger", "hammer", "blood", "cursed", "focus"}}
   local game = Game.new(seed or 1, "test")
   game.encounter.quota = 1000
-  game.encounter.draws = 1000
+  game.reshuffle = true -- keep playing the same coins
   return game
 end
 

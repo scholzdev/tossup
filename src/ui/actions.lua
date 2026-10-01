@@ -201,6 +201,9 @@ function A.open_shop()
   if not ui.flip_animation then Game.end_level(ui.game) end
 end
 
+function A.exchange() Game.exchange(ui.game) end
+function A.give_up() Game.give_up(ui.game) end
+
 function A.use_item(slot)
   if not ui.flip_animation then Game.use_item(ui.game, slot) end
 end

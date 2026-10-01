@@ -51,7 +51,8 @@ assert(heads > 49000 and heads < 51000, "50% distribution: " .. heads)
 local g = Game.new(7)
 equal(#g.coins, 1, "one starting coin")
 equal(g.coins[1].id, "sword", "Blade starter")
-equal(g.encounter.draws, 12, "opening draw budget")
+equal(Game.coins_left(g), 1, "the stack holds every coin at level start")
+g.reshuffle = true -- this test plays the single coin repeatedly
 assert(not Game.resolve(g), "nothing to resolve before flip")
 assert(Game.flip(g))
 equal(g.pending.uid, g.coins[1].uid, "one drawn coin")
@@ -65,7 +66,6 @@ g.encounter.quota = 15
 local hp = g.encounter.quota
 assert(Game.resolve(g))
 equal(g.encounter.quota, hp - 5, "Sword Heads scores points")
-equal(g.encounter.draws, 11, "one draw consumed")
 equal(g.encounter.flips, 1)
 assert(not Game.resolve(g), "cannot resolve twice")
 assert(Game.flip(g), "single-coin deck reshuffles")
@@ -75,6 +75,7 @@ local seer = Game.new(13, "seer")
 local trader = Game.new(13, "trader")
 equal(seer.coins[1].id, "cursed")
 equal(trader.coins[1].id, "dagger")
+seer.reshuffle = true -- one-coin deck: keep the level open after clearing
 assert(Game.flip(seer))
 seer.encounter.quota = 0
 assert(Game.resolve(seer))
@@ -87,6 +88,7 @@ for _, id in ipairs(Game.characters().seer.pool) do pool[id] = true end
 for _, id in ipairs(seer.shop_offers) do assert(pool[id] or id == "normal", "offer must be in character pool") end
 
 local win = Game.new(1)
+win.reshuffle = true
 assert(Game.flip(win))
 win.encounter.quota = 1
 assert(Game.force(win, "Heads"))
@@ -94,7 +96,7 @@ assert(Game.resolve(win))
 assert(win.encounter.cleared, "quota met")
 assert(Game.end_level(win))
 equal(win.phase, "SHOP", "enemy death wins")
-equal(win.player.gold, 30, "level payout 20; no extra points beyond the full quota")
+equal(win.player.gold, 32, "level payout 20 plus 2 gold for 4 points beyond the quota")
 equal(#win.coins, 1, "no free coin")
 equal(#win.shop_offers, 4)
 win.player.gold = 100
@@ -132,36 +134,41 @@ assert(Game.buy(cap, 1), "and now the purchase works")
 equal(#cap.coins, Game.DECK_MAX)
 assert(Game.leave_shop(cap))
 cap.encounter.quota = 10000
-cap.encounter.draws = 1000
+cap.player.energy = 99
+equal(Game.coins_left(cap), Game.DECK_MAX, "the level lasts as long as the stack")
 local seen = {}
-for _ = 1, Game.DECK_MAX do
+for i = 1, Game.DECK_MAX do
+  cap.player.energy = 99
   assert(Game.flip(cap))
-  assert(not seen[cap.pending.uid], "each deck coin drawn once before reshuffle")
+  assert(not seen[cap.pending.uid], "each deck coin is played once; no reshuffle")
   seen[cap.pending.uid] = true
   assert(Game.resolve(cap))
+  equal(Game.coins_left(cap), Game.DECK_MAX - i)
 end
-assert(Game.flip(cap), "deck reshuffles after one full cycle")
-assert(seen[cap.pending.uid], "reshuffle draws owned coin")
+equal(cap.phase, "GAME_OVER", "the stack ran out with the quota unmet and no exchange possible")
 
+-- a lost level: one coin, quota out of reach
 local loss = Game.new(2)
 loss.encounter.quota = 10000
-for _ = 1, loss.encounter.draws do
-  assert(Game.flip(loss))
-  assert(Game.resolve(loss))
-end
-equal(loss.phase, "GAME_OVER", "draw exhaustion loses")
+assert(Game.flip(loss) and Game.resolve(loss))
+equal(loss.phase, "GAME_OVER", "out of coins loses")
 
+-- Lucky: Heads sends the coin back into the pile (extra draw), at most RETURN_CAP times per level
 local lucky = Game.new(9)
 lucky.coins[1].id = "lucky"
-lucky.encounter.draws = 1
+lucky.encounter.quota = 10000
 lucky.player.energy = 100
-for _ = 1, 4 do
+local plays = 0
+while lucky.dealt do
+  plays = plays + 1
+  assert(plays < 20, "must terminate")
+  lucky.dealt.probability = 1
   assert(Game.flip(lucky))
-  assert(Game.force(lucky, "Heads"))
   assert(Game.resolve(lucky))
 end
-equal(lucky.encounter.bonus_draws, 3, "extra draws capped")
-equal(lucky.phase, "GAME_OVER", "extra draws cannot make an endless level")
+equal(plays, 1 + Game.RETURN_CAP, "one coin, played once plus RETURN_CAP returns")
+equal(lucky.encounter.returned, Game.RETURN_CAP)
+equal(lucky.phase, "GAME_OVER")
 
 local boss = Game.new(4)
 boss.encounter.boss = true
@@ -183,6 +190,7 @@ end
 local penny = Game.new(5)
 Game.add_relic(penny, "penny")
 penny.encounter.quota = 1000
+penny.reshuffle = true
 play(penny, "Tails")
 equal(penny.last_result.final, "Heads", "penny converts first Tails")
 play(penny, "Tails")
@@ -191,6 +199,7 @@ equal(penny.last_result.final, "Tails", "penny only once per encounter")
 local clock = Game.new(6)
 Game.add_relic(clock, "clock")
 clock.encounter.quota = 1000
+clock.reshuffle = true
 clock.encounter.flips = 9
 play(clock, "Tails")
 equal(clock.last_result.final, "Heads", "clock makes 10th flip Heads")
@@ -198,7 +207,7 @@ equal(clock.last_result.final, "Heads", "clock makes 10th flip Heads")
 local magnet = Game.new(8)
 Game.add_relic(magnet, "magnet")
 magnet.encounter.quota = 1000
-magnet.encounter.draws = 100
+magnet.reshuffle = true
 for _ = 1, 3 do play(magnet, "Heads") end
 assert(math.abs(magnet.encounter.magnet - .05) < 1e-9, "magnet after 3 Heads")
 play(magnet, "Tails")
@@ -228,6 +237,7 @@ equal(Game.discard(d2), 1)
 equal(d2.player.energy, energy, "discarding costs nothing")
 equal(d2.dealt.uid, d2.coins[1].uid, "next coin dealt")
 equal(Game.discard(d2), 0, "cannot discard last remaining coin")
+d2.reshuffle = true
 assert(Game.flip(d2) and Game.resolve(d2))
 equal(d2.dealt.uid, d2.coins[1].uid, "discarded coin never returns")
 
@@ -335,7 +345,6 @@ local k = Game.new(41, "blade")
 equal(Game.end_level(k), false, "cannot leave before the quota is met")
 for _, c in ipairs(k.coins) do c.id = "sword" end -- heads = 5 points
 k.encounter.quota, k.encounter.max_quota = 2, 2
-k.encounter.draws = 6
 local gold = k.player.gold
 k.dealt.probability = 1
 assert(Game.flip(k) and Game.resolve(k))
@@ -352,17 +361,20 @@ assert(Game.end_level(k))
 equal(k.phase, "SHOP")
 equal(k.player.gold, before, "ending pays nothing more")
 
--- running out of draws after the quota is met still goes to the shop (not game over)
+-- the stack running dry after the quota is met goes to the shop (not game over)
 local d3 = Game.new(42, "blade")
 for _, c in ipairs(d3.coins) do c.id = "sword" end
 d3.encounter.quota, d3.encounter.max_quota = 2, 2
-d3.encounter.draws = 2
-d3.dealt.probability = 1
-assert(Game.flip(d3) and Game.resolve(d3))
-equal(d3.phase, "ENCOUNTER")
-d3.dealt.probability = 1
-assert(Game.flip(d3) and Game.resolve(d3))
-equal(d3.phase, "SHOP", "last draw spent after clearing -> shop")
+local flips_made = 0
+while d3.phase == "ENCOUNTER" do
+  d3.dealt.probability = 1
+  assert(Game.flip(d3) and Game.resolve(d3))
+  flips_made = flips_made + 1
+  assert(flips_made <= #d3.coins, "terminates")
+end
+equal(flips_made, 5, "every coin of the stack was played")
+equal(d3.phase, "SHOP", "last coin played after clearing -> shop")
+assert(d3.encounter.cleared)
 
 -- the boss ends the run the moment its quota is met
 local bossy = Game.new(43, "blade")
@@ -375,5 +387,12 @@ assert(Game.flip(bossy))
 equal(bossy.pending.result, "Heads")
 assert(Game.resolve(bossy))
 equal(bossy.phase, "VICTORY")
+
+-- quotas scale with the number of coins in the deck (a level lasts as long as the stack)
+equal(Game.quota_for(1, 5), 3)
+equal(Game.quota_for(1, 10), 6)
+equal(Game.quota_for(4, 10), 24)
+equal(Game.quota_for(2, 1), 1, "never below 1")
+equal(Game.new(51, "blade").encounter.quota, Game.quota_for(1, 5), "a level's quota comes from the deck size at level start")
 
 print("game tests passed")

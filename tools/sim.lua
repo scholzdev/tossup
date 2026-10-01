@@ -38,7 +38,7 @@ local function numbers(text)
   return list
 end
 if opts.quota then
-  for level, n in ipairs(numbers(opts.quota)) do Game.route[level].quota = n end
+  for level, n in ipairs(numbers(opts.quota)) do Game.route[level].per_coin = n end
 end
 if opts.payout then
   for level, n in ipairs(numbers(opts.payout)) do Game.route[level].payout = n end
@@ -70,7 +70,8 @@ local function measure(id, games, flips)
     local g = Game.new(seed, "sim")
     g.player.gold = 30
     for _ = 1, flips do
-      g.encounter.quota, g.encounter.max_quota, g.encounter.draws = 1e9, 1e9, 1e9
+      g.encounter.quota, g.encounter.max_quota = 1e9, 1e9
+      g.reshuffle = true -- measuring the coin, not running out of coins
       g.player.energy = math.max(g.player.energy, 3) -- measuring the coin, not the energy economy
       if g.dealt then Game.flip(g) Game.resolve(g) end
     end
@@ -169,7 +170,7 @@ bots.greedy = {
 
 -- Uses measured coin values: discards weak coins, plays items when behind pace, buys the best coins.
 bots.smart = {
-  keep_playing = true, -- extra points pay gold, so it flips until the draws run out
+  keep_playing = true, -- extra points pay gold, so it flips until the stack runs out
   -- discard the weak coins of the opening hand (free) while at least three stay
   mulligan = function(g)
     local hand = g.mulligan.hand
@@ -189,7 +190,7 @@ bots.smart = {
     local coin = Game.get_coin(g, g.dealt.uid)
     local def = catalog[coin.id]
     local v, mean = coin_value(coin.id), deck_mean(g)
-    local behind = e.quota > e.draws * mean * .9
+    local behind = e.quota > Game.coins_left(g) * mean * .9
 
     if v < mean * .6 and #g.coins - e.discards > 1 and Game.discard(g) > 0 then return end
     local swap = have_item(g, "swap")
@@ -209,7 +210,7 @@ bots.smart = {
       if slot and g.dealt and g.dealt.probability < .75 then Game.use_item(g, slot) end
     end
     local extra = have_item(g, "extra_draw")
-    if extra and e.draws <= 2 and e.quota > 0 and e.quota <= 2 * mean then Game.use_item(g, extra) end
+    if extra and Game.coins_left(g) <= 2 and e.quota > 0 and e.quota <= 2 * mean then Game.use_item(g, extra) end
     finish_flip(g)
   end,
 
@@ -296,7 +297,9 @@ local function play(seed, character, bot)
     guard = guard + 1
     if g.mulligan then bot.mulligan(g)
     elseif g.phase == "ENCOUNTER" then
-      if g.dealt then bot.encounter(g) end
+      if g.dealt then bot.encounter(g)
+      elseif g.encounter.cleared then Game.end_level(g)
+      elseif Game.can_exchange(g) then Game.exchange(g) end -- every bot exchanges rather than giving up
       -- once the quota is met a bot either keeps flipping for gold or opens the shop at once
       if g.phase == "ENCOUNTER" and g.encounter.cleared and not bot.keep_playing then Game.end_level(g) end
     elseif g.phase == "SHOP" then
@@ -337,8 +340,8 @@ if opts.trace then
 end
 
 local route = {}
-for level, stage in ipairs(Game.route) do route[#route + 1] = stage.quota .. "/" .. (stage.payout or "-") end
-print("route (quota/payout): " .. table.concat(route, "  ") .. "   runs per row: " .. opts.runs ..
+for level, stage in ipairs(Game.route) do route[#route + 1] = stage.per_coin .. "/" .. (stage.payout or "-") end
+print("route (quota per coin/payout): " .. table.concat(route, "  ") .. "   runs per row: " .. opts.runs ..
   (opts.unlock == "all" and "   all locked coins unlocked" or ""))
 local names = {"blade", "seer", "trader"}
 local bot_names = {"random", "greedy", "smart"}
