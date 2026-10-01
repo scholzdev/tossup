@@ -66,7 +66,7 @@ function app.load()
   end
   for id in pairs(ui.item_catalog) do ui.item_images[id] = load_image("assets/items/" .. id .. ".png") end
   for id in pairs(Game.relics()) do ui.relic_images[id] = load_image("assets/relics/" .. id .. ".png") end
-  for _, name in ipairs({"next_round", "reroll", "gold", "energy", "coins_left"}) do
+  for _, name in ipairs({"next_round", "reroll", "gold", "energy", "coins_left", "open_shop", "exchange", "give_up"}) do
     ui.ui_images[name] = load_image("assets/ui/" .. name .. ".png")
   end
   ui.coin_images.back = love.graphics.newImage("assets/coins/back.png", {mipmaps = true})

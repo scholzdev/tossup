@@ -6,7 +6,8 @@ emblem, drawn at 4x and reduced for smooth edges. Shapes are authored in a 128x1
 Output (PNG, transparent background):
   assets/items/<id>.png    256 px   rounded-square chips
   assets/relics/<id>.png   256 px   round prizes with a double ring
-  assets/ui/<name>.png     256 px   next_round (the big red button), reroll, gold, energy, coins_left
+  assets/ui/<name>.png     256 px   next_round (the big red button), reroll, gold, energy, coins_left,
+                                    open_shop, exchange, give_up
 
 Run from the repo root:  python3 tools/gen_ui_icons.py   (needs Pillow).
 To add an icon: add a colour to ITEMS / RELICS and an emblem branch in emblem().
@@ -200,14 +201,54 @@ def coins_left():
     finish(image, ROOT / "assets" / "ui" / "coins_left.png")
 
 
+def open_shop():
+    """A shop front: striped awning over a door, on a green disc."""
+    image = canvas()
+    d = ImageDraw.Draw(image)
+    body = (75, 194, 146)
+    d.ellipse(box(10, 10, 118, 118), fill=body + (255,), outline=blend(body, (15, 20, 26), .66) + (255,), width=p(5))
+    d.rectangle(box(36, 58, 92, 94), fill=IVORY)
+    d.rectangle(box(56, 70, 72, 94), fill=blend(body, (13, 17, 24), .55) + (255,))
+    for i in range(4):  # awning stripes
+        x0 = 30 + i * 17
+        d.polygon(points([(x0, 36), (x0 + 17, 36), (x0 + 18, 58), (x0 - 1, 58)]),
+                  fill=((217, 46, 41, 255) if i % 2 == 0 else IVORY))
+    finish(image, ROOT / "assets" / "ui" / "open_shop.png")
+
+
+def exchange():
+    """Two arrows around a coin: paying for coins."""
+    image = canvas()
+    d = ImageDraw.Draw(image)
+    body = (243, 185, 88)
+    d.ellipse(box(10, 10, 118, 118), fill=body + (255,), outline=blend(body, (15, 20, 26), .66) + (255,), width=p(5))
+    d.ellipse(box(46, 46, 82, 82), fill=IVORY, outline=DARK, width=p(3))
+    d.arc(box(26, 26, 102, 102), 205, 335, fill=DARK, width=p(7))
+    d.arc(box(26, 26, 102, 102), 25, 155, fill=DARK, width=p(7))
+    d.polygon(points([(100, 26), (104, 54), (78, 44)]), fill=DARK)
+    d.polygon(points([(28, 102), (24, 74), (50, 84)]), fill=DARK)
+    finish(image, ROOT / "assets" / "ui" / "exchange.png")
+
+
+def give_up():
+    """A white flag on a pole."""
+    image = canvas()
+    d = ImageDraw.Draw(image)
+    body = (254, 95, 85)
+    d.ellipse(box(10, 10, 118, 118), fill=body + (255,), outline=blend(body, (15, 20, 26), .66) + (255,), width=p(5))
+    d.rectangle(box(40, 28, 48, 100), fill=IVORY)
+    d.polygon(points([(48, 30), (94, 42), (48, 62)]), fill=IVORY)
+    finish(image, ROOT / "assets" / "ui" / "give_up.png")
+
+
 def main():
     for name, colour in ITEMS.items():
         make_icon("items", name, colour)
     for name, colour in RELICS.items():
         make_icon("relics", name, colour)
-    for fn in (next_round, reroll, gold, energy, coins_left):
+    for fn in (next_round, reroll, gold, energy, coins_left, open_shop, exchange, give_up):
         fn()
-    print(f"generated {len(ITEMS)} item icons, {len(RELICS)} relic icons and 5 UI icons in {ROOT / 'assets'}")
+    print(f"generated {len(ITEMS)} item icons, {len(RELICS)} relic icons and 8 UI icons in {ROOT / 'assets'}")
 
 
 if __name__ == "__main__":

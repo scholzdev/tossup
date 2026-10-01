@@ -102,7 +102,7 @@ local function draw_encounter()
   outline(330, 108, 580, 22, C.panel_light, 4)
   if e.cleared then
     centered("QUOTA MET  -  EXTRA POINTS PAY GOLD", 330, 133, 580, ui.f16, C.green)
-    button("OPEN SHOP", 925, 106, 200, 34, C.green, A.open_shop,
+    D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 925, 106, 200, 34, C.green, A.open_shop,
       not ui.flip_animation and not ui.game.pending and not ui.game.mulligan)
   elseif e.boss then
     centered("EVERY 5TH DRAW INVERTS THE RESULT", 330, 133, 580, ui.f16, C.red)
@@ -295,9 +295,10 @@ local function draw_encounter()
   if empty_stack then
     -- no coins left: exchange two played Normal coins for some back, give up, or (cleared) open the shop
     if Game.can_exchange(ui.game) then
-      button("PAY " .. Game.exchange_cost(ui.game) .. " > " .. Game.EXCHANGE_GAIN .. " COINS", 510, 692, 260, 64, C.green, A.exchange)
+      D.icon_button("PAY " .. Game.exchange_cost(ui.game) .. " > " .. Game.EXCHANGE_GAIN .. " COINS", ui.ui_images.exchange,
+        510, 692, 260, 64, C.green, A.exchange)
     end
-    if not e.cleared then button("GIVE UP", 290, 692, 200, 64, C.red, A.give_up) end
+    if not e.cleared then D.icon_button("GIVE UP", ui.ui_images.give_up, 290, 692, 200, 64, C.red, A.give_up) end
   else
     local flip_label = ui.flip_animation and "FLIPPING..." or ui.holding and "NEXT COIN" or "FLIP"
     local can_act = ui.game.dealt ~= nil and not ui.flip_animation and (ui.holding or not ui.game.pending)

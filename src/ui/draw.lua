@@ -91,6 +91,21 @@ local function image_at(image, x, y, size)
   love.graphics.draw(image, x, y, 0, size / image:getWidth(), size / image:getHeight())
 end
 
+-- A button with an icon on the left and its label centred in the rest.
+local function icon_button(label, icon, x, y, w, h, tint, action, enabled)
+  local active = enabled ~= false
+  local mx, my = ui.mouse()
+  local hover = active and mx >= x and mx <= x + w and my >= y and my <= y + h
+  local top = y + (hover and -3 or 0)
+  box(x, top, w, h, active and tint or C.panel_light)
+  outline(x, top, w, h, active and C.face or C.slot)
+  local size = h - 12
+  if active then color(C.white) else love.graphics.setColor(1, 1, 1, .45) end
+  love.graphics.draw(icon, x + 8, top + 6, 0, size / icon:getWidth(), size / icon:getHeight())
+  centered(label, x + size + 8, top + (h - ui.f20:getHeight()) / 2, w - size - 8, ui.f20, active and C.ink or C.muted)
+  if active then ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = h, action = action} end
+end
+
 local function coin_name(id, x, y, w)
   local name = catalog[id].name:upper()
   if w then centered(name, x, y, w, ui.f20, C.face) else text(name, x, y, ui.f20, C.face) end
@@ -160,5 +175,5 @@ local function coin_face(cx, cy, radius, outcome, selected, id)
 end
 
 return {C = C, color = color, box = box, outline = outline, text = text, centered = centered,
-  button = button, coin_image = coin_image, image_at = image_at, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
+  button = button, coin_image = coin_image, image_at = image_at, icon_button = icon_button, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
   effects = effects, effect_description = effect_description, coin_tooltip = draw_coin_tooltip, text_hover = text_hover, text_tooltip = draw_text_tooltip}
