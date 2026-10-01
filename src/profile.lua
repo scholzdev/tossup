@@ -85,12 +85,16 @@ end
 
 -- Add one coin to a set if it is available, the set has room, and the copy limit allows it.
 -- max_copies does not apply to the plain Normal coin.
-function Profile.add_to_set(profile, character_id, index, coin_id, max, max_copies)
-  local coins = Profile.sets(profile, character_id)[index].coins
+function Profile.can_add(profile, character_id, coins, coin_id, max, max_copies)
   if #coins >= max or not available(profile, character_id)[coin_id] then return false end
   local copies = 0
   for _, id in ipairs(coins) do if id == coin_id then copies = copies + 1 end end
-  if coin_id ~= "normal" and copies >= max_copies then return false end
+  return coin_id == "normal" or copies < max_copies
+end
+
+function Profile.add_to_set(profile, character_id, index, coin_id, max, max_copies)
+  local coins = Profile.sets(profile, character_id)[index].coins
+  if not Profile.can_add(profile, character_id, coins, coin_id, max, max_copies) then return false end
   coins[#coins + 1] = coin_id
   return true
 end

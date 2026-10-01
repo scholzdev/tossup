@@ -45,16 +45,15 @@ local function draw_sets()
   local character_id = ui.sets_character
   local def = ui.characters[character_id]
   local sets = Profile.sets(ui.profile, character_id)
-  local set = sets[ui.sets_index]
-  local is_active = Profile.active(ui.profile, character_id) == ui.sets_index
+  local set = {name = sets[ui.sets_index].name, coins = A.set_draft()}
+  local dirty = A.set_dirty()
 
   -- left: the set being edited
   box(60, 175, 470, 540, C.ink)
   outline(60, 175, 470, 540, C.panel_light)
   for i = 1, Profile.SET_COUNT do
-    local label = sets[i].name .. (Profile.active(ui.profile, character_id) == i and "  *" or "")
-    button(label, 76 + (i - 1) * 146, 190, 138, 44, ui.sets_index == i and C.blue or C.panel_light,
-      function() ui.sets_index = i end)
+    button(sets[i].name, 76 + (i - 1) * 146, 190, 138, 44, ui.sets_index == i and C.blue or C.panel_light,
+      function() A.sets_pick_set(i) end)
   end
   centered(#set.coins .. " / " .. Game.START_MAX .. " COINS", 60, 252, 470, ui.f20, C.gold)
   local x0 = 60 + (470 - (5 * (SLOT + SLOT_GAP) - SLOT_GAP)) / 2
@@ -70,13 +69,11 @@ local function draw_sets()
       ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = SLOT, h = SLOT, action = function() A.remove_coin_from_set(i) end}
     end
   end
-  centered("CLICK A COIN HERE TO REMOVE IT", 60, 458, 470, ui.f16, C.muted)
-  centered(is_active and "THIS IS YOUR ACTIVE SET" or "NOT THE ACTIVE SET", 60, 496, 470, ui.f16,
-    is_active and C.green or C.muted)
-  button(is_active and "ACTIVE" or "USE THIS SET", 96, 530, 398, 54, is_active and C.panel_light or C.green,
-    A.use_set, not is_active)
-  button("CLEAR SET", 96, 600, 398, 44, C.red, A.clear_set, #set.coins > 0)
-  centered("MAX " .. Game.MAX_COPIES .. " OF THE SAME COIN  -  NORMAL: UP TO " .. Game.START_MAX, 60, 664, 470, ui.f16, C.muted)
+  centered(dirty and "UNSAVED CHANGES" or "CLICK A COIN HERE TO REMOVE IT", 60, 458, 470, ui.f16,
+    dirty and C.orange or C.muted)
+  button(dirty and "SAVE SET" or "SAVED", 96, 490, 398, 50, dirty and C.blue or C.panel_light, A.save_set, dirty)
+  button("CLEAR SET", 96, 560, 398, 44, C.red, A.clear_set, #set.coins > 0)
+  centered("MAX " .. Game.MAX_COPIES .. " OF THE SAME COIN  -  NORMAL: UP TO " .. Game.START_MAX, 60, 676, 470, ui.f16, C.muted)
 
   -- right: all of this character's coins
   box(550, 175, 690, 540, C.ink)

@@ -61,35 +61,73 @@ function A.unlock_coin(coin_id) return A.unlock_coin_for(ui.selected_character, 
 -- The coins the selected character starts a run with (its active coin set).
 function A.loadout() return Profile.loadout(ui.profile, ui.selected_character, Game.START_MAX, Game.MAX_COPIES) end
 
--- ---- coin set editor
+-- ---- coin set editor: edits go to a draft and only reach the profile when Save is pressed
+-- (LÖVE runs LuaJIT, which has no table.unpack, so lists are copied by hand)
+local function copy_list(list)
+  local out = {}
+  for i, id in ipairs(list) do out[i] = id end
+  return out
+end
+
+local function same_list(a, b)
+  if #a ~= #b then return false end
+  for i = 1, #a do if a[i] ~= b[i] then return false end end
+  return true
+end
+
+-- The coins of the open set as currently edited (a copy of the saved set until something changes).
+function A.set_draft()
+  local d = ui.set_draft
+  if not d or d.character ~= ui.sets_character or d.index ~= ui.sets_index then
+    local saved = Profile.sets(ui.profile, ui.sets_character)[ui.sets_index].coins
+    d = {character = ui.sets_character, index = ui.sets_index, coins = copy_list(saved)}
+    ui.set_draft = d
+  end
+  return d.coins
+end
+
+function A.set_dirty()
+  local saved = Profile.sets(ui.profile, ui.sets_character)[ui.sets_index].coins
+  return not same_list(A.set_draft(), saved)
+end
+
 function A.open_sets(character_id)
   ui.sets_character = character_id or ui.selected_character
   ui.sets_index = Profile.active(ui.profile, ui.sets_character)
+  ui.set_draft = nil
   A.go("sets")
 end
 
 function A.sets_pick_character(id)
   ui.sets_character = id
   ui.sets_index = Profile.active(ui.profile, id)
+  ui.set_draft = nil
+end
+
+function A.sets_pick_set(index)
+  ui.sets_index = index
+  ui.set_draft = nil -- unsaved edits are dropped when you switch sets
+  Profile.set_active(ui.profile, ui.sets_character, index) -- the play screen opens on the set you last looked at
+  save_profile()
 end
 
 function A.add_coin_to_set(coin_id)
-  if Profile.add_to_set(ui.profile, ui.sets_character, ui.sets_index, coin_id, Game.START_MAX, Game.MAX_COPIES) then
-    save_profile()
+  local coins = A.set_draft()
+  if Profile.can_add(ui.profile, ui.sets_character, coins, coin_id, Game.START_MAX, Game.MAX_COPIES) then
+    coins[#coins + 1] = coin_id
   end
 end
 
 function A.remove_coin_from_set(slot)
-  if Profile.remove_from_set(ui.profile, ui.sets_character, ui.sets_index, slot) then save_profile() end
+  table.remove(A.set_draft(), slot)
 end
 
 function A.clear_set()
-  Profile.sets(ui.profile, ui.sets_character)[ui.sets_index].coins = {}
-  save_profile()
+  ui.set_draft = {character = ui.sets_character, index = ui.sets_index, coins = {}}
 end
 
-function A.use_set()
-  Profile.set_active(ui.profile, ui.sets_character, ui.sets_index)
+function A.save_set()
+  Profile.sets(ui.profile, ui.sets_character)[ui.sets_index].coins = copy_list(A.set_draft())
   save_profile()
 end
 

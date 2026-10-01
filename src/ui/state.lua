@@ -17,6 +17,7 @@ local state = {
   screen = "title", -- title | select | collection | options (shown when no run is active or paused)
   sets_character = "blade", -- coin set editor: which character and which of its sets is open
   sets_index = 1,
+  set_draft = nil, -- unsaved edits of the open coin set
   marked = {}, -- coins marked for discarding (uid -> true), in the opening hand or the bank
   collection_page = 1,
   collection_filter = "ALL",

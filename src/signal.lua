@@ -23,7 +23,8 @@ end
 function Signal.emit(name, event)
   local list = listeners[name]
   if not list then return event end
-  local snapshot = {table.unpack(list)} -- listeners added/removed mid-emit only affect later emits
+  local snapshot = {} -- listeners added/removed mid-emit only affect later emits
+  for i, handle in ipairs(list) do snapshot[i] = handle end
   for _, handle in ipairs(snapshot) do
     if handle.active then handle.callback(event) end
   end
