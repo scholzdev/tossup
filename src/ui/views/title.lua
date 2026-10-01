@@ -7,11 +7,16 @@ local Version = require("src.version")
 local C, color, centered, button, text = D.C, D.color, D.centered, D.button, D.text
 
 local function draw_title()
-  D.frame(nil)
+  color(C.white)
+  love.graphics.draw(ui.ui_images.title_scene, 0, 0, 0, 1280 / ui.ui_images.title_scene:getWidth(), 800 / ui.ui_images.title_scene:getHeight())
+  -- menu panel on the left, the scene stays visible on the right
+  color(C.ink, .88)
+  love.graphics.rectangle("fill", 70, 70, 400, 590, 10)
+  D.outline(70, 70, 400, 590, C.gold)
   local logo = ui.ui_images.logo
   color(C.white)
-  love.graphics.draw(logo, 640 - 230, 70, 0, 460 / logo:getWidth(), 460 / logo:getWidth())
-  centered("BEAT THE QUOTA", 0, 204, 1280, ui.f20, C.muted)
+  love.graphics.draw(logo, 120, 96, 0, 300 / logo:getWidth(), 300 / logo:getWidth())
+  centered("BEAT THE QUOTA", 70, 190, 400, ui.f20, C.muted)
 
   local entries = {}
   if ui.game then
@@ -27,17 +32,25 @@ local function draw_title()
   end
   entries[#entries + 1] = {"COIN SETS", C.gold, function() A.open_sets(ui.selected_character) end}
   entries[#entries + 1] = {"COLLECTION", C.green, function() A.go("collection") end}
-  entries[#entries + 1] = {"TUTORIAL", C.green, function()
-    if ui.game then ui.confirm = {title = "TUTORIAL", text = "THIS LEVEL STARTS OVER WHEN YOU CONTINUE.", ok = Tutorial.start}
-    else Tutorial.start() end
-  end}
-  entries[#entries + 1] = {"HOW TO PLAY", C.green, function() ui.help_next = nil A.go("help") end}
-  entries[#entries + 1] = {"OPTIONS", C.panel_light, function() A.go("options") end}
-  entries[#entries + 1] = {"QUIT", C.red, A.quit}
-  text("v" .. Version.number .. " (" .. Version.build .. ")", 56, 736, ui.f16, C.muted)
-  for i, entry in ipairs(entries) do
-    button(entry[1], 470, 240 + (i - 1) * 58, 340, 48, entry[2], entry[3])
+  local small = {
+    {"TUTORIAL", C.green, function()
+      if ui.game then ui.confirm = {title = "TUTORIAL", text = "THIS LEVEL STARTS OVER WHEN YOU CONTINUE.", ok = Tutorial.start}
+      else Tutorial.start() end
+    end},
+    {"HELP", C.green, function() ui.help_next = nil A.go("help") end},
+    {"OPTIONS", C.panel_light, function() A.go("options") end},
+  }
+  text("v" .. Version.number .. " (" .. Version.build .. ")", 96, 626, ui.f16, C.muted)
+  local y = 240
+  for _, entry in ipairs(entries) do
+    button(entry[1], 100, y, 340, 52, entry[2], entry[3])
+    y = y + 62
   end
+  y = y + 10
+  for i, entry in ipairs(small) do
+    button(entry[1], 100 + (i - 1) * 114, y, 112, 44, entry[2], entry[3])
+  end
+  button("QUIT", 100, y + 62, 340, 44, C.red, A.quit)
 end
 
 return draw_title
