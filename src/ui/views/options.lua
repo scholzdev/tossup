@@ -1,3 +1,4 @@
+local Lang = require("src.lang")
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
@@ -10,7 +11,7 @@ local ROWS = {
 }
 
 local function draw_options()
-  D.frame(ui.ui_images.title_options, "BACK", function() A.go("title") end)
+  D.frame(D.title("options"), "BACK", function() A.go("title") end)
   for i, row in ipairs(ROWS) do
     local y = 190 + (i - 1) * 110
     local on = ui.profile.options[row[1]]
@@ -21,6 +22,13 @@ local function draw_options()
     button(on and "ON" or "OFF", 860, y + 22, 112, 46, on and C.green or C.panel_light,
       function() A.toggle_option(row[1]) end)
   end
+  -- language: the button shows the current language's own name
+  local y = 190 + #ROWS * 110
+  box(280, y, 720, 90, C.panel_dk)
+  outline(280, y, 720, 90, C.line)
+  text("LANGUAGE", 308, y + 16, ui.f32, C.face)
+  text("Language of all texts.", 308, y + 56, ui.f16, C.muted)
+  button(Lang.names[Lang.current], 820, y + 22, 152, 46, C.gold, A.cycle_language)
   centered("F3 SHOWS DEBUG INFO IN A RUN", 0, 690, 1280, ui.f16, C.muted)
 end
 

@@ -6,7 +6,7 @@ local Profile = {}
 
 Profile.SET_COUNT = 3 -- coin sets per character
 
-local DEFAULT_OPTIONS = {screen_shake = true, fast_flip = false, fullscreen = false, seen_help = false}
+local DEFAULT_OPTIONS = {screen_shake = true, fast_flip = false, fullscreen = false, seen_help = false, language = "en"}
 
 function Profile.new()
   local options = {}

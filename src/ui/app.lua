@@ -59,9 +59,11 @@ function app.load()
   for id in pairs(Game.relics()) do ui.relic_images[id] = load_image("assets/relics/" .. id .. ".png") end
   for _, name in ipairs({"next_round", "reroll", "gold", "energy", "coins_left", "open_shop", "exchange", "give_up",
     "flip", "discard", "next_coin", "start_level", "shop_title", "logo",
-    "title_play", "title_sets", "title_collection", "title_options", "title_help"}) do
+    "title_play", "title_sets", "title_collection", "title_options", "title_help",
+    "title_play_de", "title_sets_de", "title_collection_de", "title_options_de", "title_help_de"}) do
     ui.ui_images[name] = load_image("assets/ui/" .. name .. ".png")
   end
+  ui.ui_images.title_shop = ui.ui_images.shop_title
   ui.coin_images.back = love.graphics.newImage("assets/coins/back.png", {mipmaps = true})
   ui.coin_images.back:setMipmapFilter("linear")
   ui.coin_images.back:setFilter("linear", "linear")

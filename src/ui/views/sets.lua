@@ -27,12 +27,12 @@ local function count_in(coins, id)
 end
 
 local function draw_sets()
-  D.frame(ui.ui_images.title_sets, "BACK", function() A.go("title") end)
+  D.frame(D.title("sets"), "BACK", function() A.go("title") end)
 
   -- every character
   for i, id in ipairs(ui.character_order) do
     local selected = id == ui.sets_character
-    button(ui.characters[id].name:sub(5):upper(), 340 + (i - 1) * 210, 148, 190, 44,
+    button(D.L(({blade = "BLADE", seer = "SEER", trader = "TRADER"})[id]), 340 + (i - 1) * 210, 148, 190, 44,
       selected and C.gold or C.panel_light, function() A.sets_pick_character(id) end)
   end
 
@@ -49,7 +49,7 @@ local function draw_sets()
     button(sets[i].name, 84 + (i - 1) * 134, 226, 126, 40, ui.sets_index == i and C.blue or C.panel_light,
       function() A.sets_pick_set(i) end)
   end
-  centered(#set.coins .. " / " .. Game.START_MAX .. " COINS", 70, 280, 430, ui.f20, C.gold)
+  centered(D.L("%d / %d COINS", #set.coins, Game.START_MAX), 70, 280, 430, ui.f20, C.gold)
   local x0 = 70 + (430 - (5 * (SLOT + SLOT_GAP) - SLOT_GAP)) / 2
   for i = 1, Game.START_MAX do
     local x = x0 + ((i - 1) % 5) * (SLOT + SLOT_GAP)
@@ -67,13 +67,13 @@ local function draw_sets()
     dirty and C.orange or C.muted)
   button(dirty and "SAVE SET" or "SAVED", 100, 530, 370, 48, dirty and C.blue or C.panel_light, A.save_set, dirty)
   button("CLEAR SET", 100, 592, 370, 44, C.red, A.clear_set, #set.coins > 0)
-  centered("MAX " .. Game.MAX_COPIES .. " OF THE SAME COIN  -  NORMAL: UP TO " .. Game.START_MAX, 70, 702, 430,
+  centered(D.L("MAX %d OF THE SAME COIN  -  NORMAL: UP TO %d", Game.MAX_COPIES, Game.START_MAX), 70, 702, 430,
     ui.f16, C.muted)
 
   -- right: all of this character's coins
   box(520, 212, 700, 528, C.panel_dk)
   outline(520, 212, 700, 528, C.line)
-  centered(def.name:upper() .. "  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP", 520, 226, 700,
+  centered(D.L("%s  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP", def.name:upper()), 520, 226, 700,
     ui.f16, C.gold)
   local entries = {}
   for _, id in ipairs(def.pool) do entries[#entries + 1] = {id = id} end

@@ -8,12 +8,13 @@ local Items = require("src.items")
 local C, color, box, outline, text, centered, button = D.C, D.color, D.box, D.outline, D.text, D.centered, D.button
 local coin_image, coin_hover = D.coin_image, D.coin_hover
 local catalog = ui.catalog
+local Lang = require("src.lang")
 
 local SCREEN = {.09, .27, .30}
 
 local function vertical_label(word, x, y)
-  for i = 1, #word do
-    centered(i == 1 and word:sub(i, i):upper() or word:sub(i, i):lower(), x, y + (i - 1) * 30, 30, ui.f32, C.white)
+  for i, ch in ipairs(Lang.chars(D.L(word))) do
+    centered(i == 1 and ch:upper() or ch, x, y + (i - 1) * 30, 30, ui.f32, C.white)
   end
 end
 
@@ -33,8 +34,8 @@ local function draw_shop()
 
   -- title, gold, menu
   color(C.white)
-  love.graphics.draw(ui.ui_images.shop_title, 70, 44, 0, 110 / ui.ui_images.shop_title:getHeight(),
-    110 / ui.ui_images.shop_title:getHeight())
+  love.graphics.draw(D.title("shop"), 70, 44, 0, 110 / D.title("shop"):getHeight(),
+    110 / D.title("shop"):getHeight())
   button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu)
   D.image_at(ui.ui_images.gold, 1010, 100, 44)
   text(tostring(g.player.gold), 1062, 104, ui.f32, C.gold)
@@ -86,7 +87,7 @@ local function draw_shop()
   -- PRIZE row (relic), column 4 so it lines up with the last coin offer
   local px = X0 + 3 * STEP
   vertical_label("Prize", px - 50, 396)
-  local relic = g.shop_relic and Game.relics()[g.shop_relic]
+  local relic = g.shop_relic and ui.relic_catalog[g.shop_relic]
   if relic then
     price(25, px, 392, 110, g.player.gold >= 25)
     D.image_at(ui.relic_images[g.shop_relic], px + 7, 434, 96)
@@ -114,13 +115,13 @@ local function draw_shop()
     g.player.gold >= 8 and #g.coins > 1)
 
   -- your deck
-  text("YOUR DECK  " .. #g.coins .. " / " .. Game.DECK_MAX, 70, 612, ui.f20, C.gold)
+  text(D.L("YOUR DECK  %d / %d", #g.coins, Game.DECK_MAX), 70, 612, ui.f20, C.gold)
   text(full and "DECK FULL  -  REMOVE A COIN TO BUY ANOTHER" or "CLICK A COIN TO SELECT IT", 340, 618, ui.f16,
     full and C.orange or C.muted)
   local held = {}
   for i, id in ipairs(g.items) do held[i] = ui.item_catalog[id].short end
-  for _, id in ipairs(g.relics) do held[#held + 1] = Game.relics()[id].name:upper() end
-  if #held > 0 then text("HELD  " .. table.concat(held, ", "), 340, 638, ui.f16, C.orange) end
+  for _, id in ipairs(g.relics) do held[#held + 1] = ui.relic_catalog[id].name:upper() end
+  if #held > 0 then text(D.L("HELD  %s", table.concat(held, ", ")), 340, 638, ui.f16, C.orange) end
   for i = 1, Game.DECK_MAX do
     local x = 70 + (i - 1) * 92
     local item = g.coins[i]
@@ -129,7 +130,7 @@ local function draw_shop()
     outline(x, 664, 84, 76, chosen and C.orange or C.panel_light)
     if item then
       coin_image(item.id, x + 18, 668, 48)
-      centered(math.floor(Game.probability(g, item) * 100 + .5) .. "% H", x, 718, 84, ui.f16, C.gold)
+      centered(D.L("%d%% H", math.floor(Game.probability(g, item) * 100 + .5)), x, 718, 84, ui.f16, C.gold)
       coin_hover(item.id, x, 664, 84, 76, Game.probability(g, item))
       ui.buttons[#ui.buttons + 1] = {x = x, y = 664, w = 84, h = 76, action = function() A.coin_action(item) end}
     end

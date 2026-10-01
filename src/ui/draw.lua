@@ -1,6 +1,8 @@
 -- Drawing primitives shared by every view.
 local ui = require("src.ui.state")
 local C = require("src.ui.theme")
+local Lang = require("src.lang")
+local L = Lang.t
 local catalog = ui.catalog
 
 local function color(c, alpha)
@@ -19,12 +21,14 @@ local function outline(x, y, w, h, tint, radius)
   love.graphics.setLineWidth(1)
 end
 local function text(str, x, y, face, tint)
+  str = L(str)
   love.graphics.setFont(face or ui.f16)
   color(tint or C.face)
   love.graphics.print(str, math.floor(x), math.floor(y))
 end
 local function centered(str, x, y, w, face, tint)
   face = face or ui.f20
+  str = L(str)
   text(str, x + math.floor((w - face:getWidth(str)) / 2), y, face, tint)
 end
 local function button(str, x, y, w, h, tint, action, enabled)
@@ -42,12 +46,12 @@ local function button(str, x, y, w, h, tint, action, enabled)
 end
 
 local function effects(effects_list)
-  if #effects_list == 0 then return "Nothing" end
+  if #effects_list == 0 then return L("Nothing") end
   local parts = {}
   for _, e in ipairs(effects_list) do
     local amount = e.type == "probability" and math.floor(e.amount * 100 + .5) or e.amount
-    local labels = {score = "PTS", gold = "GOLD", energy = "NRG", penalty = "QUOTA",
-      extra_draw = "REPLAY", probability = "% HEADS"}
+    local labels = {score = L("PTS"), gold = L("GOLD"), energy = L("NRG"), penalty = L("QUOTA"),
+      extra_draw = L("REPLAY"), probability = L("% HEADS")}
     local prefix = "+"
     parts[#parts + 1] = prefix .. amount .. " " .. (labels[e.type] or e.type)
   end
@@ -55,17 +59,17 @@ local function effects(effects_list)
 end
 
 local function effect_description(effects_list)
-  if #effects_list == 0 then return "No effect" end
+  if #effects_list == 0 then return L("No effect") end
   local parts = {}
   for _, effect in ipairs(effects_list) do
     local amount = effect.amount
-    if effect.type == "score" then parts[#parts + 1] = "Score " .. amount .. " points"
-    elseif effect.type == "gold" then parts[#parts + 1] = "Gain " .. amount .. " gold"
-    elseif effect.type == "energy" then parts[#parts + 1] = "Gain " .. amount .. " energy"
-    elseif effect.type == "penalty" then parts[#parts + 1] = "Quota +" .. amount
-    elseif effect.type == "extra_draw" then parts[#parts + 1] = "Goes back into the pile"
+    if effect.type == "score" then parts[#parts + 1] = L("Score %d points", amount)
+    elseif effect.type == "gold" then parts[#parts + 1] = L("Gain %d gold", amount)
+    elseif effect.type == "energy" then parts[#parts + 1] = L("Gain %d energy", amount)
+    elseif effect.type == "penalty" then parts[#parts + 1] = L("Quota +%d", amount)
+    elseif effect.type == "extra_draw" then parts[#parts + 1] = L("Goes back into the pile")
     elseif effect.type == "probability" then
-      parts[#parts + 1] = "Gain " .. math.floor(amount * 100 + .5) .. "% Heads this level"
+      parts[#parts + 1] = L("Gain %d%% Heads this level", math.floor(amount * 100 + .5))
     end
   end
   return table.concat(parts, "; ")
@@ -120,6 +124,11 @@ local function frame(title_image, back_label, back_action)
   if back_action then button(back_label, 1120, 56, 100, 34, C.panel_light, back_action) end
 end
 
+-- The pixel title image for a screen, in the current language when there is one.
+local function title(name)
+  return (Lang.current ~= "en" and ui.ui_images["title_" .. name .. "_" .. Lang.current]) or ui.ui_images["title_" .. name]
+end
+
 local function coin_name(id, x, y, w)
   local name = catalog[id].name:upper()
   if w then centered(name, x, y, w, ui.f20, C.face) else text(name, x, y, ui.f20, C.face) end
@@ -143,7 +152,7 @@ local function draw_text_tooltip()
   text(tip.title:upper(), x + 14, y + 12, ui.f20, C.face)
   love.graphics.setFont(ui.f16)
   color(C.muted)
-  love.graphics.printf(tip.body, x + 14, y + 44, w - 28)
+  love.graphics.printf(L(tip.body), x + 14, y + 44, w - 28)
 end
 
 local function draw_coin_tooltip()
@@ -161,10 +170,10 @@ local function draw_coin_tooltip()
   text(coin.name:upper(), x + 78, y + 12, ui.f20, C.face)
   text(coin.description, x + 78, y + 40, ui.f16, C.muted)
   local heads = math.floor(ui.hovered_coin.probability * 100 + .5)
-  text("HEADS " .. heads .. "%  /  TAILS " .. (100 - heads) .. "%" ..
-    ((coin.energy_cost or 0) > 0 and ("  -  COSTS " .. coin.energy_cost .. " ENERGY") or ""), x + 14, y + 78, ui.f16, C.gold)
-  text("HEADS  " .. effect_description(coin.heads), x + 14, y + 108, ui.f16, C.blue)
-  text("TAILS  " .. effect_description(coin.tails), x + 14, y + 137, ui.f16, C.red)
+  text(L("HEADS %d%%  /  TAILS %d%%", heads, 100 - heads) ..
+    ((coin.energy_cost or 0) > 0 and L("  -  COSTS %d ENERGY", coin.energy_cost) or ""), x + 14, y + 78, ui.f16, C.gold)
+  text(L("HEADS") .. "  " .. effect_description(coin.heads), x + 14, y + 108, ui.f16, C.blue)
+  text(L("TAILS") .. "  " .. effect_description(coin.tails), x + 14, y + 137, ui.f16, C.red)
   if ui.hovered_coin.locked then
     text("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK", x + 14, y + 172, ui.f16, C.orange)
   end
@@ -189,5 +198,5 @@ local function coin_face(cx, cy, radius, outcome, selected, id)
 end
 
 return {C = C, color = color, box = box, outline = outline, text = text, centered = centered,
-  button = button, coin_image = coin_image, image_at = image_at, icon_button = icon_button, frame = frame, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
-  effects = effects, effect_description = effect_description, coin_tooltip = draw_coin_tooltip, text_hover = text_hover, text_tooltip = draw_text_tooltip}
+  button = button, coin_image = coin_image, image_at = image_at, icon_button = icon_button, frame = frame, title = title, coin_name = coin_name, coin_face = coin_face, coin_hover = coin_hover,
+  effects = effects, effect_description = effect_description, coin_tooltip = draw_coin_tooltip, L = L, text_hover = text_hover, text_tooltip = draw_text_tooltip}

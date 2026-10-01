@@ -12,7 +12,7 @@ local characters = ui.characters
 local SLOT, GAP = 80, 22
 
 local function draw_menu()
-  D.frame(ui.ui_images.title_play, "BACK", function() A.go("title") end)
+  D.frame(D.title("play"), "BACK", function() A.go("title") end)
 
   local character = characters[ui.selected_character]
   local active = Profile.active(ui.profile, ui.selected_character)
@@ -39,7 +39,7 @@ local function draw_menu()
   centered("COIN SET", 484, 174, 736, ui.f16, C.gold)
   button("<", 510, 200, 50, 44, C.panel_light, function() A.cycle_active_set(-1) end)
   box(570, 200, 504, 44, C.card)
-  centered(set.name .. "  /  " .. #A.loadout() .. " COINS", 570, 210, 504, ui.f20, C.face)
+  centered(D.L("%s  /  %d COINS", set.name, #A.loadout()), 570, 210, 504, ui.f20, C.face)
   button(">", 1084, 200, 50, 44, C.panel_light, function() A.cycle_active_set(1) end)
 
   local coins = A.loadout()

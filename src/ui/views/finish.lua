@@ -15,7 +15,7 @@ local function draw_end()
   outline(36, 36, 1208, 728, C.gold)
 
   -- headline, drawn at double size in the outcome colour with a shadow
-  local headline = won and "THE HOUSE FALLS" or "RUN OVER"
+  local headline = D.L(won and "THE HOUSE FALLS" or "RUN OVER")
   love.graphics.setFont(ui.f48)
   local width = ui.f48:getWidth(headline) * 2
   color(C.black, .35)
@@ -43,11 +43,11 @@ local function draw_end()
   D.image_at(ui.ui_images.gold, 690, 430, 44)
   text(tostring(g.player.gold), 746, 436, ui.f32, C.gold)
   text("GOLD LEFT", 690, 484, ui.f16, C.muted)
-  text("SEED " .. g.seed, 690, 512, ui.f16, C.muted)
+  text(D.L("SEED %s", g.seed), 690, 512, ui.f16, C.muted)
   if not won and g.lost_why then
     love.graphics.setFont(ui.f16)
     color(C.red)
-    love.graphics.printf(g.lost_why:sub(1, 1):upper() .. g.lost_why:sub(2), 380, 570, 520, "center")
+    love.graphics.printf((function(s) return s:sub(1, 1):upper() .. s:sub(2) end)(D.L(g.lost_why)), 380, 570, 520, "center")
   end
 
   D.icon_button("NEW RUN", ui.ui_images.start_level, 470, 600, 340, 64, C.green, function() A.start() end)

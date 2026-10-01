@@ -1,5 +1,6 @@
 -- Shared mutable UI state. Game rules live in src/game.lua; this is presentation only.
 local Game = require("src.game")
+local Lang = require("src.lang")
 
 -- The game is drawn on a fixed 1280x800 canvas that is scaled and centred to fit the window.
 local function layout()
@@ -9,9 +10,10 @@ local function layout()
 end
 
 local state = {
-  catalog = Game.catalog(),
-  item_catalog = Game.item_catalog(),
-  characters = Game.characters(),
+  catalog = Lang.wrap("coins", Game.catalog()), -- names/descriptions follow the language
+  item_catalog = Lang.wrap("items", Game.item_catalog()),
+  relic_catalog = Lang.wrap("relics", Game.relics()),
+  characters = Lang.wrap("characters", Game.characters()),
   character_order = {"blade", "seer", "trader"},
   selected_character = "blade",
   screen = "title", -- title | select | collection | options (shown when no run is active or paused)

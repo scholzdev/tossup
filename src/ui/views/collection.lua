@@ -74,7 +74,7 @@ local function chevron(cx, cy, size, direction)
 end
 
 local function draw_collection()
-  D.frame(ui.ui_images.title_collection, "BACK", function() A.go("title") end)
+  D.frame(D.title("collection"), "BACK", function() A.go("title") end)
 
   -- sort + rarity filters
   text("SORT", 70, 168, ui.f16, C.muted)
@@ -117,7 +117,7 @@ local function draw_collection()
   centered(ui.collection_page .. "/" .. pages, 440, 700, 400, ui.f32, C.white)
   local owned = 0
   for _ in pairs(ui.profile.collected) do owned = owned + 1 end
-  centered("COLLECTED " .. owned .. " / " .. #ui.coin_order, 880, 710, 320, ui.f16, C.muted)
+  centered(D.L("COLLECTED %d / %d", owned, #ui.coin_order), 880, 710, 320, ui.f16, C.muted)
 end
 
 return draw_collection

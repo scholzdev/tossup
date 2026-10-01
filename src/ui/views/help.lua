@@ -15,7 +15,7 @@ local SECTIONS = {
 }
 
 local function draw_help()
-  D.frame(ui.ui_images.title_help, "BACK", function() A.go("title") end)
+  D.frame(D.title("help"), "BACK", function() A.go("title") end)
   for i, section in ipairs(SECTIONS) do
     local col, row = (i - 1) % 2, math.floor((i - 1) / 2)
     local x, y = 70 + col * 580, 160 + row * 128
@@ -24,7 +24,7 @@ local function draw_help()
     text(section[1], x + 16, y + 10, ui.f20, C.gold)
     love.graphics.setFont(ui.f16)
     color(C.face)
-    love.graphics.printf(section[2], x + 16, y + 38, 528)
+    love.graphics.printf(D.L(section[2]), x + 16, y + 38, 528)
   end
   -- the 8th cell of the grid: controls
   box(650, 544, 560, 116, C.panel_dk)
@@ -32,7 +32,7 @@ local function draw_help()
   text("CONTROLS", 666, 554, ui.f20, C.gold)
   love.graphics.setFont(ui.f16)
   color(C.face)
-  love.graphics.printf("Space = Flip / Next Coin.  Click = mark a coin.  Esc = menu (your run waits).  Hover any coin for details. Quitting the app loses the run.", 666, 582, 528)
+  love.graphics.printf(D.L("Space = Flip / Next Coin.  Click = mark a coin.  Esc = menu (your run waits).  Hover any coin for details. Quitting the app loses the run."), 666, 582, 528)
   if ui.help_next then
     D.icon_button("GOT IT", ui.ui_images.start_level, 470, 684, 340, 56, C.green, function() A.go(ui.help_next) end)
   end

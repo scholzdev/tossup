@@ -5,10 +5,13 @@ local ui = require("src.ui.state")
 
 local A = {}
 
+local Lang = require("src.lang")
+
 local PROFILE_FILE = "profile.lua"
 
 local function apply_options()
   love.window.setFullscreen(ui.profile.options.fullscreen)
+  Lang.set(ui.profile.options.language)
 end
 
 function A.load_profile()
@@ -61,6 +64,19 @@ end
 function A.toggle_option(key)
   ui.profile.options[key] = not ui.profile.options[key]
   if key == "fullscreen" then apply_options() end
+  save_profile()
+end
+
+-- Cycle through the available languages (English, Deutsch).
+function A.cycle_language()
+  local order = Lang.order
+  for i, code in ipairs(order) do
+    if code == Lang.current then
+      ui.profile.options.language = order[i % #order + 1]
+      break
+    end
+  end
+  Lang.set(ui.profile.options.language)
   save_profile()
 end
 

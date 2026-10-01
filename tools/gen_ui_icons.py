@@ -369,7 +369,9 @@ def main():
     for fn in (next_round, reroll, gold, energy, coins_left, open_shop, exchange, give_up, flip, discard,
                next_coin, start_level, shop_title, logo):
         fn()
-    for word, name in (("PLAY", "play"), ("COIN SETS", "sets"), ("COLLECTION", "collection"), ("OPTIONS", "options"), ("HOW TO PLAY", "help")):
+    for word, name in (("PLAY", "play"), ("COIN SETS", "sets"), ("COLLECTION", "collection"), ("OPTIONS", "options"), ("HOW TO PLAY", "help"),
+                       ("SPIELEN", "play_de"), ("MÜNZSETS", "sets_de"), ("SAMMLUNG", "collection_de"),
+                       ("OPTIONEN", "options_de"), ("ANLEITUNG", "help_de")):
         pixel_title(word, name)
     cursor("cursor_arrow.png", IVORY[:3], True)
     cursor("cursor_click.png", (243, 185, 88), False)
