@@ -138,7 +138,8 @@ local function draw_shop()
   -- next round: the big red button
   local mx, my = ui.mouse()
   local over = (mx - 1130) ^ 2 + (my - 690) ^ 2 <= 62 ^ 2
-  D.image_at(ui.ui_images.next_round, 1070, 628 + (over and -3 or 0), 120)
+  D.image_at(ui.ui_images.next_round, 1074, 616 + (over and -3 or 0), 112)
+  centered("NEXT ROUND", 1040, 736, 180, ui.f20, C.white)
   ui.buttons[#ui.buttons + 1] = {x = 1068, y = 628, w = 124, h = 124, action = function() Game.leave_shop(g) end}
 end
 
