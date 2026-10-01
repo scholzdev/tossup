@@ -18,8 +18,8 @@ return {
   trader = {
     name = "The Trader", description = "Gold and energy",
     starter = "normal", deck = {"normal", "normal", "dagger"},
-    pool = {"normal", "copper", "loaded", "dagger"},
-    locked = {{"spark", 3}, {"sword", 3}, {"bank", 4}, {"miser", 4}, {"hammer", 4}, {"bounty", 5},
+    pool = {"normal", "copper", "loaded", "dagger", "sword"},
+    locked = {{"spark", 3}, {"bank", 4}, {"miser", 4}, {"hammer", 4}, {"bounty", 5},
       {"flock", 5}, {"momentum", 5}, {"capacitor", 6}},
   },
 }

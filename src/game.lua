@@ -17,10 +17,10 @@ Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down i
 Game.MAX_COPIES = 3 -- copies of one coin in a set; the plain Normal coin is exempt (up to the set size)
 
 local route = {
-  {name = "Opening", quota = 3, flips = 12, payout = 20},
-  {name = "Second Chance", quota = 11, flips = 10, payout = 25},
-  {name = "High Stakes", quota = 20, flips = 10, payout = 30},
-  {name = "The House", quota = 36, flips = 12, boss = true},
+  {name = "Opening", quota = 15, flips = 12, payout = 20},
+  {name = "Second Chance", quota = 22, flips = 10, payout = 25},
+  {name = "High Stakes", quota = 28, flips = 10, payout = 30},
+  {name = "The House", quota = 40, flips = 12, boss = true},
 }
 
 local function log(game, message)

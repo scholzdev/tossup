@@ -94,7 +94,7 @@ assert(Game.resolve(win))
 assert(win.encounter.cleared, "quota met")
 assert(Game.end_level(win))
 equal(win.phase, "SHOP", "enemy death wins")
-equal(win.player.gold, 31, "level payout 20 + 1 gold for the extra points")
+equal(win.player.gold, 30, "level payout 20; no extra points beyond the full quota")
 equal(#win.coins, 1, "no free coin")
 equal(#win.shop_offers, 4)
 win.player.gold = 100

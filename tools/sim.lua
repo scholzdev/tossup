@@ -2,6 +2,7 @@
 --   lua tools/sim.lua                      all bots x all characters, 300 runs each
 --   lua tools/sim.lua --runs 1000 --char blade --bot smart
 --   lua tools/sim.lua --unlock all         pretend every locked coin is unlocked
+--   lua tools/sim.lua --set default        start from the default deck instead of a best-coins 10-coin set
 --   lua tools/sim.lua --coins              per-coin strength report
 --   lua tools/sim.lua --trace 7 --char blade --bot smart   print the full log of one run
 --   lua tools/sim.lua --quota 3,8,14,26 --payout 20,25,30   override the route
@@ -24,6 +25,7 @@ while arg and arg[i] do
   elseif a == "--unlock" then opts.unlock = arg[i + 1] i = i + 1
   elseif a == "--quota" then opts.quota = arg[i + 1] i = i + 1
   elseif a == "--payout" then opts.payout = arg[i + 1] i = i + 1
+  elseif a == "--set" then opts.set = arg[i + 1] i = i + 1
   elseif a == "--coins" then opts.coins = true
   elseif a == "--trace" then opts.trace = tonumber(arg[i + 1]) i = i + 1
   else error("unknown argument: " .. a) end
@@ -269,8 +271,26 @@ local function unlocked_for(character)
   return list
 end
 
+-- A competent player's coin set: the best available coins (max copies each), Normal fills the rest.
+local function best_set(character)
+  local unlocked = unlocked_for(character) or {}
+  local ids, seen = {}, {}
+  for _, id in ipairs(characters[character].pool) do ids[#ids + 1] = id seen[id] = true end
+  for _, id in ipairs(unlocked) do if not seen[id] then ids[#ids + 1] = id end end
+  table.sort(ids, function(a, b) return coin_value(a) > coin_value(b) end)
+  local set = {}
+  for _, id in ipairs(ids) do
+    if id ~= "normal" and coin_value(id) > coin_value("normal") then
+      for _ = 1, Game.MAX_COPIES do if #set < Game.START_MAX then set[#set + 1] = id end end
+    end
+  end
+  while #set < Game.START_MAX do set[#set + 1] = "normal" end
+  return set
+end
+
 local function play(seed, character, bot)
-  local g = Game.new(seed, character, unlocked_for(character), nil, true)
+  local loadout = opts.set ~= "default" and best_set(character) or nil
+  local g = Game.new(seed, character, unlocked_for(character), loadout, true)
   local guard = 0
   while g.phase ~= "VICTORY" and g.phase ~= "GAME_OVER" and guard < 2000 do
     guard = guard + 1
