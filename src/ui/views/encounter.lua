@@ -183,7 +183,7 @@ local function draw_encounter()
   end
   local item = result and Game.get_coin(ui.game, result.uid)
   local outcome = result and (result.final or result.result)
-  centered(ui.game.mulligan and "OPENING HAND  -  PLAYS FIRST" or ui.flip_animation and "FLIPPING" or ui.game.pending and "CURRENT FLIP" or
+  centered(ui.game.mulligan and "" or ui.flip_animation and "FLIPPING" or ui.game.pending and "CURRENT FLIP" or
     ui.game.dealt and not ui.holding and "DEALT COIN" or item and "LAST FLIP" or "NO COIN", 330, 186, 880, ui.f20, C.gold)
   if result and result.altered and result.raw and not ui.flip_animation then
     centered("ROLLED " .. result.raw:upper() .. "  >  " .. outcome:upper() .. "  (" .. result.altered .. ")",
