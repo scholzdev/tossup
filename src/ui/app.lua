@@ -5,6 +5,7 @@ local A = require("src.ui.actions")
 local D = require("src.ui.draw")
 local Sound = require("src.ui.sound")
 local Tutorial = require("src.ui.tutorial")
+local Pad = require("src.ui.pad")
 local views = {
   ENCOUNTER = require("src.ui.views.encounter"),
   SHOP = require("src.ui.views.shop"),
@@ -111,6 +112,7 @@ function app.draw()
   D.text_tooltip()
   if ui.tutorial then Tutorial.draw() end
   D.confirm_dialog()
+  Pad.draw() -- the controller focus ring, on top of everything
   love.graphics.pop()
   love.graphics.pop()
 end
@@ -118,6 +120,7 @@ end
 function app.update(dt)
   A.update(dt)
   Tutorial.update()
+  Pad.update(dt, app)
   Sound.watch(ui)
   if ui.cursors then -- pick the cursor from what the last frame drew under the mouse
     local mx, my = ui.mouse()
@@ -133,22 +136,33 @@ function app.update(dt)
   end
 end
 
+-- Press a button (mouse or controller): click sound, its action, and sliders start following the mouse.
+function app.activate(b, x)
+  ui.notice = ""
+  Sound.play("click")
+  b.action()
+  if x and b.drag then ui.dragging = b b.drag(x) end -- sliders follow the mouse until it is released
+end
+
+function app.discard_current() A.discard_current() end
+
 function app.mousepressed(x, y, mouse_button)
   if mouse_button ~= 1 then return end
+  Pad.mouse_used()
   x, y = ui.to_canvas(x, y)
   for i = #ui.buttons, 1, -1 do
     local b = ui.buttons[i]
     if x >= b.x and x <= b.x + b.w and y >= b.y and y <= b.y + b.h then
-      ui.notice = ""
-      Sound.play("click")
-      b.action()
-      if b.drag then ui.dragging = b b.drag(x) end -- sliders follow the mouse until it is released
+      app.activate(b, x)
       return
     end
   end
 end
 
+function app.gamepadpressed(_, button) Pad.pressed(button, app) end
+
 function app.mousemoved(x)
+  Pad.mouse_used()
   if ui.dragging then ui.dragging.drag((ui.to_canvas(x, 0))) end
 end
 

@@ -14,5 +14,6 @@ love.draw = app.draw
 love.update = app.update
 love.mousepressed = app.mousepressed
 love.mousemoved = app.mousemoved
+love.gamepadpressed = app.gamepadpressed
 love.mousereleased = app.mousereleased
 love.keypressed = app.keypressed

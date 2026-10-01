@@ -36,6 +36,7 @@ local function slider(key, label, hint, y)
   text(value .. "%", 912, y + 24, ui.f32, C.gold)
   ui.buttons[#ui.buttons + 1] = {x = x - 10, y = y + 16, w = w + 20, h = 44, action = function() end,
     drag = function(mouse_x) A.set_volume(key, (mouse_x - x) / w * 100) end,
+    adjust = function(direction) A.set_volume(key, ui.profile.options[key] + direction * 5) A.save_options() Sound.play("score") end, -- controller
     release = function() A.save_options() Sound.play("score") end}
 end
 
