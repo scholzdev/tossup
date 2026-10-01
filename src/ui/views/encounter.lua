@@ -62,10 +62,10 @@ local function draw_flip_animation()
   local phase = turns * (1 - (1 - progress) ^ 4)
   local squash = math.max(.06, math.abs(math.cos(phase * math.pi)))
   local heads = math.floor(phase + .5) % 2 == 1 -- the side changes at the thin edge-on moments, not at full width
-  local lift = 90 * math.sin(math.min(1, progress / .75) * math.pi)
+  local lift = 45 * math.sin(math.min(1, progress / .75) * math.pi)
   local word = heads and "HEADS" or "TAILS"
   love.graphics.push()
-  love.graphics.translate(610, 400 - lift)
+  love.graphics.translate(770, 385 - lift)
   love.graphics.scale(squash, 1)
   color(C.white)
   local image = ui.coin_images[ui.flip_animation.id]
@@ -115,21 +115,18 @@ local function draw_encounter()
     text(stat[2], x + 36, 106, ui.f32, stat[3])
   end
 
-  -- left: coin bank
+  -- left: coin bank, three big cards and one quiet line of numbers
   local remaining = bank_coins()
-  local deck_total = #ui.game.coins
-  local queue_count = #(ui.game.mulligan and ui.game.mulligan.hand or e.queue)
   box(70, 170, 240, 480, C.panel_dk)
   outline(70, 170, 240, 480, C.line)
   text("COIN BANK", 84, 184, ui.f20, C.gold)
-  text("NEXT " .. #remaining .. " COINS", 84, 214, ui.f16, C.face)
   for i = 1, Game.VISIBLE do
-    local x, y = 83, 255 + (i - 1) * 76
+    local x, y = 83, 236 + (i - 1) * 112
     local owned = remaining[i] -- flipped and discarded coins drop off the list
     local current = owned and ui.game.dealt and owned.uid == ui.game.dealt.uid
     local marked = owned and ui.marked[owned.uid]
-    box(x, y, 214, 64, marked and C.marked or owned and C.card or C.slot_dk)
-    outline(x, y, 214, 64, marked and C.red or current and C.gold or owned and C.line or C.ink)
+    box(x, y, 214, 84, marked and C.marked or owned and C.card or C.slot_dk)
+    outline(x, y, 214, 84, marked and C.red or current and C.gold or owned and C.line or C.ink)
     if owned then
       local tab_x = x + 130
       if marked then
@@ -137,116 +134,100 @@ local function draw_encounter()
         love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
         centered("DISCARD", tab_x, y - 9, 76, ui.f16, C.ink)
       end
-      local cost = catalog[owned.id].energy_cost or 0
-      if cost > 0 then text("E" .. cost, x + 188, y + 36, ui.f16, C.orange) end
       if ui.game.dealt and not ui.flip_animation and not ui.holding and not ui.game.mulligan then
-        ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = 214, h = 64, action = function() A.toggle_mark(owned.uid) end}
+        ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = 214, h = 84, action = function() A.toggle_mark(owned.uid) end}
       end
       if current and not marked then -- tab on the card's top edge
         color(C.gold)
         love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
         centered("CURRENT", tab_x, y - 9, 76, ui.f16, C.ink)
       end
-      coin_image(owned.id, x + 4, y + 4, 56)
-      text(catalog[owned.id].name:upper(), x + 63, y + 7, ui.f20, C.face)
-      text(math.floor(Game.probability(ui.game, owned) * 100 + .5) .. "% HEADS", x + 64, y + 36, ui.f16, C.gold)
+      coin_image(owned.id, x + 8, y + 10, 64)
+      text(catalog[owned.id].name:upper(), x + 80, y + 16, ui.f20, C.face)
+      text(math.floor(Game.probability(ui.game, owned) * 100 + .5) .. "% HEADS", x + 80, y + 46, ui.f16, C.gold)
+      local cost = catalog[owned.id].energy_cost or 0
+      if cost > 0 then text("E" .. cost, x + 188, y + 60, ui.f16, C.orange) end
     else
-      centered("EMPTY SLOT", x, y + 20, 214, ui.f16, C.muted)
+      centered("EMPTY SLOT", x, y + 34, 214, ui.f16, C.muted)
     end
   end
-  local y = 255 + Game.VISIBLE * 76 + 10
-  text("IN BANK      " .. queue_count, 84, y, ui.f16, C.face)
-  text("DRAW PILE    " .. #e.pile, 84, y + 24, ui.f16, C.face)
-  text("DISCARDED    " .. e.discards, 84, y + 48, ui.f16, C.muted)
-  text("DECK         " .. deck_total .. " / " .. Game.DECK_MAX, 84, y + 72, ui.f16, C.muted)
+  text("PILE " .. #e.pile .. "   OUT " .. e.discards .. "   DECK " .. #ui.game.coins .. "/" .. Game.DECK_MAX,
+    84, 590, ui.f16, C.muted)
 
-  -- centre: the coin on the table
-  box(330, 170, 560, 480, C.card)
-  outline(330, 170, 560, 480, C.gold)
+  -- centre: the stage. One big coin, its two effects either side, the odds under it.
+  local SX = 770
+  box(330, 170, 880, 480, C.card)
+  outline(330, 170, 880, 480, C.gold)
   local result = not ui.flip_animation and (ui.game.pending or ui.holding and ui.game.last_result or ui.game.dealt or ui.game.last_result)
   local item = result and Game.get_coin(ui.game, result.uid)
   local outcome = result and (result.final or result.result)
   centered(ui.flip_animation and "FLIPPING" or ui.game.pending and "CURRENT FLIP" or
-    ui.game.dealt and not ui.holding and "DEALT COIN" or item and "LAST FLIP" or "NO COIN", 330, 186, 560, ui.f20, C.gold)
-  color(C.panel_dk)
-  love.graphics.circle("fill", 610, 400, 150)
-  if item then
-    coin_face(610, 400, 115, nil, true, item.id)
-  elseif not ui.flip_animation then
-    coin_image("back", 460, 250, 300)
-  end
-  draw_flip_animation()
-  local shown_cost = item and catalog[item.id].energy_cost or 0
-  if shown_cost > 0 and not ui.flip_animation then text("ENERGY COST " .. shown_cost, 346, 186, ui.f16, C.orange) end
-  centered(item and catalog[item.id].name:upper() or ui.flip_animation and "DRAWING..." or
-    (not ui.game.mulligan and "NO COINS LEFT" or "MYSTERY COIN"), 330, 566, 560, ui.f32, C.face)
-  centered(item and ((outcome and outcome:upper() .. " / " or "") ..
-    math.floor(result.probability * 100 + .5) .. "% HEADS") or
-    "ONE COIN AT A TIME", 330, 606, 560, ui.f16,
-    outcome and (outcome == "Heads" and C.blue or C.red) or C.muted)
+    ui.game.dealt and not ui.holding and "DEALT COIN" or item and "LAST FLIP" or "NO COIN", 330, 186, 880, ui.f20, C.gold)
   if result and result.altered and result.raw and not ui.flip_animation then
     centered("ROLLED " .. result.raw:upper() .. "  >  " .. outcome:upper() .. "  (" .. result.altered .. ")",
-      330, 630, 560, ui.f16, C.orange)
+      330, 214, 880, ui.f16, C.orange)
+  end
+  color(C.panel_dk)
+  love.graphics.circle("fill", SX, 385, 160)
+  if item then
+    coin_face(SX, 385, 135, nil, true, item.id)
+  elseif not ui.flip_animation then
+    coin_image("back", SX - 150, 235, 300)
+  end
+  draw_flip_animation()
+
+  -- the two effects
+  local coin = item and catalog[item.id] or ui.flip_animation and catalog[ui.flip_animation.id]
+  for k, side in ipairs({"HEADS", "TAILS"}) do
+    local cx = k == 1 and 354 or 986
+    local accent = k == 1 and C.blue or C.red
+    box(cx, 320, 200, 130, coin and C.panel_dk or C.slot_dk)
+    outline(cx, 320, 200, 130, coin and accent or C.line)
+    text(side, cx + 14, 332, ui.f20, accent)
+    love.graphics.setFont(ui.f16)
+    color(coin and C.face or C.muted)
+    love.graphics.printf(coin and effect_description(k == 1 and coin.heads or coin.tails) or "?", cx + 14, 368, 172)
   end
 
-  -- right: what the coin does
-  local RX, RW = 924, 272
-  box(910, 170, 300, 480, C.panel_dk)
-  outline(910, 170, 300, 480, C.line)
-  text("CURRENT COIN", RX, 184, ui.f20, C.gold)
-  if item then
-    local coin = catalog[item.id]
-    local chance = result.probability
-    text(coin.name:upper(), RX, 214, ui.f32, C.face)
-    love.graphics.setFont(ui.f16)
-    color(C.muted)
-    love.graphics.printf(coin.description, RX, 254, RW)
-    text("HEADS " .. math.floor(chance * 100 + .5) .. "%", RX, 290, ui.f16, C.blue)
-    local tails_text = "TAILS " .. math.floor((1 - chance) * 100 + .5) .. "%"
-    text(tails_text, RX + RW - ui.f16:getWidth(tails_text), 290, ui.f16, C.red)
-    color(C.blue)
-    love.graphics.rectangle("fill", RX, 314, RW * chance, 11)
-    color(C.red)
-    love.graphics.rectangle("fill", RX + RW * chance, 314, RW * (1 - chance), 11)
-    box(RX, 340, RW, 76, C.card)
-    outline(RX, 340, RW, 76, C.blue)
-    text("HEADS", RX + 10, 347, ui.f16, C.blue)
-    text(effect_description(coin.heads), RX + 10, 376, ui.f16, C.face)
-    box(RX, 426, RW, 76, C.card)
-    outline(RX, 426, RW, 76, C.red)
-    text("TAILS", RX + 10, 433, ui.f16, C.red)
-    text(effect_description(coin.tails), RX + 10, 462, ui.f16, C.face)
-    local result_color = not outcome and C.muted or outcome == "Heads" and C.blue or C.red
-    box(RX, 512, RW, 124, C.card)
-    outline(RX, 512, RW, 124, result_color)
-    centered(outcome and outcome:upper() or "READY", RX, 532, RW, ui.f32, result_color)
-    local note, note_color = "EFFECT APPLIED", C.muted
+  -- result banner on the coin once it has landed
+  if outcome and not ui.flip_animation then
+    local note, note_color = "", C.muted
     if ui.game.dealt and not ui.holding then note = "FLIP IT OR DISCARD"
     elseif ui.game.pending then note = "APPLYING..."
-    elseif result and result.gained and result.gained > 0 then note, note_color = "+" .. result.gained .. " POINTS", C.green
-    elseif result and result.penalty and result.penalty > 0 then note, note_color = "QUOTA +" .. result.penalty, C.red
-    elseif result and result.gained then note = "NO POINTS" end
-    centered(note, RX, 586, RW, ui.f20, note_color)
-  else
-    text(ui.flip_animation and "FLIPPING..." or "UNKNOWN", RX, 216, ui.f32, C.face)
-    text("Flip to reveal a coin", RX, 262, ui.f16, C.muted)
-    text("from your stack.", RX, 284, ui.f16, C.muted)
-    for k, label in ipairs({"HEADS", "TAILS"}) do
-      local by = 340 + (k - 1) * 86
-      box(RX, by, RW, 76, C.slot_dk)
-      outline(RX, by, RW, 76, C.line)
-      text(label, RX + 10, by + 7, ui.f16, k == 1 and C.blue or C.red)
-      text("?", RX + 10, by + 36, ui.f16, C.muted)
+    elseif result.gained and result.gained > 0 then note, note_color = "+" .. result.gained .. " POINTS", C.green
+    elseif result.penalty and result.penalty > 0 then note, note_color = "QUOTA +" .. result.penalty, C.red
+    elseif result.gained then note = "NO POINTS" end
+    if not (ui.game.dealt and not ui.holding) then
+      local accent = outcome == "Heads" and C.blue or C.red
+      box(SX - 130, 456, 260, 62, C.ink)
+      outline(SX - 130, 456, 260, 62, accent)
+      centered(outcome:upper(), SX - 130, 460, 260, ui.f32, accent)
+      centered(note, SX - 130, 496, 260, ui.f16, note_color)
     end
-    box(RX, 512, RW, 124, C.slot_dk)
-    outline(RX, 512, RW, 124, C.line)
-    centered("AWAITING FLIP", RX, 564, RW, ui.f20, C.muted)
+  end
+
+  -- name, odds bar
+  local shown_cost = coin and coin.energy_cost or 0
+  centered(coin and coin.name:upper() or ui.flip_animation and "DRAWING..." or
+    (not ui.game.mulligan and "NO COINS LEFT" or "MYSTERY COIN"), 330, 548, 880, ui.f32, C.face)
+  if coin and result then
+    local chance = result.probability
+    color(C.blue)
+    love.graphics.rectangle("fill", SX - 170, 596, 340 * chance, 10)
+    color(C.red)
+    love.graphics.rectangle("fill", SX - 170 + 340 * chance, 596, 340 * (1 - chance), 10)
+    text("HEADS " .. math.floor(chance * 100 + .5) .. "%", SX - 170, 612, ui.f16, C.blue)
+    local tails_text = "TAILS " .. math.floor((1 - chance) * 100 + .5) .. "%"
+    text(tails_text, SX + 170 - ui.f16:getWidth(tails_text), 612, ui.f16, C.red)
+    if shown_cost > 0 and not ui.flip_animation then
+      centered("ENERGY COST " .. shown_cost, SX - 60, 612, 120, ui.f16, C.orange)
+    end
+  elseif not ui.flip_animation then
+    centered("ONE COIN AT A TIME", 330, 596, 880, ui.f16, C.muted)
   end
 
   -- bottom: hint on the left, buttons, then chips; no bar behind them
-  text(ui.game.mulligan and "OPENING HAND" or ui.flip_animation and "COIN IN MOTION" or ui.game.pending and "COIN FLIPPED" or
-    "YOUR MOVE", 70, 686, ui.f20, C.gold)
-  local hint = ui.holding and "Click for the next coin." or "Flip it, or mark coins and discard."
+  local hint
   if ui.game.mulligan then hint = "Mark the coins you do not want." end
   if e.cleared then hint = "Keep going for gold, or open the shop." end
   if not ui.game.dealt and not ui.game.mulligan and not ui.game.pending and not ui.flip_animation and not ui.holding then
@@ -278,9 +259,11 @@ local function draw_encounter()
       centered("ITEM", x, 698, 120, ui.f16, C.muted)
     end
   end
-  love.graphics.setFont(ui.f16)
-  color(C.muted)
-  love.graphics.printf(hint, 70, 714, 240)
+  if hint then
+    love.graphics.setFont(ui.f16)
+    color(C.muted)
+    love.graphics.printf(hint, 70, 690, 240)
+  end
   if ui.game.dealt and not ui.flip_animation and not ui.holding then
     local n = A.marked_count()
     D.icon_button(n > 0 and ("DISCARD " .. n) or "DISCARD", ui.ui_images.discard, 330, 676, 200, 64, C.red,
