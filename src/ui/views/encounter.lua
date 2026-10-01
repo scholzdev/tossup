@@ -21,41 +21,37 @@ end
 local function draw_mulligan()
   local g = ui.game
   local hand = g.mulligan.hand
-  box(292, 160, 960, 504, C.card)
-  outline(292, 160, 960, 504, C.gold)
-  centered("OPENING HAND", 292, 178, 960, ui.f32, C.gold)
-  centered("DISCARD COINS YOU DO NOT WANT  -  FREE  -  THEY STAY OUT FOR THE LEVEL", 292, 220, 960, ui.f16, C.muted)
-  local w, gap = 168, 16
-  local x0 = 292 + (960 - (#hand * w + (#hand - 1) * gap)) / 2
+  box(330, 170, 880, 480, C.panel_dk)
+  outline(330, 170, 880, 480, C.gold)
+  centered("OPENING HAND", 330, 186, 880, ui.f32, C.gold)
+  centered("DISCARD COINS YOU DO NOT WANT  -  FREE  -  THEY STAY OUT FOR THE LEVEL", 330, 226, 880, ui.f16, C.muted)
+  local w, gap = 150, 14
+  local x0 = 330 + (880 - (#hand * w + (#hand - 1) * gap)) / 2
   for i, uid in ipairs(hand) do
     local owned = Game.get_coin(g, uid)
     local def = catalog[owned.id]
     local x, y = x0 + (i - 1) * (w + gap), 262
     local marked = ui.marked[uid]
-    box(x, y, w, 330, marked and C.marked or C.panel_dk)
+    box(x, y, w, 330, marked and C.marked or C.card)
     outline(x, y, w, 330, marked and C.red or i <= Game.VISIBLE and C.gold or C.line)
-    coin_image(owned.id, x + 34, y + 12, 100)
+    coin_image(owned.id, x + 25, y + 12, 100)
     centered(def.name:upper(), x, y + 118, w, ui.f20, C.face)
     centered(math.floor(Game.probability(g, owned) * 100 + .5) .. "% HEADS", x, y + 146, w, ui.f16, C.gold)
     text("H " .. effects(def.heads), x + 10, y + 180, ui.f16, C.blue)
     text("T " .. effects(def.tails), x + 10, y + 204, ui.f16, C.red)
     local cost = def.energy_cost or 0
     if cost > 0 then text("ENERGY COST " .. cost, x + 10, y + 232, ui.f16, C.orange) end
-    if marked then centered("MARKED TO DISCARD", x, y + 280, w, ui.f16, C.red)
-    elseif i <= Game.VISIBLE then centered("PLAYS NEXT", x, y + 280, w, ui.f16, C.gold) end
+    if marked then centered("MARKED TO DISCARD", x, y + 292, w, ui.f16, C.red)
+    elseif i <= Game.VISIBLE then centered("PLAYS NEXT", x, y + 292, w, ui.f16, C.gold) end
     coin_hover(owned.id, x, y, w, 330, Game.probability(g, owned))
     ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = 330, action = function() A.toggle_mark(uid) end}
   end
-  centered("CLICK COINS TO MARK THEM, THEN PRESS DISCARD  -  GOLD FRAMES PLAY FIRST", 292, 612, 960, ui.f16, C.muted)
+  centered("CLICK COINS TO MARK THEM, THEN PRESS DISCARD  -  GOLD FRAMES PLAY FIRST", 330, 616, 880, ui.f16, C.muted)
 
-  box(28, 680, 1224, 90, C.panel_dk)
-  outline(28, 680, 1224, 90, C.line)
-  text("OPENING HAND", 45, 694, ui.f20, C.gold)
-  text("Mark the coins you do not want.", 45, 728, ui.f16, C.muted)
   local marked_count = A.marked_count()
-  D.icon_button(marked_count > 0 and ("DISCARD " .. marked_count) or "DISCARD", ui.ui_images.discard, 290, 692, 200, 64,
+  D.icon_button(marked_count > 0 and ("DISCARD " .. marked_count) or "DISCARD", ui.ui_images.discard, 330, 676, 200, 64,
     C.red, A.discard_marked, marked_count > 0 and marked_count < #hand)
-  D.icon_button("START LEVEL", ui.ui_images.start_level, 510, 692, 260, 64, C.green, function() Game.mulligan_done(g) end)
+  D.icon_button("START LEVEL", ui.ui_images.start_level, 550, 676, 260, 64, C.green, function() Game.mulligan_done(g) end)
 end
 
 local function draw_flip_animation()
@@ -69,7 +65,7 @@ local function draw_flip_animation()
   local lift = 90 * math.sin(math.min(1, progress / .75) * math.pi)
   local word = heads and "HEADS" or "TAILS"
   love.graphics.push()
-  love.graphics.translate(619, 390 - lift)
+  love.graphics.translate(610, 400 - lift)
   love.graphics.scale(squash, 1)
   color(C.white)
   local image = ui.coin_images[ui.flip_animation.id]
@@ -82,181 +78,176 @@ end
 
 local function draw_encounter()
   local e = ui.game.encounter
-  box(16, 16, 1248, 768, C.screen)
-  outline(16, 16, 1248, 768, C.gold)
+  box(0, 0, 1280, 800, C.felt_dark)
+  box(36, 36, 1208, 728, C.screen)
+  outline(36, 36, 1208, 728, C.gold)
 
-  box(28, 28, 1224, 118, C.panel_dk)
-  outline(28, 28, 1224, 118, C.line)
-  -- left: where you are
+  -- header: logo + level, points in the middle, menu and stats on the right (no boxes, like the shop)
   color(C.white)
-  love.graphics.draw(ui.ui_images.logo, 40, 26, 0, 46 / ui.ui_images.logo:getHeight(), 46 / ui.ui_images.logo:getHeight())
-  text("LEVEL " .. ui.game.encounter_index .. " / 4", 44, 78, ui.f16, C.muted)
-  text(e.boss and "THE HOUSE" or e.name:upper(), 44, 100, ui.f20, e.boss and C.red or C.face)
-  -- centre: the number that matters, points scored against the quota
+  local logo_scale = 64 / ui.ui_images.logo:getHeight()
+  love.graphics.draw(ui.ui_images.logo, 70, 46, 0, logo_scale, logo_scale)
+  text("LEVEL " .. ui.game.encounter_index .. " / 4", 70, 118, ui.f16, C.muted)
+  text(e.boss and "THE HOUSE" or e.name:upper(), 70, 136, ui.f20, e.boss and C.red or C.face)
   local met = e.quota <= 0
-  -- one caption line above the number: a status when there is one, otherwise just "POINTS"
   local caption, caption_color = "POINTS", C.muted
   if e.cleared then caption, caption_color = "QUOTA MET  -  EXTRA POINTS PAY GOLD", C.green
   elseif e.boss then caption, caption_color = "THE HOUSE  -  EVERY 5TH FLIP IS INVERTED", C.red end
-  centered(caption, 330, 36, 580, ui.f16, caption_color)
-  centered(e.scored .. " / " .. e.max_quota, 330, 56, 580, ui.f48, met and C.green or C.gold)
+  centered(caption, 330, 48, 580, ui.f16, caption_color)
+  centered(e.scored .. " / " .. e.max_quota, 330, 68, 580, ui.f48, met and C.green or C.gold)
   color(C.slot_dk)
-  love.graphics.rectangle("fill", 330, 112, 580, 22, 4)
+  love.graphics.rectangle("fill", 330, 128, 580, 20, 4)
   color(met and C.green or C.gold)
-  love.graphics.rectangle("fill", 330, 112, 580 * math.min(1, e.scored / e.max_quota), 22, 4)
-  outline(330, 112, 580, 22, C.line, 4)
+  love.graphics.rectangle("fill", 330, 128, 580 * math.min(1, e.scored / e.max_quota), 20, 4)
+  outline(330, 128, 580, 20, C.line, 4)
+  button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu)
   if e.cleared then
-    D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 940, 108, 192, 30, C.green, A.open_shop,
+    D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 930, 54, 170, 38, C.green, A.open_shop,
       not ui.flip_animation and not ui.game.pending and not ui.game.mulligan)
   end
-  -- right: what you have left
   local stats = {
-    {"COINS", tostring(Game.coins_left(ui.game)), Game.coins_left(ui.game) <= 2 and C.red or C.face},
-    {"GOLD", tostring(ui.game.player.gold), C.gold},
-    {"ENERGY", tostring(ui.game.player.energy), C.blue},
+    {"coins_left", tostring(Game.coins_left(ui.game)), Game.coins_left(ui.game) <= 2 and C.red or C.face},
+    {"gold", tostring(ui.game.player.gold), C.gold},
+    {"energy", tostring(ui.game.player.energy), C.blue},
   }
-  local stat_icons = {"coins_left", "gold", "energy"}
   for i, stat in ipairs(stats) do
-    local x = 940 + (i - 1) * 100
-    box(x, 38, 92, 62, C.card)
-    text(stat[1], x + 8, 43, ui.f16, C.muted)
-    text(stat[2], x + 8, 64, ui.f32, stat[3])
-    D.image_at(ui.ui_images[stat_icons[i]], x + 60, 42, 26)
+    local x = 950 + (i - 1) * 90
+    D.image_at(ui.ui_images[stat[1]], x, 106, 30)
+    text(stat[2], x + 36, 106, ui.f32, stat[3])
   end
-  button("MENU", 1140, 108, 92, 30, C.panel_light, A.open_menu)
 
+  -- left: coin bank
   local remaining = bank_coins()
   local deck_total = #ui.game.coins
   local queue_count = #(ui.game.mulligan and ui.game.mulligan.hand or e.queue)
-  box(28, 160, 250, 504, C.panel_dk)
-  outline(28, 160, 250, 504, C.line)
-  text("COIN BANK", 42, 175, ui.f20, C.gold)
-  text("NEXT " .. #remaining .. " COINS", 43, 207, ui.f16, C.face)
+  box(70, 170, 240, 480, C.panel_dk)
+  outline(70, 170, 240, 480, C.line)
+  text("COIN BANK", 84, 184, ui.f20, C.gold)
+  text("NEXT " .. #remaining .. " COINS", 84, 214, ui.f16, C.face)
   for i = 1, Game.VISIBLE do
-    local x, y = 41, 265 + (i - 1) * 75
+    local x, y = 83, 255 + (i - 1) * 76
     local owned = remaining[i] -- flipped and discarded coins drop off the list
     local current = owned and ui.game.dealt and owned.uid == ui.game.dealt.uid
     local marked = owned and ui.marked[owned.uid]
-    box(x, y, 224, 64, marked and C.marked or owned and C.card or C.slot_dk)
-    outline(x, y, 224, 64, marked and C.red or current and C.gold or owned and C.line or C.ink)
+    box(x, y, 214, 64, marked and C.marked or owned and C.card or C.slot_dk)
+    outline(x, y, 214, 64, marked and C.red or current and C.gold or owned and C.line or C.ink)
     if owned then
+      local tab_x = x + 130
       if marked then
         color(C.red)
-        love.graphics.rectangle("fill", x + 140, y - 9, 76, 18, 4)
-        centered("DISCARD", x + 140, y - 9, 76, ui.f16, C.ink)
+        love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
+        centered("DISCARD", tab_x, y - 9, 76, ui.f16, C.ink)
       end
       local cost = catalog[owned.id].energy_cost or 0
-      if cost > 0 then text("E" .. cost, x + 196, y + 36, ui.f16, C.orange) end
+      if cost > 0 then text("E" .. cost, x + 188, y + 36, ui.f16, C.orange) end
       if ui.game.dealt and not ui.flip_animation and not ui.holding and not ui.game.mulligan then
-        ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = 224, h = 64, action = function() A.toggle_mark(owned.uid) end}
+        ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = 214, h = 64, action = function() A.toggle_mark(owned.uid) end}
       end
       if current and not marked then -- tab on the card's top edge
         color(C.gold)
-        love.graphics.rectangle("fill", x + 140, y - 9, 76, 18, 4)
-        centered("CURRENT", x + 140, y - 9, 76, ui.f16, C.ink)
+        love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
+        centered("CURRENT", tab_x, y - 9, 76, ui.f16, C.ink)
       end
       coin_image(owned.id, x + 4, y + 4, 56)
       text(catalog[owned.id].name:upper(), x + 63, y + 7, ui.f20, C.face)
-      text(math.floor(Game.probability(ui.game, owned) * 100 + .5) .. "% HEADS",
-        x + 64, y + 36, ui.f16, C.gold)
+      text(math.floor(Game.probability(ui.game, owned) * 100 + .5) .. "% HEADS", x + 64, y + 36, ui.f16, C.gold)
     else
-      centered("EMPTY SLOT", x, y + 20, 224, ui.f16, C.muted)
+      centered("EMPTY SLOT", x, y + 20, 214, ui.f16, C.muted)
     end
   end
-  local y = 265 + Game.VISIBLE * 75 + 8
-  text("IN BANK      " .. queue_count, 43, y, ui.f16, C.face)
-  text("DRAW PILE    " .. #e.pile, 43, y + 24, ui.f16, C.face)
-  text("DISCARDED    " .. e.discards, 43, y + 48, ui.f16, C.muted)
-  text("DECK         " .. deck_total .. " / " .. Game.DECK_MAX, 43, y + 72, ui.f16, C.muted)
+  local y = 255 + Game.VISIBLE * 76 + 10
+  text("IN BANK      " .. queue_count, 84, y, ui.f16, C.face)
+  text("DRAW PILE    " .. #e.pile, 84, y + 24, ui.f16, C.face)
+  text("DISCARDED    " .. e.discards, 84, y + 48, ui.f16, C.muted)
+  text("DECK         " .. deck_total .. " / " .. Game.DECK_MAX, 84, y + 72, ui.f16, C.muted)
 
-  box(292, 160, 654, 504, C.card)
-  outline(292, 160, 654, 504, C.gold)
+  -- centre: the coin on the table
+  box(330, 170, 560, 480, C.card)
+  outline(330, 170, 560, 480, C.gold)
   local result = not ui.flip_animation and (ui.game.pending or ui.holding and ui.game.last_result or ui.game.dealt or ui.game.last_result)
   local item = result and Game.get_coin(ui.game, result.uid)
   local outcome = result and (result.final or result.result)
   centered(ui.flip_animation and "FLIPPING" or ui.game.pending and "CURRENT FLIP" or
-    ui.game.dealt and not ui.holding and "DEALT COIN" or item and "LAST FLIP" or "NO COIN", 310, 179, 618, ui.f20, C.gold)
+    ui.game.dealt and not ui.holding and "DEALT COIN" or item and "LAST FLIP" or "NO COIN", 330, 186, 560, ui.f20, C.gold)
   color(C.panel_dk)
-  love.graphics.circle("fill", 619, 390, 180)
-  color(C.panel_light)
-  love.graphics.setLineWidth(3)
-  love.graphics.circle("line", 619, 390, 180)
-  love.graphics.setLineWidth(1)
+  love.graphics.circle("fill", 610, 400, 150)
   if item then
-    coin_face(619, 390, 115, nil, true, item.id)
+    coin_face(610, 400, 115, nil, true, item.id)
   elseif not ui.flip_animation then
-    coin_image("back", 469, 240, 300)
+    coin_image("back", 460, 250, 300)
   end
   draw_flip_animation()
   local shown_cost = item and catalog[item.id].energy_cost or 0
-  if shown_cost > 0 and not ui.flip_animation then text("ENERGY COST " .. shown_cost, 310, 179, ui.f16, C.orange) end
+  if shown_cost > 0 and not ui.flip_animation then text("ENERGY COST " .. shown_cost, 346, 186, ui.f16, C.orange) end
   centered(item and catalog[item.id].name:upper() or ui.flip_animation and "DRAWING..." or
-    (not ui.game.mulligan and "NO COINS LEFT" or "MYSTERY COIN"), 310, 578, 618, ui.f32, C.face)
+    (not ui.game.mulligan and "NO COINS LEFT" or "MYSTERY COIN"), 330, 566, 560, ui.f32, C.face)
   centered(item and ((outcome and outcome:upper() .. " / " or "") ..
     math.floor(result.probability * 100 + .5) .. "% HEADS") or
-    "ONE COIN AT A TIME", 310, 617, 618, ui.f16,
+    "ONE COIN AT A TIME", 330, 606, 560, ui.f16,
     outcome and (outcome == "Heads" and C.blue or C.red) or C.muted)
   if result and result.altered and result.raw and not ui.flip_animation then
     centered("ROLLED " .. result.raw:upper() .. "  >  " .. outcome:upper() .. "  (" .. result.altered .. ")",
-      310, 642, 618, ui.f16, C.orange)
+      330, 630, 560, ui.f16, C.orange)
   end
 
-  box(960, 160, 292, 504, C.panel_dk)
-  outline(960, 160, 292, 504, C.line)
-  text("CURRENT COIN", 974, 175, ui.f20, C.gold)
+  -- right: what the coin does
+  local RX, RW = 924, 272
+  box(910, 170, 300, 480, C.panel_dk)
+  outline(910, 170, 300, 480, C.line)
+  text("CURRENT COIN", RX, 184, ui.f20, C.gold)
   if item then
     local coin = catalog[item.id]
     local chance = result.probability
-    local mx, my = ui.mouse()
-    text(coin.name:upper(), 975, 210, ui.f32, C.face)
-    text(coin.description, 975, 253, ui.f16, C.muted)
-    text("HEADS " .. math.floor(chance * 100 + .5) .. "%", 975, 287, ui.f16, C.blue)
-    text("TAILS " .. math.floor((1 - chance) * 100 + .5) .. "%", 1135, 287, ui.f16, C.red)
+    text(coin.name:upper(), RX, 214, ui.f32, C.face)
+    love.graphics.setFont(ui.f16)
+    color(C.muted)
+    love.graphics.printf(coin.description, RX, 254, RW)
+    text("HEADS " .. math.floor(chance * 100 + .5) .. "%", RX, 290, ui.f16, C.blue)
+    local tails_text = "TAILS " .. math.floor((1 - chance) * 100 + .5) .. "%"
+    text(tails_text, RX + RW - ui.f16:getWidth(tails_text), 290, ui.f16, C.red)
     color(C.blue)
-    love.graphics.rectangle("fill", 975, 314, 262 * chance, 11)
+    love.graphics.rectangle("fill", RX, 314, RW * chance, 11)
     color(C.red)
-    love.graphics.rectangle("fill", 975 + 262 * chance, 314, 262 * (1 - chance), 11)
-    box(973, 343, 266, 76, C.card)
-    outline(973, 343, 266, 76, C.blue)
-    text("HEADS", 984, 350, ui.f16, C.blue)
-    text(effect_description(coin.heads), 984, 379, ui.f16, C.face)
-    box(973, 429, 266, 76, C.card)
-    outline(973, 429, 266, 76, C.red)
-    text("TAILS", 984, 436, ui.f16, C.red)
-    text(effect_description(coin.tails), 984, 465, ui.f16, C.face)
+    love.graphics.rectangle("fill", RX + RW * chance, 314, RW * (1 - chance), 11)
+    box(RX, 340, RW, 76, C.card)
+    outline(RX, 340, RW, 76, C.blue)
+    text("HEADS", RX + 10, 347, ui.f16, C.blue)
+    text(effect_description(coin.heads), RX + 10, 376, ui.f16, C.face)
+    box(RX, 426, RW, 76, C.card)
+    outline(RX, 426, RW, 76, C.red)
+    text("TAILS", RX + 10, 433, ui.f16, C.red)
+    text(effect_description(coin.tails), RX + 10, 462, ui.f16, C.face)
     local result_color = not outcome and C.muted or outcome == "Heads" and C.blue or C.red
-    box(973, 527, 266, 124, C.card)
-    outline(973, 527, 266, 124, result_color)
-    centered(outcome and outcome:upper() or "READY", 980, 546, 252, ui.f32, result_color)
+    box(RX, 512, RW, 124, C.card)
+    outline(RX, 512, RW, 124, result_color)
+    centered(outcome and outcome:upper() or "READY", RX, 532, RW, ui.f32, result_color)
     local note, note_color = "EFFECT APPLIED", C.muted
     if ui.game.dealt and not ui.holding then note = "FLIP IT OR DISCARD"
     elseif ui.game.pending then note = "APPLYING..."
     elseif result and result.gained and result.gained > 0 then note, note_color = "+" .. result.gained .. " POINTS", C.green
     elseif result and result.penalty and result.penalty > 0 then note, note_color = "QUOTA +" .. result.penalty, C.red
     elseif result and result.gained then note = "NO POINTS" end
-    centered(note, 980, 600, 252, ui.f20, note_color)
+    centered(note, RX, 586, RW, ui.f20, note_color)
   else
-    text(ui.flip_animation and "FLIPPING..." or "UNKNOWN", 975, 213, ui.f32, C.face)
-    text("Flip to reveal a coin", 975, 261, ui.f16, C.muted)
-    text("from your stack.", 975, 283, ui.f16, C.muted)
-    box(973, 343, 266, 76, C.slot_dk)
-    outline(973, 343, 266, 76, C.line)
-    text("HEADS", 984, 350, ui.f16, C.blue)
-    text("?", 984, 379, ui.f16, C.muted)
-    box(973, 429, 266, 76, C.slot_dk)
-    outline(973, 429, 266, 76, C.line)
-    text("TAILS", 984, 436, ui.f16, C.red)
-    text("?", 984, 465, ui.f16, C.muted)
-    box(973, 527, 266, 124, C.slot_dk)
-    outline(973, 527, 266, 124, C.line)
-    centered("AWAITING FLIP", 980, 571, 252, ui.f20, C.muted)
+    text(ui.flip_animation and "FLIPPING..." or "UNKNOWN", RX, 216, ui.f32, C.face)
+    text("Flip to reveal a coin", RX, 262, ui.f16, C.muted)
+    text("from your stack.", RX, 284, ui.f16, C.muted)
+    for k, label in ipairs({"HEADS", "TAILS"}) do
+      local by = 340 + (k - 1) * 86
+      box(RX, by, RW, 76, C.slot_dk)
+      outline(RX, by, RW, 76, C.line)
+      text(label, RX + 10, by + 7, ui.f16, k == 1 and C.blue or C.red)
+      text("?", RX + 10, by + 36, ui.f16, C.muted)
+    end
+    box(RX, 512, RW, 124, C.slot_dk)
+    outline(RX, 512, RW, 124, C.line)
+    centered("AWAITING FLIP", RX, 564, RW, ui.f20, C.muted)
   end
 
-  box(28, 680, 1224, 90, C.panel_dk)
-  outline(28, 680, 1224, 90, C.line)
-  text(ui.flip_animation and "COIN IN MOTION" or ui.game.pending and "COIN FLIPPED" or
-    "YOUR MOVE", 45, 694, ui.f20, C.gold)
+  -- bottom: hint on the left, buttons, then chips; no bar behind them
+  text(ui.game.mulligan and "OPENING HAND" or ui.flip_animation and "COIN IN MOTION" or ui.game.pending and "COIN FLIPPED" or
+    "YOUR MOVE", 70, 686, ui.f20, C.gold)
   local hint = ui.holding and "Click for the next coin." or "Flip it, or mark coins and discard."
+  if ui.game.mulligan then hint = "Mark the coins you do not want." end
   if e.cleared then hint = "Keep going for gold, or open the shop." end
   if not ui.game.dealt and not ui.game.mulligan and not ui.game.pending and not ui.flip_animation and not ui.holding then
     hint = Game.can_exchange(ui.game) and "No coins left: exchange?" or "No coins left."
@@ -270,27 +261,29 @@ local function draw_encounter()
   local mx, my = ui.mouse()
   local usable = Items.can_use(ui.game) and not ui.flip_animation and not ui.holding
   for slot = 1, Items.MAX do
-    local x = 790 + (slot - 1) * 152
+    local x = 830 + (slot - 1) * 128
     local id = ui.game.items[slot]
     if id then
       local def = ui.item_catalog[id]
-      local hover = usable and mx >= x and mx <= x + 140 and my >= 692 and my <= 756
-      box(x, 692 + (hover and -3 or 0), 140, 64, usable and C.card or C.slot_dk)
-      outline(x, 692 + (hover and -3 or 0), 140, 64, usable and C.orange or C.line)
-      D.image_at(ui.item_images[id], x + 8, 702 + (hover and -3 or 0), 44)
-      text(def.short, x + 58, 716 + (hover and -3 or 0), ui.f16, usable and C.face or C.muted)
-      if usable then ui.buttons[#ui.buttons + 1] = {x = x, y = 692, w = 140, h = 64, action = function() A.use_item(slot) end} end
-      if mx >= x and mx <= x + 140 and my >= 692 and my <= 756 then hint = def.description end
+      local hover = usable and mx >= x and mx <= x + 120 and my >= 676 and my <= 740
+      box(x, 676 + (hover and -3 or 0), 120, 64, usable and C.card or C.slot_dk)
+      outline(x, 676 + (hover and -3 or 0), 120, 64, usable and C.orange or C.line)
+      D.image_at(ui.item_images[id], x + 6, 686 + (hover and -3 or 0), 44)
+      text(def.short, x + 54, 700 + (hover and -3 or 0), ui.f16, usable and C.face or C.muted)
+      if usable then ui.buttons[#ui.buttons + 1] = {x = x, y = 676, w = 120, h = 64, action = function() A.use_item(slot) end} end
+      if mx >= x and mx <= x + 120 and my >= 676 and my <= 740 then hint = def.description end
     else
-      box(x, 692, 140, 64, C.slot_dk)
-      outline(x, 692, 140, 64, C.line)
-      centered("ITEM", x, 714, 140, ui.f16, C.muted)
+      box(x, 676, 120, 64, C.slot_dk)
+      outline(x, 676, 120, 64, C.line)
+      centered("ITEM", x, 698, 120, ui.f16, C.muted)
     end
   end
-  text(hint, 45, 728, ui.f16, C.muted)
+  love.graphics.setFont(ui.f16)
+  color(C.muted)
+  love.graphics.printf(hint, 70, 714, 240)
   if ui.game.dealt and not ui.flip_animation and not ui.holding then
     local n = A.marked_count()
-    D.icon_button(n > 0 and ("DISCARD " .. n) or "DISCARD", ui.ui_images.discard, 290, 692, 200, 64, C.red,
+    D.icon_button(n > 0 and ("DISCARD " .. n) or "DISCARD", ui.ui_images.discard, 330, 676, 200, 64, C.red,
       A.discard_marked, n > 0)
   end
   local empty_stack = not ui.game.dealt and not ui.game.mulligan and not ui.game.pending
@@ -299,9 +292,9 @@ local function draw_encounter()
     -- no coins left: exchange two played Normal coins for some back, give up, or (cleared) open the shop
     if Game.can_exchange(ui.game) then
       D.icon_button("PAY " .. Game.exchange_cost(ui.game) .. " > " .. Game.EXCHANGE_GAIN .. " COINS", ui.ui_images.exchange,
-        510, 692, 260, 64, C.green, A.exchange)
+        550, 676, 260, 64, C.green, A.exchange)
     end
-    if not e.cleared then D.icon_button("GIVE UP", ui.ui_images.give_up, 290, 692, 200, 64, C.red, A.give_up) end
+    if not e.cleared then D.icon_button("GIVE UP", ui.ui_images.give_up, 330, 676, 200, 64, C.red, A.give_up) end
   else
     local flip_label = ui.flip_animation and "FLIPPING..." or ui.holding and "NEXT COIN" or "FLIP"
     local can_act = ui.game.dealt ~= nil and not ui.flip_animation and (ui.holding or not ui.game.pending)
@@ -309,7 +302,7 @@ local function draw_encounter()
       flip_label = "NEED " .. Game.flip_cost(ui.game, ui.game.dealt.uid) .. " ENERGY"
       can_act = false
     end
-    D.icon_button(flip_label, ui.holding and ui.ui_images.next_coin or ui.ui_images.flip, 510, 692, 260, 64, C.blue,
+    D.icon_button(flip_label, ui.holding and ui.ui_images.next_coin or ui.ui_images.flip, 550, 676, 260, 64, C.blue,
       A.next_or_flip, can_act)
   end
   if ui.game.mulligan then draw_mulligan() end -- covers the play area and takes over the bottom bar
