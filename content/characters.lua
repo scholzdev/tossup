@@ -8,7 +8,8 @@ return {
     deck = {"normal", "normal", "normal", "normal", "sword"},
     pool = {"normal", "sword", "dagger"},
     locked = {{"hammer", 3}, {"blood", 4}, {"vampire", 4}, {"chain", 5}, {"cursed", 5}, {"fuse", 5},
-      {"focus", 6}, {"martyr", 6}, {"snowball", 8}},
+      {"focus", 6}, {"martyr", 6}, {"snowball", 8},
+      {"megaphone", 5}, {"pot", 4}},
   },
   seer = {
     name = "The Seer", description = "Risk and changing odds",
@@ -16,7 +17,8 @@ return {
     deck = {"normal", "normal", "normal", "focus", "spark"},
     pool = {"normal", "cursed", "gambler", "spark", "focus", "lucky"},
     locked = {{"dagger", 3}, {"contrarian", 4}, {"lucky_seven", 4}, {"blood", 4},
-      {"hourglass", 5}, {"jester", 5}, {"echo", 6}, {"phoenix", 6}},
+      {"hourglass", 5}, {"jester", 5}, {"echo", 6}, {"phoenix", 6},
+      {"mirror", 5}, {"domino", 6}, {"twin", 5}},
   },
   trader = {
     name = "The Trader", description = "Gold and energy",
@@ -24,6 +26,7 @@ return {
     deck = {"normal", "normal", "normal", "loaded", "dagger"},
     pool = {"normal", "copper", "loaded", "dagger", "sword"},
     locked = {{"spark", 3}, {"bank", 4}, {"miser", 4}, {"hammer", 4}, {"bounty", 5},
-      {"flock", 5}, {"momentum", 5}, {"capacitor", 6}},
+      {"flock", 5}, {"momentum", 5}, {"capacitor", 6},
+      {"cheerleader", 4}, {"megaphone", 5}},
   },
 }

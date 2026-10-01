@@ -172,6 +172,16 @@ local function draw_encounter()
   text(D.L("PILE %d   OUT %d   DECK %d/%d", #e.pile, e.discards, #ui.game.coins, Game.DECK_MAX),
     84, 590, ui.f16, C.muted)
 
+  -- active buffs ("next N coins ...") so they are never invisible
+  for i, buff in ipairs(e.buffs) do
+    local label
+    if buff.kind == "mult" then label = D.L("BUFF x%d  (%d LEFT)", buff.amount, buff.left)
+    elseif buff.kind == "odds" then label = D.L("BUFF +%d%% HEADS  (%d LEFT)", math.floor(buff.amount * 100 + .5), buff.left)
+    elseif buff.kind == "swap" then label = D.L("BUFF: NEXT COIN SWAPS SIDES")
+    else label = D.L("BUFF: NEXT COIN LANDS HEADS") end
+    if i <= 2 then text(label, 84, 612 + (i - 1) * 18, ui.f16, C.orange) end
+  end
+
   -- centre: the stage. One big coin, its two effects either side, the odds under it.
   local SX = 770
   box(330, 170, 880, 480, C.card)

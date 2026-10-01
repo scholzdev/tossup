@@ -66,6 +66,11 @@ return {
   ["REPLAY"] = "NOCHMAL", ["% HEADS"] = "% KOPF", ["Score %d points"] = "Erzielt %d Punkte", ["Gain %d gold"] = "Erhalte %d Gold",
   ["Gain %d energy"] = "Erhalte %d Energie", ["Quota +%d"] = "Ziel +%d", ["Goes back into the pile"] = "Kommt zurück auf den Stapel",
   ["Gain %d%% Heads this level"] = "+%d %% Kopf in diesem Level",
+  ["NEXT %d x%d"] = "NÄCHSTE %d x%d", ["NEXT %d +%d%%"] = "NÄCHSTE %d +%d%%", ["NEXT: SWAP"] = "NÄCHSTE: TAUSCH", ["NEXT: HEADS"] = "NÄCHSTE: KOPF",
+  ["Next %d coins pay x%d"] = "Die nächsten %d Münzen zahlen x%d", ["Next coin: +%d%% Heads"] = "Nächste Münze: +%d %% Kopf",
+  ["Next %d coins: +%d%% Heads"] = "Nächste %d Münzen: +%d %% Kopf", ["Next coin uses its other side"] = "Nächste Münze nutzt ihre andere Seite",
+  ["Next coin lands Heads"] = "Nächste Münze landet auf Kopf", ["BUFF"] = "BONUS", ["BUFF x%d  (%d LEFT)"] = "BONUS x%d  (%d ÜBRIG)", ["BUFF +%d%% HEADS  (%d LEFT)"] = "BONUS +%d %% KOPF  (%d ÜBRIG)",
+  ["BUFF: NEXT COIN SWAPS SIDES"] = "BONUS: NÄCHSTE TAUSCHT SEITE", ["BUFF: NEXT COIN LANDS HEADS"] = "BONUS: NÄCHSTE LANDET AUF KOPF",
   ["HEADS %d%%  /  TAILS %d%%"] = "KOPF %d%%  /  ZAHL %d%%", ["  -  COSTS %d ENERGY"] = "  -  KOSTET %d ENERGIE",
   ["LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"] = "GESPERRT  -  KAUFE SIE IM SHOP, UM SIE FREIZUSCHALTEN",
   -- how to play
@@ -128,6 +133,12 @@ return {
     martyr = {name = "Märtyrer", description = "Zahl: Ziel +3. Kopf: 4 Punkte, +1 je Zahl in diesem Level."},
     bounty = {name = "Kopfgeld", description = "Zahlt 1 Gold für je 2 Punkte, die sie erzielt."},
     jester = {name = "Narr", description = "Kopf oder Zahl, sie tut etwas Zufälliges."},
+    megaphone = {name = "Megafon", description = "Kopf: 2 Punkte, und die nächsten 2 Münzen zahlen doppelt."},
+    cheerleader = {name = "Cheerleaderin", description = "Kopf: 2 Punkte, nächste 2 Münzen +20 % Kopf. Zahl: nächste Münze +20 %."},
+    mirror = {name = "Spiegel", description = "Kopf: Die nächste Münze nutzt die Effekte ihrer anderen Seite. Zahl: 2 Punkte."},
+    twin = {name = "Zwilling", description = "Landet immer wie der vorherige Wurf."},
+    pot = {name = "Topf", description = "Kopf: Punkte gleich den bisherigen Würfen in diesem Level (max. 12)."},
+    domino = {name = "Domino", description = "Kopf: 2 Punkte, und die nächste Münze landet auf Kopf. Zahl: Ziel +1."},
     flock = {name = "Schwarm", description = "+10 % Kopf für jeden anderen Schwarm in deiner Bank."},
   },
   items = {
@@ -143,5 +154,6 @@ return {
     magnet = {name = "Magnet", description = "Je 3 Kopf in Folge: +5 % Kopf in diesem Level"},
     penny = {name = "Glückspfennig", description = "Die erste Zahl jedes Levels wird zu Kopf"},
     clock = {name = "Kaputte Uhr", description = "Jeder 10. Wurf ist Kopf"},
+    metronome = {name = "Metronom", description = "Jeder 4. Wurf zahlt doppelt"},
   },
 }

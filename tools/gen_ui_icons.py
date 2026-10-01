@@ -42,6 +42,7 @@ RELICS = {
     "magnet": "c0463c",
     "penny": "b9784a",
     "clock": "c4a13a",
+    "metronome": "6f8fc4",
 }
 
 
@@ -138,6 +139,10 @@ def emblem(d, name):
         d.line(points([(64, 64), (64, 44)]), fill=IVORY, width=p(5))
         d.line(points([(64, 64), (78, 70)]), fill=IVORY, width=p(5))
         d.line(points([(80, 34), (72, 48), (82, 54), (74, 68)]), fill=DARK, width=p(3))
+    elif name == "metronome":  # a pyramid with a swinging arm
+        d.polygon(points([(48, 92), (80, 92), (72, 38), (56, 38)]), fill=IVORY)
+        d.line(points([(64, 84), (80, 42)]), fill=DARK, width=p(4))
+        d.ellipse(box(74, 40, 86, 52), fill=DARK)
     else:
         raise ValueError(name)
 

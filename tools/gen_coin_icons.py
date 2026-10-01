@@ -48,6 +48,12 @@ COLORS = {
     "snowball": "8fb8d8",
     "gambler": "b0475f",
     "momentum": "d98a3d",
+    "megaphone": "d4682e",
+    "cheerleader": "d9609a",
+    "mirror": "86b8c9",
+    "twin": "7a6fb3",
+    "pot": "a67c4b",
+    "domino": "5c6b7a",
 }
 
 
@@ -199,6 +205,31 @@ def emblem(image, coin_id):
         for x, y in ((44, 58), (64, 50), (84, 58)):
             d.ellipse(box(x - 9, y - 9, x + 9, y + 9), fill=ivory)
             d.line(points([(x, y + 9), (x, y + 30)]), fill=ivory, width=p(4))
+    elif coin_id == "megaphone":  # a cone with sound arcs
+        d.polygon(points([(40, 58), (70, 40), (70, 88), (40, 70)]), fill=ivory)
+        d.rectangle(box(34, 58, 44, 70), fill=ivory)
+        d.arc(box(66, 46, 90, 82), 300, 60, fill=ivory, width=p(4))
+        d.arc(box(66, 38, 104, 90), 300, 60, fill=ivory, width=p(4))
+    elif coin_id == "cheerleader":  # three chevrons pointing up: a boost
+        for y in (42, 58, 74):
+            d.line(points([(44, y + 14), (64, y), (84, y + 14)]), fill=ivory, width=p(6))
+    elif coin_id == "mirror":  # an oval mirror with two shine strokes
+        d.ellipse(box(42, 32, 86, 90), outline=ivory, width=width)
+        d.line(points([(52, 54), (62, 44)]), fill=ivory, width=p(4))
+        d.line(points([(52, 66), (70, 48)]), fill=ivory, width=p(4))
+        d.rectangle(box(61, 90, 67, 100), fill=ivory)
+    elif coin_id == "twin":  # two overlapping rings
+        d.ellipse(box(36, 48, 74, 86), outline=ivory, width=width)
+        d.ellipse(box(54, 48, 92, 86), outline=ivory, width=width)
+    elif coin_id == "pot":  # a pot full of coins
+        d.polygon(points([(40, 62), (88, 62), (82, 94), (46, 94)]), fill=ivory)
+        for x in (50, 64, 78):
+            d.ellipse(box(x - 8, 48, x + 8, 64), fill=ivory, outline=dark, width=p(2))
+    elif coin_id == "domino":  # a domino tile
+        d.rounded_rectangle(box(48, 30, 80, 98), radius=p(5), fill=ivory)
+        d.line(points([(48, 64), (80, 64)]), fill=dark, width=p(3))
+        for x, y in ((58, 44), (70, 54), (58, 78), (70, 88)):
+            d.ellipse(box(x - 4, y - 4, x + 4, y + 4), fill=dark)
     elif coin_id == "back":
         d.arc(box(44, 37, 84, 76), 190, 350, fill=ivory, width=p(8))
         d.line(points([(83, 59), (64, 77), (64, 82)]), fill=ivory, width=p(8))

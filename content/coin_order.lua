@@ -1,2 +1,2 @@
 -- Display order of all coins (collection screen). Add new coin ids here and in content/coins.lua.
-return {"normal", "copper", "sword", "lucky", "cursed", "loaded", "dagger", "hammer", "blood", "spark", "focus", "snowball", "gambler", "momentum", "echo", "vampire", "miser", "fuse", "phoenix", "contrarian", "chain", "bank", "lucky_seven", "hourglass", "capacitor", "martyr", "bounty", "jester", "flock"}
+return {"normal", "copper", "sword", "lucky", "cursed", "loaded", "dagger", "hammer", "blood", "spark", "focus", "snowball", "gambler", "momentum", "echo", "vampire", "miser", "fuse", "phoenix", "contrarian", "chain", "bank", "lucky_seven", "hourglass", "capacitor", "martyr", "bounty", "jester", "flock", "megaphone", "cheerleader", "mirror", "twin", "pot", "domino"}

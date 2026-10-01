@@ -115,7 +115,13 @@ end
 function Game.probability(game, item)
   local bonus = game.phase == "ENCOUNTER" and game.encounter and game.encounter.bonus[item.uid] or 0
   local magnet = game.phase == "ENCOUNTER" and game.encounter and game.encounter.magnet or 0
-  local p = catalog[item.id].probability + item.bonus + bonus + magnet
+  local boost = 0
+  if game.phase == "ENCOUNTER" and game.encounter then
+    for _, buff in ipairs(game.encounter.buffs) do
+      if buff.kind == "odds" and not buff.fresh then boost = boost + buff.amount end
+    end
+  end
+  local p = catalog[item.id].probability + item.bonus + bonus + magnet + boost
   return math.max(0, math.min(1, Hooks.odds(game, item, p)))
 end
 
@@ -148,7 +154,7 @@ local function start_encounter(game)
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = quota, max_quota = quota,
     boss = stage.boss or false, payout = stage.payout,
-    flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0,
+    flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {},
     returned = 0, played = {}, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
   game.pending = nil
@@ -277,11 +283,37 @@ local function finalize(game, item, flip)
   flip.result = final
 end
 
+-- Buffs: "the next N coins ..." effects. kind: "mult" (x amount on score and gold), "odds" (+amount Heads),
+-- "swap" (use the other side's effects), "heads" (guaranteed Heads). A buff made while a coin resolves is
+-- "fresh" and starts with the following coin; every resolved coin uses up one of the remaining coins.
+function Game.add_buff(game, kind, amount, coins)
+  local list = game.encounter.buffs
+  list[#list + 1] = {kind = kind, amount = amount, left = coins or 1, fresh = true}
+end
+
+local function buff_active(game, kind)
+  local e = game.encounter
+  for _, buff in ipairs(e.buffs) do
+    if buff.kind == kind and not buff.fresh then return buff end
+  end
+end
+
+local function tick_buffs(game)
+  local list, kept = game.encounter.buffs, {}
+  for _, buff in ipairs(list) do
+    if buff.fresh then buff.fresh = false
+    else buff.left = buff.left - 1 end
+    if buff.left > 0 then kept[#kept + 1] = buff end
+  end
+  game.encounter.buffs = kept
+end
+
 local function roll(game, item, flip)
   flip.raw = RNG.random(game) < flip.probability and "Heads" or "Tails"
   flip.result = flip.raw
   flip.forced = nil
   flip.altered = nil
+  if buff_active(game, "heads") then flip.result = "Heads" flip.altered = "BUFF" end
   Signal.emit("coin_flip", {game = game, inst = item, flip = flip})
   finalize(game, item, flip)
 end
@@ -383,6 +415,18 @@ local function apply_effect(game, item, effect)
   elseif effect.type == "energy" then
     p.energy = p.energy + effect.amount
     return "+" .. effect.amount .. " energy"
+  elseif effect.type == "next_mult" then
+    Game.add_buff(game, "mult", effect.amount, effect.coins)
+    return "next " .. effect.coins .. " coins x" .. effect.amount
+  elseif effect.type == "next_odds" then
+    Game.add_buff(game, "odds", effect.amount, effect.coins)
+    return "next " .. effect.coins .. " coins +" .. math.floor(effect.amount * 100 + .5) .. "% Heads"
+  elseif effect.type == "next_swap" then
+    Game.add_buff(game, "swap", 0, effect.coins)
+    return "next coin uses its other side"
+  elseif effect.type == "next_heads" then
+    Game.add_buff(game, "heads", 0, effect.coins)
+    return "next coin lands Heads"
   elseif effect.type == "penalty" then
     e.quota = e.quota + effect.amount -- a penalty moves the goalposts
     e.max_quota = e.max_quota + effect.amount
@@ -461,10 +505,20 @@ function Game.resolve(game)
   e.streak = final == "Heads" and e.streak + 1 or 0
   -- hooks get a private copy of the effect list so they can edit it without touching the def
   local res = {result = final, raw = result.raw, effects = {}}
-  for i, effect in ipairs(catalog[item.id][string.lower(final)]) do
-    res.effects[i] = {type = effect.type, amount = effect.amount}
+  local side = buff_active(game, "swap") and (final == "Heads" and "tails" or "heads") or string.lower(final)
+  for i, effect in ipairs(catalog[item.id][side]) do
+    res.effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins}
   end
   Signal.emit("coin_resolve", {game = game, inst = item, res = res})
+  local multiplier = 1
+  for _, buff in ipairs(e.buffs) do
+    if buff.kind == "mult" and not buff.fresh then multiplier = multiplier * buff.amount end
+  end
+  if multiplier ~= 1 then -- a "next coins pay double" buff doubles points and gold
+    for _, effect in ipairs(res.effects) do
+      if effect.type == "score" or effect.type == "gold" then effect.amount = math.floor(effect.amount * multiplier) end
+    end
+  end
   local messages = {}
   local scored_before, quota_total_before = e.scored, e.max_quota
   for _, effect in ipairs(res.effects) do
@@ -472,6 +526,7 @@ function Game.resolve(game)
     messages[#messages + 1] = text
     Signal.emit("effect_applied", {game = game, inst = item, effect = effect, text = text})
   end
+  tick_buffs(game)
   result.gained = e.scored - scored_before -- for the UI: what this flip was worth
   result.penalty = e.max_quota - quota_total_before
   Signal.emit("coin_resolved", {game = game, inst = item, res = res})
