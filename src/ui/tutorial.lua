@@ -29,6 +29,8 @@ local STEPS = {
   {title = "THE RESULT", rect = {330, 450, 880, 300},
    text = "The banner shows the side it landed on and the points you got. Press NEXT COIN to continue.",
    wait = function(g) return g.last_result ~= nil and not ui.holding end, hint = "PRESS NEXT COIN"},
+  {title = "CHIPS", rect = {830, 676, 376, 64},
+   text = "These three slots hold CHIPS: one-use helpers you buy in the shop. Click one while a coin is in play to use it, for example an Energy Drink for 2 more energy. You can hold three."},
   {title = "DISCARD", rect = {330, 676, 200, 64},
    text = "Don't like the coin in play? DISCARD throws it away for the level, for free, but you lose that flip. Only the current coin can be discarded."},
   {title = "FLIP AGAIN", rect = {550, 676, 260, 64},
@@ -48,8 +50,13 @@ local STEPS = {
   {title = "NEXT ROUND", rect = {1000, 586, 220, 170},
    text = "Press the red button when you are ready for the next level.",
    wait = function(g) return g.phase == "ENCOUNTER" end, hint = "PRESS NEXT ROUND"},
+  {title = "A NEW MODIFIER", rect = {330, 540, 300, 110},
+   enter = function(g) if g.mulligan then Game.mulligan_done(g) end end,
+   text = "From level 2 on, every level has a MODIFIER: a bonus or a twist for this level only. Read it here before you flip."},
+  {title = "RUNNING OUT OF COINS", rect = {930, 96, 100, 46},
+   text = "If your coins run out before the quota is met, pay gold to EXCHANGE: three played coins come back, at most 3 times per level. After that the run is over."},
   {title = "THAT'S IT", rect = {330, 280, 620, 200},
-   text = "Beat four levels and the boss. Build a deck that scores, keep your combos going, and spend your gold well. Good luck!"},
+   text = "Beat four levels and the boss. Build a deck that scores, keep your combos going, and spend your gold well. Win a run to unlock the next character. Good luck!"},
 }
 
 -- Start the tutorial on a fresh throwaway run.
@@ -57,6 +64,7 @@ function Tutorial.start()
   local game = Game.new(7, "blade", {}, {"normal", "normal", "normal", "normal", "normal"}, true)
   game.tutorial = true -- not logged, no tokens, no collection
   game.tutorial_heads = 3 -- the first flips land Heads, so the tutorial always works
+  game.items = {"energy_drink"} -- so the chip slots are not empty
   game.encounter.quota, game.encounter.max_quota = 2, 2
   game.paused = false
   ui.game, ui.flip_animation, ui.holding, ui.marked, ui.resolve_timer = game, nil, false, {}, 0
@@ -76,7 +84,9 @@ function Tutorial.next()
   local t = ui.tutorial
   if not t then return end
   t.step = t.step + 1
-  if t.step > #STEPS then Tutorial.finish() end
+  if t.step > #STEPS then Tutorial.finish() return end
+  local entered = STEPS[t.step]
+  if entered.enter and ui.game then entered.enter(ui.game) end -- a step may set the scene (start the next level)
 end
 
 -- Steps that wait for the player move on by themselves once the thing is done.

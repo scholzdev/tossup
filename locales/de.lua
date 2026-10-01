@@ -116,8 +116,11 @@ return {
   ["With a coin selected below: the ODDS TUNER adds Heads chance, COIN REMOVAL drops a weak coin."] = "Mit einer unten gewählten Münze: Der CHANCEN-TUNER erhöht die Kopf-Chance, die MÜNZ-ENTFERNUNG wirft eine schwache Münze raus.",
   ["YOUR DECK"] = "DEIN DECK", ["Your coins. Click one to select it for the tune-ups. The dark slots on the right are extra deck slots: 5 gold each, up to ten."] = "Deine Münzen. Klicke eine an, um sie für die Upgrades zu wählen. Die dunklen Plätze rechts sind zusätzliche Deckplätze: 5 Gold pro Platz, bis zu zehn.",
   ["NEXT ROUND"] = "NÄCHSTE RUNDE", ["Press the red button when you are ready for the next level."] = "Drücke den roten Knopf, wenn du für das nächste Level bereit bist.",
+  ["CHIPS"] = "CHIPS", ["These three slots hold CHIPS: one-use helpers you buy in the shop. Click one while a coin is in play to use it, for example an Energy Drink for 2 more energy. You can hold three."] = "In diesen drei Plätzen liegen CHIPS: Einweg-Helfer aus dem Shop. Klicke einen an, während eine Münze im Spiel ist, zum Beispiel einen Energydrink für 2 Energie mehr. Du kannst drei halten.",
+  ["A NEW MODIFIER"] = "EIN NEUER MODIFIKATOR", ["From level 2 on, every level has a MODIFIER: a bonus or a twist for this level only. Read it here before you flip."] = "Ab Level 2 hat jedes Level einen MODIFIKATOR: einen Bonus oder eine Besonderheit nur für dieses Level. Lies ihn hier, bevor du wirfst.",
+  ["RUNNING OUT OF COINS"] = "MÜNZEN GEHEN AUS", ["If your coins run out before the quota is met, pay gold to EXCHANGE: three played coins come back, at most 3 times per level. After that the run is over."] = "Wenn deine Münzen ausgehen, bevor das Ziel erreicht ist, zahle Gold zum TAUSCHEN: Drei gespielte Münzen kommen zurück, höchstens 3-mal pro Level. Danach ist der Lauf vorbei.",
   ["THAT'S IT"] = "DAS WAR'S",
-  ["Beat four levels and the boss. Build a deck that scores, keep your combos going, and spend your gold well. Good luck!"] = "Schlage vier Level und den Boss. Baue ein Deck, das punktet, halte deine Serien am Laufen und gib dein Gold klug aus. Viel Glück!",
+  ["Beat four levels and the boss. Build a deck that scores, keep your combos going, and spend your gold well. Win a run to unlock the next character. Good luck!"] = "Schlage vier Level und den Boss. Baue ein Deck, das punktet, halte deine Serien am Laufen und gib dein Gold klug aus. Gewinne einen Lauf, um den nächsten Charakter freizuschalten. Viel Glück!",
 
   -- how to play
   ["THE GOAL"] = "DAS ZIEL",
