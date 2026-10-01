@@ -11,6 +11,7 @@ local catalog, characters = ui.catalog, ui.characters
 local function remaining_coins()
   local in_pile = {}
   for _, uid in ipairs(ui.game.encounter.pile) do in_pile[uid] = true end
+  if ui.game.dealt then in_pile[ui.game.dealt.uid] = true end -- dealt but not flipped yet
   local remaining = {}
   for _, owned in ipairs(ui.game.coins) do
     if in_pile[owned.uid] then remaining[#remaining + 1] = owned end
@@ -71,8 +72,6 @@ local function draw_encounter()
   button("MENU", 1135, 109, 102, 30, C.panel_light, function() ui.game.paused = true end)
 
   local remaining = remaining_coins()
-  local in_pile = {}
-  for _, owned in ipairs(remaining) do in_pile[owned.uid] = true end
   box(28, 160, 250, 504, C.ink)
   outline(28, 160, 250, 504, C.panel_light)
   text("COIN STACK", 42, 175, ui.f20, C.gold)
@@ -80,16 +79,15 @@ local function draw_encounter()
   text("RESHUFFLES WHEN EMPTY", 43, 232, ui.f16, C.muted)
   for i = 1, 5 do
     local x, y = 41, 265 + (i - 1) * 75
-    local owned = ui.game.coins[i]
-    local ready = owned and in_pile[owned.uid]
-    box(x, y, 224, 64, ready and C.panel or C.slot)
-    outline(x, y, 224, 64, ready and C.panel_light or C.ink)
+    local owned = remaining[i] -- flipped and discarded coins drop off the list
+    local current = owned and ui.game.dealt and owned.uid == ui.game.dealt.uid
+    box(x, y, 224, 64, owned and C.panel or C.slot)
+    outline(x, y, 224, 64, current and C.gold or owned and C.panel_light or C.ink)
     if owned then
       coin_image(owned.id, x + 4, y + 4, 56)
-      text(catalog[owned.id].name:upper(), x + 63, y + 7, ui.f20,
-        ready and C.face or C.muted)
+      text(catalog[owned.id].name:upper(), x + 63, y + 7, ui.f20, C.face)
       text(math.floor(Game.probability(ui.game, owned) * 100 + .5) .. "% HEADS",
-        x + 64, y + 36, ui.f16, ready and C.gold or C.muted)
+        x + 64, y + 36, ui.f16, C.gold)
     else
       centered("EMPTY SLOT", x, y + 20, 224, ui.f16, C.muted)
     end
