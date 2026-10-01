@@ -13,7 +13,7 @@ Game.VISIBLE = 3 -- coins shown in the bank; the first one is the coin you are a
 Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may discard
 Game.START_MAX = 10 -- coins in a coin set you can take into a run
 Game.DECK_MAX = 10 -- the shop can never grow the deck past this (a full deck replaces a coin)
-Game.MAX_COPIES = 2 -- copies of one coin in a set; the plain Normal coin is exempt
+Game.MAX_COPIES = 3 -- copies of one coin in a set; the plain Normal coin is exempt (up to the set size)
 
 local route = {
   {name = "Opening", quota = 3, flips = 12, payout = 20},

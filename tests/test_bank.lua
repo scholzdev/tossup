@@ -111,8 +111,8 @@ assert(not pcall(Game.new, 5, "blade", nil, ten), "too many coins")
 assert(not pcall(Game.new, 5, "blade", nil, {}), "empty")
 assert(not pcall(Game.new, 5, "blade", nil, {"hammer"}), "locked coin")
 assert(pcall(Game.new, 5, "blade", {"hammer"}, {"hammer", "normal"}), "unlocked coin is allowed")
-assert(pcall(Game.new, 5, "blade", nil, {"sword", "sword", "normal"}), "two copies are fine")
-assert(not pcall(Game.new, 5, "blade", nil, {"sword", "sword", "sword"}), "three copies are not")
+assert(pcall(Game.new, 5, "blade", nil, {"sword", "sword", "sword", "normal"}), "three copies are fine")
+assert(not pcall(Game.new, 5, "blade", nil, {"sword", "sword", "sword", "sword"}), "four copies are refused")
 
 -- energy cost: a coin you cannot pay for cannot be flipped (discard it instead); the last coin always flips
 Game.characters().pricey = {name = "P", description = "", starter = "normal", deck = {"hammer", "normal", "normal"},

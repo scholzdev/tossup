@@ -42,14 +42,16 @@ local sets = Profile.sets(sp, "blade")
 equal(#sets, 3)
 equal(table.concat(sets[1].coins, ","), "normal,normal,normal", "set 1 is the default deck")
 equal(#sets[2].coins, 0, "other sets start empty")
-assert(Profile.add_to_set(sp, "blade", 2, "sword", 10, 2))
-assert(Profile.add_to_set(sp, "blade", 2, "sword", 10, 2))
-assert(not Profile.add_to_set(sp, "blade", 2, "sword", 10, 2), "copy limit")
-for _ = 1, 8 do assert(Profile.add_to_set(sp, "blade", 2, "normal", 10, 2), "normal has no copy limit") end
-assert(not Profile.add_to_set(sp, "blade", 2, "normal", 10, 2), "set is full")
-assert(not Profile.add_to_set(sp, "blade", 3, "hammer", 10, 2), "locked coins cannot be added")
+for _ = 1, 3 do assert(Profile.add_to_set(sp, "blade", 2, "sword", 10, 3)) end
+assert(not Profile.add_to_set(sp, "blade", 2, "sword", 10, 3), "a fourth copy is refused")
+for _ = 1, 7 do assert(Profile.add_to_set(sp, "blade", 2, "normal", 10, 3), "normal has no copy limit") end
+assert(not Profile.add_to_set(sp, "blade", 2, "normal", 10, 3), "set is full")
+assert(not Profile.add_to_set(sp, "blade", 3, "hammer", 10, 3), "locked coins cannot be added")
 assert(Profile.remove_from_set(sp, "blade", 2, 1))
 equal(#Profile.sets(sp, "blade")[2].coins, 9)
+local all_normal = Profile.new()
+Profile.sets(all_normal, "blade")[1].coins = {}
+for _ = 1, 10 do assert(Profile.add_to_set(all_normal, "blade", 1, "normal", 10, 3), "ten Normal coins are fine") end
 Profile.set_active(sp, "blade", 2)
 equal(Profile.active(sp, "blade"), 2)
 equal(#Profile.loadout(sp, "blade", 10), 9, "the active set is what a run starts with")
@@ -75,6 +77,7 @@ equal(table.concat(Profile.loadout(fresh2, "blade", 10), ","), "sword", "locked 
 -- a save with too many copies (from before the limit existed) still yields a valid loadout
 local over = Profile.new()
 Profile.sets(over, "blade")[1].coins = {"sword", "sword", "sword", "normal", "normal", "normal", "dagger"}
-equal(table.concat(Profile.loadout(over, "blade", 10, 2), ","), "sword,sword,normal,normal,normal,dagger", "third sword dropped")
+Profile.sets(over, "blade")[1].coins = {"sword", "sword", "sword", "sword", "normal", "normal", "dagger"}
+equal(table.concat(Profile.loadout(over, "blade", 10, 3), ","), "sword,sword,sword,normal,normal,dagger", "fourth sword dropped")
 
 print("profile tests passed")

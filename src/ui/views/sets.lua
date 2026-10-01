@@ -76,7 +76,7 @@ local function draw_sets()
   button(is_active and "ACTIVE" or "USE THIS SET", 96, 530, 398, 54, is_active and C.panel_light or C.green,
     A.use_set, not is_active)
   button("CLEAR SET", 96, 600, 398, 44, C.red, A.clear_set, #set.coins > 0)
-  centered("MAX " .. Game.MAX_COPIES .. " COPIES OF A COIN  (NORMAL: ANY)", 60, 664, 470, ui.f16, C.muted)
+  centered("MAX " .. Game.MAX_COPIES .. " OF THE SAME COIN  -  NORMAL: UP TO " .. Game.START_MAX, 60, 664, 470, ui.f16, C.muted)
 
   -- right: all of this character's coins
   box(550, 175, 690, 540, C.ink)
