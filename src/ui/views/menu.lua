@@ -66,9 +66,16 @@ local function draw_menu()
     end
   end
   if #set.coins == 0 then
-    centered("THIS SET IS EMPTY  -  THE DEFAULT DECK IS USED", 484, 490, 736, ui.f16, C.orange)
+    centered("THIS SET IS EMPTY  -  THE DEFAULT DECK IS USED", 484, 464, 736, ui.f16, C.orange)
   end
-  button("EDIT COIN SETS", 674, 540, 356, 52, C.gold, function() A.open_sets(ui.selected_character) end, not locked)
+  -- stage (difficulty): each win on the highest one unlocks the next
+  local stake, top = A.stake(), Profile.max_stake(ui.profile, ui.selected_character)
+  button("<", 510, 486, 50, 52, C.panel_light, function() A.cycle_stake(-1) end, stake > 1 and not locked)
+  box(570, 486, 504, 52, C.card)
+  centered(D.L("STAGE %d / %d", stake, #Game.stakes()), 570, 490, 504, ui.f20, stake == top and C.gold or C.face)
+  centered(D.L(Game.stakes()[stake].text), 570, 518, 504, ui.f16, C.muted)
+  button(">", 1084, 486, 50, 52, C.panel_light, function() A.cycle_stake(1) end, stake < top and not locked)
+  button("EDIT COIN SETS", 674, 556, 356, 52, C.gold, function() A.open_sets(ui.selected_character) end, not locked)
 
   D.icon_button("START RUN", ui.ui_images.start_level, 470, 660, 340, 68, C.green, function() A.start() end, not locked)
 end

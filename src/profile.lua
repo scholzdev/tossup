@@ -14,7 +14,7 @@ Profile.DEFAULT_OPTIONS = DEFAULT_OPTIONS
 function Profile.new()
   local options = {}
   for key, value in pairs(DEFAULT_OPTIONS) do options[key] = value end
-  return {tokens = 0, unlocked = {}, collected = {}, sets = {}, active_set = {}, options = options, wins = {}, best_endless = {}}
+  return {tokens = 0, unlocked = {}, collected = {}, sets = {}, active_set = {}, options = options, wins = {}, best_endless = {}, stakes = {}}
 end
 
 -- Characters unlock in this order: the first is always playable, each next one after winning a run with the one before.
@@ -40,6 +40,21 @@ function Profile.record_win(profile, character_id)
   profile.wins[character_id] = true
   for i, id in ipairs(Profile.CHARACTER_ORDER) do
     if id == character_id then return Profile.CHARACTER_ORDER[i + 1] end
+  end
+end
+
+-- Stages (difficulty, content/stakes.lua): the highest one a character may start. Winning a run on the highest unlocks the next.
+-- Profiles from before stages: a character that has won already may start stage 2.
+function Profile.max_stake(profile, character_id)
+  return profile.stakes[character_id] or (profile.wins[character_id] and 2 or 1)
+end
+
+-- A run was won on this stage. Returns the stage it unlocked, if it unlocked one.
+function Profile.record_stake_win(profile, character_id, stake)
+  local top = #require("content.stakes")
+  if stake >= Profile.max_stake(profile, character_id) and stake < top then
+    profile.stakes[character_id] = stake + 1
+    return stake + 1
   end
 end
 
@@ -200,6 +215,8 @@ function Profile.encode(profile)
   end
   lines[#lines + 1] = "}, wins = {"
   for _, id in ipairs(sorted_keys(profile.wins)) do lines[#lines + 1] = "  " .. id .. " = true," end
+  lines[#lines + 1] = "}, stakes = {"
+  for _, id in ipairs(sorted_keys(profile.stakes)) do lines[#lines + 1] = "  " .. id .. " = " .. profile.stakes[id] .. "," end
   lines[#lines + 1] = "}, best_endless = {"
   for _, id in ipairs(sorted_keys(profile.best_endless)) do lines[#lines + 1] = "  " .. id .. " = " .. profile.best_endless[id] .. "," end
   lines[#lines + 1] = "}, options = {"
@@ -227,6 +244,7 @@ function Profile.decode(text)
     end
   end
   data.wins = type(data.wins) == "table" and data.wins or fresh.wins
+  data.stakes = type(data.stakes) == "table" and data.stakes or fresh.stakes
   data.best_endless = type(data.best_endless) == "table" and data.best_endless or fresh.best_endless
   data.active_set = type(data.active_set) == "table" and data.active_set or fresh.active_set
   -- older saves kept a single loadout per character: it becomes set 1

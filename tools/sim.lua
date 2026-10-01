@@ -22,6 +22,7 @@ while arg and arg[i] do
   if a == "--runs" then opts.runs = tonumber(arg[i + 1]) i = i + 1
   elseif a == "--bot" then opts.bot = arg[i + 1] i = i + 1
   elseif a == "--char" then opts.char = arg[i + 1] i = i + 1
+  elseif a == "--stake" then opts.stake = tonumber(arg[i + 1]) i = i + 1
   elseif a == "--unlock" then opts.unlock = arg[i + 1] i = i + 1
   elseif a == "--quota" then opts.quota = arg[i + 1] i = i + 1
   elseif a == "--payout" then opts.payout = arg[i + 1] i = i + 1
@@ -295,7 +296,7 @@ end
 
 local function play(seed, character, bot)
   local loadout = opts.set ~= "default" and best_set(character) or nil
-  local g = Game.new(seed, character, unlocked_for(character), loadout, true)
+  local g = Game.new(seed, character, unlocked_for(character), loadout, true, opts.stake)
   local guard = 0
   while g.phase ~= "VICTORY" and g.phase ~= "GAME_OVER" and guard < 2000 do
     guard = guard + 1

@@ -17,6 +17,7 @@ local state = {
   characters = Lang.wrap("characters", Game.characters()),
   character_order = {"blade", "seer", "trader"},
   selected_character = "blade",
+  stake_pick = {}, -- stage chosen per character on the play screen (default: the highest unlocked)
   screen = "title", -- title | select | collection | options (shown when no run is active or paused)
   sets_character = "blade", -- coin set editor: which character and which of its sets is open
   sets_index = 1,

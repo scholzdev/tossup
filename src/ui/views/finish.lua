@@ -48,6 +48,9 @@ local function draw_end()
   if g.unlocked_character then
     centered(D.L("NEW CHARACTER UNLOCKED: %s", ui.characters[g.unlocked_character].name:upper()), 380, 552, 520, ui.f20, C.gold)
   end
+  if g.unlocked_stake then
+    centered(D.L("STAGE %d UNLOCKED", g.unlocked_stake), 380, 590, 520, ui.f20, C.gold)
+  end
   if not won and g.lost_why then
     love.graphics.setFont(ui.f16)
     color(C.red)

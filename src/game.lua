@@ -7,6 +7,7 @@ local catalog = require("content.coins")
 local relic_catalog = require("content.relics")
 local item_catalog = require("content.items")
 local modifier_catalog = require("content.modifiers")
+local stake_catalog = require("content.stakes")
 local MODIFIER_ORDER = {"lucky_day", "cold_snap", "power_surge", "blackout", "gold_rush", "high_stakes", "good_rhythm", "bonus_exchange"}
 local characters = require("content.characters")
 local Game = {}
@@ -157,20 +158,35 @@ function Game.stage(level)
   return {name = "Endless", endless = k, per_coin = route[#route].per_coin + 0.5 * k, payout = 40 + 5 * k, inverts = true}
 end
 
-function Game.quota_for(level, coin_count)
-  return math.max(1, math.floor(Game.stage(level).per_coin * coin_count + .5))
+function Game.quota_for(level, coin_count, mult)
+  return math.max(1, math.floor(Game.stage(level).per_coin * coin_count * (mult or 1) + .5))
+end
+
+-- The stage (difficulty) of a run: the value of a rule, from the highest stage that sets it (see content/stakes.lua).
+function Game.rule(game, key, default)
+  local value = default
+  for i = 1, math.min(game.stake or 1, #stake_catalog) do
+    local rules = stake_catalog[i].rules
+    if rules and rules[key] ~= nil then value = rules[key] end
+  end
+  return value
+end
+
+-- Shop price of a coin, chip or prize after the stage's price rule.
+function Game.price(game, base)
+  return math.floor(base * Game.rule(game, "price_mult", 1) + .5)
 end
 
 local function start_encounter(game)
   local stage = Game.stage(game.encounter_index)
-  local quota = Game.quota_for(game.encounter_index, #game.coins)
+  local quota = Game.quota_for(game.encounter_index, #game.coins, Game.rule(game, "quota_mult", 1))
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = quota, max_quota = quota,
     boss = stage.boss or false, inverts = stage.boss or stage.inverts or false, endless = stage.endless, payout = stage.payout,
     flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {}, combo_side = nil, combo_len = 0, shield = 0, combo_step = Game.COMBO_STEP, combo_cap = Game.COMBO_CAP,
     returned = 0, played = {}, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
-  if Game.use_modifiers ~= false and game.encounter_index >= 2 then -- every level from the second on has a modifier (tests can switch this off)
+  if Game.use_modifiers ~= false and game.encounter_index >= Game.rule(game, "modifiers_from", 2) then -- every level from the second on has a modifier (tests can switch this off)
     local id = MODIFIER_ORDER[RNG.int(game, 1, #MODIFIER_ORDER)]
     game.encounter.modifier = id
     modifier_catalog[id].apply(game, game.encounter)
@@ -248,7 +264,7 @@ end
 -- loadout: optional list of coin ids to start with (at most START_MAX, from the character's
 -- pool plus unlocked coins); defaults to the character's deck.
 -- manual_mulligan: the UI sets this and calls Game.mulligan_done itself.
-function Game.new(seed, character_id, unlocked, loadout, manual_mulligan)
+function Game.new(seed, character_id, unlocked, loadout, manual_mulligan, stake)
   character_id = character_id or "blade"
   assert(characters[character_id], "unknown character: " .. tostring(character_id))
   local normalized = RNG.seed(seed)
@@ -258,6 +274,8 @@ function Game.new(seed, character_id, unlocked, loadout, manual_mulligan)
     coins = {}, relics = {}, items = {}, shop_items = {}, unlocked = unlocked or {}, purchased = {}, cleared = 0, shop_relic = nil, next_uid = 0, encounter_index = 1, encounter = nil,
     pending = nil, shop_offers = {}, log = {}, selected_uid = nil, slots = Game.START_MAX}
   local def = characters[character_id]
+  game.stake = math.max(1, math.min(#stake_catalog, stake or 1))
+  game.player.gold = Game.rule(game, "start_gold", Game.START_GOLD)
   game.manual_mulligan = manual_mulligan
   if loadout then
     assert(#loadout >= 1 and #loadout <= Game.START_MAX, "loadout must have 1-" .. Game.START_MAX .. " coins")
@@ -295,7 +313,7 @@ local function finalize(game, item, flip)
   Signal.emit("coin_outcome", outcome)
   local final = outcome.result
   flip.altered = final ~= before and "RELIC" or nil -- shown in the UI so a changed side is never a mystery
-  if (e.boss or e.inverts) and nth % 5 == 0 then
+  if (e.boss or e.inverts) and nth % Game.rule(game, "boss_every", 5) == 0 then
     final = final == "Heads" and "Tails" or "Heads"
     flip.altered = (flip.altered and flip.altered .. " + " or "") .. "THE HOUSE"
   end
@@ -663,7 +681,7 @@ end
 -- Exchanges still allowed this level (EXCHANGE_MAX, plus extras from Lifeline coins and the Bonus Exchange modifier).
 function Game.exchanges_left(game)
   local e = game.encounter
-  return Game.EXCHANGE_MAX + (e.extra_exchanges or 0) - (e.exchanges or 0)
+  return Game.rule(game, "exchange_max", Game.EXCHANGE_MAX) + (e.extra_exchanges or 0) - (e.exchanges or 0)
 end
 
 -- With an empty stack, pay gold to get up to EXCHANGE_GAIN of the coins you already played this level
@@ -733,21 +751,21 @@ end
 
 function Game.buy_item(game, index)
   local id = game.phase == "SHOP" and game.shop_items[index]
-  if not id or #game.items >= Items.MAX or game.player.gold < item_catalog[id].cost then return false end
+  if not id or #game.items >= Items.MAX or game.player.gold < Game.price(game, item_catalog[id].cost) then return false end
   game.shop_items[index] = false
-  game.player.gold = game.player.gold - item_catalog[id].cost
+  game.player.gold = game.player.gold - Game.price(game, item_catalog[id].cost)
   game.items[#game.items + 1] = id
-  log(game, "Bought " .. item_catalog[id].name .. " for " .. item_catalog[id].cost .. " gold.")
+  log(game, "Bought " .. item_catalog[id].name .. " for " .. Game.price(game, item_catalog[id].cost) .. " gold.")
   return true
 end
 
 function Game.use_item(game, slot) return Items.use(game, slot) end
 
 function Game.buy_relic(game)
-  if game.phase ~= "SHOP" or not game.shop_relic or game.player.gold < 25 then return false end
-  game.player.gold = game.player.gold - 25
+  if game.phase ~= "SHOP" or not game.shop_relic or game.player.gold < Game.price(game, 25) then return false end
+  game.player.gold = game.player.gold - Game.price(game, 25)
   Game.add_relic(game, game.shop_relic)
-  log(game, "Bought relic " .. relic_catalog[game.shop_relic].name .. " for 25 gold.")
+  log(game, "Bought relic " .. relic_catalog[game.shop_relic].name .. " for " .. Game.price(game, 25) .. " gold.")
   game.shop_relic = nil
   return true
 end
@@ -763,13 +781,13 @@ end
 
 function Game.buy(game, index)
   local id = game.phase == "SHOP" and game.shop_offers[index]
-  if not id or game.player.gold < (catalog[id].cost or 15) then return false end
+  if not id or game.player.gold < Game.price(game, catalog[id].cost or 15) then return false end
   if #game.coins >= game.slots then return false end -- a full deck needs a free slot (buy one) or must lose a coin
   game.shop_offers[index] = false
   game.purchased[id] = true -- the UI turns purchases of locked coins into permanent unlocks
-  game.player.gold = game.player.gold - (catalog[id].cost or 15)
+  game.player.gold = game.player.gold - Game.price(game, catalog[id].cost or 15)
   add_to_deck(game, id)
-  log(game, "Bought " .. catalog[id].name .. " for " .. (catalog[id].cost or 15) .. " gold.")
+  log(game, "Bought " .. catalog[id].name .. " for " .. Game.price(game, catalog[id].cost or 15) .. " gold.")
   return true
 end
 
@@ -870,6 +888,7 @@ end
 
 function Game.relics() return relic_catalog end
 function Game.modifiers() return modifier_catalog end
+function Game.stakes() return stake_catalog end
 function Game.item_catalog() return item_catalog end
 function Game.characters() return characters end
 function Game.active_count(game) return active_count(game) end

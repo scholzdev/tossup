@@ -81,8 +81,8 @@ end
 local function log_run(game)
   local coins = {}
   for i, owned in ipairs(game.coins) do coins[i] = owned.id end
-  love.filesystem.append("runs.log", string.format("%s v=%s seed=%d char=%s result=%s cleared=%d gold=%d why=%s coins=%s\n",
-    os.date("%Y-%m-%d %H:%M:%S"), Version.number .. "-" .. Version.build, game.seed, game.character_id, game.endless and "ENDLESS" or game.phase == "VICTORY" and "WIN" or "LOSS",
+  love.filesystem.append("runs.log", string.format("%s v=%s seed=%d char=%s stage=%d result=%s cleared=%d gold=%d why=%s coins=%s\n",
+    os.date("%Y-%m-%d %H:%M:%S"), Version.number .. "-" .. Version.build, game.seed, game.character_id, game.stake or 1, game.endless and "ENDLESS" or game.phase == "VICTORY" and "WIN" or "LOSS",
     game.cleared, game.player.gold, game.lost_why or "-", table.concat(coins, ",")))
 end
 
@@ -279,7 +279,7 @@ function A.start(seed)
   saved_key = nil
   if not Profile.character_unlocked(ui.profile, ui.selected_character) then return end -- win a run with the one before first
   ui.game = Game.new(seed or (os.time() + math.floor(love.timer.getTime() * 1000000)),
-    ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character), A.loadout(), true)
+    ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character), A.loadout(), true, A.stake())
   ui.flip_animation = nil
   ui.resolve_timer = 0
   ui.holding = false
@@ -289,6 +289,18 @@ end
 
 function A.select_character(id)
   ui.selected_character = id
+end
+
+-- The stage (difficulty) picked for the selected character: the highest unlocked one unless the player went lower.
+function A.stake()
+  local id = ui.selected_character
+  local top = Profile.max_stake(ui.profile, id)
+  return math.max(1, math.min(top, ui.stake_pick[id] or top))
+end
+
+function A.cycle_stake(step)
+  local id = ui.selected_character
+  ui.stake_pick[id] = math.max(1, math.min(Profile.max_stake(ui.profile, id), A.stake() + step))
 end
 
 -- Every coin the menu shows for a character: base pool first, then the locked ones.
@@ -396,6 +408,7 @@ function A.update(dt)
   if record and record.phase == "VICTORY" and not record.win_recorded then -- a won run unlocks the next character
     record.win_recorded = true
     record.unlocked_character = Profile.record_win(ui.profile, record.character_id)
+    record.unlocked_stake = Profile.record_stake_win(ui.profile, record.character_id, record.stake or 1)
     save_profile()
   end
   if record and record.endless and record.phase == "GAME_OVER" and not record.endless_recorded then

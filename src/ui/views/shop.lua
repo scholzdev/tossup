@@ -56,7 +56,7 @@ local function draw_shop()
     local x = X0 + (i - 1) * STEP
     local id = g.shop_offers[i]
     if id then
-      local cost = catalog[id].cost or 15
+      local cost = Game.price(g, catalog[id].cost or 15)
       price(cost, x, 186, 110, g.player.gold >= cost and not full)
       coin_image(id, x + 7, 228, 96)
       coin_hover(id, x, 228, 110, 96)
@@ -74,11 +74,12 @@ local function draw_shop()
     local id = g.shop_items[i]
     if id then
       local def = ui.item_catalog[id]
-      price(def.cost, x, 392, 110, g.player.gold >= def.cost and #g.items < Items.MAX)
+      local cost = Game.price(g, def.cost)
+      price(cost, x, 392, 110, g.player.gold >= cost and #g.items < Items.MAX)
       D.image_at(ui.item_images[id], x + 7, 434, 96)
       D.text_hover(def.name, def.description, x + 7, 434, 96, 96)
       button("BUY", x, 542, 110, 34, C.blue, function() Game.buy_item(g, i) end,
-        g.player.gold >= def.cost and #g.items < Items.MAX)
+        g.player.gold >= cost and #g.items < Items.MAX)
     else
       centered("SOLD", x, 474, 110, ui.f32, C.muted)
     end
@@ -89,10 +90,10 @@ local function draw_shop()
   vertical_label("Prize", px - 50, 396)
   local relic = g.shop_relic and ui.relic_catalog[g.shop_relic]
   if relic then
-    price(25, px, 392, 110, g.player.gold >= 25)
+    price(Game.price(g, 25), px, 392, 110, g.player.gold >= Game.price(g, 25))
     D.image_at(ui.relic_images[g.shop_relic], px + 7, 434, 96)
     D.text_hover(relic.name, relic.description, px + 7, 434, 96, 96)
-    button("BUY", px, 542, 110, 34, C.blue, function() Game.buy_relic(g) end, g.player.gold >= 25)
+    button("BUY", px, 542, 110, 34, C.blue, function() Game.buy_relic(g) end, g.player.gold >= Game.price(g, 25))
   else
     centered("SOLD", px, 474, 110, ui.f32, C.muted)
   end
