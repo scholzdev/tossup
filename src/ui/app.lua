@@ -25,7 +25,14 @@ local function draw_game()
   local game = ui.game
   if game.phase == "ENCOUNTER" then views.ENCOUNTER()
   elseif game.phase == "SHOP" then views.SHOP()
-  else draw_end() end -- VICTORY and GAME_OVER
+  elseif game.phase == "GAME_OVER" and not game.over_seen then
+    -- the last coin is gone and nothing can be exchanged: say so on the round screen before the run-over screen
+    views.ENCOUNTER()
+    if not ui.confirm then
+      ui.confirm = {title = "GAME OVER", text = "NO COINS LEFT AND NOT ENOUGH GOLD TO EXCHANGE. THE RUN IS OVER.", single = true,
+        ok = function() game.over_seen = true end}
+    end
+  else draw_end() end -- VICTORY and the run-over screen
   if ui.notice ~= "" then text(ui.notice, 300, 762, ui.f16, C.red) end
   if ui.debug_visible then
     box(944, 177, 300, 101, C.ink)
@@ -151,7 +158,14 @@ end
 function app.keypressed(key)
   local game = ui.game
   if key == "f3" then ui.debug_visible = not ui.debug_visible return end
-  if ui.confirm then if key == "escape" then ui.confirm = nil end return end -- a popup is open
+  if ui.confirm then -- a popup is open: Esc cancels it (or confirms a notice that has only OK)
+    if key == "escape" or key == "return" and ui.confirm.single then
+      local c = ui.confirm
+      ui.confirm = nil
+      if c.single then c.ok() end
+    end
+    return
+  end
   if key == "escape" then
     if game and not game.paused then A.open_menu()
     elseif ui.screen ~= "title" then A.go("title")

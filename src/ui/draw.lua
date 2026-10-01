@@ -161,8 +161,12 @@ local function confirm_dialog()
   love.graphics.setFont(ui.f20)
   color(C.face)
   love.graphics.printf(L(c.text), 410, 352, 460, "center")
-  button("OK", 420, 454, 200, 52, C.red, function() ui.confirm = nil c.ok() end)
-  button("CANCEL", 660, 454, 200, 52, C.panel_light, function() ui.confirm = nil end)
+  if c.single then -- a notice: just OK
+    button("OK", 540, 454, 200, 52, C.red, function() ui.confirm = nil c.ok() end)
+  else
+    button("OK", 420, 454, 200, 52, C.red, function() ui.confirm = nil c.ok() end)
+    button("CANCEL", 660, 454, 200, 52, C.panel_light, function() ui.confirm = nil end)
+  end
 end
 
 local function coin_name(id, x, y, w)

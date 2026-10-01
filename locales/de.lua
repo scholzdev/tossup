@@ -14,7 +14,7 @@ return {
   ["FULLSCREEN"] = "VOLLBILD", ["Switch between windowed and fullscreen."] = "Wechselt zwischen Fenster und Vollbild.",
   ["LANGUAGE"] = "SPRACHE", ["SOUND"] = "TON", ["GAME"] = "SPIEL", ["MASTER VOLUME"] = "GESAMTLAUTSTÄRKE", ["MUSIC"] = "MUSIK", ["SOUND EFFECTS"] = "SOUNDEFFEKTE",
   ["Everything at once."] = "Alles auf einmal.", ["The background loop."] = "Die Hintergrundmusik.", ["Flips, scores, buttons."] = "Würfe, Punkte, Knöpfe.", ["CLEAR PROGRESS"] = "FORTSCHRITT LÖSCHEN", ["Resets unlocks, collection, sets and tokens. Options stay."] = "Setzt Freischaltungen, Sammlung, Sets und Tokens zurück.",
-  ["CLEAR"] = "LÖSCHEN", ["OK"] = "OK", ["CANCEL"] = "ABBRECHEN", ["YOUR DATA WILL BE PERMANENTLY DELETED."] = "DEINE DATEN WERDEN DAUERHAFT GELÖSCHT.",
+  ["CLEAR"] = "LÖSCHEN", ["GAME OVER"] = "SPIEL VORBEI", ["NO COINS LEFT AND NOT ENOUGH GOLD TO EXCHANGE. THE RUN IS OVER."] = "KEINE MÜNZEN MEHR UND ZU WENIG GOLD ZUM TAUSCHEN. DER LAUF IST VORBEI.", ["OK"] = "OK", ["CANCEL"] = "ABBRECHEN", ["YOUR DATA WILL BE PERMANENTLY DELETED."] = "DEINE DATEN WERDEN DAUERHAFT GELÖSCHT.",
   ["THE CURRENT RUN WILL BE LOST."] = "DER AKTUELLE LAUF GEHT VERLOREN.", ["Language of all texts."] = "Sprache aller Texte.", ["ON"] = "AN", ["OFF"] = "AUS",
   ["F3 SHOWS DEBUG INFO IN A RUN"] = "F3 ZEIGT DEBUG-INFOS IM LAUF",
   -- end of run
