@@ -93,19 +93,20 @@ local function draw_encounter()
   text(e.boss and "THE HOUSE" or e.name:upper(), 44, 100, ui.f20, e.boss and C.red or C.face)
   -- centre: the number that matters, points scored against the quota
   local met = e.quota <= 0
-  centered("POINTS", 300, 34, 640, ui.f16, C.muted)
-  centered(e.scored .. " / " .. e.max_quota, 300, 50, 640, ui.f48, met and C.green or C.gold)
+  -- one caption line above the number: a status when there is one, otherwise just "POINTS"
+  local caption, caption_color = "POINTS", C.muted
+  if e.cleared then caption, caption_color = "QUOTA MET  -  EXTRA POINTS PAY GOLD", C.green
+  elseif e.boss then caption, caption_color = "THE HOUSE  -  EVERY 5TH FLIP IS INVERTED", C.red end
+  centered(caption, 330, 36, 580, ui.f16, caption_color)
+  centered(e.scored .. " / " .. e.max_quota, 330, 56, 580, ui.f48, met and C.green or C.gold)
   color(C.slot)
-  love.graphics.rectangle("fill", 330, 108, 580, 22, 4)
+  love.graphics.rectangle("fill", 330, 112, 580, 22, 4)
   color(met and C.green or C.gold)
-  love.graphics.rectangle("fill", 330, 108, 580 * math.min(1, e.scored / e.max_quota), 22, 4)
-  outline(330, 108, 580, 22, C.panel_light, 4)
+  love.graphics.rectangle("fill", 330, 112, 580 * math.min(1, e.scored / e.max_quota), 22, 4)
+  outline(330, 112, 580, 22, C.panel_light, 4)
   if e.cleared then
-    centered("QUOTA MET  -  EXTRA POINTS PAY GOLD", 330, 133, 580, ui.f16, C.green)
-    D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 925, 106, 200, 34, C.green, A.open_shop,
+    D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 940, 108, 192, 30, C.green, A.open_shop,
       not ui.flip_animation and not ui.game.pending and not ui.game.mulligan)
-  elseif e.boss then
-    centered("EVERY 5TH DRAW INVERTS THE RESULT", 330, 133, 580, ui.f16, C.red)
   end
   -- right: what you have left
   local stats = {
