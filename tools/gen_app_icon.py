@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the app/window icon: a gold coin with a pixel "T" on a teal rounded square, a flip arc and a spark.
 
-Output: assets/ui/icon.png (512 px, transparent corners; conf.lua points t.window.icon at it) and, on macOS
+Output: assets/ui/icon.ico (Windows) and assets/ui/icon.png (512 px, transparent corners; conf.lua points t.window.icon at it) and, on macOS
 (needs `iconutil`), assets/ui/icon.icns for the dock icon of a packaged app.
 Run from the repo root:  python3 tools/gen_app_icon.py   (needs Pillow).
 """
@@ -57,6 +57,10 @@ def main():
     out = ROOT / "assets" / "ui" / "icon.png"
     img.resize((N, N), Image.Resampling.LANCZOS).save(out)
     print(f"wrote {out}")
+    # Windows icon (used by tools/build_windows.sh for Tossup.exe)
+    sizes = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+    img.resize((256, 256), Image.Resampling.LANCZOS).save(ROOT / "assets" / "ui" / "icon.ico", sizes=sizes)
+    print(f"wrote {ROOT / 'assets' / 'ui' / 'icon.ico'}")
     if not shutil.which("iconutil"):
         print("iconutil not found (not macOS): skipped icon.icns")
         return
