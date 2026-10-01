@@ -33,21 +33,32 @@ local function context_key()
     ui.confirm and "c" or "-", ui.tutorial and ui.tutorial.step or "-"}, ":")
 end
 
--- The button the focus is on: the one whose centre is nearest to the focus point.
-function Pad.focused()
-  if not Pad.focus then return nil end
+-- The button nearest to a point (and how far away it is).
+local function nearest(px, py)
   local best, best_d
   for _, b in ipairs(ui.buttons) do
     local cx, cy = center(b)
-    local d = (cx - Pad.focus[1]) ^ 2 + (cy - Pad.focus[2]) ^ 2
+    local d = (cx - px) ^ 2 + (cy - py) ^ 2
     if not best_d or d < best_d then best, best_d = b, d end
   end
-  return best
+  return best, best_d
+end
+
+-- The button the focus is on. If it is unavailable right now (the Flip button during the flip animation is not clickable),
+-- there is no focus: no ring, and A does nothing, instead of jumping to some other button such as Menu.
+function Pad.focused()
+  if not Pad.focus then return nil end
+  local best, d = nearest(Pad.focus[1], Pad.focus[2])
+  if best and d <= 120 ^ 2 then return best end
 end
 
 local function move(dx, dy)
   local current = Pad.focused()
-  if not current then return end
+  if not current then -- the focused button is gone: the first press picks the nearest button
+    local best = Pad.focus and nearest(Pad.focus[1], Pad.focus[2])
+    if best then Pad.focus = {center(best)} end
+    return
+  end
   local fx, fy = center(current)
   local best, best_score
   for _, b in ipairs(ui.buttons) do
