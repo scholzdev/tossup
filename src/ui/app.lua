@@ -84,6 +84,7 @@ function app.load()
   end
   Sound.load()
   A.load_profile()
+  if Game.SANDBOX_MODE then A.start_sandbox() end
   -- game cursors: an arrow with a coin; it turns gold with the coin on edge over anything clickable
   ui.cursors = {
     arrow = love.mouse.newCursor(love.image.newImageData("assets/ui/cursor_arrow.png"), 2, 2),
@@ -198,6 +199,7 @@ local KEYS = {up = "dpup", down = "dpdown", left = "dpleft", right = "dpright", 
   q = "leftshoulder", e = "rightshoulder", i = "inspect"}
 
 function app.keypressed(key)
+  if key == "f5" and Game.SANDBOX_MODE then A.start_sandbox() return end
   local game = ui.game
   Pad.device = "keyboard"
   if key == "f3" then ui.debug_visible = not ui.debug_visible return end
@@ -215,6 +217,7 @@ function app.keypressed(key)
   end
   if key == "escape" then
     if game and not game.paused then A.open_menu()
+    elseif ui.screen == "sets" then A.back_from_sets()
     elseif ui.screen ~= "title" then A.go("title")
     elseif game then game.paused = false end
     return

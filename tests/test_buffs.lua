@@ -5,10 +5,10 @@ local function equal(a, b, message) assert(a == b, (message or "values differ") 
 
 -- a level whose bank holds the given coins in order; quota is huge so nothing ends
 local function level(ids, seed)
-  Game.characters().test = {name = "Test", description = "", starter = "normal", pool = {}}
+  Game.characters().test = {name = "Test", description = "", starter = "normal", pool = {}, deck = ids}
   local keep = Game.START_MAX
   Game.START_MAX = 10 -- tests use decks bigger than the start size
-  local game = Game.new(seed or 1, "test", require("content.coin_order"), ids, false)
+  local game = Game.new(seed or 1, "test", require("content.coin_order"), nil, false)
   Game.START_MAX = keep
   local e = game.encounter
   e.quota, e.max_quota = 1000, 1000
@@ -37,24 +37,31 @@ end
 -- megaphone: the next 2 coins pay double, the third does not
 local g = level({"megaphone", "sword", "sword", "sword"})
 equal(scored(g, "Heads"), 2, "megaphone itself is not doubled")
-equal(scored(g, "Heads"), 10, "next coin x2")
-equal(scored(g, "Heads"), 10, "second coin x2")
-equal(scored(g, "Heads"), 5, "third coin back to normal")
+equal(scored(g, "Heads"), 6, "next coin x2")
+equal(scored(g, "Heads"), 6, "second coin x2")
+equal(scored(g, "Heads"), 3, "third coin back to normal")
 
 -- cheerleader: +20% Heads on the next 2 coins (shown in the odds), then gone
 g = level({"cheerleader", "sword", "sword", "sword"})
 play(g, "Heads")
-assert(math.abs(Game.probability(g, Game.get_coin(g, g.dealt.uid)) - .7) < 1e-9, "next coin has +20%")
+assert(math.abs(Game.probability(g, Game.get_coin(g, g.dealt.uid)) - .55) < 1e-9, "next coin has +20%")
 play(g, "Tails")
-assert(math.abs(Game.probability(g, Game.get_coin(g, g.dealt.uid)) - .7) < 1e-9, "second coin has +20%")
+assert(math.abs(Game.probability(g, Game.get_coin(g, g.dealt.uid)) - .55) < 1e-9, "second coin has +20%")
 play(g, "Tails")
-assert(math.abs(Game.probability(g, Game.get_coin(g, g.dealt.uid)) - .5) < 1e-9, "third coin back to 50%")
+assert(math.abs(Game.probability(g, Game.get_coin(g, g.dealt.uid)) - .35) < 1e-9, "third coin back to base odds")
+
+-- Focus prepares one risky scorer instead of raising its own odds after it has been played.
+g = level({"focus", "sword", "sword"})
+play(g, "Heads")
+assert(math.abs(Game.probability(g, Game.get_coin(g, g.dealt.uid)) - .7) < 1e-9, "Focus boosts the next coin")
+play(g, "Tails")
+assert(math.abs(Game.probability(g, Game.get_coin(g, g.dealt.uid)) - .35) < 1e-9, "Focus boost lasts one coin")
 
 -- mirror: Heads makes the next coin use its other side
 g = level({"mirror", "dagger", "dagger"})
 play(g, "Heads")
 equal(scored(g, "Heads"), 1, "dagger Heads used its Tails effect (1)")
-equal(scored(g, "Heads"), 4, "buff used up")
+equal(scored(g, "Heads"), 2, "buff used up")
 
 -- domino: the next coin lands Heads whatever the roll
 for seed = 1, 12 do

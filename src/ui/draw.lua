@@ -1,9 +1,11 @@
 -- Drawing primitives shared by every view.
 local ui = require("src.ui.state")
+local Game = require("src.game")
 local C = require("src.ui.theme")
 local Lang = require("src.lang")
 local L = Lang.t
 local catalog = ui.catalog
+local RARITY_NAME = {N = "Common", R = "Uncommon", SR = "Rare", UR = "Epic"}
 
 local function color(c, alpha)
   love.graphics.setColor(c[1], c[2], c[3], alpha or 1)
@@ -74,7 +76,7 @@ local function effect_description(effects_list)
   local parts = {}
   for _, effect in ipairs(effects_list) do
     local amount = effect.amount
-    if effect.type == "score" then parts[#parts + 1] = L("Score %d points", amount)
+    if effect.type == "score" then parts[#parts + 1] = amount == 1 and L("Score 1 point") or L("Score %d points", amount)
     elseif effect.type == "gold" then parts[#parts + 1] = L("Gain %d gold", amount)
     elseif effect.type == "energy" then parts[#parts + 1] = L("Gain %d energy", amount)
     elseif effect.type == "penalty" then parts[#parts + 1] = L("Quota +%d", amount)
@@ -101,7 +103,10 @@ local function effect_description(effects_list)
 end
 
 local function coin_hover(id, x, y, w, h, probability, locked)
-  local info = {id = id, probability = probability or catalog[id].probability, locked = locked}
+  local demo_odds = ui.game and ui.game.sandbox and ui.game.sandbox.odds and ui.game.sandbox.odds[id]
+  local tie = ui.game and Game.tie_probability(ui.game, {id = id}) or catalog[id].tie_probability or 0
+  local info = {id = id, probability = probability or demo_odds and demo_odds.heads or catalog[id].probability,
+    tie_probability = tie, locked = locked}
   ui.regions[#ui.regions + 1] = {x = x, y = y, w = w, h = h, coin = info}
   local mx, my = ui.mouse()
   if mx >= x and mx <= x + w and my >= y and my <= y + h then ui.hovered_coin = info end
@@ -218,10 +223,23 @@ local function draw_coin_tooltip()
   if not ui.hovered_coin then return end
   local coin = catalog[ui.hovered_coin.id]
   local mx, my = ui.pointer()
-  local w, h = 390, ui.hovered_coin.locked and 204 or 172
+  local w, h = 390, ui.hovered_coin.locked and 222 or 190
   local _, lines = ui.f16:getWrap(coin.description, w - 92) -- long descriptions wrap and push the rest down
   local extra = math.max(0, #lines - 1) * 18
-  h = h + extra
+  local heads_line = L("HEADS") .. "  " .. effect_description(coin.heads)
+  local tails_line = L("TAILS") .. "  " .. effect_description(coin.tails)
+  local _, head_lines = ui.f16:getWrap(heads_line, w - 28) -- effect lines wrap too
+  local _, tail_lines = ui.f16:getWrap(tails_line, w - 28)
+  local tie = ui.hovered_coin.tie_probability or 0
+  local edge_line = tie > 0 and (L("EDGE") .. "  " .. effect_description(Game.tie_effects(ui.hovered_coin.id))) or nil
+  local edge_lines = {}
+  if edge_line then _, edge_lines = ui.f16:getWrap(edge_line, w - 28) end
+  local edge_extra = edge_line and (30 + (#edge_lines - 1) * 18) or 0
+  local locked_line = L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK")
+  local _, locked_lines = ui.f16:getWrap(locked_line, w - 28)
+  local tails_y = 155 + (#head_lines - 1) * 18
+  h = h + extra + (#head_lines - 1) * 18 + (#tail_lines - 1) * 18 +
+    edge_extra + (ui.hovered_coin.locked and (#locked_lines - 1) * 18 or 0)
   local x = math.min(mx + 18, 1280 - w - 12)
   local y = my + 18
   if y + h > 788 then y = my - h - 18 end
@@ -230,16 +248,27 @@ local function draw_coin_tooltip()
   outline(x, y, w, h, C.gold)
   coin_image(ui.hovered_coin.id, x + 9, y + 9, 62)
   text(coin.name:upper(), x + 78, y + 12, ui.f20, C.face)
+  text(L(RARITY_NAME[coin.rarity]):upper(), x + 78, y + 38, ui.f16, C.rarity[coin.rarity])
   love.graphics.setFont(ui.f16)
   color(C.muted)
-  love.graphics.printf(coin.description, x + 78, y + 40, w - 92)
+  love.graphics.printf(coin.description, x + 78, y + 58, w - 92)
   local heads = math.floor(ui.hovered_coin.probability * 100 + .5)
-  text(L("HEADS %d%%  /  TAILS %d%%", heads, 100 - heads) ..
-    ((coin.energy_cost or 0) > 0 and L("  -  COSTS %d ENERGY", coin.energy_cost) or ""), x + 14, y + 78 + extra, ui.f16, C.gold)
-  text(L("HEADS") .. "  " .. effect_description(coin.heads), x + 14, y + 108 + extra, ui.f16, C.blue)
-  text(L("TAILS") .. "  " .. effect_description(coin.tails), x + 14, y + 137 + extra, ui.f16, C.red)
+  local odds = tie > 0 and L("HEADS %d%%  /  EDGE %d%%  /  TAILS %d%%", heads,
+    math.floor(tie * 100 + .5), math.floor((1 - ui.hovered_coin.probability - tie) * 100 + .5)) or
+    L("HEADS %d%%  /  TAILS %d%%", heads, 100 - heads)
+  text(odds ..
+    ((coin.energy_cost or 0) > 0 and L("  -  COSTS %d ENERGY", coin.energy_cost) or ""), x + 14, y + 96 + extra, ui.f16, C.gold)
+  color(C.blue)
+  love.graphics.printf(heads_line, x + 14, y + 126 + extra, w - 28)
+  color(C.red)
+  love.graphics.printf(tails_line, x + 14, y + tails_y + extra, w - 28)
+  if edge_line then
+    color(C.purple)
+    love.graphics.printf(edge_line, x + 14, y + tails_y + 30 + extra + (#tail_lines - 1) * 18, w - 28)
+  end
   if ui.hovered_coin.locked then
-    text("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK", x + 14, y + 172 + extra, ui.f16, C.orange)
+    color(C.orange)
+    love.graphics.printf(locked_line, x + 14, y + tails_y + 35 + edge_extra + extra + (#tail_lines - 1) * 18, w - 28)
   end
 end
 
@@ -251,7 +280,7 @@ local function coin_face(cx, cy, radius, outcome, selected, id)
   end
   coin_image(id or "copper", cx - size / 2, cy - size / 2, size)
   if outcome then
-    local tint = outcome == "Heads" and C.blue or C.red
+    local tint = outcome == "Heads" and C.blue or outcome == "Tie" and C.purple or C.red
     local bx, by = cx + radius * .78, cy + radius * .65
     color(C.ink)
     love.graphics.circle("fill", bx, by, 15)

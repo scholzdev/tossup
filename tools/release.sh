@@ -43,8 +43,13 @@ if [ "$DRY" = 0 ]; then
 fi
 
 echo "== tests"
-for t in tests/test_*.lua; do lua "$t" | tail -1; done
-./tools/build_docs.sh --check | tail -1
+# no "cmd | tail": a pipe would hide the exit status of cmd from set -e
+for t in tests/test_*.lua; do
+  out=$(lua "$t" 2>&1) || { echo "$out"; echo "tests failed: $t"; exit 1; }
+  echo "$out" | tail -1
+done
+out=$(./tools/build_docs.sh --check 2>&1) || { echo "$out"; echo "docs are out of date"; exit 1; }
+echo "$out" | tail -1
 
 echo "== build"
 ./tools/build_all.sh

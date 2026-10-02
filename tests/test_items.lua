@@ -63,16 +63,16 @@ assert(w.dealt.probability <= before + 1e-9, "next coin not weighted")
 
 -- double down doubles the next coin's effect, then is gone
 local d = fresh({"double_down"})
-for _, c in ipairs(d.coins) do c.id = "sword" end -- heads = 5 points
+for _, c in ipairs(d.coins) do c.id = "sword" end -- heads = 3 points
 d.dealt.probability = 1
 assert(Game.use_item(d, 1))
 local hp = d.encounter.quota
 flip_resolve(d)
-equal(hp - d.encounter.quota, 10, "points doubled")
+equal(hp - d.encounter.quota, 6, "points doubled")
 d.dealt.probability = 1
 hp = d.encounter.quota
 flip_resolve(d)
-equal(hp - d.encounter.quota, 5, "only once")
+equal(hp - d.encounter.quota, 3, "only once")
 
 -- swap: free discard of the dealt coin
 local s = fresh({"swap"})

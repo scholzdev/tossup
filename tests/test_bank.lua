@@ -14,6 +14,7 @@ local function visible(g) return #g.encounter.queue end
 
 -- auto mulligan (headless default): five coins in the bank, the rest in the pile
 local g = Game.new(1, "big")
+g.player.gold = Game.EXCHANGE_BASE -- this fixture expects an exchange to be affordable after the stack empties
 equal(#g.coins, 8)
 equal(#g.encounter.queue, 5, "opening hand")
 equal(#g.encounter.pile, 3, "rest of the deck is the draw pile")
@@ -105,20 +106,25 @@ assert(Game.leave_shop(lvl))
 assert(lvl.mulligan, "mulligan again on the next level")
 equal(lvl.player.energy, lvl.player.max_energy, "energy refilled")
 
--- coin sets: at most START_MAX coins, at most MAX_COPIES of a coin (Normal is exempt), only usable coins
-local ok = Game.new(5, "blade", nil, {"normal", "sword", "dagger", "normal"})
-equal(#ok.coins, 4)
+-- coin sets: at most START_MAX coins, with rarity-based copy limits, only usable coins
+local ok = Game.new(5, "blade", nil, {"normal", "sword", "dagger"})
+equal(#ok.coins, 3)
 equal(ok.coins[2].id, "sword")
-local ten = {}
-for i = 1, Game.START_MAX do ten[i] = "normal" end
-equal(#Game.new(5, "blade", nil, ten).coins, Game.START_MAX, "a full set of Normal coins is fine")
-ten[#ten + 1] = "normal"
-assert(not pcall(Game.new, 5, "blade", nil, ten), "too many coins")
+local full = {"normal", "normal", "normal", "hammer", "hammer"}
+equal(#Game.new(5, "blade", {"hammer"}, full).coins, Game.START_MAX, "a full legal set is fine")
+full[#full + 1] = "normal"
+assert(not pcall(Game.new, 5, "blade", {"hammer"}, full), "too many coins")
+assert(not pcall(Game.new, 5, "blade", nil, {"normal", "normal", "normal", "normal"}), "four Normal coins are refused")
 assert(not pcall(Game.new, 5, "blade", nil, {}), "empty")
 assert(not pcall(Game.new, 5, "blade", nil, {"hammer"}), "locked coin")
 assert(pcall(Game.new, 5, "blade", {"hammer"}, {"hammer", "normal"}), "unlocked coin is allowed")
-assert(pcall(Game.new, 5, "blade", nil, {"sword", "sword", "sword", "normal"}), "three copies are fine")
+assert(pcall(Game.new, 5, "blade", nil, {"sword", "sword", "sword"}), "three common copies are fine")
 assert(not pcall(Game.new, 5, "blade", nil, {"sword", "sword", "sword", "sword"}), "four copies are refused")
+assert(not pcall(Game.new, 5, "blade", nil, {"normal", "sword", "dagger", "normal"}), "four commons of different types refused")
+assert(pcall(Game.new, 5, "blade", {"hammer"}, {"hammer", "hammer"}), "two uncommon copies are fine")
+assert(not pcall(Game.new, 5, "blade", {"hammer"}, {"hammer", "hammer", "hammer"}), "third uncommon refused")
+assert(not pcall(Game.new, 5, "blade", {"cursed"}, {"cursed", "cursed"}), "second rare refused")
+assert(not pcall(Game.new, 5, "seer", {"mimic"}, {"mimic", "mimic"}), "second epic refused")
 
 -- energy cost: a coin you cannot pay for cannot be flipped (discard it instead); the last coin always flips
 Game.characters().pricey = {name = "P", description = "", starter = "normal", deck = {"hammer", "normal", "normal"},

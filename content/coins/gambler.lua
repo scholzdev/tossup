@@ -6,7 +6,7 @@ return {
   rarity = "SR",
   cost = 22,
   energy_cost = 1,
-  probability = .5,
+  probability = .35,
   heads = {{type = "score", amount = 7}},
   tails = {},
   on_resolve = function(game, _, res)

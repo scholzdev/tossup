@@ -10,7 +10,8 @@ local function level(ids, seed)
   for i = 1, #ids do plain[i] = "normal" end
   local keep = Game.START_MAX
   Game.START_MAX = 10 -- tests use decks bigger than the start size
-  local game = Game.new(seed or 1, "test", require("content.coin_order"), plain, false)
+  Game.characters().test.deck = plain -- constructed test stacks may exceed deckbuilding copy limits
+  local game = Game.new(seed or 1, "test", require("content.coin_order"), nil, false)
   Game.START_MAX = keep
   for i, id in ipairs(ids) do game.coins[i].id = id end -- the copy limit only applies when a deck is built
   local e = game.encounter
@@ -30,12 +31,12 @@ local function scored(game, side)
   return game.encounter.scored - before
 end
 
--- the multiplier: x1, x1.25, x1.5, x1.75 on a 4-point coin, rounded
+-- the multiplier: x1, x1.25, x1.5, x1.75 on a 2-point coin, rounded
 local g = level({"dagger", "dagger", "dagger", "dagger", "dagger"})
-equal(scored(g, "Heads"), 4, "first flip x1")
-equal(scored(g, "Heads"), 5, "second flip x1.25")
-equal(scored(g, "Heads"), 6, "third flip x1.5")
-equal(scored(g, "Heads"), 7, "fourth flip x1.75")
+equal(scored(g, "Heads"), 2, "first flip x1")
+equal(scored(g, "Heads"), 3, "second flip x1.25")
+equal(scored(g, "Heads"), 3, "third flip x1.5")
+equal(scored(g, "Heads"), 4, "fourth flip x1.75")
 equal(g.encounter.combo_len, 4)
 equal(scored(g, "Tails"), 1, "a different result breaks the combo (Tails pays 1)")
 equal(g.encounter.combo_len, 1)
@@ -44,13 +45,13 @@ equal(g.encounter.combo_side, "Tails")
 -- cap at x3
 g = level({"dagger", "dagger"})
 g.encounter.combo_side, g.encounter.combo_len = "Heads", 30
-equal(scored(g, "Heads"), 12, "capped at x3")
+equal(scored(g, "Heads"), 6, "capped at x3")
 
 -- hot hand adds an extra step for the next flip
 g = level({"hot_hand", "dagger"})
 equal(scored(g, "Heads"), 2)
 equal(g.encounter.combo_len, 2, "hot hand: 1 for the flip + 1 extra")
-equal(scored(g, "Heads"), 6, "next flip is the third step: x1.5")
+equal(scored(g, "Heads"), 3, "next flip is the third step: x1.5")
 
 -- anchor: a shield lets the next different result pass without breaking the combo
 g = level({"anchor", "dagger", "dagger"})

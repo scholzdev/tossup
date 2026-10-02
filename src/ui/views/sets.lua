@@ -1,4 +1,4 @@
--- Coin Sets: every character with all of its coins. Build up to three sets of up to 10 coins per
+-- Coin Sets: every character with all of its coins. Build up to three sets of up to 5 coins per
 -- character. Locked coins are unlocked by buying them in the shop during a run.
 local Game = require("src.game")
 local Profile = require("src.profile")
@@ -9,6 +9,8 @@ local C, color, box, outline, text, centered, button = D.C, D.color, D.box, D.ou
 local coin_image, coin_hover = D.coin_image, D.coin_hover
 
 local SLOT, SLOT_GAP = 64, 14
+local RARITY_SHORT = {N = "COM", R = "UNC", SR = "RAR", UR = "EPI"}
+local RARITY_RANK = {N = 1, R = 2, SR = 3, UR = 4}
 
 local function padlock(cx, cy)
   color(C.face)
@@ -27,7 +29,7 @@ local function count_in(coins, id)
 end
 
 local function draw_sets()
-  D.frame(D.title("sets"), "BACK", function() A.go("title") end)
+  D.frame(D.title("sets"), "BACK", A.back_from_sets)
 
   -- every character
   for i, id in ipairs(ui.character_order) do
@@ -61,14 +63,16 @@ local function draw_sets()
       coin_image(id, x, y, SLOT)
       coin_hover(id, x, y, SLOT, SLOT)
       ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = SLOT, h = SLOT, action = function() A.remove_coin_from_set(i) end}
+      local rarity = ui.catalog[id].rarity
+      centered(D.L(RARITY_SHORT[rarity]), x, y + SLOT + 2, SLOT, ui.f16, C.rarity[rarity])
     end
   end
   centered(dirty and "UNSAVED CHANGES" or "CLICK A COIN HERE TO REMOVE IT", 70, 496, 430, ui.f16,
     dirty and C.orange or C.muted)
   button(dirty and "SAVE SET" or "SAVED", 100, 530, 370, 48, dirty and C.blue or C.panel_light, A.save_set, dirty)
   button("CLEAR SET", 100, 592, 370, 44, C.red, A.clear_set, #set.coins > 0)
-  centered(D.L("MAX %d OF THE SAME COIN  -  NORMAL: UP TO %d", Game.MAX_COPIES, Game.START_MAX), 70, 702, 430,
-    ui.f16, C.muted)
+  centered("PER SET: COMMON 3  -  UNCOMMON 2", 70, 680, 430, ui.f16, C.muted)
+  centered("RARE 1  -  EPIC 1", 70, 704, 430, ui.f16, C.muted)
 
   -- right: all of this character's coins
   box(520, 212, 700, 528, C.panel_dk)
@@ -76,10 +80,15 @@ local function draw_sets()
   centered(D.L("%s  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP", def.name:upper()), 520, 226, 700,
     ui.f16, C.gold)
   local entries = {}
-  for _, id in ipairs(def.pool) do entries[#entries + 1] = {id = id} end
+  for _, id in ipairs(def.pool) do entries[#entries + 1] = {id = id, order = #entries + 1} end
   for _, entry in ipairs(def.locked or {}) do
-    entries[#entries + 1] = {id = entry[1], cost = entry[2], locked = not Profile.is_unlocked(ui.profile, character_id, entry[1])}
+    entries[#entries + 1] = {id = entry[1], order = #entries + 1,
+      locked = not Profile.is_unlocked(ui.profile, character_id, entry[1])}
   end
+  table.sort(entries, function(a, b)
+    local ra, rb = RARITY_RANK[ui.catalog[a.id].rarity], RARITY_RANK[ui.catalog[b.id].rarity]
+    return ra == rb and a.order < b.order or ra < rb
+  end)
   local columns, step = 8, 82
   local gx = 520 + (700 - ((columns - 1) * step + SLOT)) / 2
   for i, entry in ipairs(entries) do
@@ -96,6 +105,8 @@ local function draw_sets()
       centered(n > 0 and ("x" .. n) or "", x, y + SLOT + 2, SLOT, ui.f16, C.green)
       ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = SLOT, h = SLOT, action = function() A.add_coin_to_set(entry.id) end}
     end
+    local rarity = ui.catalog[entry.id].rarity
+    centered(D.L(RARITY_SHORT[rarity]), x, y + SLOT + 20, SLOT, ui.f16, C.rarity[rarity])
     coin_hover(entry.id, x, y, SLOT, SLOT, nil, entry.locked)
   end
 end

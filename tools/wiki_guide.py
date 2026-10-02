@@ -50,7 +50,7 @@ Between levels you visit the shop: four coins, two chips and one prize, plus a f
 - Coins go into your deck. Buying a coin you have not unlocked yet unlocks it for good, so it can be in your starting sets from then on.
 - Chips are one-use items. You can hold 3. Use them from the bar during a level while a coin is dealt.
 - Prizes are passive and last the whole run.
-- Reroll shows new coins (4 gold, 2 more every time). An extra deck slot costs 5 gold, up to {DECK_MAX} slots. Removing a coin and tuning its odds are there too.
+- Reroll shows new coins (4 gold, 2 more every time). An extra deck slot costs {SLOT_COST} gold, {SLOT_STEP} more for each one you buy, up to {DECK_MAX} slots. Removing a coin and tuning its odds are there too.
 
 A full deck cannot buy coins until you buy a slot or remove one.
 
@@ -109,7 +109,7 @@ Zwischen den Leveln gehst du in den Shop: vier Münzen, zwei Chips und eine Prä
 - Münzen kommen in dein Deck. Kaufst du eine noch nicht freigeschaltete Münze, ist sie dauerhaft freigeschaltet und kann danach in deine Startsets.
 - Chips sind Einwegartikel. Du kannst 3 halten. Benutze sie über die Leiste, solange eine Münze ausgeteilt ist.
 - Prämien wirken passiv und halten den ganzen Lauf.
-- Neu würfeln zeigt neue Münzen (4 Gold, jedes Mal 2 mehr). Ein zusätzlicher Deckplatz kostet 5 Gold, bis zu {DECK_MAX} Plätze. Eine Münze entfernen und ihre Chance verbessern gibt es auch.
+- Neu würfeln zeigt neue Münzen (4 Gold, jedes Mal 2 mehr). Ein zusätzlicher Deckplatz kostet {SLOT_COST} Gold, für jeden gekauften {SLOT_STEP} mehr, bis zu {DECK_MAX} Plätze. Eine Münze entfernen und ihre Chance verbessern gibt es auch.
 
 Ein volles Deck kann keine Münzen kaufen, bis du einen Platz kaufst oder eine Münze entfernst.
 
@@ -147,7 +147,7 @@ Every character has its own difficulty stage, 1 to 8. You choose it on the play 
 
 ## Saving
 
-The game saves your run by itself at the start of every level and in the shop, and Continue on the main menu picks it up again, even after you quit. A level in progress starts again from its opening hand. Coins, sets, options and records are saved separately. Options has a Clear Progress button that deletes everything.
+The game saves your run by itself at the start of every level and in the shop, and Continue on the main menu picks it up again, even after you quit. A level in progress starts again from its opening hand. Coins, sets, options and records are saved separately. The Clear Progress button in Options resets unlocks, collection, sets, tokens, stages, wins and endless records, and keeps your options.
 """,
             "de": """# Charaktere, Stufen und Speichern
 
@@ -165,7 +165,7 @@ Jeder Charakter hat seine eigene Schwierigkeitsstufe, 1 bis 8. Du wählst sie au
 
 ## Speichern
 
-Das Spiel speichert deinen Lauf von selbst zu Beginn jedes Levels und im Shop, und Weiter im Hauptmenü setzt ihn fort, auch nach dem Beenden. Ein laufendes Level beginnt wieder bei der Starthand. Münzen, Sets, Optionen und Rekorde werden getrennt gespeichert. In den Optionen löscht der Knopf Fortschritt löschen alles.
+Das Spiel speichert deinen Lauf von selbst zu Beginn jedes Levels und im Shop, und Weiter im Hauptmenü setzt ihn fort, auch nach dem Beenden. Ein laufendes Level beginnt wieder bei der Starthand. Münzen, Sets, Optionen und Rekorde werden getrennt gespeichert. Der Knopf Fortschritt löschen in den Optionen setzt Freischaltungen, Sammlung, Sets, Tokens, Stufen, Siege und Endlos-Rekorde zurück und behält deine Optionen.
 """,
         },
     },

@@ -88,7 +88,7 @@ local route = {}
 for i, stage in ipairs(Game.route) do route[i] = {name = stage.name, per_coin = stage.per_coin, payout = stage.payout, boss = stage.boss or false} end
 
 local constants = {}
-for _, key in ipairs({"START_GOLD", "START_MAX", "DECK_MAX", "SLOT_COST", "EXCHANGE_BASE", "EXCHANGE_STEP", "EXCHANGE_GAIN", "EXCHANGE_MAX",
+for _, key in ipairs({"START_GOLD", "START_MAX", "DECK_MAX", "SLOT_COST", "SLOT_STEP", "EXCHANGE_BASE", "EXCHANGE_STEP", "EXCHANGE_GAIN", "EXCHANGE_MAX",
   "SURPLUS_RATE", "COMBO_STEP", "COMBO_CAP", "RETURN_CAP", "MAX_COPIES", "VISIBLE", "MULLIGAN"}) do
   constants[key] = Game[key]
 end

@@ -3,7 +3,7 @@ return {
   name = "Sword", description = "Steady points on Heads.",
   rarity = "N",
   cost = 12,
-  probability = .5,
-  heads = {{type = "score", amount = 5}},
+  probability = .35,
+  heads = {{type = "score", amount = 3}},
   tails = {},
 }

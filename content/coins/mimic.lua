@@ -4,7 +4,7 @@ local RNG = require("src.rng")
 return {
   name = "Mimic", description = "Heads: does what the Heads side of a random other coin in your deck does.",
   rarity = "UR",
-  probability = .5,
+  probability = .3,
   heads = {}, tails = {{type = "score", amount = 1}},
   on_resolve = function(game, inst, res)
     if res.result ~= "Heads" then return end

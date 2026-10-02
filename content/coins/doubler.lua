@@ -1,8 +1,8 @@
 -- Every Doubler flip this level doubles the next one's Heads value (the counter is shared by all copies and resets each level).
 return {
-  name = "Doubler", description = "Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24...).",
+  name = "Doubler", description = "Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24... up to 384).",
   rarity = "SR",
-  probability = .5,
+  probability = .3,
   heads = {}, tails = {},
   on_resolve = function(game, _, res)
     local e = game.encounter

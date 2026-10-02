@@ -2,7 +2,7 @@
 return {
   name = "Echo", description = "Repeats the effects the previous coin had for this side.",
   rarity = "UR",
-  probability = .5,
+  probability = .6,
   heads = {}, tails = {},
   on_resolve = function(game, _, res)
     local previous = game.last_result
@@ -10,7 +10,7 @@ return {
     local Game = require("src.game") -- lazy: src.game loads this file
     local def = Game.catalog()[Game.get_coin(game, previous.uid).id]
     for _, effect in ipairs(def[string.lower(res.result)]) do
-      res.effects[#res.effects + 1] = {type = effect.type, amount = effect.amount}
+      res.effects[#res.effects + 1] = {type = effect.type, amount = effect.amount, coins = effect.coins}
     end
   end,
 }

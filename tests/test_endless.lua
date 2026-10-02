@@ -9,7 +9,8 @@ local function level(ids, seed)
   for i = 1, #ids do plain[i] = "normal" end
   local keep = Game.START_MAX
   Game.START_MAX = 10 -- tests use decks bigger than the start size
-  local game = Game.new(seed or 1, "test", require("content.coin_order"), plain, false)
+  Game.characters().test.deck = plain -- constructed test stacks may exceed deckbuilding copy limits
+  local game = Game.new(seed or 1, "test", require("content.coin_order"), nil, false)
   Game.START_MAX = keep
   for i, id in ipairs(ids) do game.coins[i].id = id end
   local e = game.encounter
@@ -77,9 +78,9 @@ equal(g.encounter.buffs[1].amount, 2)
 equal(scored(g, "Heads"), 2, "amplifier itself is doubled: 1 point x2")
 equal(g.encounter.buffs[1].amount, 3, "x2 became x3")
 equal(g.encounter.buffs[1].left, 2, "megaphone's second coin plus one more")
-equal(scored(g, "Heads"), 15, "sword x3")
-equal(scored(g, "Heads"), 15, "sword x3 again")
-equal(scored(g, "Heads"), 5, "buff over")
+equal(scored(g, "Heads"), 9, "sword x3")
+equal(scored(g, "Heads"), 9, "sword x3 again")
+equal(scored(g, "Heads"), 3, "buff over")
 
 -- true echo: repeats what the previous coin really did (Bettor's computed points, which Echo would miss), on either side
 g = level({"dagger", "dagger", "bettor", "true_echo"})

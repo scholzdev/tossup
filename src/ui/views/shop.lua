@@ -1,5 +1,5 @@
 -- Shop (full screen): coins, chips (items) and prizes (relics), a reroll for the coin offers,
--- and tune-ups for the coin you select in the deck strip. Buying a locked coin unlocks it for good.
+-- and coin removal for the coin you select in the deck strip. Buying a locked coin unlocks it for good.
 local Game = require("src.game")
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
@@ -48,6 +48,24 @@ local function draw_shop()
   text("REROLL", 124, 245, ui.f20, C.muted)
   price(reroll_cost, 70, 274, 190, g.player.gold >= reroll_cost)
   button("REROLL", 90, 322, 150, 36, C.orange, function() Game.reroll_shop(g) end, g.player.gold >= reroll_cost)
+
+  -- Owned chips and prizes stay visible as icons, with their effects on hover.
+  box(70, 390, 190, 188, PANEL)
+  outline(70, 390, 190, 188, C.panel_light)
+  text("CHIPS", 82, 400, ui.f20, C.gold)
+  for i, id in ipairs(g.items) do
+    local x = 82 + (i - 1) * 52
+    D.image_at(ui.item_images[id], x, 426, 40)
+    local def = ui.item_catalog[id]
+    D.text_hover(def.name, def.description, x, 426, 40, 40)
+  end
+  text("PRIZES", 82, 482, ui.f20, C.gold)
+  for i, id in ipairs(g.relics) do
+    local x = 82 + (i - 1) * 34
+    D.image_at(ui.relic_images[id], x, 510, 30)
+    local def = ui.relic_catalog[id]
+    D.text_hover(def.name, def.description, x, 510, 30, 30)
+  end
 
   -- COIN row
   local full = #g.coins >= g.slots
@@ -98,31 +116,21 @@ local function draw_shop()
     centered("SOLD", px, 474, 110, ui.f32, C.muted)
   end
 
-  -- tune-ups for the selected coin
-  box(1000, 190, 220, 370, PANEL)
-  outline(1000, 190, 220, 370, C.line)
-  centered("TUNE-UPS", 1000, 200, 220, ui.f20, C.gold)
+  -- deck tool for the selected coin
+  box(1000, 238, 220, 220, PANEL)
+  outline(1000, 238, 220, 220, C.line)
+  centered("DECK TOOL", 1000, 250, 220, ui.f20, C.gold)
   local selected = Game.get_coin(g, g.selected_uid)
-  centered("ODDS TUNER", 1000, 236, 220, ui.f20, C.face)
-  centered("+10% HEADS ON THE", 1000, 262, 220, ui.f16, C.muted)
-  centered("SELECTED COIN", 1000, 281, 220, ui.f16, C.muted)
-  price(10, 1000, 298, 220, g.player.gold >= 10)
-  button("UPGRADE", 1032, 340, 156, 36, C.gold, function() Game.upgrade(g, g.selected_uid) end,
-    g.player.gold >= 10 and selected and Game.probability(g, selected) < 1)
-  centered("COIN REMOVAL", 1000, 400, 220, ui.f20, C.face)
-  centered("DROP THE SELECTED COIN", 1000, 426, 220, ui.f16, C.muted)
-  price(8, 1000, 444, 220, g.player.gold >= 8)
-  button("REMOVE", 1032, 486, 156, 36, C.red, function() Game.remove(g, g.selected_uid) end,
+  centered("COIN REMOVAL", 1000, 286, 220, ui.f20, C.face)
+  centered(selected and catalog[selected.id].name or "SELECT A COIN", 1000, 316, 220, ui.f16, C.muted)
+  price(8, 1000, 342, 220, g.player.gold >= 8)
+  button("REMOVE", 1032, 394, 156, 36, C.red, function() Game.remove(g, g.selected_uid) end,
     g.player.gold >= 8 and #g.coins > 1)
 
   -- your deck
   text(D.L("YOUR DECK  %d / %d", #g.coins, g.slots), 70, 612, ui.f20, C.gold)
   text(full and "DECK FULL  -  BUY A SLOT OR REMOVE A COIN" or "CLICK A COIN TO SELECT IT", 340, 618, ui.f16,
     full and C.orange or C.muted)
-  local held = {}
-  for i, id in ipairs(g.items) do held[i] = ui.item_catalog[id].short end
-  for _, id in ipairs(g.relics) do held[#held + 1] = ui.relic_catalog[id].name:upper() end
-  if #held > 0 then text(D.L("HELD  %s", table.concat(held, ", ")), 340, 638, ui.f16, C.orange) end
   for i = 1, Game.DECK_MAX do
     local x = 70 + (i - 1) * 92
     local item = g.coins[i]
@@ -134,7 +142,7 @@ local function draw_shop()
       outline(x, 664, 84, 76, next_slot and C.gold or C.line)
       D.padlock(x + 42, next_slot and 692 or 702)
       if next_slot then
-        centered(D.L("+%d GOLD", Game.SLOT_COST), x, 716, 84, ui.f16, g.player.gold >= Game.SLOT_COST and C.gold or C.red)
+        centered(D.L("+%d GOLD", Game.slot_cost(g)), x, 716, 84, ui.f16, g.player.gold >= Game.slot_cost(g) and C.gold or C.red)
         D.text_hover("EXTRA SLOT", "Buy one more deck slot. A bigger deck means a bigger quota.", x, 664, 84, 76)
         ui.buttons[#ui.buttons + 1] = {x = x, y = 664, w = 84, h = 76, action = function() Game.buy_slot(g) end}
       end
@@ -151,7 +159,7 @@ local function draw_shop()
     ::continue::
   end
 
-  -- next round: the big red button, under the tune-ups
+  -- next round: the big red button, under the deck tool
   local mx, my = ui.mouse()
   local over = mx >= 1054 and mx <= 1166 and my >= 586 and my <= 698
   D.image_at(ui.ui_images.next_round, 1054, 586 + (over and -3 or 0), 112)

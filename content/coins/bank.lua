@@ -2,7 +2,7 @@
 return {
   name = "Bank", description = "Heads: +3 gold, plus 1 per 10 gold held (max +3).",
   rarity = "R",
-  probability = .5,
+  probability = .4,
   heads = {{type = "gold", amount = 3}}, tails = {},
   on_resolve = function(game, _, res)
     if res.result ~= "Heads" then return end

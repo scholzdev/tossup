@@ -10,7 +10,7 @@ local SECTIONS = {
   {"EACH LEVEL", "First you see an OPENING HAND: click coins to mark them and press Discard to throw them away for free. Then the bank shows your next 3 coins. Flip the first one, or Discard it."},
   {"ENERGY", "Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Flux Capacitor give more. A coin you cannot pay for can only be discarded."},
   {"QUOTA MET", "You are paid gold at once and the level stays open: every 2 extra points pay 1 more gold. Press OPEN SHOP (top right) when you want to move on."},
-  {"OUT OF COINS", "If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back (at most 3 times per level). If you cannot, the run is over."},
+  {"OUT OF COINS", "If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back (only a limited number of times per level). If you cannot, the run is over."},
   {"THE SHOP", "Buy COINS (a bigger deck means a bigger quota, so buy better coins), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Odds Tuner adds Heads chance; Coin Removal drops a weak coin."},
 }
 
@@ -32,7 +32,7 @@ local function draw_help()
   text("CONTROLS", 666, 554, ui.f20, C.gold)
   love.graphics.setFont(ui.f16)
   color(C.face)
-  love.graphics.printf(D.L("Space = Flip / Next Coin.  Click = mark a coin.  Esc = menu (your run waits).  Hover any coin for details. Quitting the app loses the run."), 666, 582, 528)
+  love.graphics.printf(D.L("Space = Flip / Next Coin.  Click = mark a coin.  Esc = menu (your run waits).  Hover a coin for details. The run is saved at each level start and in the shop; Continue resumes it, a level in progress restarts."), 666, 582, 528)
   if ui.help_next then
     D.icon_button("GOT IT", ui.ui_images.start_level, 470, 684, 340, 56, C.green, function() A.go(ui.help_next) end)
   end

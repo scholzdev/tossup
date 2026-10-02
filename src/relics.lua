@@ -5,7 +5,8 @@
 --   encounter_start{encounter}   encounter_end{won}
 --   coin_deal{inst}  coin_flip{inst, flip}  coin_outcome{inst, flips, result}  <- set e.result
 --   coin_resolve{inst, res}  effect_applied{inst, effect, text}  coin_resolved{inst, res}
--- coin_outcome fires before the boss inversion; set e.result to "Heads"/"Tails" to change it.
+-- coin_outcome fires before the boss inversion; set e.result to "Heads"/"Tails" to change it, and e.final = true
+-- to keep that side (the boss inversion then skips this flip).
 local Signal = require("src.signal")
 local catalog = require("content.relics")
 

@@ -1,5 +1,5 @@
 -- Coin effect hooks. Routes a coin def's hooks onto the Signal bus, scoped to the coin that is
--- currently dealt/flipped. Modelled on the marble hooks in carnival_game (engine/marble.lua).
+-- currently dealt/flipped.
 --
 -- A coin def (content/coins/<id>.lua) may declare hooks in two styles, mixed freely:
 --
@@ -29,7 +29,8 @@
 --   on it are how a coin scales itself.
 --
 -- Events (scoped ones carry {game, inst}; all are also on the bus for relics/characters):
---   coin_deal  coin_flip{flip}  coin_resolve{res}  coin_discard
+--   coin_deal  coin_flip{flip}  coin_outcome{flips, result}  coin_resolve{res}  coin_discard
+--     (coin_outcome: set e.result to change the side that counts; e.final = true also stops the boss inversion)
 --   effect_applied{effect, text}  coin_resolved{res}             -- after the effects ran
 --   encounter_start{encounter}  encounter_end{won}                 -- global, no inst
 --

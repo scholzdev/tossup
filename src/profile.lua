@@ -1,6 +1,7 @@
 -- Meta progression that survives between runs: tokens, coin unlocks, coin sets and options.
 -- Pure data + (de)serialization; the LÖVE layer decides where the string is stored.
 local characters = require("content.characters")
+local coin_catalog = require("content.coins")
 
 local Profile = {}
 
@@ -11,10 +12,29 @@ local DEFAULT_OPTIONS = {screen_shake = true, fast_flip = false, fullscreen = fa
 
 Profile.DEFAULT_OPTIONS = DEFAULT_OPTIONS
 
+local RARITY_LIMIT = {N = 3, R = 2, SR = 1, UR = 1}
+
+function Profile.rarity_limit(coin_id)
+  local coin = coin_catalog[coin_id]
+  return coin and RARITY_LIMIT[coin.rarity] or 0
+end
+
 function Profile.new()
   local options = {}
   for key, value in pairs(DEFAULT_OPTIONS) do options[key] = value end
   return {tokens = 0, unlocked = {}, collected = {}, sets = {}, active_set = {}, options = options, wins = {}, best_endless = {}, stakes = {}}
+end
+
+-- Populate every existing unlock in memory for a development session.
+function Profile.unlock_all(profile)
+  local coins = require("content.coins")
+  for id in pairs(coins) do profile.collected[id] = true end
+  for character_id, def in pairs(characters) do
+    profile.wins[character_id] = true
+    profile.stakes[character_id] = #require("content.stakes")
+    profile.unlocked[character_id] = profile.unlocked[character_id] or {}
+    for _, entry in ipairs(def.locked or {}) do profile.unlocked[character_id][entry[1]] = true end
+  end
 end
 
 -- Characters unlock in this order: the first is always playable, each next one after winning a run with the one before.
@@ -113,6 +133,24 @@ local function copy(list)
   return out
 end
 
+local function limited_set(source, max, allowed)
+  local entries = {}
+  for _, id in ipairs(source) do
+    if coin_catalog[id] and (not allowed or allowed[id]) and #entries < max then entries[#entries + 1] = id end
+  end
+  -- Keep later picks when an older set has too many of a rarity (for example its starter Sword).
+  local out, counts = {}, {}
+  for i = #entries, 1, -1 do
+    local id = entries[i]
+    local rarity = coin_catalog[id].rarity
+    if (counts[rarity] or 0) < Profile.rarity_limit(id) then
+      table.insert(out, 1, id)
+      counts[rarity] = (counts[rarity] or 0) + 1
+    end
+  end
+  return out
+end
+
 -- The character's coin sets, created on first use: set 1 is the default deck, the others start
 -- empty. Returns a list of {name, coins}.
 function Profile.sets(profile, character_id)
@@ -135,18 +173,18 @@ function Profile.set_active(profile, character_id, index)
   if index >= 1 and index <= Profile.SET_COUNT then profile.active_set[character_id] = index end
 end
 
--- Add one coin to a set if it is available, the set has room, and the copy limit allows it.
--- max_copies does not apply to the plain Normal coin.
-function Profile.can_add(profile, character_id, coins, coin_id, max, max_copies)
+-- Add one coin to a set if it is available, the set has room, and its rarity has room.
+function Profile.can_add(profile, character_id, coins, coin_id, max)
   if #coins >= max or not available(profile, character_id)[coin_id] then return false end
-  local copies = 0
-  for _, id in ipairs(coins) do if id == coin_id then copies = copies + 1 end end
-  return coin_id == "normal" or copies < max_copies
+  local rarity = coin_catalog[coin_id].rarity
+  local count = 0
+  for _, id in ipairs(coins) do if coin_catalog[id] and coin_catalog[id].rarity == rarity then count = count + 1 end end
+  return count < Profile.rarity_limit(coin_id)
 end
 
-function Profile.add_to_set(profile, character_id, index, coin_id, max, max_copies)
+function Profile.add_to_set(profile, character_id, index, coin_id, max)
   local coins = Profile.sets(profile, character_id)[index].coins
-  if not Profile.can_add(profile, character_id, coins, coin_id, max, max_copies) then return false end
+  if not Profile.can_add(profile, character_id, coins, coin_id, max) then return false end
   coins[#coins + 1] = coin_id
   return true
 end
@@ -159,23 +197,14 @@ function Profile.remove_from_set(profile, character_id, index, slot)
 end
 
 -- The coins a new run starts with: the active set, limited to coins that are available, to max
--- entries and to max_copies of a coin (Normal is exempt), so an old or hand-edited save can never
+-- entries and the rarity totals, so an old or hand-edited save can never
 -- produce a set the game would reject. An empty (or unusable) set falls back to the default deck.
-function Profile.loadout(profile, character_id, max, max_copies)
-  max_copies = max_copies or max
+function Profile.loadout(profile, character_id, max)
   local def = characters[character_id]
   local ok = available(profile, character_id)
-  local function pick(source)
-    local list, copies = {}, {}
-    for _, id in ipairs(source) do
-      copies[id] = (copies[id] or 0) + 1
-      if ok[id] and #list < max and (id == "normal" or copies[id] <= max_copies) then list[#list + 1] = id end
-    end
-    return list
-  end
   local sets = Profile.sets(profile, character_id)
-  local list = pick(sets[Profile.active(profile, character_id)].coins)
-  if #list == 0 then list = pick(def.deck or {def.starter}) end
+  local list = limited_set(sets[Profile.active(profile, character_id)].coins, max, ok)
+  if #list == 0 then list = limited_set(def.deck or {def.starter}, max, ok) end
   return list
 end
 
@@ -220,8 +249,17 @@ function Profile.encode(profile)
   lines[#lines + 1] = "}, best_endless = {"
   for _, id in ipairs(sorted_keys(profile.best_endless)) do lines[#lines + 1] = "  " .. id .. " = " .. profile.best_endless[id] .. "," end
   lines[#lines + 1] = "}, options = {"
-  for _, key in ipairs(sorted_keys(profile.options)) do
-    lines[#lines + 1] = "  " .. key .. " = " .. tostring(profile.options[key]) .. ","
+  local option_keys = {}
+  for key in pairs(profile.options) do
+    if type(key) == "string" then option_keys[#option_keys + 1] = key end
+  end
+  table.sort(option_keys)
+  for _, key in ipairs(option_keys) do
+    local value = profile.options[key]
+    local kind = type(value)
+    if kind == "boolean" or kind == "string" or (kind == "number" and value == value and math.abs(value) < math.huge) then
+      lines[#lines + 1] = string.format("  [%q] = ", key) .. (kind == "string" and string.format("%q", value) or tostring(value)) .. ","
+    end
   end
   lines[#lines + 1] = "}}"
   return table.concat(lines, "\n")
@@ -234,32 +272,68 @@ function Profile.decode(text)
   if not ok or type(data) ~= "table" or type(data.tokens) ~= "number" or type(data.unlocked) ~= "table" then
     return Profile.new()
   end
-  -- fill what older save files lack
-  local fresh = Profile.new()
-  data.collected = type(data.collected) == "table" and data.collected or fresh.collected
-  data.sets = type(data.sets) == "table" and data.sets or fresh.sets
-  for _, list in pairs(data.sets) do -- sets used to hold 10 coins
-    for _, set in ipairs(type(list) == "table" and list or {}) do
-      while type(set.coins) == "table" and #set.coins > Profile.SET_SIZE do table.remove(set.coins) end
+  -- fill what older save files lack, and drop or default anything of the wrong type (damaged or hand-edited files)
+  local function table_of(value) return type(value) == "table" and value or {} end
+  local function whole(value) return type(value) == "number" and value == math.floor(value) and value or nil end
+  -- keeps only character-id keys (known characters) whose value passes check(value) -> cleaned value or nil
+  local function per_character(source, check)
+    local out = {}
+    for character_id, value in pairs(table_of(source)) do
+      if characters[character_id] then out[character_id] = check(value) end
     end
+    return out
   end
-  data.wins = type(data.wins) == "table" and data.wins or fresh.wins
-  data.stakes = type(data.stakes) == "table" and data.stakes or fresh.stakes
-  data.best_endless = type(data.best_endless) == "table" and data.best_endless or fresh.best_endless
-  data.active_set = type(data.active_set) == "table" and data.active_set or fresh.active_set
+  local function flag(value) return value == true or nil end
+  data.tokens = (data.tokens == data.tokens and data.tokens >= 0 and data.tokens < math.huge) and math.floor(data.tokens) or 0
+  data.unlocked = per_character(data.unlocked, function(ids)
+    local out = {}
+    for id, on in pairs(table_of(ids)) do if on == true and coin_catalog[id] then out[id] = true end end
+    return out
+  end)
+  local collected = {}
+  for id, on in pairs(table_of(data.collected)) do if on == true and coin_catalog[id] then collected[id] = true end end
+  data.collected = collected
+  data.sets = per_character(data.sets, function(list)
+    local sets = {}
+    for i, set in ipairs(table_of(list)) do
+      if i > Profile.SET_COUNT then break end
+      local coins = limited_set(table_of(table_of(set).coins), Profile.SET_SIZE) -- sets used to hold 10 coins
+      sets[i] = {name = type(table_of(set).name) == "string" and set.name or "SET " .. i, coins = coins}
+    end
+    return #sets == Profile.SET_COUNT and sets or nil -- an incomplete list is rebuilt from the default deck
+  end)
+  data.wins = per_character(data.wins, flag)
+  data.stakes = per_character(data.stakes, function(n)
+    n = whole(n)
+    return n and math.max(1, math.min(#require("content.stakes"), n))
+  end)
+  data.best_endless = per_character(data.best_endless, function(n)
+    n = whole(n)
+    return n and n > 0 and n or nil
+  end)
+  data.active_set = per_character(data.active_set, function(n)
+    n = whole(n)
+    return n and n >= 1 and n <= Profile.SET_COUNT and n or nil
+  end)
   -- older saves kept a single loadout per character: it becomes set 1
   if type(data.loadouts) == "table" then
     for character_id, list in pairs(data.loadouts) do
       if characters[character_id] and not data.sets[character_id] and type(list) == "table" then
-        Profile.sets(data, character_id)[1].coins = copy(list)
+        Profile.sets(data, character_id)[1].coins = limited_set(list, Profile.SET_SIZE)
       end
     end
     data.loadouts = nil
   end
-  data.options = type(data.options) == "table" and data.options or {}
-  for key, value in pairs(DEFAULT_OPTIONS) do
-    if type(data.options[key]) ~= type(value) then data.options[key] = value end
+  -- only the known options survive, each with the right type and range
+  local options = {}
+  for key, default in pairs(DEFAULT_OPTIONS) do
+    local value = table_of(data.options)[key]
+    if type(value) ~= type(default) or value ~= value then value = default end
+    if key:sub(1, 7) == "volume_" then value = math.max(0, math.min(100, value)) end
+    if key == "language" and value ~= "en" and value ~= "de" then value = default end
+    options[key] = value
   end
+  data.options = options
   return data
 end
 

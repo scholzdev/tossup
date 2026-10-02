@@ -3,7 +3,7 @@ return {
   name = "Fuse", description = "Discard it to charge +6. Heads spends all charge as points.",
   rarity = "SR",
   cost = 10,
-  probability = .5,
+  probability = .3,
   heads = {{type = "score", amount = 1}}, tails = {},
   on_discard = function(_, inst) inst.charge = (inst.charge or 0) + 6 end,
   on_resolve = function(_, inst, res)

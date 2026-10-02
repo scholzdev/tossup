@@ -10,7 +10,8 @@ local function level(ids, seed)
   for i = 1, #ids do plain[i] = "normal" end
   local keep = Game.START_MAX
   Game.START_MAX = 10
-  local game = Game.new(seed or 1, "test", require("content.coin_order"), plain, false)
+  Game.characters().test.deck = plain -- constructed test stacks may exceed deckbuilding copy limits
+  local game = Game.new(seed or 1, "test", require("content.coin_order"), nil, false)
   Game.START_MAX = keep
   for i, id in ipairs(ids) do game.coins[i].id = id end
   local e = game.encounter
@@ -66,12 +67,12 @@ scored(rush, "Heads")
 equal(rush.player.gold, gold + 8, "gold rush doubles Loaded's 4 gold")
 Game.use_modifiers = false
 
--- Jackpot: 20% for 25
-equal(Game.catalog().jackpot.probability, .2)
+-- Jackpot: 15% for 25
+equal(Game.catalog().jackpot.probability, .15)
 equal(scored(level({"jackpot"}), "Heads"), 25)
 
 -- Mimic copies the Heads effects of another coin in the deck
-equal(scored(level({"mimic", "sword"}), "Heads"), 5, "mimic copies Sword's 5 points")
+equal(scored(level({"mimic", "sword"}), "Heads"), 3, "mimic copies Sword's 3 points")
 equal(scored(level({"mimic", "sword"}), "Tails"), 1, "tails: 1 point")
 equal(scored(level({"mimic"}), "Heads"), 0, "nothing to copy")
 
@@ -88,7 +89,7 @@ equal(Game.exchanges_left(life), Game.EXCHANGE_MAX + 1)
 local horo = level({"horoscope", "normal"})
 scored(horo, "Heads")
 assert(math.abs(horo.encounter.magnet - .07) < 1e-9)
-assert(math.abs(Game.probability(horo, horo.coins[2]) - .57) < 1e-9)
+assert(math.abs(Game.probability(horo, horo.coins[2]) - .72) < 1e-9)
 
 -- Crystal Ball: Heads 5 points; Tails lets you discard one of the next three bank coins (once)
 local ball = level({"crystal_ball", "sword", "dagger", "normal", "normal"})
@@ -113,8 +114,8 @@ equal(chips.encounter.shield, 1, "Safety Net: a shield")
 assert(Items.use(chips, 1))
 assert(math.abs(chips.dealt.probability - .7) < 1e-9, "Lucky Charm applies to the coin in play")
 scored(chips, "Tails")
-assert(math.abs(Game.probability(chips, Game.get_coin(chips, chips.dealt.uid)) - .7) < 1e-9, "and to the next coin")
+assert(math.abs(Game.probability(chips, Game.get_coin(chips, chips.dealt.uid)) - .85) < 1e-9, "and to the next coin")
 scored(chips, "Tails")
-assert(math.abs(Game.probability(chips, Game.get_coin(chips, chips.dealt.uid)) - .5) < 1e-9, "then it is used up (2 coins)")
+assert(math.abs(Game.probability(chips, Game.get_coin(chips, chips.dealt.uid)) - .65) < 1e-9, "then it is used up (2 coins)")
 
 print("extra tests passed")

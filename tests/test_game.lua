@@ -1,4 +1,5 @@
 local Game = require("src.game")
+local Profile = require("src.profile")
 local RNG = require("src.rng")
 
 -- most tests below assume the old one-coin, six-coin-pool characters; the real content is
@@ -70,7 +71,7 @@ assert(not Game.force(g, "Tails"), "insufficient energy")
 g.encounter.quota = 15
 local hp = g.encounter.quota
 assert(Game.resolve(g))
-equal(g.encounter.quota, hp - 5, "Sword Heads scores points")
+equal(g.encounter.quota, hp - 3, "Sword Heads scores points")
 equal(g.encounter.flips, 1)
 assert(not Game.resolve(g), "cannot resolve twice")
 assert(Game.flip(g), "single-coin deck reshuffles")
@@ -101,14 +102,11 @@ assert(Game.resolve(win))
 assert(win.encounter.cleared, "quota met")
 assert(Game.end_level(win))
 equal(win.phase, "SHOP", "enemy death wins")
-equal(win.player.gold, Game.START_GOLD + Game.route[1].payout + 2, "level payout plus 2 gold for 4 points beyond the quota")
+equal(win.player.gold, Game.START_GOLD + Game.route[1].payout + 1, "level payout plus 1 gold for 2 points beyond the quota")
 equal(#win.coins, 1, "no free coin")
 equal(#win.shop_offers, 4)
 win.player.gold = 100
 local selected = win.coins[1]
-local old = Game.probability(win, selected)
-assert(Game.upgrade(win, selected.uid))
-equal(Game.probability(win, selected), old + .10, "permanent probability upgrade")
 assert(Game.buy_energy(win))
 equal(win.player.max_energy, 4)
 assert(Game.reroll_shop(win))
@@ -137,7 +135,10 @@ for i = Game.START_MAX + 1, Game.DECK_MAX do
   assert(Game.buy_slot(cap), "buy slot " .. i)
   equal(cap.slots, i)
 end
-equal(cap.player.gold, gold_slots - (Game.DECK_MAX - Game.START_MAX) * Game.SLOT_COST, "each slot costs SLOT_COST")
+local slot_total = 0
+for i = 0, Game.DECK_MAX - Game.START_MAX - 1 do slot_total = slot_total + Game.SLOT_COST + Game.SLOT_STEP * i end
+equal(cap.player.gold, gold_slots - slot_total, "each slot costs SLOT_STEP more than the one before")
+equal(Game.slot_cost(Game.new(6)), Game.SLOT_COST, "the first extra slot costs SLOT_COST")
 assert(not Game.buy_slot(cap), "no slot beyond DECK_MAX")
 local poor = Game.new(6)
 poor.phase = "SHOP"
@@ -241,7 +242,7 @@ for _ = 1, 3 do play(magnet, "Heads") end
 assert(math.abs(magnet.encounter.magnet - .05) < 1e-9, "magnet after 3 Heads")
 play(magnet, "Tails")
 equal(magnet.encounter.streak, 0, "Tails resets streak")
-assert(Game.probability(magnet, magnet.coins[1]) > .5, "magnet raises odds")
+assert(Game.probability(magnet, magnet.coins[1]) > Game.catalog()[magnet.coins[1].id].probability, "magnet raises odds")
 
 local shop = Game.new(9)
 shop.phase = "SHOP"
@@ -272,9 +273,15 @@ equal(d2.dealt.uid, d2.coins[1].uid, "discarded coin never returns")
 
 for id, r in pairs(real) do chars[id].starter, chars[id].deck, chars[id].pool, chars[id].locked = r[1], r[2], r[3], r[4] end
 
--- real content: every character starts with 5 coins (5 free slots), mostly Normal plus a coin or two of its own
-for id in pairs(Game.characters()) do
-  equal(#real[id][2], 5, id .. " default deck has five coins")
+-- real starter sets obey the rarity limits; Blade and Trader grow from three coins
+for id, expected in pairs({blade = 3, seer = 5, trader = 3}) do
+  equal(#real[id][2], expected, id .. " default deck size")
+  local counts = {}
+  for _, coin_id in ipairs(real[id][2]) do
+    local rarity = Game.catalog()[coin_id].rarity
+    counts[rarity] = (counts[rarity] or 0) + 1
+    assert(counts[rarity] <= Profile.rarity_limit(coin_id), id .. " default rarity limit")
+  end
 end
 for _, id in ipairs({"blade", "seer", "trader"}) do
   local specials = 0
@@ -282,7 +289,7 @@ for _, id in ipairs({"blade", "seer", "trader"}) do
   assert(specials >= 1, id .. " starts with at least one coin of its own")
 end
 local blade = Game.new(3, "blade")
-equal(#blade.coins, 5)
+equal(#blade.coins, 3)
 blade.encounter.quota = 1
 assert(Game.flip(blade))
 blade.pending.result = "Heads"
@@ -317,11 +324,11 @@ assert(only_listed, "offers come from the character's own coins")
 assert(appeared.hammer and appeared.sword, "locked and starting coins both appear")
 
 -- buying a coin records it as purchased (the UI unlocks locked ones for good)
-local shopper = Game.new(5, "blade")
+local shopper = Game.new(5, "blade", {"blood"}, {"normal", "normal", "normal", "blood", "blood"})
 shopper.phase = "SHOP"
 shopper.shop_offers = {"hammer"}
 shopper.player.gold = 60
-assert(not Game.buy(shopper, 1), "the starting deck fills its slots: buy a slot first")
+assert(not Game.buy(shopper, 1), "a full deck must buy a slot first")
 assert(Game.buy_slot(shopper))
 assert(Game.buy(shopper, 1), "now there is a free slot")
 equal(#shopper.coins, 6)
@@ -378,7 +385,7 @@ equal(house.last_result.final, "Tails")
 -- clearing the quota does not end the level: keep flipping for extra gold, open the shop when you like
 local k = Game.new(41, "blade")
 equal(Game.end_level(k), false, "cannot leave before the quota is met")
-for _, c in ipairs(k.coins) do c.id = "sword" end -- heads = 5 points
+for _, c in ipairs(k.coins) do c.id = "sword" end -- heads = 3 points
 k.encounter.quota, k.encounter.max_quota = 2, 2
 local gold = k.player.gold
 k.dealt.probability = 1
@@ -386,10 +393,10 @@ assert(Game.flip(k) and Game.resolve(k))
 equal(k.phase, "ENCOUNTER", "level stays open after clearing")
 assert(k.encounter.cleared)
 equal(k.cleared, 1, "counts as cleared right away")
-equal(k.player.gold, gold + Game.route[1].payout + 1, "level payout plus 1 gold for the 3 extra points")
+equal(k.player.gold, gold + Game.route[1].payout, "level payout, with only 1 extra point")
 k.dealt.probability = 1
 assert(Game.flip(k) and Game.resolve(k))
-equal(k.player.gold, gold + Game.route[1].payout + 4, "8 extra points in total pay 4 gold, of which 1 was already paid")
+equal(k.player.gold, gold + Game.route[1].payout + 2, "4 extra points in total pay 2 gold")
 equal(k.cleared, 1, "cleared is counted once")
 local before = k.player.gold
 assert(Game.end_level(k))
@@ -409,7 +416,7 @@ while d3.phase == "ENCOUNTER" do
   flips_made = flips_made + 1
   assert(flips_made <= #d3.coins, "terminates")
 end
-equal(flips_made, 5, "every coin of the stack was played")
+equal(flips_made, #d3.coins, "every coin of the stack was played")
 equal(d3.phase, "SHOP", "last coin played after clearing -> shop")
 assert(d3.encounter.cleared)
 
@@ -426,10 +433,10 @@ assert(Game.resolve(bossy))
 equal(bossy.phase, "VICTORY")
 
 -- quotas scale with the number of coins in the deck (a level lasts as long as the stack)
-equal(Game.quota_for(1, 5), 3)
-equal(Game.quota_for(1, 10), 6)
-equal(Game.quota_for(4, 10), 30)
+equal(Game.quota_for(1, 5), 4)
+equal(Game.quota_for(1, 10), 7)
+equal(Game.quota_for(4, 10), 45)
 equal(Game.quota_for(2, 1), 1, "never below 1")
-equal(Game.new(51, "blade").encounter.quota, Game.quota_for(1, 5), "a level's quota comes from the deck size at level start")
+equal(Game.new(51, "blade").encounter.quota, Game.quota_for(1, 3), "a level's quota comes from the deck size at level start")
 
 print("game tests passed")

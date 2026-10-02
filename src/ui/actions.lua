@@ -12,7 +12,7 @@ local Version = require("src.version")
 local Tutorial = require("src.ui.tutorial")
 
 local PROFILE_FILE = "profile.lua"
-local RUN_FILE = "run.lua" -- the saved run (autosaved at the start of every level and in the shop)
+local RUN_FILE = Game.DEV_MODE and "run-dev.lua" or "run.lua" -- keep development runs separate
 local saved_key = nil
 
 local function apply_options()
@@ -22,29 +22,37 @@ local function apply_options()
 end
 
 function A.load_profile()
-  ui.profile = Profile.decode(love.filesystem.getInfo(PROFILE_FILE) and love.filesystem.read(PROFILE_FILE))
+  ui.profile = Game.SANDBOX_MODE and Profile.new() or
+    Profile.decode(love.filesystem.getInfo(PROFILE_FILE) and love.filesystem.read(PROFILE_FILE))
+  if Game.DEV_MODE or Game.SANDBOX_MODE then
+    Profile.unlock_all(ui.profile)
+    ui.profile.options.seen_help = true
+  end
   apply_options()
 end
 
 local function save_profile()
+  if Game.DEV_MODE or Game.SANDBOX_MODE then return end -- development unlocks and wins never enter the regular profile
   love.filesystem.write(PROFILE_FILE, Profile.encode(ui.profile))
 end
 
 -- ---- run saving: the opening hand of a level and the shop are safe points (no coin is mid-flip)
-function A.has_saved_run() return love.filesystem.getInfo(RUN_FILE) ~= nil end
+function A.has_saved_run() return not Game.SANDBOX_MODE and love.filesystem.getInfo(RUN_FILE) ~= nil end
 
 local function delete_run()
   if A.has_saved_run() then love.filesystem.remove(RUN_FILE) end
 end
 
 local function save_run(game)
+  if game.sandbox then return end
   love.filesystem.write(RUN_FILE, Serialize.encode({version = 1, build = Version.build, game = Game.snapshot(game)}))
 end
 
 -- Continue the saved run (at the start of its level or in its shop). False when there is none or it cannot be read.
 function A.load_run()
   local data = A.has_saved_run() and Serialize.decode(love.filesystem.read(RUN_FILE))
-  local game = type(data) == "table" and data.version == 1 and Game.restore(data.game)
+  local ok, game = pcall(function() return type(data) == "table" and data.version == 1 and Game.restore(data.game) end)
+  if not ok then game = nil end
   if not game then delete_run() return false end
   ui.game, ui.selected_character = game, game.character_id
   ui.flip_animation, ui.holding, ui.marked, ui.resolve_timer, ui.notice = nil, false, {}, 0, ""
@@ -66,7 +74,7 @@ function A.play()
   Tutorial.start()
 end
 
--- Quitting asks first (popup) while a run is in progress, because runs are not saved.
+-- Quitting asks first (popup) while a level is in progress, because only the start of a level and the shop are saved.
 function A.quit()
   local g = ui.game
   local running = g and g.phase == "ENCOUNTER" and not g.mulligan and not g.tutorial -- the level in progress is not saved; levels and the shop are
@@ -139,7 +147,9 @@ function A.do_clear_progress()
   local options = ui.profile.options
   ui.profile = Profile.new()
   ui.profile.options = options
+  if Game.DEV_MODE then Profile.unlock_all(ui.profile) end
   ui.game, ui.set_draft, ui.marked, ui.flip_animation, ui.holding = nil, nil, {}, nil, false
+  delete_run()
   save_profile()
 end
 
@@ -153,7 +163,7 @@ function A.change_collection_page(delta)
 end
 
 -- The coins the selected character starts a run with (its active coin set).
-function A.loadout() return Profile.loadout(ui.profile, ui.selected_character, Game.START_MAX, Game.MAX_COPIES) end
+function A.loadout() return Profile.loadout(ui.profile, ui.selected_character, Game.START_MAX) end
 
 -- ---- coin set editor: edits go to a draft and only reach the profile when Save is pressed
 -- (LÖVE runs LuaJIT, which has no table.unpack, so lists are copied by hand)
@@ -188,10 +198,15 @@ end
 function A.open_sets(character_id)
   character_id = character_id or ui.selected_character
   if not Profile.character_unlocked(ui.profile, character_id) then character_id = "blade" end
+  ui.sets_return = ui.screen == "select" and "select" or "title"
   ui.sets_character = character_id
   ui.sets_index = Profile.active(ui.profile, ui.sets_character)
   ui.set_draft = nil
   A.go("sets")
+end
+
+function A.back_from_sets()
+  A.go(ui.sets_return == "select" and "select" or "title")
 end
 
 function A.sets_pick_character(id)
@@ -210,7 +225,7 @@ end
 
 function A.add_coin_to_set(coin_id)
   local coins = A.set_draft()
-  if Profile.can_add(ui.profile, ui.sets_character, coins, coin_id, Game.START_MAX, Game.MAX_COPIES) then
+  if Profile.can_add(ui.profile, ui.sets_character, coins, coin_id, Game.START_MAX) then
     coins[#coins + 1] = coin_id
   end
 end
@@ -276,6 +291,7 @@ function A.discard_bank(uid)
 end
 
 function A.start(seed)
+  if Game.SANDBOX_MODE then return A.start_sandbox() end
   saved_key = nil
   if not Profile.character_unlocked(ui.profile, ui.selected_character) then return end -- win a run with the one before first
   ui.game = Game.new(seed or (os.time() + math.floor(love.timer.getTime() * 1000000)),
@@ -285,6 +301,38 @@ function A.start(seed)
   ui.holding = false
   ui.marked = {}
   ui.notice = ""
+end
+
+function A.start_sandbox(path)
+  path = path or os.getenv("SANDBOX_SCENE") or "sandbox.lua"
+  if type(path) ~= "string" or not path:match("^[%w_/%-]+%.lua$") or path:sub(1, 1) == "/" or path:find("//", 1, true) then
+    print("invalid sandbox scene file: " .. tostring(path))
+    return false
+  end
+  local module = path:sub(1, -5):gsub("/", ".")
+  package.loaded[module] = nil
+  local ok, cfg = pcall(require, module)
+  if not ok then print(path .. " failed to load: " .. tostring(cfg)) return false end
+  local screen = type(cfg) == "table" and (cfg.screen or "encounter")
+  local menu_screens = {title = true, select = true, collection = true, sets = true, options = true, help = true}
+  if screen ~= "encounter" and screen ~= "shop" and not menu_screens[screen] then
+    print(path .. " invalid screen: " .. tostring(screen))
+    return false
+  end
+  local made, game = pcall(Game.new_sandbox, cfg)
+  if not made then print(path .. " invalid: " .. tostring(game)) return false end
+  if screen == "shop" then Game.open_sandbox_shop(game) end
+  game.paused = menu_screens[screen] or false
+  saved_key = nil
+  ui.game = game
+  ui.selected_character = game.character_id
+  ui.sets_character = game.character_id
+  ui.sets_return = "title"
+  ui.set_draft = nil
+  ui.tutorial = nil
+  A.go(game.paused and screen or "title")
+  ui.flip_animation, ui.holding, ui.marked, ui.resolve_timer, ui.notice = nil, false, {}, 0, ""
+  return true
 end
 
 function A.select_character(id)
@@ -407,8 +455,8 @@ function A.update(dt)
   end
   if record and record.phase == "VICTORY" and not record.win_recorded then -- a won run unlocks the next character
     record.win_recorded = true
+    record.unlocked_stake = Profile.record_stake_win(ui.profile, record.character_id, record.stake or 1) -- before record_win: its legacy rule would lift max_stake
     record.unlocked_character = Profile.record_win(ui.profile, record.character_id)
-    record.unlocked_stake = Profile.record_stake_win(ui.profile, record.character_id, record.stake or 1)
     save_profile()
   end
   if record and record.endless and record.phase == "GAME_OVER" and not record.endless_recorded then

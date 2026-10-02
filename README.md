@@ -30,6 +30,10 @@ love .
 or `./tools/run.sh`. The first run starts a short interactive tutorial. Progress and the current run are saved
 automatically.
 
+For a sandbox scene, run `./tools/run.sh scenes/shop.lua` with a project-relative Lua file. Its `screen` field
+chooses `encounter`, `shop`, `title`, `select`, `collection`, `sets`, `options`, or `help`. Press F5 to reload the same
+file. `SANDBOX=1 ./tools/run.sh` uses `sandbox.lua` by default; sandbox runs do not touch normal progress.
+
 Keyboard: arrows move the focus, Enter presses, Space flips, D discards, 1 to 3 use chips, O opens the shop,
 Q and E change page or tab, Esc opens the menu. With a controller: stick or D-pad to move, A to press, B or Start for
 Esc, X flips, Y discards, the shoulder buttons and triggers change pages. The full list is under Options > Controls.

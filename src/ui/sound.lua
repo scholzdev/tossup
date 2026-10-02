@@ -42,12 +42,20 @@ function Sound.watch(ui)
   local animation = ui.flip_animation
   if animation and not last.animation then Sound.play("flip") end
   if last.animation and not animation then
-    Sound.play(last.animation.outcome == "Heads" and "land_heads" or "land_tails")
+    if last.animation.outcome == "Tie" then Sound.play("land_tails", 1.35)
+    else Sound.play(last.animation.outcome == "Heads" and "land_heads" or "land_tails") end
   end
   last.animation = animation
-  if not game then last.phase, last.result = nil, nil return end
+  if not game then last.game, last.phase, last.result = nil, nil, nil return end
 
+  local e = game.encounter
   local result = game.last_result
+  if game ~= last.game then -- a new or resumed game: take its state as the starting point, play nothing for it
+    local live = e and game.phase == "ENCOUNTER"
+    last.game, last.result, last.phase, last.gold = game, result, game.phase, game.player.gold
+    last.cleared, last.discards = live and e.cleared or nil, live and e.discards or nil
+    return
+  end
   if result and result ~= last.result then -- a coin just resolved
     if (result.penalty or 0) > 0 then Sound.play("penalty")
     elseif (result.gained or 0) > 0 then Sound.play("score", 1 + math.min(result.gained, 24) / 48) end
@@ -55,7 +63,6 @@ function Sound.watch(ui)
   end
   last.result = result
 
-  local e = game.encounter
   if e and game.phase == "ENCOUNTER" then
     if e.cleared and last.cleared == false then Sound.play("levelup") end
     if last.discards and e.discards > last.discards and not game.mulligan then Sound.play("discard") end

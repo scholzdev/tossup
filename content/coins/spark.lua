@@ -2,7 +2,7 @@
 return {
   name = "Spark", description = "Energy or a small strike.",
   rarity = "R",
-  probability = .5,
+  probability = .7,
   heads = {{type = "energy", amount = 2}},
   tails = {{type = "score", amount = 3}},
 }

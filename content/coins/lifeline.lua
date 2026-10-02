@@ -2,6 +2,6 @@
 return {
   name = "Lifeline", description = "Heads: 1 point, and you may exchange one more time this level.",
   rarity = "R",
-  probability = .5,
+  probability = .7,
   heads = {{type = "score", amount = 1}, {type = "extra_exchange", amount = 1}}, tails = {},
 }

@@ -1,11 +1,11 @@
--- deck: the starting coin set a new player gets (5 coins, leaving 5 free slots). pool: coins you can use in coin sets from the
+-- deck: the starting coin set a new player gets (up to 5 coins). pool: coins you can use in coin sets from the
 -- start. locked: {id, _} coins that are unlocked by buying them in the shop (the second value is
 -- unused). The shop sells every coin of a character, pool and locked alike.
 return {
   blade = {
     name = "The Blade", description = "Reliable points",
     starter = "normal",
-    deck = {"normal", "normal", "normal", "normal", "sword"},
+    deck = {"normal", "sword", "dagger"},
     pool = {"normal", "sword", "dagger"},
     locked = {{"hammer", 3}, {"blood", 4}, {"vampire", 4}, {"chain", 5}, {"cursed", 5}, {"fuse", 5},
       {"focus", 6}, {"martyr", 6}, {"snowball", 8}, {"spark", 3}, {"jackpot", 5}, {"lifeline", 4},
@@ -27,7 +27,7 @@ return {
   trader = {
     name = "The Trader", description = "Gold and energy",
     starter = "normal",
-    deck = {"normal", "normal", "normal", "loaded", "dagger"},
+    deck = {"normal", "loaded", "dagger"},
     pool = {"normal", "copper", "loaded", "dagger", "sword"},
     locked = {{"spark", 3}, {"bank", 4}, {"miser", 4}, {"hammer", 4}, {"bounty", 5},
       {"flock", 5}, {"momentum", 5}, {"capacitor", 6},

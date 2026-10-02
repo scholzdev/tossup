@@ -1,4 +1,4 @@
--- Interactive tutorial, played over a real throwaway run (5 Normal coins, quota 2, the first flips forced to Heads).
+-- Interactive tutorial, played over a real throwaway run (3 Normal coins, quota 2, the first flips forced to Heads).
 -- Each step dims the screen except a spotlight rectangle and shows a card next to it. A step either waits for a click
 -- ("click to continue") or waits for the player to do the thing (`wait` returns true when done); in those steps only the
 -- buttons inside the spotlight work. Esc or the SKIP button leaves the tutorial. Nothing from the run is saved.
@@ -20,6 +20,11 @@ local STEPS = {
    text = "Every level starts with an OPENING HAND. Click coins to mark them, then Discard throws them away for free. This time keep them all and press START LEVEL.",
    wait = function(g) return not g.mulligan end, hint = "PRESS START LEVEL"},
   {title = "THE COIN BANK", rect = {70, 170, 240, 480},
+   enter = function(g) -- discarding in the opening hand must not make the quota unreachable (a Normal coin scores 1)
+     local e = g.encounter
+     e.quota = math.min(e.quota, Game.coins_left(g))
+     e.max_quota = e.quota
+   end,
    text = "Your next three coins. The first one is up next. A level lasts exactly as long as your stack: every coin is played once."},
   {title = "THE COIN IN PLAY", rect = {330, 170, 880, 480},
    text = "The coin with its Heads effect (blue, left) and Tails effect (red, right), and its odds below. Read them before you flip."},
@@ -43,10 +48,10 @@ local STEPS = {
    wait = function(g) return g.phase == "SHOP" end, hint = "PRESS OPEN SHOP"},
   {title = "THE SHOP", rect = {70, 160, 920, 440},
    text = "Between levels you buy COINS (a bigger deck means a bigger quota, so buy better coins), CHIPS (one-use helpers) and a PRIZE (lasts the run). REROLL refreshes the coins."},
-  {title = "TUNE-UPS", rect = {1000, 190, 220, 370},
-   text = "With a coin selected below: the ODDS TUNER adds Heads chance, COIN REMOVAL drops a weak coin."},
+  {title = "DECK TOOL", rect = {1000, 238, 220, 220},
+   text = "Select a coin below to remove it from the deck for 8 gold."},
   {title = "YOUR DECK", rect = {70, 600, 920, 150},
-   text = "Your coins. Click one to select it for the tune-ups. The dark slots on the right are extra deck slots: 5 gold each, up to ten."},
+   text = "Your coins. Click one to select it for removal. The dark slots on the right are extra deck slots: 5 gold, 2 more for each one you buy, up to ten."},
   {title = "NEXT ROUND", rect = {1000, 586, 220, 170},
    text = "Press the red button when you are ready for the next level.",
    wait = function(g) return g.phase == "ENCOUNTER" end, hint = "PRESS NEXT ROUND"},
@@ -54,14 +59,14 @@ local STEPS = {
    enter = function(g) if g.mulligan then Game.mulligan_done(g) end end,
    text = "From level 2 on, every level has a MODIFIER: a bonus or a twist for this level only. Read it here before you flip."},
   {title = "RUNNING OUT OF COINS", rect = {930, 96, 100, 46},
-   text = "If your coins run out before the quota is met, pay gold to EXCHANGE: three played coins come back, at most 3 times per level. After that the run is over."},
+   text = "If your coins run out before the quota is met, pay gold to EXCHANGE: three played coins come back, only a limited number of times per level. After that the run is over."},
   {title = "THAT'S IT", rect = {330, 280, 620, 200},
-   text = "Beat four levels and the boss. Build a deck that scores, keep your combos going, and spend your gold well. Win a run to unlock the next character. Good luck!"},
+   text = "Beat three levels and then The House. Build a deck that scores, keep your combos going, and spend your gold well. Win a run to unlock the next character. Good luck!"},
 }
 
 -- Start the tutorial on a fresh throwaway run.
 function Tutorial.start()
-  local game = Game.new(7, "blade", {}, {"normal", "normal", "normal", "normal", "normal"}, true)
+  local game = Game.new(7, "blade", {}, {"normal", "normal", "normal"}, true)
   game.tutorial = true -- not logged, no tokens, no collection
   game.tutorial_heads = 3 -- the first flips land Heads, so the tutorial always works
   game.items = {"energy_drink"} -- so the chip slots are not empty
@@ -145,7 +150,7 @@ function Tutorial.draw()
     kept[1] = {x = 0, y = 0, w = 1280, h = 800, action = Tutorial.next}
   end
   ui.buttons = kept
-  D.button("SKIP", 1150, 750, 100, 36, C.panel_light, Tutorial.finish, nil, "B")
+  D.button("SKIP", 1110, 750, 140, 36, C.panel_light, Tutorial.finish, nil, "B")
 end
 
 return Tutorial

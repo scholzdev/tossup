@@ -11,5 +11,5 @@ return {
   {info = "Shop prices +20%", text = "SHOP PRICES +20%", rules = {price_mult = 1.2}},
   {info = "Only 2 exchanges per level", text = "ONLY 2 EXCHANGES PER LEVEL", rules = {exchange_max = 2}},
   {info = "Level 1 has a modifier too", text = "LEVEL 1 HAS A MODIFIER TOO", rules = {modifiers_from = 1}},
-  {info = "Quotas +50% in total", text = "QUOTAS +50% IN TOTAL", rules = {quota_mult = 1.5}},
+  {info = "Quotas +80% in total", text = "QUOTAS +80% IN TOTAL", rules = {quota_mult = 1.8}},
 }

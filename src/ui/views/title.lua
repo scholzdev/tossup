@@ -21,7 +21,9 @@ local function draw_title()
   local entries = {}
   if ui.game then
     entries[#entries + 1] = {"CONTINUE", C.blue, function() ui.game.paused = false end}
-    entries[#entries + 1] = {"NEW RUN", C.gold, A.play}
+    entries[#entries + 1] = {"NEW RUN", C.gold, function()
+      ui.confirm = {title = "NEW RUN", text = "YOUR SAVED RUN WILL BE REPLACED.", ok = A.play}
+    end}
   elseif A.has_saved_run() then -- a run saved by a previous session
     entries[#entries + 1] = {"CONTINUE", C.blue, A.load_run}
     entries[#entries + 1] = {"NEW RUN", C.gold, function()

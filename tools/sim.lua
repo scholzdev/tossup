@@ -9,6 +9,7 @@
 -- Everything is seeded: the same arguments always print the same numbers.
 package.path = "./?.lua;" .. package.path
 local Game = require("src.game")
+local Profile = require("src.profile")
 local Signal = require("src.signal")
 local Items = require("src.items")
 
@@ -72,7 +73,7 @@ local function measure(id, games, flips)
     g.player.gold = 30
     for step = 1, flips do
       g.encounter.quota, g.encounter.max_quota = 1e9, 1e9
-      if step % 15 == 1 then g.encounter.doubler = nil end -- Doubler's counter is per level (about three passes of a deck)
+      if step % 15 == 1 then g.encounter.doubler = nil g.encounter.tails = 0 end -- Doubler's counter and the level's Tails count (Martyr) are per level (about three passes of a deck)
       g.reshuffle = true -- measuring the coin, not running out of coins
       g.player.energy = math.max(g.player.energy, 3) -- measuring the coin, not the energy economy
       if g.dealt then Game.flip(g) Game.resolve(g) end
@@ -240,7 +241,7 @@ bots.smart = {
         local price = catalog[g.shop_offers[best]].cost or 15
         if #g.coins < g.slots then
           improved = Game.buy(g, best)
-        elseif g.slots < Game.DECK_MAX and g.player.gold >= Game.SLOT_COST + price and best_value > .5 then
+        elseif g.slots < Game.DECK_MAX and g.player.gold >= Game.slot_cost(g) + price and best_value > .5 then
           improved = Game.buy_slot(g) and Game.buy(g, best) -- a new slot is cheaper than dropping a coin
         else
           local worst, worst_value = worst_coin()
@@ -260,12 +261,6 @@ bots.smart = {
         Game.buy_item(g, index)
       end
     end
-    -- permanent odds upgrade on the best coin with whatever is left
-    local best_coin, best_value = nil, -math.huge
-    for _, c in ipairs(g.coins) do
-      if coin_value(c.id) > best_value then best_coin, best_value = c, coin_value(c.id) end
-    end
-    while best_coin and g.player.gold >= 10 and Game.upgrade(g, best_coin.uid) do end
   end,
 }
 
@@ -277,20 +272,27 @@ local function unlocked_for(character)
   return list
 end
 
--- A competent player's coin set: the best available coins (max copies each), Normal fills the rest.
+-- A competent player's coin set: buy the best available coins within the starting-set rarity caps.
 local function best_set(character)
   local unlocked = unlocked_for(character) or {}
   local ids, seen = {}, {}
   for _, id in ipairs(characters[character].pool) do ids[#ids + 1] = id seen[id] = true end
   for _, id in ipairs(unlocked) do if not seen[id] then ids[#ids + 1] = id end end
   table.sort(ids, function(a, b) return coin_value(a) > coin_value(b) end)
-  local set = {}
+  local set, counts = {}, {}
   for _, id in ipairs(ids) do
     if id ~= "normal" and coin_value(id) > coin_value("normal") then
-      for _ = 1, Game.MAX_COPIES do if #set < Game.START_MAX then set[#set + 1] = id end end
+      local rarity = catalog[id].rarity
+      while #set < Game.START_MAX and (counts[rarity] or 0) < Profile.rarity_limit(id) do
+        set[#set + 1] = id
+        counts[rarity] = (counts[rarity] or 0) + 1
+      end
     end
   end
-  while #set < Game.START_MAX do set[#set + 1] = "normal" end
+  while #set < Game.START_MAX and (counts.N or 0) < Profile.rarity_limit("normal") do
+    set[#set + 1] = "normal"
+    counts.N = (counts.N or 0) + 1
+  end
   return set
 end
 

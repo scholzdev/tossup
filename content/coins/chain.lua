@@ -2,7 +2,7 @@
 return {
   name = "Chain", description = "Heads: 2 points per Heads in a row, including this one.",
   rarity = "R",
-  probability = .5,
+  probability = .6,
   heads = {}, tails = {},
   on_resolve = function(game, _, res)
     if res.result ~= "Heads" then return end

@@ -2,7 +2,7 @@
 return {
   name = "Momentum", description = "+5% Heads for every Heads in a row this level.",
   rarity = "SR",
-  probability = .4,
+  probability = .35,
   heads = {{type = "score", amount = 6}},
   tails = {},
   on_odds = function(game, _, odds)

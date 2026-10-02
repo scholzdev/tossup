@@ -10,28 +10,30 @@ local modifier_catalog = require("content.modifiers")
 local stake_catalog = require("content.stakes")
 local MODIFIER_ORDER = {"lucky_day", "cold_snap", "power_surge", "blackout", "gold_rush", "high_stakes", "good_rhythm", "bonus_exchange"}
 local characters = require("content.characters")
+local Profile = require("src.profile")
 local Game = {}
 
+Game.DEV_MODE = os.getenv("TOSSUP_DEV") == "1"
+Game.SANDBOX_MODE = os.getenv("SANDBOX") == "1"
 Game.VISIBLE = 3 -- coins shown in the bank; the first one is the coin you are about to play
 Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may discard
 Game.START_MAX = 5 -- coins in a coin set = the deck slots a run starts with
 Game.DECK_MAX = 10 -- the most deck slots; the shop sells the extra ones one by one
-Game.SLOT_COST = 5 -- gold for one more deck slot
+Game.SLOT_COST, Game.SLOT_STEP = 5, 2 -- gold for the first extra deck slot, and how much more every further one costs
 Game.EXCHANGE_BASE = 10 -- gold for the first exchange of a level (empty stack): played coins come back
 Game.EXCHANGE_STEP = 5 -- every further exchange in the same level costs this much more
 Game.EXCHANGE_GAIN = 3 -- played coins that come back into the stack in exchange
 Game.COMBO_STEP, Game.COMBO_CAP = 0.25, 3 -- combo: x1 + 0.25 per extra same result in a row, up to x3
 Game.EXCHANGE_MAX = 3 -- exchanges per level; after the third one an empty stack loses the level
 Game.RETURN_CAP = 3 -- "extra draw" effects (a coin returning to the pile) per level
-Game.START_GOLD = 25
+Game.START_GOLD = 5
 Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
-Game.MAX_COPIES = 3 -- copies of one coin in a set; the plain Normal coin is exempt (up to the set size)
 
 local route = {
-  {name = "Opening", per_coin = 0.6, payout = 25},
-  {name = "Second Chance", per_coin = 0.9, payout = 30},
-  {name = "High Stakes", per_coin = 1.6, payout = 35},
-  {name = "The House", per_coin = 3.0, boss = true},
+  {name = "Opening", per_coin = 0.7, payout = 25},
+  {name = "Second Chance", per_coin = 1.4, payout = 30},
+  {name = "High Stakes", per_coin = 2.5, payout = 35},
+  {name = "The House", per_coin = 4.5, boss = true},
 }
 
 local function log(game, message)
@@ -85,6 +87,13 @@ end
 -- Every coin the shop may offer this character, including coins that are still locked: buying a
 -- locked coin in the shop is what unlocks it (see game.purchased).
 local function shop_pool(game)
+  if game.sandbox then
+    local pool, seen = {}, {}
+    for _, id in ipairs(game.sandbox.coins) do
+      if not seen[id] then pool[#pool + 1] = id seen[id] = true end
+    end
+    return pool
+  end
   local pool = usable_pool(game)
   local seen = {}
   for _, id in ipairs(pool) do seen[id] = true end
@@ -127,8 +136,30 @@ function Game.probability(game, item)
       if buff.kind == "odds" and not buff.fresh then boost = boost + buff.amount end
     end
   end
-  local p = catalog[item.id].probability + item.bonus + bonus + magnet + boost
-  return math.max(0, math.min(1, Hooks.odds(game, item, p)))
+  local override = game.sandbox and game.sandbox.odds and game.sandbox.odds[item.id]
+  local p = (override and override.heads or catalog[item.id].probability) + item.bonus + bonus + magnet + boost
+  local max_heads = 1 - Game.tie_probability(game, item)
+  if game.phase ~= "ENCOUNTER" then return math.max(0, math.min(max_heads, p)) end -- odds hooks read the level: none in the shop
+  return math.max(0, math.min(max_heads, Hooks.odds(game, item, p)))
+end
+
+function Game.tie_probability(game, item)
+  local override = game.sandbox and game.sandbox.odds and game.sandbox.odds[item.id]
+  return override and override.tie or catalog[item.id].tie_probability or 0
+end
+
+-- Only numeric, even-valued effects currently have an Edge outcome. Halving both sides is exact.
+function Game.tie_effects(id)
+  local def = catalog[id]
+  local effects = {}
+  for _, side in ipairs({"tails", "heads"}) do -- penalties first, so score is not clamped before quota rises
+    for _, effect in ipairs(def[side]) do
+      assert((effect.type == "score" or effect.type == "gold" or effect.type == "energy" or effect.type == "penalty")
+        and effect.amount % 2 == 0, "Edge requires even numeric effects: " .. id)
+      effects[#effects + 1] = {type = effect.type, amount = effect.amount / 2}
+    end
+  end
+  return effects
 end
 
 local deal
@@ -227,6 +258,7 @@ function deal(game)
   Hooks.bind(game, inst)
   Signal.emit("coin_deal", {game = game, inst = inst})
   game.dealt.probability = Game.probability(game, inst) -- on_deal may have changed the odds
+  game.dealt.tie_probability = Game.tie_probability(game, inst)
 end
 
 -- Discard coins from the opening hand (free). They stay out of play for the level, and at least
@@ -241,7 +273,12 @@ function Game.mulligan_discard(game, uids)
         table.remove(m.hand, index)
         e.discarded[uid] = true
         e.discards = e.discards + 1
-        log(game, catalog[find_coin(game, uid).id].name .. " #" .. uid .. " discarded from the opening hand.")
+        local inst = find_coin(game, uid)
+        log(game, catalog[inst.id].name .. " #" .. uid .. " discarded from the opening hand.")
+        Hooks.bind(game, inst) -- the coin's own on_discard hook runs here too
+        Signal.emit("coin_discard", {game = game, inst = inst})
+        Hooks.unbind()
+        Hooks.grow(inst, "discard")
         count = count + 1
         break
       end
@@ -260,11 +297,11 @@ function Game.mulligan_done(game)
   return true
 end
 
--- unlocked: optional list of extra coin ids bought with tokens in the main menu.
+-- unlocked: optional list of extra coin ids the character may sell (tokens are earned and saved, but nothing spends them yet).
 -- loadout: optional list of coin ids to start with (at most START_MAX, from the character's
 -- pool plus unlocked coins); defaults to the character's deck.
 -- manual_mulligan: the UI sets this and calls Game.mulligan_done itself.
-function Game.new(seed, character_id, unlocked, loadout, manual_mulligan, stake)
+function Game.new(seed, character_id, unlocked, loadout, manual_mulligan, stake, sandbox)
   character_id = character_id or "blade"
   assert(characters[character_id], "unknown character: " .. tostring(character_id))
   local normalized = RNG.seed(seed)
@@ -272,29 +309,55 @@ function Game.new(seed, character_id, unlocked, loadout, manual_mulligan, stake)
     character_id = character_id,
     phase = "ENCOUNTER", player = {gold = Game.START_GOLD, energy = 3, max_energy = 3},
     coins = {}, relics = {}, items = {}, shop_items = {}, unlocked = unlocked or {}, purchased = {}, cleared = 0, shop_relic = nil, next_uid = 0, encounter_index = 1, encounter = nil,
-    pending = nil, shop_offers = {}, log = {}, selected_uid = nil, slots = Game.START_MAX}
+    pending = nil, shop_offers = {}, log = {}, selected_uid = nil, slots = Game.START_MAX, sandbox = sandbox}
   local def = characters[character_id]
   game.stake = math.max(1, math.min(#stake_catalog, stake or 1))
-  game.player.gold = Game.rule(game, "start_gold", Game.START_GOLD)
+  game.player.gold = Game.DEV_MODE and 5000 or Game.rule(game, "start_gold", Game.START_GOLD)
   game.manual_mulligan = manual_mulligan
   if loadout then
     assert(#loadout >= 1 and #loadout <= Game.START_MAX, "loadout must have 1-" .. Game.START_MAX .. " coins")
     local allowed = {}
     for _, id in ipairs(usable_pool(game)) do allowed[id] = true end
-    local copies = {}
+    local counts = {}
     for _, id in ipairs(loadout) do
       assert(allowed[id], "coin not available to this character: " .. tostring(id))
-      copies[id] = (copies[id] or 0) + 1
-      assert(id == "normal" or copies[id] <= Game.MAX_COPIES, "too many copies of " .. id)
+      local rarity = catalog[id].rarity
+      counts[rarity] = (counts[rarity] or 0) + 1
+      assert(counts[rarity] <= Profile.rarity_limit(id), "too many " .. rarity .. " coins")
     end
   end
-  for i, id in ipairs(loadout or def.deck or {def.starter}) do game.coins[i] = coin(game, id) end
+  for i, id in ipairs(sandbox and sandbox.coins or loadout or def.deck or {def.starter}) do game.coins[i] = coin(game, id) end
+  if sandbox then
+    game.slots = math.max(game.slots, #game.coins)
+    game.player.gold = sandbox.gold or game.player.gold
+    game.player.energy = sandbox.energy or game.player.energy
+    game.player.max_energy = game.player.energy
+  end
   game.selected_uid = game.coins[1].uid
   log(game, "Seed: " .. normalized)
   Relics.bind(game)
   Items.clear()
   start_encounter(game)
   return game
+end
+
+local last_sandbox_seed = 0
+
+function Game.new_sandbox(cfg)
+  assert(type(cfg) == "table" and type(cfg.coins) == "table" and #cfg.coins >= 1 and #cfg.coins <= Game.DECK_MAX,
+    "sandbox needs 1-" .. Game.DECK_MAX .. " coins")
+  for _, id in ipairs(cfg.coins) do assert(catalog[id], "unknown sandbox coin: " .. tostring(id)) end
+  for id, odds in pairs(cfg.odds or {}) do
+    assert(catalog[id] and type(odds) == "table" and type(odds.heads) == "number" and type(odds.tie) == "number"
+      and odds.heads >= 0 and odds.tie >= 0 and odds.heads + odds.tie <= 1, "invalid sandbox odds: " .. tostring(id))
+    if odds.tie > 0 then Game.tie_effects(id) end
+  end
+  local seed = cfg.seed
+  if not seed then
+    seed = math.max(os.time() + math.floor(os.clock() * 1000000), last_sandbox_seed + 1)
+    last_sandbox_seed = seed
+  end
+  return Game.new(seed, cfg.character or "blade", nil, nil, false, cfg.stake, cfg)
 end
 
 function Game.select(game, uid)
@@ -313,7 +376,7 @@ local function finalize(game, item, flip)
   Signal.emit("coin_outcome", outcome)
   local final = outcome.result
   flip.altered = final ~= before and "RELIC" or nil -- shown in the UI so a changed side is never a mystery
-  if (e.boss or e.inverts) and nth % Game.rule(game, "boss_every", 5) == 0 then
+  if not outcome.final and final ~= "Tie" and (e.boss or e.inverts) and nth % Game.rule(game, "boss_every", 5) == 0 then
     final = final == "Heads" and "Tails" or "Heads"
     flip.altered = (flip.altered and flip.altered .. " + " or "") .. "THE HOUSE"
   end
@@ -346,7 +409,9 @@ local function tick_buffs(game)
 end
 
 local function roll(game, item, flip)
-  flip.raw = RNG.random(game) < flip.probability and "Heads" or "Tails"
+  local value = RNG.random(game)
+  flip.raw = value < flip.probability and "Heads" or
+    value < flip.probability + (flip.tie_probability or 0) and "Tie" or "Tails"
   flip.result = flip.raw
   flip.forced = nil
   flip.altered = nil
@@ -361,7 +426,7 @@ function Game.flip(game)
   local uid, probability = game.dealt.uid, game.dealt.probability
   local item = find_coin(game, uid)
   game.player.energy = game.player.energy - math.min(Game.flip_cost(game, uid), game.player.energy)
-  game.pending = {uid = uid, probability = probability}
+  game.pending = {uid = uid, probability = probability, tie_probability = game.dealt.tie_probability}
   game.dealt = nil
   table.remove(game.encounter.queue, 1) -- a flipped coin leaves the bank at once
   game.encounter.played[#game.encounter.played + 1] = uid
@@ -526,6 +591,8 @@ local function apply_effect(game, item, effect)
       for index, played in ipairs(e.played) do
         if played == uid then table.remove(e.played, index) break end
       end
+      for _, waiting in ipairs(e.pile) do if waiting == uid then uid = nil break end end -- never twice in the pile
+      if not uid then break end
       table.insert(e.pile, RNG.int(game, 1, #e.pile + 1), uid)
       e.returned = e.returned + 1
       back = back + 1
@@ -558,14 +625,25 @@ local function enter_shop(game)
   game.shop_items = offers(game, item_ids, 2)
 end
 
+local function close_encounter(game)
+  Hooks.unbind()
+  game.dealt = nil
+  Items.clear()
+end
+
+-- Open a fresh shop for a sandbox scene, using the same stock and seeded RNG as a cleared level.
+function Game.open_sandbox_shop(game)
+  assert(game.sandbox and game.phase == "ENCOUNTER", "sandbox shop needs a fresh encounter")
+  close_encounter(game)
+  enter_shop(game)
+end
+
 -- The level is over for good: the player opened the shop (or the boss fell). Only possible once the
 -- quota is met. The payout was already given when the quota was met.
 function Game.end_level(game)
   local e = game.encounter
   if game.phase ~= "ENCOUNTER" or not e.cleared or game.pending or game.mulligan then return false end
-  Hooks.unbind()
-  game.dealt = nil
-  Items.clear()
+  close_encounter(game)
   Signal.emit("encounter_end", {game = game, won = true})
   if e.boss then game.phase = "VICTORY" else enter_shop(game) end
   return true
@@ -579,18 +657,26 @@ function Game.resolve(game)
   e.flips = e.flips + 1
   local final = result.result -- already decided (relics, boss inversion) when the coin was flipped
   result.final = final
-  e.streak = final == "Heads" and e.streak + 1 or 0
+  if final == "Heads" then e.streak = e.streak + 1
+  elseif final == "Tails" then e.streak = 0 end -- Edge holds the current streak
   -- combo: consecutive identical results. A shield (Anchor) lets one different result pass without breaking it.
-  if e.combo_side == final then e.combo_len = e.combo_len + 1
-  elseif e.combo_side and e.shield > 0 then e.shield = e.shield - 1
-  else e.combo_side, e.combo_len = final, 1 end
+  if final ~= "Tie" then
+    if e.combo_side == final then e.combo_len = e.combo_len + 1
+    elseif e.combo_side and e.shield > 0 then e.shield = e.shield - 1
+    else e.combo_side, e.combo_len = final, 1 end
+  end
   -- hooks get a private copy of the effect list so they can edit it without touching the def
   local res = {result = final, raw = result.raw, effects = {}}
-  local side = buff_active(game, "swap") and (final == "Heads" and "tails" or "heads") or string.lower(final)
-  for i, effect in ipairs(catalog[item.id][side]) do
-    res.effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins}
+  if final == "Tie" then
+    res.effects = Game.tie_effects(item.id)
+  else
+    local side = buff_active(game, "swap") and (final == "Heads" and "tails" or "heads") or string.lower(final)
+    for i, effect in ipairs(catalog[item.id][side]) do
+      res.effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins}
+    end
   end
   Signal.emit("coin_resolve", {game = game, inst = item, res = res})
+  if final == "Tails" then e.tails = (e.tails or 0) + 1 end -- Tails flipped this level (Martyr reads it)
   result.base_effects = {} -- what this coin did before multipliers (True Echo repeats it)
   for i, effect in ipairs(res.effects) do
     result.base_effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins}
@@ -770,12 +856,18 @@ function Game.buy_relic(game)
   return true
 end
 
+-- Gold the next deck slot costs: SLOT_COST for the first one, SLOT_STEP more for each one bought before it.
+function Game.slot_cost(game)
+  return Game.SLOT_COST + Game.SLOT_STEP * (game.slots - Game.START_MAX)
+end
+
 -- One more deck slot (the deck starts with START_MAX and can grow to DECK_MAX).
 function Game.buy_slot(game)
-  if game.phase ~= "SHOP" or game.slots >= Game.DECK_MAX or game.player.gold < Game.SLOT_COST then return false end
-  game.player.gold = game.player.gold - Game.SLOT_COST
+  local cost = Game.slot_cost(game)
+  if game.phase ~= "SHOP" or game.slots >= Game.DECK_MAX or game.player.gold < cost then return false end
+  game.player.gold = game.player.gold - cost
   game.slots = game.slots + 1
-  log(game, "Bought deck slot " .. game.slots .. " for " .. Game.SLOT_COST .. " gold.")
+  log(game, "Bought deck slot " .. game.slots .. " for " .. cost .. " gold.")
   return true
 end
 
@@ -824,16 +916,6 @@ function Game.remove(game, uid)
   return false
 end
 
-function Game.upgrade(game, uid)
-  if game.phase ~= "SHOP" or game.player.gold < 10 then return false end
-  local item = find_coin(game, uid)
-  if not item or Game.probability(game, item) >= 1 then return false end
-  game.player.gold = game.player.gold - 10
-  item.bonus = math.min(1 - catalog[item.id].probability, item.bonus + .10)
-  log(game, catalog[item.id].name .. " upgraded to " .. math.floor((catalog[item.id].probability + item.bonus) * 100 + .5) .. "% Heads.")
-  return true
-end
-
 function Game.leave_shop(game)
   if game.phase ~= "SHOP" then return false end
   return Game.next_encounter(game)
@@ -874,11 +956,72 @@ function Game.snapshot(game)
   return copy
 end
 
+-- Structural check of a saved run (a damaged or hand-edited file must not crash the game later).
+local function valid_run(data)
+  local function num(v, low, high) return type(v) == "number" and v == v and v >= (low or -math.huge) and v <= (high or math.huge) and v > -math.huge and v < math.huge end
+  local function whole(v, low, high) return num(v, low, high) and v == math.floor(v) end
+  local function list(t, check) -- a plain 1..n list whose entries all pass check
+    if type(t) ~= "table" then return false end
+    local n = 0
+    for _ in pairs(t) do n = n + 1 end
+    if n ~= #t then return false end
+    for i = 1, n do if not check(t[i]) then return false end end
+    return true
+  end
+  local uids = {}
+  for _, coin in ipairs(data.coins) do
+    if type(coin) ~= "table" or not catalog[coin.id] or not whole(coin.uid) or uids[coin.uid] or not num(coin.bonus) then return false end
+    uids[coin.uid] = true
+  end
+  if not list(data.coins, function(c) return type(c) == "table" end) then return false end
+  local function uid_list(t) return list(t, function(u) return uids[u] end) end
+  local function uid_map(t, check) -- keyed by existing uids
+    if type(t) ~= "table" then return false end
+    for uid, v in pairs(t) do if not uids[uid] or not check(v) then return false end end
+    return true
+  end
+  local p = data.player
+  if not (num(p.gold, 0) and num(p.energy) and num(p.max_energy)) then return false end
+  if not (whole(data.slots, 1, 99) and whole(data.next_uid, 0) and whole(data.encounter_index, 1) and whole(data.cleared, 0)
+      and whole(data.rng_state, 1, 2147483646) and whole(data.stake, 1, #stake_catalog)) then return false end
+  for uid in pairs(uids) do if uid > data.next_uid then return false end end
+  if data.selected_uid ~= nil and not uids[data.selected_uid] then return false end
+  if not list(data.log, function(line) return type(line) == "string" end) then return false end
+  if not list(data.unlocked, function(id) return catalog[id] ~= nil end) then return false end
+  if not (list(data.relics, function(id) return relic_catalog[id] ~= nil end) and list(data.items, function(id) return item_catalog[id] ~= nil end)) then return false end
+  if not (list(data.shop_offers, function(id) return id == false or catalog[id] ~= nil end)
+      and list(data.shop_items, function(id) return id == false or item_catalog[id] ~= nil end)
+      and type(data.purchased) == "table") then return false end
+  for id, on in pairs(data.purchased) do if not catalog[id] or on ~= true then return false end end
+  if data.shop_relic ~= nil and not relic_catalog[data.shop_relic] then return false end
+  local e = data.encounter
+  -- in the shop the finished level's table is only kept for display and replaced when the next level starts; a removed coin
+  -- leaves its uid in it, so it is not checked further
+  if data.phase == "SHOP" then return e == nil or type(e) == "table" end
+  if type(e) ~= "table" or type(e.name) ~= "string" or (e.modifier ~= nil and not modifier_catalog[e.modifier]) then return false end
+  for _, key in ipairs({"quota", "max_quota", "flips", "scored", "surplus_paid", "discards", "magnet", "streak", "combo_len", "shield",
+      "combo_step", "combo_cap", "returned"}) do
+    if not num(e[key]) then return false end
+  end
+  if e.payout ~= nil and not num(e.payout) then return false end -- the House pays nothing
+  if e.bank_discards ~= nil and not num(e.bank_discards) then return false end
+  if not (uid_list(e.queue) and uid_list(e.pile) and uid_list(e.played) and uid_map(e.discarded, function(v) return v == true end)
+      and uid_map(e.bonus, num)) then return false end
+  if not list(e.buffs, function(b) return type(b) == "table" and type(b.kind) == "string" and num(b.amount) and num(b.left) end) then return false end
+  if data.mulligan ~= nil and not (type(data.mulligan) == "table" and uid_list(data.mulligan.hand)) then return false end
+  return true
+end
+
 -- Rebuild a game from a snapshot. Only safe points are saved (the opening hand of a level, the shop), where no coin is
 -- mid-flip, so only the owned relics need binding again. Returns nil for data that is not a run.
 function Game.restore(data)
   if type(data) ~= "table" or type(data.coins) ~= "table" or type(data.player) ~= "table" or not characters[data.character_id] then return nil end
   if data.phase ~= "SHOP" and not (data.phase == "ENCOUNTER" and data.mulligan and data.encounter) then return nil end
+  -- a run saved by another build may name content that no longer exists
+  if type(data.relics) ~= "table" or type(data.items) ~= "table" then return nil end
+  for _, id in ipairs(data.relics) do if not relic_catalog[id] then return nil end end
+  for _, id in ipairs(data.items) do if not item_catalog[id] then return nil end end
+  if not valid_run(data) then return nil end
   Hooks.unbind()
   Items.clear()
   data.paused = false

@@ -15,6 +15,7 @@ mkdir -p "$OUT"
 unzip -q "dist/cache/$ZIP" -d dist/cache/win
 cp dist/cache/win/love-$VERSION-win64/*.dll "$OUT"/
 cp dist/cache/win/love-$VERSION-win64/license.txt "$OUT"/love-license.txt 2>/dev/null || true
+cp LICENSE "$OUT"/LICENSE
 # give love.exe our icon and name (resedit is installed once into dist/cache/node)
 if [ ! -d dist/cache/node/node_modules/resedit ]; then
   mkdir -p dist/cache/node

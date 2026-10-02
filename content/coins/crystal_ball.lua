@@ -2,6 +2,6 @@
 return {
   name = "Crystal Ball", description = "Heads: 5 points. Tails: discard one of the next three coins.",
   rarity = "SR",
-  probability = .5,
+  probability = .3,
   heads = {{type = "score", amount = 5}}, tails = {{type = "bank_discard", amount = 1}},
 }

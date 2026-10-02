@@ -76,7 +76,8 @@ local function draw_flip_animation()
   if not ui.flip_animation then return end
   local progress = math.min(1, ui.flip_animation.elapsed / ui.flip_animation.duration)
   -- quartic ease-out so the spin slows to a tense stop; even half-turn = Tails up, odd = Heads up
-  local turns = ui.flip_animation.outcome == "Heads" and 9 or 10
+  local edge = ui.flip_animation.outcome == "Tie"
+  local turns = edge and 9.5 or ui.flip_animation.outcome == "Heads" and 9 or 10
   local phase = turns * (1 - (1 - progress) ^ 4)
   local squash = math.max(.06, math.abs(math.cos(phase * math.pi)))
   local heads = math.floor(phase + .5) % 2 == 1 -- the side changes at the thin edge-on moments, not at full width
@@ -90,8 +91,9 @@ local function draw_flip_animation()
   love.graphics.draw(image, -150, -150, 0, 300 / image:getWidth(), 300 / image:getHeight())
   color(C.ink)
   love.graphics.rectangle("fill", -90, 76, 180, 44, 6)
-  text(word, -ui.f32:getWidth(word) / 2, 82, ui.f32, heads and C.blue or C.red)
+  if not (edge and progress > .85) then text(word, -ui.f32:getWidth(word) / 2, 82, ui.f32, heads and C.blue or C.red) end
   love.graphics.pop()
+  if edge and progress > .85 then centered("EDGE", 640, 460, 260, ui.f32, C.purple) end
 end
 
 local function draw_encounter()
@@ -107,10 +109,11 @@ local function draw_encounter()
   text(e.endless and D.L("LEVEL %d", ui.game.encounter_index) or D.L("LEVEL %d / 4", ui.game.encounter_index), 70, 118, ui.f16, C.muted)
   text(e.endless and D.L("ENDLESS %d", e.endless) or e.boss and D.L("THE HOUSE") or D.L(e.name):upper(), 70, 136, ui.f20, e.boss and C.red or C.face)
   local met = e.quota <= 0
+  local every = Game.rule(ui.game, "boss_every", 5)
   local caption, caption_color = "POINTS", C.muted
   if e.cleared then caption, caption_color = "QUOTA MET  -  EXTRA POINTS PAY GOLD", C.green
-  elseif e.boss then caption, caption_color = "THE HOUSE  -  EVERY 5TH FLIP IS INVERTED", C.red
-  elseif e.endless then caption, caption_color = "INVERTED  -  EVERY 5TH FLIP", C.red end
+  elseif e.boss then caption, caption_color = D.L("THE HOUSE  -  EVERY %dTH FLIP IS INVERTED", every), C.red
+  elseif e.endless then caption, caption_color = D.L("INVERTED  -  EVERY %dTH FLIP", every), C.red end
   centered(caption, 330, 48, 580, ui.f16, caption_color)
   centered(e.scored .. " / " .. e.max_quota, 330, 68, 580, ui.f48, met and C.green or C.gold)
   color(C.slot_dk)
@@ -119,7 +122,15 @@ local function draw_encounter()
   love.graphics.rectangle("fill", 330, 128, 580 * math.min(1, e.scored / e.max_quota), 20, 4)
   outline(330, 128, 580, 20, C.line, 4)
   button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu, nil, "START")
-  if e.cleared then
+  -- quota met and nothing left to flip: the big bottom button opens the shop (where a player clicks next); an exchange,
+  -- which costs gold, sits up in the corner instead
+  local level_done = e.cleared and not ui.game.dealt and not ui.game.mulligan and not ui.game.pending
+    and not ui.flip_animation and not ui.holding
+  if level_done then
+    if Game.can_exchange(ui.game) then
+      D.icon_button(D.L("EXCHANGE %dG", Game.exchange_cost(ui.game)), ui.ui_images.exchange, 930, 54, 170, 38, C.panel_light, A.exchange)
+    end
+  elseif e.cleared then
     D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 930, 54, 170, 38, C.green, A.open_shop,
       not ui.flip_animation and not ui.game.pending and not ui.game.mulligan)
   end
@@ -128,10 +139,13 @@ local function draw_encounter()
     {"gold", tostring(ui.game.player.gold), C.gold},
     {"energy", tostring(ui.game.player.energy), C.blue},
   }
-  for i, stat in ipairs(stats) do
-    local x = 950 + (i - 1) * 90
+  local x = 1226 -- laid out from the right edge, so long numbers push the others left instead of overlapping
+  for i = #stats, 1, -1 do
+    local stat = stats[i]
+    x = x - 36 - ui.f32:getWidth(stat[2])
     D.image_at(ui.ui_images[stat[1]], x, 106, 30)
     text(stat[2], x + 36, 106, ui.f32, stat[3])
+    x = x - 22
   end
 
   -- left: coin bank, three big cards and one quiet line of numbers
@@ -194,7 +208,8 @@ local function draw_encounter()
   local result = not ui.flip_animation and (ui.game.pending or ui.holding and ui.game.last_result or ui.game.dealt or ui.game.last_result)
   if ui.game.mulligan then -- the stage shows the coin that would play first
     local uid = first_unmarked(ui.game)
-    result = {uid = uid, probability = Game.probability(ui.game, Game.get_coin(ui.game, uid))}
+    local coin = Game.get_coin(ui.game, uid)
+    result = {uid = uid, probability = Game.probability(ui.game, coin), tie_probability = Game.tie_probability(ui.game, coin)}
   end
   local item = result and Game.get_coin(ui.game, result.uid)
   local outcome = result and (result.final or result.result)
@@ -254,15 +269,17 @@ local function draw_encounter()
     local note, note_color = "", C.muted
     if ui.game.dealt and not ui.holding then note = "FLIP IT OR DISCARD"
     elseif ui.game.pending then note = "APPLYING..."
+    elseif result.gained and result.gained > 0 and result.penalty and result.penalty > 0 then
+      note, note_color = D.L("+%d PTS / QUOTA +%d", result.gained, result.penalty), C.purple
     elseif result.gained and result.gained > 0 then note, note_color = D.L("+%d POINTS", result.gained), C.green
       if result.combo and result.combo.mult > 1.001 then note = D.L("+%d POINTS  (x%.2f)", result.gained, result.combo.mult) end
     elseif result.penalty and result.penalty > 0 then note, note_color = D.L("QUOTA +%d", result.penalty), C.red
     elseif result.gained then note = "NO POINTS" end
     if not (ui.game.dealt and not ui.holding) then
-      local accent = outcome == "Heads" and C.blue or C.red
+      local accent = outcome == "Heads" and C.blue or outcome == "Tie" and C.purple or C.red
       box(SX - 130, 456, 260, 62, C.ink)
       outline(SX - 130, 456, 260, 62, accent)
-      centered(outcome:upper(), SX - 130, 460, 260, ui.f32, accent)
+      centered(outcome == "Tie" and "EDGE" or outcome:upper(), SX - 130, 460, 260, ui.f32, accent)
       centered(note, SX - 130, 496, 260, ui.f16, note_color)
     end
   end
@@ -274,15 +291,21 @@ local function draw_encounter()
   if ui.game.mulligan then -- the hand floats over this part
   elseif coin and result then
     local chance = result.probability
+    local tie = result.tie_probability or 0
     color(C.blue)
     love.graphics.rectangle("fill", SX - 170, 596, 340 * chance, 10)
+    if tie > 0 then
+      color(C.purple)
+      love.graphics.rectangle("fill", SX - 170 + 340 * chance, 596, 340 * tie, 10)
+    end
     color(C.red)
-    love.graphics.rectangle("fill", SX - 170 + 340 * chance, 596, 340 * (1 - chance), 10)
+    love.graphics.rectangle("fill", SX - 170 + 340 * (chance + tie), 596, 340 * (1 - chance - tie), 10)
     text(D.L("HEADS %d%%", math.floor(chance * 100 + .5)), SX - 170, 612, ui.f16, C.blue)
-    local tails_text = D.L("TAILS %d%%", math.floor((1 - chance) * 100 + .5))
+    if tie > 0 then centered(D.L("EDGE %d%%", math.floor(tie * 100 + .5)), SX - 55, 612, 110, ui.f16, C.purple) end
+    local tails_text = D.L("TAILS %d%%", math.floor((1 - chance - tie) * 100 + .5))
     text(tails_text, SX + 170 - ui.f16:getWidth(tails_text), 612, ui.f16, C.red)
     if shown_cost > 0 and not ui.flip_animation then
-      centered(D.L("ENERGY COST %d", shown_cost), SX - 60, 612, 120, ui.f16, C.orange)
+      centered(D.L("ENERGY COST %d", shown_cost), SX - 60, tie > 0 and 632 or 612, 120, ui.f16, C.orange)
     end
   elseif not ui.flip_animation then
     centered("ONE COIN AT A TIME", 330, 596, 880, ui.f16, C.muted)
@@ -346,10 +369,9 @@ local function draw_encounter()
     D.icon_button("START AGAIN", ui.ui_images.start_level, 530, 424, 480, 56, C.gold, function() A.start() end)
     D.icon_button("BACK TO MENU", ui.ui_images.give_up, 530, 492, 480, 56, C.panel_light, A.open_menu)
   elseif empty_stack then
-    -- cleared with an empty stack: exchange for more gold, or open the shop
-    if Game.can_exchange(ui.game) then
-      D.icon_button(D.L("PAY %d > %d COINS", Game.exchange_cost(ui.game), Game.EXCHANGE_GAIN), ui.ui_images.exchange,
-        550, 676, 260, 64, C.green, A.exchange)
+    -- cleared with an empty stack: the shop is the main button, the exchange is the small one in the corner
+    if e.cleared then
+      D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 550, 676, 260, 64, C.green, A.open_shop, nil, "X")
     end
   else
     -- after the last coin there is nothing left to deal, but the result is still shown: the button must still work

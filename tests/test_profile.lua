@@ -60,23 +60,37 @@ local sets = Profile.sets(sp, "blade")
 equal(#sets, 3)
 equal(table.concat(sets[1].coins, ","), blade_deck, "set 1 is the default deck")
 equal(#sets[2].coins, 0, "other sets start empty")
-for _ = 1, 3 do assert(Profile.add_to_set(sp, "blade", 2, "sword", 10, 3)) end
-assert(not Profile.add_to_set(sp, "blade", 2, "sword", 10, 3), "a fourth copy is refused")
-for _ = 1, 7 do assert(Profile.add_to_set(sp, "blade", 2, "normal", 10, 3), "normal has no copy limit") end
-assert(not Profile.add_to_set(sp, "blade", 2, "normal", 10, 3), "set is full")
-assert(not Profile.add_to_set(sp, "blade", 3, "hammer", 10, 3), "locked coins cannot be added")
+assert(Profile.add_to_set(sp, "blade", 2, "normal", 10))
+assert(Profile.add_to_set(sp, "blade", 2, "sword", 10))
+assert(Profile.add_to_set(sp, "blade", 2, "dagger", 10))
+assert(not Profile.add_to_set(sp, "blade", 2, "normal", 10), "fourth common refused, even if a different type")
+assert(not Profile.add_to_set(sp, "blade", 3, "hammer", 10), "locked coins cannot be added")
+assert(Profile.grant(sp, "blade", "hammer"))
+assert(Profile.grant(sp, "blade", "blood"))
+assert(Profile.add_to_set(sp, "blade", 2, "hammer", 10))
+assert(Profile.add_to_set(sp, "blade", 2, "blood", 10))
+assert(not Profile.add_to_set(sp, "blade", 2, "hammer", 10), "third uncommon refused")
+assert(Profile.grant(sp, "blade", "cursed"))
+assert(Profile.grant(sp, "blade", "martyr"))
+assert(Profile.add_to_set(sp, "blade", 3, "cursed", 10))
+assert(not Profile.add_to_set(sp, "blade", 3, "martyr", 10), "second rare refused, even if a different type")
+assert(Profile.grant(sp, "seer", "mimic"))
+assert(Profile.grant(sp, "seer", "echo"))
+assert(Profile.add_to_set(sp, "seer", 2, "mimic", 10))
+assert(not Profile.add_to_set(sp, "seer", 2, "echo", 10), "second epic refused, even if a different type")
 assert(Profile.remove_from_set(sp, "blade", 2, 1))
-equal(#Profile.sets(sp, "blade")[2].coins, 9)
+equal(#Profile.sets(sp, "blade")[2].coins, 4)
 local all_normal = Profile.new()
 Profile.sets(all_normal, "blade")[1].coins = {}
-for _ = 1, 10 do assert(Profile.add_to_set(all_normal, "blade", 1, "normal", 10, 3), "ten Normal coins are fine") end
+for _ = 1, 3 do assert(Profile.add_to_set(all_normal, "blade", 1, "normal", 10)) end
+assert(not Profile.add_to_set(all_normal, "blade", 1, "normal", 10))
 Profile.set_active(sp, "blade", 2)
 equal(Profile.active(sp, "blade"), 2)
-equal(#Profile.loadout(sp, "blade", 10), 9, "the active set is what a run starts with")
+equal(#Profile.loadout(sp, "blade", 10), 4, "the active set is what a run starts with")
 Profile.set_active(sp, "blade", 9)
 equal(Profile.active(sp, "blade"), 2, "invalid set index ignored")
 local saved = Profile.decode(Profile.encode(sp))
-equal(#saved.sets.blade[2].coins, Profile.SET_SIZE, "sets survive a save; older, longer sets are cut to SET_SIZE")
+equal(#saved.sets.blade[2].coins, 4, "set survives a save")
 equal(Profile.SET_SIZE, require("src.game").START_MAX, "a set holds exactly the starting slots")
 equal(saved.sets.blade[2].name, "SET 2")
 equal(saved.active_set.blade, 2)
@@ -95,8 +109,9 @@ equal(table.concat(Profile.loadout(fresh2, "blade", 10), ","), "sword", "locked 
 
 -- a save with too many copies (from before the limit existed) still yields a valid loadout
 local over = Profile.new()
-Profile.sets(over, "blade")[1].coins = {"sword", "sword", "sword", "normal", "normal", "normal", "dagger"}
-Profile.sets(over, "blade")[1].coins = {"sword", "sword", "sword", "sword", "normal", "normal", "dagger"}
-equal(table.concat(Profile.loadout(over, "blade", 10, 3), ","), "sword,sword,sword,normal,normal,dagger", "fourth sword dropped")
+Profile.sets(over, "blade")[1].coins = {"normal", "normal", "normal", "normal", "sword"}
+equal(table.concat(Profile.loadout(over, "blade", 10), ","), "normal,normal,sword", "older common copies dropped")
+local migrated = Profile.decode(Profile.encode(over))
+equal(table.concat(Profile.sets(migrated, "blade")[1].coins, ","), "normal,normal,sword", "old starter Sword preserved")
 
 print("profile tests passed")

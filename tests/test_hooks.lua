@@ -34,13 +34,16 @@ equal(s.coins[1].stack, 1, "snowball grew")
 hp = s.encounter.quota
 play(s, "Heads")
 equal(hp - s.encounter.quota, 4, "snowball second flip")
+hp = s.encounter.quota
+play(s, "Tails")
+equal(hp - s.encounter.quota, 1, "snowball growth only pays on Heads")
 
 -- momentum: on_odds reads the streak and is pure
 local m = fresh("momentum")
 m.encounter.streak = 2
-assert(math.abs(Game.probability(m, m.coins[1]) - .5) < 1e-9, "momentum odds")
+assert(math.abs(Game.probability(m, m.coins[1]) - .45) < 1e-9, "momentum odds")
 m.encounter.streak = 0
-assert(math.abs(Game.probability(m, m.coins[1]) - .4) < 1e-9, "momentum odds reset")
+assert(math.abs(Game.probability(m, m.coins[1]) - .35) < 1e-9, "momentum odds reset")
 
 -- gambler: heads is either 0 or 21 points, both occur
 local seen = {}

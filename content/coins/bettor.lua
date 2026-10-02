@@ -3,7 +3,7 @@ return {
   name = "Bettor", description = "Heads: 3 points per flip in the current combo (max 30). Tails: quota +2.",
   rarity = "SR",
   energy_cost = 1,
-  probability = .45,
+  probability = .35,
   heads = {}, tails = {{type = "penalty", amount = 2}},
   on_resolve = function(game, _, res)
     if res.result ~= "Heads" then return end

@@ -2,7 +2,7 @@
 return {
   name = "Orchestra", description = "Heads: 2 points per different coin type in your deck.",
   rarity = "R",
-  probability = .5,
+  probability = .25,
   heads = {}, tails = {{type = "gold", amount = 1}},
   on_resolve = function(game, _, res)
     if res.result ~= "Heads" then return end

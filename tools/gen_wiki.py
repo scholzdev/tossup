@@ -437,7 +437,7 @@ def home():
     if LANG == "de":
         intro = t("Tossup is a roguelike about flipping coins: build a small deck, flip one coin at a time, and score points against a quota before your stack runs out. This wiki lists everything in the game.")
         quota = f"{t('The quota is the per-coin value times the number of coins in your deck. After the boss,')} <strong>{t('Endless Mode')}</strong> {t('adds levels that ask 0.5 more per coin each time.')}"
-        numbers = (f"<tr><th>{t('Starting gold')}</th><td>{c['START_GOLD']}</td></tr><tr><th>{t('Deck slots')}</th><td>{c['START_MAX']} am Anfang, bis zu {c['DECK_MAX']} (je {c['SLOT_COST']} Gold im Shop)</td></tr>"
+        numbers = (f"<tr><th>{t('Starting gold')}</th><td>{c['START_GOLD']}</td></tr><tr><th>{t('Deck slots')}</th><td>{c['START_MAX']} am Anfang, bis zu {c['DECK_MAX']} (erster {c['SLOT_COST']} Gold, jeder weitere {c['SLOT_STEP']} mehr)</td></tr>"
                    f"<tr><th>{t('Exchange')}</th><td>{c['EXCHANGE_BASE']} Gold zahlen (+{c['EXCHANGE_STEP']} jedes Mal), um {c['EXCHANGE_GAIN']} gespielte Münzen zurückzubekommen, höchstens {c['EXCHANGE_MAX']}-mal pro Level</td></tr>"
                    f"<tr><th>{t('Combo')}</th><td>+{c['COMBO_STEP']} Multiplikator je gleiches Ergebnis in Folge, bis x{c['COMBO_CAP']}</td></tr>"
                    f"<tr><th>{t('Bank')}</th><td>du siehst die nächsten {c['VISIBLE']} Münzen; die Starthand hat {c['MULLIGAN']}</td></tr>")
@@ -445,7 +445,7 @@ def home():
     else:
         intro = "Tossup is a roguelike about flipping coins: build a small deck, flip one coin at a time, and score points against a quota before your stack runs out. This wiki lists everything in the game."
         quota = "The quota is the per-coin value times the number of coins in your deck. After the boss, <strong>Endless Mode</strong> adds levels that ask 0.5 more per coin each time."
-        numbers = (f"<tr><th>Starting gold</th><td>{c['START_GOLD']}</td></tr><tr><th>Deck slots</th><td>{c['START_MAX']} at the start, up to {c['DECK_MAX']} (+{c['SLOT_COST']} gold each in the shop)</td></tr>"
+        numbers = (f"<tr><th>Starting gold</th><td>{c['START_GOLD']}</td></tr><tr><th>Deck slots</th><td>{c['START_MAX']} at the start, up to {c['DECK_MAX']} (first {c['SLOT_COST']} gold, each further one {c['SLOT_STEP']} more)</td></tr>"
                    f"<tr><th>Exchange</th><td>pay {c['EXCHANGE_BASE']} gold (+{c['EXCHANGE_STEP']} each time) to get {c['EXCHANGE_GAIN']} played coins back, at most {c['EXCHANGE_MAX']} times per level</td></tr>"
                    f"<tr><th>Combo</th><td>+{c['COMBO_STEP']} multiplier per same result in a row, up to x{c['COMBO_CAP']}</td></tr>"
                    f"<tr><th>Bank</th><td>you see the next {c['VISIBLE']} coins; the opening hand has {c['MULLIGAN']}</td></tr>")
@@ -501,7 +501,7 @@ JS = """
       var t = q.value.trim().toLowerCase();
       if (!t) { box.style.display = 'none'; return; }
       var hits = SEARCH_INDEX.filter(function (e) { return (e.name + ' ' + (e.alt || '')).toLowerCase().indexOf(t) >= 0; }).slice(0, 12);
-      box.innerHTML = hits.map(function (e) { return '<a href="' + base + e.url + '"><img src="' + base + e.icon + '" alt=""><span>' + e.name + '</span><small>' + e.type + '</small></a>'; }).join('') || '<a>No results</a>';
+      box.innerHTML = hits.map(function (e) { return '<a href="' + base + e.url + '"><img src="' + assets + e.icon + '" alt=""><span>' + e.name + '</span><small>' + e.type + '</small></a>'; }).join('') || '<a>' + (document.documentElement.lang === 'de' ? 'Keine Treffer' : 'No results') + '</a>';
       box.style.display = 'block';
     });
     document.addEventListener('click', function (e) { if (!box.contains(e.target) && e.target !== q) box.style.display = 'none'; });

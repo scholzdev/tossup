@@ -2,7 +2,9 @@ local RNG = {}
 local modulus = 2147483647
 
 function RNG.seed(value)
-  local seed = math.floor(tonumber(value) or 1) % modulus
+  value = tonumber(value)
+  if not value or value ~= value or value == math.huge or value == -math.huge then value = 1 end
+  local seed = math.floor(value) % modulus
   if seed <= 0 then seed = 1 end
   return seed
 end

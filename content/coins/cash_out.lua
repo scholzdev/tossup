@@ -2,7 +2,7 @@
 return {
   name = "Cash Out", description = "Heads: 3 points, the combo multiplier counts twice, then the combo resets.",
   rarity = "SR",
-  probability = .5,
+  probability = .3,
   heads = {{type = "score", amount = 3}}, tails = {},
   on_resolve = function(_, _, res)
     if res.result == "Heads" then res.cash_out = true end

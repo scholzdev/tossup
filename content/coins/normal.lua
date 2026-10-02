@@ -2,7 +2,7 @@
 return {
   name = "Normal", description = "A plain coin. Barely a scratch.",
   rarity = "N",
-  probability = .5, cost = 5,
+  probability = .65, cost = 5,
   heads = {{type = "score", amount = 1}},
   tails = {},
 }
