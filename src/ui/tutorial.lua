@@ -67,6 +67,8 @@ local STEPS = {
 -- Start the tutorial on a fresh throwaway run.
 function Tutorial.start()
   local game = Game.new(7, "blade", {}, {"normal", "normal", "normal"}, true)
+  game.run_encounter_id = nil -- the scripted tutorial should not gain a random run rule
+  game.encounter.payout = Game.stage(1).payout
   game.tutorial = true -- not logged, no tokens, no collection
   game.tutorial_heads = 3 -- the first flips land Heads, so the tutorial always works
   game.items = {"energy_drink"} -- so the chip slots are not empty

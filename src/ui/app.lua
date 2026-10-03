@@ -11,6 +11,7 @@ local views = {
   ENCOUNTER = require("src.ui.views.encounter"),
   SHOP = require("src.ui.views.shop"),
   CONTRACT = require("src.ui.views.contracts"),
+  AUGMENT = require("src.ui.views.augments"),
 }
 local screens = {
   title = require("src.ui.views.title"),
@@ -21,6 +22,7 @@ local screens = {
   help = require("src.ui.views.help"),
 }
 local draw_end = require("src.ui.views.finish")
+local draw_encounter_reveal = require("src.ui.views.encounter_reveal")
 local C, color, box, text = D.C, D.color, D.box, D.text
 
 local app = {}
@@ -30,6 +32,7 @@ local function draw_game()
   if game.phase == "ENCOUNTER" then views.ENCOUNTER()
   elseif game.phase == "SHOP" then views.SHOP()
   elseif game.phase == "CONTRACT" then views.CONTRACT()
+  elseif game.phase == "AUGMENT" then views.AUGMENT()
   elseif game.phase == "GAME_OVER" and not game.over_seen then
     -- the last coin is gone and nothing can be exchanged: say so on the round screen before the run-over screen
     views.ENCOUNTER()
@@ -61,6 +64,17 @@ function app.load()
     image:setFilter("linear", "linear")
     image:setMipmapFilter("linear") -- smooth when a 512px coin is drawn small
     ui.coin_images[id] = image
+  end
+  for _, id in ipairs(Game.encounters()) do
+    local image = love.graphics.newImage("assets/encounters/" .. id .. ".png")
+    image:setFilter("nearest", "nearest")
+    ui.encounter_images[id] = image
+  end
+  for _, id in ipairs(Game.augments()) do
+    local def = Game.augment_def(id)
+    local image = love.graphics.newImage("assets/augments/" .. def.tier .. "/" .. id .. ".png")
+    image:setFilter("nearest", "nearest")
+    ui.augment_images[id] = image
   end
   local function load_image(path)
     local image = love.graphics.newImage(path, {mipmaps = true})
@@ -120,6 +134,7 @@ function app.draw()
   if ui.tutorial then Tutorial.draw() end
   D.confirm_dialog()
   Pad.draw() -- the controller focus ring, on top of everything
+  if ui.encounter_reveal then draw_encounter_reveal() end
   love.graphics.pop()
   love.graphics.pop()
 end
@@ -171,6 +186,7 @@ end
 
 function app.mousepressed(x, y, mouse_button)
   if mouse_button ~= 1 then return end
+  if ui.encounter_reveal then ui.encounter_reveal = nil return end
   Pad.mouse_used()
   x, y = ui.to_canvas(x, y)
   for i = #ui.buttons, 1, -1 do
@@ -182,7 +198,11 @@ function app.mousepressed(x, y, mouse_button)
   end
 end
 
-function app.gamepadpressed(_, button) Pad.device = "controller" Pad.pressed(button, app) end
+function app.gamepadpressed(_, button)
+  if ui.encounter_reveal then ui.encounter_reveal = nil return end
+  Pad.device = "controller"
+  Pad.pressed(button, app)
+end
 
 function app.mousemoved(x)
   Pad.mouse_used()
@@ -202,6 +222,7 @@ local KEYS = {up = "dpup", down = "dpdown", left = "dpleft", right = "dpright", 
 
 function app.keypressed(key)
   if key == "f5" and Game.SANDBOX_MODE then A.start_sandbox() return end
+  if ui.encounter_reveal then ui.encounter_reveal = nil return end
   local game = ui.game
   Pad.device = "keyboard"
   if key == "f3" then ui.debug_visible = not ui.debug_visible return end

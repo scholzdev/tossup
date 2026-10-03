@@ -2,6 +2,7 @@ local Game = require("src.game")
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
+local draw_run_modifiers = require("src.ui.views.run_modifiers")
 local C, color, box, outline, text, centered, button = D.C, D.color, D.box, D.outline, D.text, D.centered, D.button
 local coin_image, coin_face, coin_hover, effects, effect_description =
   D.coin_image, D.coin_face, D.coin_hover, D.effects, D.effect_description
@@ -98,6 +99,10 @@ end
 
 local function draw_encounter()
   local e = ui.game.encounter
+  local heads_bet = Game.side_bet_quote(ui.game, "Heads")
+  local tails_bet = Game.side_bet_quote(ui.game, "Tails")
+  local bet_available = heads_bet and ui.game.player.gold >= heads_bet.stake
+    or tails_bet and ui.game.player.gold >= tails_bet.stake
   box(0, 0, 1280, 800, C.felt_dark)
   box(36, 36, 1208, 728, C.screen)
   outline(36, 36, 1208, 728, C.gold)
@@ -106,7 +111,7 @@ local function draw_encounter()
   color(C.white)
   local logo_scale = 64 / ui.ui_images.logo:getHeight()
   love.graphics.draw(ui.ui_images.logo, 70, 46, 0, logo_scale, logo_scale)
-  text(e.endless and D.L("LEVEL %d", ui.game.encounter_index) or D.L("LEVEL %d / 4", ui.game.encounter_index), 70, 118, ui.f16, C.muted)
+  text(e.endless and D.L("LEVEL %d", ui.game.encounter_index) or D.L("LEVEL %d / 8", ui.game.encounter_index), 70, 118, ui.f16, C.muted)
   text(e.endless and D.L("ENDLESS %d", e.endless) or e.boss and D.L("THE HOUSE") or D.L(e.name):upper(), 70, 136, ui.f20, e.boss and C.red or C.face)
   if e.contract then
     local def = Game.contract_def(e.contract.id)
@@ -166,6 +171,7 @@ local function draw_encounter()
   box(70, 170, 240, 480, C.panel_dk)
   outline(70, 170, 240, 480, C.line)
   text("COIN BANK", 84, 184, ui.f20, C.gold)
+  draw_run_modifiers(195, 181, 25)
   local picking = (e.bank_discards or 0) > 0 and ui.game.dealt and not ui.game.pending and not ui.game.mulligan and not ui.flip_animation
   if picking then text(D.L("CLICK A COIN TO DISCARD IT"), 84, 630, ui.f16, C.orange) end
   for i = 1, Game.VISIBLE do
@@ -335,7 +341,7 @@ local function draw_encounter()
     if tie > 0 then centered(D.L("EDGE %d%%", math.floor(tie * 100 + .5)), SX - 55, 612, 110, ui.f16, C.purple) end
     local tails_text = D.L("TAILS %d%%", math.floor((1 - chance - tie) * 100 + .5))
     text(tails_text, SX + 170 - ui.f16:getWidth(tails_text), 612, ui.f16, C.red)
-    if shown_cost > 0 and not ui.flip_animation and not (e.flips == 0 and not e.side_bet and ui.game.player.gold >= 5) then
+    if shown_cost > 0 and not ui.flip_animation and not (e.flips == 0 and not e.side_bet and bet_available) then
       centered(D.L("ENERGY COST %d", shown_cost), SX - 60, tie > 0 and 632 or 612, 120, ui.f16, C.orange)
     end
   elseif not ui.flip_animation then
@@ -382,16 +388,16 @@ local function draw_encounter()
   end
   local push_choice = ui.holding and ui.game.dealt ~= nil and Game.can_bank_combo(ui.game)
   local side_bet = ui.game.dealt and not ui.game.mulligan and not ui.game.pending and not ui.flip_animation
-    and not ui.holding and e.flips == 0 and not e.side_bet and ui.game.player.gold >= 5
+    and not ui.holding and e.flips == 0 and not e.side_bet and (heads_bet or tails_bet)
   if side_bet then
-    local heads = ui.game.dealt.probability
-    local tails = 1 - heads - (ui.game.dealt.tie_probability or 0)
-    local heads_pay = heads > 0 and math.max(5, math.floor(5 / heads + .5)) or 0
-    local tails_pay = tails > 0 and math.max(5, math.floor(5 / tails + .5)) or 0
-    button(D.L("BET HEADS 5G  >  %dG", heads_pay), 420, 632, 190, 34, C.blue,
-      function() A.side_bet("Heads") end, true)
-    button(D.L("BET TAILS 5G  >  %dG", tails_pay), 630, 632, 190, 34, C.red,
-      function() A.side_bet("Tails") end, true)
+    if heads_bet then
+      button(D.L("BET %s %dG  >  %dG", D.L("HEADS"), heads_bet.stake, heads_bet.payout), 420, 632, 190, 34, C.blue,
+        function() A.side_bet("Heads") end, ui.game.player.gold >= heads_bet.stake)
+    end
+    if tails_bet then
+      button(D.L("BET %s %dG  >  %dG", D.L("TAILS"), tails_bet.stake, tails_bet.payout), 630, 632, 190, 34, C.red,
+        function() A.side_bet("Tails") end, ui.game.player.gold >= tails_bet.stake)
+    end
   end
   if ui.game.dealt and not ui.flip_animation and not ui.holding then
     D.icon_button("DISCARD", ui.ui_images.discard, 330, 676, 200, 64, C.red, A.discard_current, nil, "Y") -- only the current coin

@@ -315,6 +315,8 @@ local function play(seed, character, bot)
       elseif Game.can_exchange(g) then Game.exchange(g) end -- every bot exchanges rather than giving up
       -- once the quota is met a bot either keeps flipping for gold or opens the shop at once
       if g.phase == "ENCOUNTER" and g.encounter.cleared and not bot.keep_playing then Game.end_level(g) end
+    elseif g.phase == "AUGMENT" then
+      Game.choose_augment(g, g.augment_options[1])
     elseif g.phase == "SHOP" then
       bot.shop(g)
       Game.leave_shop(g)
@@ -325,17 +327,18 @@ end
 
 local function summarize(character, bot_name)
   local bot = bots[bot_name]
-  local reached, wins, gold, tokens = {0, 0, 0, 0, 0}, 0, 0, 0
+  local reached, wins, gold, tokens = {}, 0, 0, 0
   for seed = 1, opts.runs do
     local g = play(seed, character, bot)
-    for level = 0, g.cleared do reached[level + 1] = reached[level + 1] + 1 end
+    for level = 0, g.cleared do reached[level + 1] = (reached[level + 1] or 0) + 1 end
     if g.phase == "VICTORY" then wins = wins + 1 end
     gold = gold + g.player.gold
     tokens = tokens + Game.run_tokens(g)
   end
   local function pct(n) return string.format("%5.1f%%", 100 * n / opts.runs) end
-  print(string.format("%-8s %-7s clear L1 %s  L2 %s  L3 %s  boss %s   avg gold %5.1f  avg tokens %4.2f",
-    character, bot_name, pct(reached[2]), pct(reached[3]), pct(reached[4]), pct(wins), gold / opts.runs, tokens / opts.runs))
+  print(string.format("%-8s %-7s clear L1 %s  L3 %s  L5 %s  L7 %s  boss %s   avg gold %5.1f  avg tokens %4.2f",
+    character, bot_name, pct(reached[2] or 0), pct(reached[4] or 0), pct(reached[6] or 0), pct(reached[8] or 0),
+    pct(wins), gold / opts.runs, tokens / opts.runs))
 end
 
 if opts.coins then

@@ -14,6 +14,16 @@ for _, def in ipairs(require("content.contracts")) do
   CONTRACTS[def.id] = def
   CONTRACT_ORDER[#CONTRACT_ORDER + 1] = def.id
 end
+local ENCOUNTERS, ENCOUNTER_ORDER = {}, {}
+for _, def in ipairs(require("content.encounters")) do
+  ENCOUNTERS[def.id] = def
+  ENCOUNTER_ORDER[#ENCOUNTER_ORDER + 1] = def.id
+end
+local AUGMENTS, AUGMENT_ORDER = {}, {}
+for _, def in ipairs(require("content.augments")) do
+  AUGMENTS[def.id] = def
+  AUGMENT_ORDER[#AUGMENT_ORDER + 1] = def.id
+end
 local characters = require("content.characters")
 local Profile = require("src.profile")
 local Game = {}
@@ -26,7 +36,7 @@ Game.MULLIGAN = 5 -- coins drawn at the start of a level, from which you may dis
 Game.START_MAX = 5 -- coins in a coin set = the deck slots a run starts with
 Game.DECK_MAX = 10 -- the most deck slots; the shop sells the extra ones one by one
 Game.SLOT_COST, Game.SLOT_STEP = 5, 2 -- gold for the first extra deck slot, and how much more every further one costs
-Game.EXCHANGE_BASE = 10 -- gold for the first exchange of a level (empty stack): played coins come back
+Game.EXCHANGE_BASE = 7 -- gold for the first exchange of a level (empty stack): played coins come back
 Game.EXCHANGE_STEP = 5 -- every further exchange in the same level costs this much more
 Game.EXCHANGE_GAIN = 3 -- played coins that come back into the stack in exchange
 Game.COMBO_STEP, Game.COMBO_CAP = 0.25, 3 -- combo: x1 + 0.25 per extra same result in a row, up to x3
@@ -44,6 +54,10 @@ local levels = {
   (require("content.levels.opening")),
   (require("content.levels.second_chance")),
   (require("content.levels.high_stakes")),
+  (require("content.levels.rising_tide")),
+  (require("content.levels.double_down")),
+  (require("content.levels.last_call")),
+  (require("content.levels.final_table")),
   (require("content.levels.the_house")),
 }
 
@@ -53,6 +67,28 @@ end
 
 local function contract_def(encounter)
   return encounter and encounter.contract and CONTRACTS[encounter.contract.id]
+end
+
+local function has_augment(game, id)
+  for _, owned in ipairs(game.augments or {}) do
+    if owned == id then return true end
+  end
+  return false
+end
+
+local function new_shop_state()
+  return {refresh_cost = 4, coin_offer_count = 4, coin_price_discount = 0}
+end
+
+-- A selected Run Encounter gets one on_trigger hook; event names identify the lifecycle boundary,
+-- and mutable in-flight values are exposed temporarily under game.run (throw, bank, side_bet).
+local function trigger_run_encounter(game, event)
+  if not game.run_encounter_id then return false end
+  local def = ENCOUNTERS[game.run_encounter_id]
+  if not def or not def.on_trigger then return false end
+  game.run = game.run or {}
+  def.on_trigger({game = game, event = event, encounter = game.encounter, shop = game.shop})
+  return true
 end
 
 local function coin(game, id, upgrade)
@@ -126,10 +162,10 @@ local function shop_pool(game)
   return pool
 end
 
--- Four distinct coin offers; one can occasionally carry an upgrade.
+-- Up to four distinct coin offers; one can occasionally carry an upgrade.
 local function shop_stock(game)
   local pool = shop_pool(game)
-  local ids = offers(game, pool, 4)
+  local ids = offers(game, pool, game.shop and game.shop.coin_offer_count or 4)
   local upgrades, available = {}, {}
   for i = 1, #ids do upgrades[i] = false end
   for _, id in ipairs(pool) do
@@ -305,12 +341,15 @@ function Game.coin_offer_cost(game, index)
   if not id then return nil end
   local upgrade_id = game.shop_upgrades and game.shop_upgrades[index]
   local upgrade = upgrade_id and catalog[id].upgrades and catalog[id].upgrades[upgrade_id]
-  return Game.price(game, (catalog[id].cost or 15) + (upgrade and upgrade.cost or 0))
+  local cost = Game.price(game, (catalog[id].cost or 15) + (upgrade and upgrade.cost or 0))
+  cost = math.max(0, cost - (game.shop and game.shop.coin_price_discount or 0))
+  return cost
 end
 
 local function start_encounter(game)
   local stage = Game.stage(game.encounter_index)
-  local quota = deck_quota(game)
+  local quota = deck_quota(game) + (game.next_level_quota_bonus or 0)
+  game.next_level_quota_bonus = 0
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = quota, max_quota = quota,
     boss = stage.boss or false, inverts = stage.boss or stage.inverts or false, endless = stage.endless, payout = stage.payout,
@@ -326,6 +365,7 @@ local function start_encounter(game)
   game.pending = nil
   game.last_result = nil
   game.phase = "ENCOUNTER"
+  trigger_run_encounter(game, "encounter_start")
   log(game, "Encounter " .. game.encounter_index .. ": " .. stage.name .. " (quota " .. quota .. ")")
   for _, owned in ipairs(game.coins) do Hooks.grow(owned, "level") end
   Signal.emit("encounter_start", {game = game, encounter = game.encounter})
@@ -368,12 +408,51 @@ function Game.choose_contract(game, id)
 end
 
 function Game.contract_def(id) return CONTRACTS[id] end
+function Game.encounter_def(id) return ENCOUNTERS[id] end
+function Game.augment_def(id) return AUGMENTS[id] end
+function Game.encounters() return ENCOUNTER_ORDER end
+function Game.augments() return AUGMENT_ORDER end
 
 function Game.skip_contract(game)
   if game.phase ~= "CONTRACT" or not game.encounter then return false end
   game.encounter.contract_options = nil
   game.phase = "ENCOUNTER"
   log(game, "Contract skipped.")
+  return true
+end
+
+function Game.offer_augment(game, level)
+  local target = level or (game.encounter_index + 1)
+  if game.phase ~= "SHOP" or game.sandbox or target ~= game.encounter_index + 1
+      or (target ~= 3 and target ~= 6) then return false end
+  local owned = {}
+  for _, id in ipairs(game.augments or {}) do owned[id] = true end
+  local pool = {}
+  for _, id in ipairs(AUGMENT_ORDER) do
+    if not owned[id] then pool[#pool + 1] = id end
+  end
+  if #pool < 3 then return false end
+  game.augment_level = target
+  game.augment_options = offers(game, pool, 3)
+  game.phase = "AUGMENT"
+  return true
+end
+
+function Game.choose_augment(game, id)
+  if game.phase ~= "AUGMENT" then return false end
+  local offered = false
+  for _, offered_id in ipairs(game.augment_options or {}) do
+    if offered_id == id and AUGMENTS[id] then offered = true break end
+  end
+  if not offered then return false end
+  game.augments = game.augments or {}
+  game.augments[#game.augments + 1] = id
+  local level = game.augment_level
+  game.augment_level, game.augment_options = nil, nil
+  game.encounter_index = level
+  log(game, "Chosen augment: " .. AUGMENTS[id].name .. ".")
+  start_encounter(game)
+  if game.contracts_enabled then Game.offer_contract(game) end
   return true
 end
 
@@ -478,7 +557,9 @@ function Game.new(seed, character_id, unlocked, loadout, manual_mulligan, stake,
     phase = "ENCOUNTER", player = {gold = Game.START_GOLD, energy = 3, max_energy = 3},
     coins = {}, relics = {}, items = {}, shop_items = {}, unlocked = unlocked or {}, purchased = {}, cleared = 0, shop_relic = nil, next_uid = 0, encounter_index = 1, encounter = nil,
     pending = nil, shop_offers = {}, shop_upgrades = {}, log = {}, selected_uid = nil, slots = Game.START_MAX, sandbox = sandbox,
-    fortune_bonus = 0}
+    fortune_bonus = 0, augments = {}, next_level_quota_bonus = 0,
+    run = {},
+    shop = new_shop_state()}
   local def = characters[character_id]
   game.stake = math.max(1, math.min(#stake_catalog, stake or 1))
   game.player.gold = Game.DEV_MODE and 5000 or Game.rule(game, "start_gold", Game.START_GOLD)
@@ -506,7 +587,14 @@ function Game.new(seed, character_id, unlocked, loadout, manual_mulligan, stake,
   log(game, "Seed: " .. normalized)
   Relics.bind(game)
   Items.clear()
+  if not sandbox then
+    game.run_encounter_id = ENCOUNTER_ORDER[RNG.int(game, 1, #ENCOUNTER_ORDER)]
+    trigger_run_encounter(game, "run_start")
+  end
   start_encounter(game)
+  if game.run_encounter_id then
+    log(game, "Run Encounter: " .. ENCOUNTERS[game.run_encounter_id].name .. ".")
+  end
   return game
 end
 
@@ -540,16 +628,25 @@ end
 local function finalize(game, item, flip)
   local e = game.encounter
   local nth = e.flips + 1
+  flip.count = nth
   local before = flip.result
   local outcome = {game = game, inst = item, flips = nth, result = before}
   Signal.emit("coin_outcome", outcome)
   local final = outcome.result
   flip.altered = final ~= before and "RELIC" or nil -- shown in the UI so a changed side is never a mystery
-  if not outcome.final and final ~= "Tie" and (e.boss or e.inverts) and nth % Game.rule(game, "boss_every", 5) == 0 then
+  local interval = Game.rule(game, "boss_every", 5)
+  local inverted = e.boss or e.inverts
+  flip.stage_inverted = false
+  if not outcome.final and final ~= "Tie" and inverted and nth % interval == 0 then
     final = final == "Heads" and "Tails" or "Heads"
+    flip.stage_inverted = true
     flip.altered = (flip.altered and flip.altered .. " + " or "") .. "THE HOUSE"
   end
   flip.result = final
+  game.run = game.run or {}
+  game.run.throw = flip
+  trigger_run_encounter(game, "throw")
+  game.run.throw = nil
 end
 
 -- Buffs: "the next N coins ..." effects. kind: "mult" (x amount on score and gold), "odds" (+amount Heads),
@@ -606,18 +703,31 @@ function Game.flip(game)
   return true
 end
 
--- One optional odds bet per encounter, available only before its first flip.
+function Game.side_bet_quote(game, side)
+  if not game.dealt or (side ~= "Heads" and side ~= "Tails") then return nil end
+  local odds = side == "Heads" and game.dealt.probability or
+    1 - game.dealt.probability - (game.dealt.tie_probability or 0)
+  if odds <= 0 then return nil end
+  local stake = 5
+  local payout = math.max(stake, math.floor(stake / odds + .5))
+  if has_augment(game, "hedge_fund") then payout = math.floor(payout * 1.25 + .5) end
+  local quote = {side = side, stake = stake, payout = payout}
+  game.run = game.run or {}
+  game.run.side_bet = quote
+  trigger_run_encounter(game, "side_bet_quote")
+  game.run.side_bet = nil
+  return quote
+end
+
+-- One optional odds bet per level, available only before its first flip.
 function Game.place_side_bet(game, side)
   local e = game.encounter
   if game.phase ~= "ENCOUNTER" or not e or e.flips ~= 0 or not game.dealt or e.side_bet then return false end
-  if side ~= "Heads" and side ~= "Tails" then return false end
-  local stake = 5
-  local odds = side == "Heads" and game.dealt.probability or
-    1 - game.dealt.probability - (game.dealt.tie_probability or 0)
-  if odds <= 0 or game.player.gold < stake then return false end
-  game.player.gold = game.player.gold - stake
-  e.side_bet = {side = side, stake = stake, payout = math.max(stake, math.floor(stake / odds + .5))}
-  log(game, "Bet 5 gold on " .. side .. " (" .. e.side_bet.payout .. " gold payout).")
+  local quote = Game.side_bet_quote(game, side)
+  if not quote or game.player.gold < quote.stake then return false end
+  game.player.gold = game.player.gold - quote.stake
+  e.side_bet = {side = side, stake = quote.stake, payout = quote.payout}
+  log(game, "Bet " .. quote.stake .. " gold on " .. side .. " (" .. quote.payout .. " gold payout).")
   return true
 end
 
@@ -643,6 +753,15 @@ end
 local function bank_combo_pot(game, counts_for_contract)
   local e, amount = game.encounter, game.encounter.combo_pot or 0
   if amount <= 0 then return 0 end
+  if has_augment(game, "bankers_cut") then
+    amount = amount + 2
+    game.next_level_quota_bonus = (game.next_level_quota_bonus or 0) + 2
+  end
+  game.run = game.run or {}
+  game.run.bank = {amount = amount}
+  trigger_run_encounter(game, "bank")
+  amount = math.max(0, math.floor(game.run.bank.amount or amount))
+  game.run.bank = nil
   game.player.gold = game.player.gold + amount
   if counts_for_contract then e.combo_banked = true end
   e.combo_pot, e.combo_side, e.combo_len = 0, nil, 0
@@ -688,6 +807,12 @@ function Game.discard(game, uids)
     e.discards = e.discards + 1
     local inst = find_coin(game, uid)
     log(game, catalog[inst.id].name .. " #" .. uid .. " discarded for this level.")
+    if has_augment(game, "scrap_dealer") then
+      game.player.gold = game.player.gold + 1
+      e.max_quota = e.max_quota + 2
+      if not e.cleared then e.quota = e.quota + 2 end
+      log(game, "Scrap Dealer: +1 gold, quota +2.")
+    end
     Hooks.bind(game, inst) -- so the coin's own on_discard hook runs even if it was not the front coin
     Signal.emit("coin_discard", {game = game, inst = inst})
     Hooks.unbind()
@@ -841,10 +966,11 @@ local function apply_effect(game, item, effect)
   error("unknown effect: " .. tostring(effect.type))
 end
 
--- Stock the shop after a cleared level: four coins and one relic, all from the seeded RNG.
+-- Stock the shop after a cleared level using the run's settings and seeded RNG.
 local function enter_shop(game)
   game.phase = "SHOP"
-  game.reroll_cost = 4
+  trigger_run_encounter(game, "shop_open")
+  game.reroll_cost = game.shop.refresh_cost or 4
   game.reroll_step = 2
   game.shop_offers, game.shop_upgrades = shop_stock(game)
   game.shop_relic = nil
@@ -897,27 +1023,56 @@ function Game.resolve(game)
   e.flips = e.flips + 1
   local final = result.result -- already decided (relics, boss inversion) when the coin was flipped
   result.final = final
+  game.run = game.run or {}
+  game.run.throw = result
   if e.side_bet and not e.side_bet.settled then
     local bet = e.side_bet
-    bet.settled = true
-    if final == "Tie" then
-      game.player.gold = game.player.gold + bet.stake
-      bet.outcome = "PUSH"
-      log(game, "Side bet pushed; stake returned.")
-    elseif final == bet.side then
-      game.player.gold = game.player.gold + bet.payout
-      bet.outcome = "WON"
-      log(game, "Side bet won: +" .. bet.payout .. " gold.")
+    game.run.side_bet = bet
+    trigger_run_encounter(game, "side_bet_resolve")
+    game.run.side_bet = nil
+    if not bet.settled then
+      bet.settled = true
+      if final == "Tie" then
+        game.player.gold = game.player.gold + bet.stake
+        bet.outcome = "PUSH"
+      elseif final == bet.side then
+        game.player.gold = game.player.gold + bet.payout
+        bet.outcome = "WON"
+      else
+        bet.outcome = "LOST"
+      end
+    end
+    if bet.outcome == "PUSH" then log(game, "Side bet pushed; stake returned.")
+    elseif bet.outcome == "WON" then log(game, "Side bet won: +" .. bet.payout .. " gold.")
     else
-      bet.outcome = "LOST"
       log(game, "Side bet lost.")
+      if has_augment(game, "hedge_fund") then
+        game.next_level_quota_bonus = (game.next_level_quota_bonus or 0) + 2
+      end
     end
   end
   if final == "Heads" then e.streak = e.streak + 1
   elseif final == "Tails" then e.streak = 0 end -- Edge holds the current streak
   -- combo: consecutive identical results. A shield (Anchor) lets one different result pass without breaking it.
   local previous_combo_side = e.combo_side
-  if final == "Tie" and contract_def_active and contract_def_active.tie_breaks_combo and e.combo_side then
+  trigger_run_encounter(game, "combo")
+  local pushing = e.pushing == true
+  e.pushing = nil
+  local all_in_multiplier, all_in_message = 1, nil
+  if pushing and has_augment(game, "all_in") then
+    if final ~= "Tie" and final == previous_combo_side then
+      if not e.all_in_paid then
+        e.all_in_paid = true
+        all_in_multiplier = 2
+        all_in_message = "All-In push succeeded: combo payout doubled."
+      end
+    else
+      local lost = math.min(2, game.player.gold)
+      game.player.gold = game.player.gold - lost
+      all_in_message = "All-In push failed: -" .. lost .. " gold."
+    end
+  end
+  if final == "Tie" and e.combo_side and contract_def_active and contract_def_active.tie_breaks_combo then
     e.combo_side, e.combo_len = nil, 0
   elseif final ~= "Tie" then
     if e.combo_side == final then e.combo_len = e.combo_len + 1
@@ -928,6 +1083,7 @@ function Game.resolve(game)
   local combo_broke = previous_combo_side ~= nil and e.combo_side ~= previous_combo_side
   local combo_lost = combo_broke and (e.combo_pot or 0) or 0
   if combo_broke then e.combo_pot = 0 end
+  game.run.throw = nil
   -- hooks get a private copy of the effect list so they can edit it without touching the def
   local res = {result = final, raw = result.raw, effects = {}}
   local side
@@ -978,6 +1134,7 @@ function Game.resolve(game)
     if buff.kind == "mult" and not buff.fresh then multiplier = multiplier * buff.amount end
   end
   local combo = math.min(e.combo_cap, 1 + e.combo_step * (math.max(e.combo_len, 1) - 1))
+  combo = combo * all_in_multiplier
   if res.cash_out then combo = combo * combo end -- Cash Out spends the combo twice (then resets it)
   if contract_def_active and contract_def_active.combo_multiplier_cap then
     combo = math.min(combo, contract_def_active.combo_multiplier_cap)
@@ -990,6 +1147,7 @@ function Game.resolve(game)
     end
   end
   local messages = {}
+  if all_in_message then messages[#messages + 1] = all_in_message end
   if combo_lost > 0 then messages[#messages + 1] = "lost " .. combo_lost .. " unbanked combo gold" end
   local scored_before, quota_total_before = e.scored, e.max_quota
   local greed = 0
@@ -1268,7 +1426,9 @@ end
 
 function Game.next_encounter(game)
   if game.phase ~= "SHOP" or active_count(game) == 0 then return false end
-  game.encounter_index = game.encounter_index + 1
+  local next_level = game.encounter_index + 1
+  if not game.endless and Game.offer_augment(game, next_level) then return true end
+  game.encounter_index = next_level
   start_encounter(game)
   if game.contracts_enabled then Game.offer_contract(game) end
   return true
@@ -1287,6 +1447,11 @@ function Game.catalog() return catalog end
 function Game.snapshot(game)
   local copy = {}
   for k, v in pairs(game) do copy[k] = v end
+  copy.run = {}
+  for k, v in pairs(game.run or {}) do
+    if k ~= "throw" and k ~= "bank" and k ~= "side_bet" then copy.run[k] = v end
+  end
+  copy.run_rules, copy.run_encounter_applied = nil, nil
   local log_tail = {}
   for i = math.max(1, #game.log - 40), #game.log do log_tail[#log_tail + 1] = game.log[i] end
   copy.log = log_tail
@@ -1328,6 +1493,33 @@ local function valid_run(data)
   if data.reroll_step ~= nil and not whole(data.reroll_step, 1, 2) then return false end
   if not (whole(data.slots, 1, 99) and whole(data.next_uid, 0) and whole(data.encounter_index, 1) and whole(data.cleared, 0)
       and whole(data.rng_state, 1, 2147483646) and whole(data.stake, 1, #stake_catalog)) then return false end
+  if data.run_encounter_id ~= nil and not ENCOUNTERS[data.run_encounter_id] then return false end
+  if data.run ~= nil and type(data.run) ~= "table" then return false end
+  if data.shop ~= nil then
+    if type(data.shop) ~= "table" then return false end
+    if data.shop.refresh_cost ~= nil and not num(data.shop.refresh_cost, 0) then return false end
+    if data.shop.coin_offer_count ~= nil and not whole(data.shop.coin_offer_count, 1, 99) then return false end
+    if data.shop.coin_price_discount ~= nil and not num(data.shop.coin_price_discount, 0) then return false end
+  end
+  if data.next_level_quota_bonus ~= nil and not whole(data.next_level_quota_bonus, 0) then return false end
+  if data.augments ~= nil then
+    if not list(data.augments, function(id) return AUGMENTS[id] ~= nil end) or #data.augments > 2 then return false end
+    local seen = {}
+    for _, id in ipairs(data.augments) do if seen[id] then return false else seen[id] = true end end
+  end
+  if data.phase == "AUGMENT" then
+    if not whole(data.augment_level) or data.augment_level ~= data.encounter_index + 1
+        or (data.augment_level ~= 3 and data.augment_level ~= 6)
+        or not list(data.augment_options, function(id) return AUGMENTS[id] ~= nil end)
+        or #data.augment_options ~= 3 then return false end
+    local seen = {}
+    for _, id in ipairs(data.augment_options) do
+      if seen[id] or has_augment(data, id) then return false end
+      seen[id] = true
+    end
+  elseif data.augment_level ~= nil or data.augment_options ~= nil then
+    return false
+  end
   for uid in pairs(uids) do if uid > data.next_uid then return false end end
   if data.selected_uid ~= nil and not uids[data.selected_uid] then return false end
   if not list(data.log, function(line) return type(line) == "string" end) then return false end
@@ -1383,7 +1575,8 @@ end
 -- mid-flip, so only the owned relics need binding again. Returns nil for data that is not a run.
 function Game.restore(data)
   if type(data) ~= "table" or type(data.coins) ~= "table" or type(data.player) ~= "table" or not characters[data.character_id] then return nil end
-  if data.phase ~= "SHOP" and not ((data.phase == "ENCOUNTER" or data.phase == "CONTRACT") and data.mulligan and data.encounter) then return nil end
+  if data.phase ~= "SHOP" and not (data.phase == "AUGMENT" and data.encounter)
+      and not ((data.phase == "ENCOUNTER" or data.phase == "CONTRACT") and data.mulligan and data.encounter) then return nil end
   -- a run saved by another build may name content that no longer exists
   if type(data.relics) ~= "table" or type(data.items) ~= "table" then return nil end
   for _, id in ipairs(data.relics) do if not relic_catalog[id] then return nil end end
@@ -1392,6 +1585,12 @@ function Game.restore(data)
   Hooks.unbind()
   Items.clear()
   data.fortune_bonus = data.fortune_bonus or 0
+  data.augments = data.augments or {}
+  data.next_level_quota_bonus = data.next_level_quota_bonus or 0
+  data.shop = data.shop or new_shop_state()
+  data.run = data.run or {}
+  data.run.throw, data.run.bank, data.run.side_bet = nil, nil, nil
+  data.run_rules, data.run_encounter_applied = nil, nil
   if data.phase == "ENCOUNTER" or data.phase == "CONTRACT" then
     data.encounter.best_scores = data.encounter.best_scores or {}
     data.encounter.combo_pot = data.encounter.combo_pot or 0
@@ -1409,5 +1608,7 @@ function Game.item_catalog() return item_catalog end
 function Game.characters() return characters end
 function Game.active_count(game) return active_count(game) end
 function Game.get_coin(game, uid) return find_coin(game, uid) end
+function Game.is_dev() return Game.DEV_MODE end
+function Game.is_sandbox() return Game.SANDBOX_MODE end
 
 return Game

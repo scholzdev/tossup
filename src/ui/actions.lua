@@ -56,6 +56,7 @@ function A.load_run()
   if not game then delete_run() return false end
   game.contracts_enabled = true -- old safe-point saves gain contracts when they reach their next level
   ui.game, ui.selected_character = game, game.character_id
+  ui.encounter_reveal = nil
   ui.flip_animation, ui.holding, ui.marked, ui.resolve_timer, ui.notice = nil, false, {}, 0, ""
   saved_key = nil
   return true
@@ -297,6 +298,7 @@ function A.start(seed)
   if not Profile.character_unlocked(ui.profile, ui.selected_character) then return end -- win a run with the one before first
   ui.game = Game.new(seed or (os.time() + math.floor(love.timer.getTime() * 1000000)),
     ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character), A.loadout(), true, A.stake())
+  ui.encounter_reveal = {elapsed = 0, duration = 3.4}
   ui.game.contracts_enabled = true
   Game.offer_contract(ui.game)
   ui.flip_animation = nil
@@ -328,6 +330,7 @@ function A.start_sandbox(path)
   game.paused = menu_screens[screen] or false
   saved_key = nil
   ui.game = game
+  ui.encounter_reveal = nil
   ui.selected_character = game.character_id
   ui.sets_character = game.character_id
   ui.sets_return = "title"
@@ -392,6 +395,7 @@ function A.give_up() Game.give_up(ui.game) end
 function A.side_bet(side) return Game.place_side_bet(ui.game, side) end
 function A.choose_contract(id) return Game.choose_contract(ui.game, id) end
 function A.skip_contract() return Game.skip_contract(ui.game) end
+function A.choose_augment(id) return Game.choose_augment(ui.game, id) end
 
 function A.use_item(slot)
   if not ui.flip_animation then Game.use_item(ui.game, slot) end
@@ -407,13 +411,13 @@ end
 function A.push_combo()
   if not ui.holding or not Game.can_flip(ui.game) then return false end
   ui.holding = false
-  A.flip_next_coin()
-  return true
+  return A.flip_next_coin(true)
 end
 
-function A.flip_next_coin()
+function A.flip_next_coin(pushing)
   local game = ui.game
-  if not Game.flip(game) then return end
+  if not Game.flip(game) then return false end
+  if pushing then game.encounter.pushing = true end
   if game.tutorial and (game.tutorial_heads or 0) > 0 then -- the scripted tutorial run always shows Heads first
     game.tutorial_heads = game.tutorial_heads - 1
     game.pending.result = "Heads"
@@ -421,6 +425,7 @@ function A.flip_next_coin()
   ui.flip_animation = {id = Game.get_coin(game, game.pending.uid).id,
     outcome = game.pending.result, elapsed = 0,
     duration = ui.profile.options.fast_flip and .8 or 1.6}
+  return true
 end
 
 function A.next_or_flip()
@@ -436,6 +441,10 @@ end
 function A.update(dt)
   local game = ui.game
   ui.shake = math.max(0, ui.shake - dt)
+  if ui.encounter_reveal and game and not game.paused then
+    ui.encounter_reveal.elapsed = math.min(ui.encounter_reveal.duration,
+      ui.encounter_reveal.elapsed + dt)
+  end
   if game and game.phase ~= "ENCOUNTER" then ui.holding = false end
   if game and next(ui.marked) then -- marks only make sense while the coin is still in the bank or hand
     local live = {}
@@ -451,7 +460,7 @@ function A.update(dt)
     if unlocked_now then save_profile() end
   end
   do -- autosave at the safe points; drop the save when the run is over
-    local safe = game and not game.tutorial and (game.phase == "SHOP" or
+    local safe = game and not game.tutorial and (game.phase == "SHOP" or game.phase == "AUGMENT" or
       ((game.phase == "CONTRACT" or game.phase == "ENCOUNTER") and game.mulligan))
     if safe then
       local key = game.phase .. game.encounter_index .. (game.endless and "e" or "") .. ":" .. game.player.gold .. ":" ..
@@ -482,7 +491,7 @@ function A.update(dt)
   end
   if record and record.endless and record.phase == "GAME_OVER" and not record.endless_recorded then
     record.endless_recorded = true
-    record.endless_record = Profile.record_endless(ui.profile, record.character_id, record.cleared - 4)
+    record.endless_record = Profile.record_endless(ui.profile, record.character_id, record.cleared - 8)
     save_profile()
   end
   if record and record.endless and record.phase == "GAME_OVER" and not record.endless_logged then

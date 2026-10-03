@@ -1,5 +1,5 @@
 return {
     name = "The House",
-    per_coin = 4.5,
+    per_coin = 6.0,
     boss = true,
 }

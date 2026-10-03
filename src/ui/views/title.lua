@@ -5,6 +5,7 @@ local D = require("src.ui.draw")
 local Tutorial = require("src.ui.tutorial")
 local Version = require("src.version")
 local C, color, centered, button, text = D.C, D.color, D.centered, D.button, D.text
+local Game = require("src.game")
 
 local function draw_title()
   color(C.white)
@@ -42,7 +43,11 @@ local function draw_title()
     {"HELP", C.green, function() ui.help_next = nil A.go("help") end},
     {"OPTIONS", C.panel_light, function() A.go("options") end},
   }
-  text("v" .. Version.number .. " (" .. Version.build .. ")", 96, 626, ui.f16, C.muted)
+
+  local dev_string = Game.is_dev() and ".dev" or ""
+
+  text("v" .. Version.number .. dev_string .. " (" .. Version.build .. ")", 96, 626, ui.f16, C.muted)
+
   local y = 240
   for _, entry in ipairs(entries) do
     button(entry[1], 100, y, 340, 52, entry[2], entry[3])

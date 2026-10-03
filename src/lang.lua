@@ -1,6 +1,6 @@
 -- Text lookup. Source strings in the code are English; locales/<code>.lua maps them to another language.
 -- Lang.t("BACK") -> "ZURÜCK" (German). Unknown strings come back unchanged, so English needs no table.
--- Lang.t("LEVEL %d / 4", n) formats after the lookup, so the translation can move the number.
+-- Lang.t("LEVEL %d / 8", n) formats after the lookup, so the translation can move the number.
 -- Names and descriptions of coins, chips, prizes and characters live in the table's coins/items/relics/characters.
 local Lang = {current = "en", names = {en = "ENGLISH", de = "DEUTSCH"}, order = {"en", "de"}}
 

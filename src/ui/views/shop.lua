@@ -4,6 +4,7 @@ local Game = require("src.game")
 local ui = require("src.ui.state")
 local A = require("src.ui.actions")
 local D = require("src.ui.draw")
+local draw_run_modifiers = require("src.ui.views.run_modifiers")
 local Items = require("src.items")
 local C, color, box, outline, text, centered, button = D.C, D.color, D.box, D.outline, D.text, D.centered, D.button
 local coin_image, coin_hover = D.coin_image, D.coin_hover
@@ -39,6 +40,7 @@ local function draw_shop()
   button("MENU", 1120, 56, 100, 34, C.panel_light, A.open_menu, nil, "START")
   D.image_at(ui.ui_images.gold, 1010, 100, 44)
   text(tostring(g.player.gold), 1062, 104, ui.f32, C.gold)
+  draw_run_modifiers(250, 104, 32)
 
   -- reroll (coin offers only), level with the coin icons
   local reroll_cost = g.reroll_cost or 4
