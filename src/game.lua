@@ -30,6 +30,11 @@ Game.RETURN_CAP = 3 -- "extra draw" effects (a coin returning to the pile) per l
 Game.START_GOLD = 5
 Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
 
+local function combo_pot(len)
+  -- Each repeated result adds one more gold to the unbanked triangular pot.
+  return math.max(0, (len - 1) * len / 2)
+end
+
 local levels = {
   (require("content.levels.opening")),
   (require("content.levels.second_chance")),
@@ -297,7 +302,7 @@ local function start_encounter(game)
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = quota, max_quota = quota,
     boss = stage.boss or false, inverts = stage.boss or stage.inverts or false, endless = stage.endless, payout = stage.payout,
-    flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {}, combo_side = nil, combo_len = 0, shield = 0, combo_step = Game.COMBO_STEP, combo_cap = Game.COMBO_CAP,
+    flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {}, combo_side = nil, combo_len = 0, combo_pot = 0, shield = 0, combo_step = Game.COMBO_STEP, combo_cap = Game.COMBO_CAP,
     returned = 0, played = {}, best_scores = {}, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
   if Game.use_modifiers ~= false and game.encounter_index >= Game.rule(game, "modifiers_from", 2) then -- every level from the second on has a modifier (tests can switch this off)
@@ -534,6 +539,26 @@ function Game.can_flip(game)
   return Game.flip_cost(game, game.dealt.uid) <= game.player.energy or #game.coins - e.discards <= 1
 end
 
+function Game.can_bank_combo(game)
+  local e = game and game.encounter
+  return game ~= nil and game.phase == "ENCOUNTER" and e ~= nil and not game.pending and not game.mulligan
+    and (e.combo_pot or 0) > 0
+end
+
+local function bank_combo_pot(game)
+  local e, amount = game.encounter, game.encounter.combo_pot or 0
+  if amount <= 0 then return 0 end
+  game.player.gold = game.player.gold + amount
+  e.combo_pot, e.combo_side, e.combo_len = 0, nil, 0
+  log(game, "Banked " .. amount .. " combo gold.")
+  return amount
+end
+
+function Game.bank_combo(game)
+  if not Game.can_bank_combo(game) then return 0 end
+  return bank_combo_pot(game)
+end
+
 -- Spend one "bank_discard" (Crystal Ball Tails): throw away any of the visible bank coins, free. Returns true if it worked.
 function Game.discard_bank(game, uid)
   local e = game.encounter
@@ -758,6 +783,7 @@ end
 function Game.end_level(game)
   local e = game.encounter
   if game.phase ~= "ENCOUNTER" or not e.cleared or game.pending or game.mulligan then return false end
+  if (e.combo_pot or 0) > 0 then bank_combo_pot(game) end
   close_encounter(game)
   Signal.emit("encounter_end", {game = game, won = true})
   if e.boss then game.phase = "VICTORY" else enter_shop(game) end
@@ -782,6 +808,8 @@ function Game.resolve(game)
     else e.combo_side, e.combo_len = final, 1 end
   end
   local combo_broke = previous_combo_side ~= nil and e.combo_side ~= previous_combo_side
+  local combo_lost = combo_broke and (e.combo_pot or 0) or 0
+  if combo_broke then e.combo_pot = 0 end
   -- hooks get a private copy of the effect list so they can edit it without touching the def
   local res = {result = final, raw = result.raw, effects = {}}
   local side
@@ -840,8 +868,8 @@ function Game.resolve(game)
       if effect.type == "score" or effect.type == "gold" then effect.amount = math.floor(effect.amount * multiplier + .5) end
     end
   end
-  if res.cash_out then e.combo_side, e.combo_len = nil, 0 end
   local messages = {}
+  if combo_lost > 0 then messages[#messages + 1] = "lost " .. combo_lost .. " unbanked combo gold" end
   local scored_before, quota_total_before = e.scored, e.max_quota
   local greed = 0
   if has_type(item, "greed") then
@@ -867,6 +895,12 @@ function Game.resolve(game)
       game.player.gold = game.player.gold - lost
       messages[#messages + 1] = "-" .. lost .. " greed gold"
     end
+  end
+  e.combo_pot = combo_pot(e.combo_len)
+  if res.cash_out then
+    local banked = bank_combo_pot(game)
+    if banked > 0 then messages[#messages + 1] = "banked " .. banked .. " combo gold" end
+    e.combo_side, e.combo_len, e.combo_pot = nil, 0, 0
   end
   tick_buffs(game, item)
   result.gained = e.scored - scored_before -- for the UI: what this flip was worth
@@ -906,6 +940,11 @@ function Game.resolve(game)
 end
 
 local function lose_level(game, why)
+  local e = game.encounter
+  if e and (e.combo_pot or 0) > 0 then
+    log(game, "Lost " .. e.combo_pot .. " unbanked combo gold.")
+    e.combo_pot = 0
+  end
   game.phase = "GAME_OVER"
   game.exchange_open = false
   game.dealt = nil
@@ -1189,6 +1228,7 @@ local function valid_run(data)
       "combo_step", "combo_cap", "returned"}) do
     if not num(e[key]) then return false end
   end
+  if e.combo_pot ~= nil and not whole(e.combo_pot, 0) then return false end
   if e.payout ~= nil and not num(e.payout) then return false end -- the House pays nothing
   if e.bank_discards ~= nil and not num(e.bank_discards) then return false end
   if not (uid_list(e.queue) and uid_list(e.pile) and uid_list(e.played) and uid_map(e.discarded, function(v) return v == true end)
@@ -1212,7 +1252,10 @@ function Game.restore(data)
   Hooks.unbind()
   Items.clear()
   data.fortune_bonus = data.fortune_bonus or 0
-  if data.phase == "ENCOUNTER" then data.encounter.best_scores = data.encounter.best_scores or {} end
+  if data.phase == "ENCOUNTER" then
+    data.encounter.best_scores = data.encounter.best_scores or {}
+    data.encounter.combo_pot = data.encounter.combo_pot or 0
+  end
   data.paused = false
   Relics.bind(data)
   return data

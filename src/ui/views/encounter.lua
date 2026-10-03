@@ -240,7 +240,12 @@ local function draw_encounter()
     text(label, 1190 - face:getWidth(D.L(label)), 184, face, tint)
     local big = string.format("x%.2f", mult)
     text(big, 1190 - ui.f32:getWidth(big), 202, ui.f32, len < 2 and C.muted or C.gold)
-    if e.shield > 0 then text(D.L("SHIELD %d", e.shield), 1190 - face:getWidth(D.L("SHIELD %d", e.shield)), 238, face, C.green) end
+    if e.shield > 0 then text(D.L("SHIELD %d", e.shield), 940, 238, face, C.green) end
+    if (e.combo_pot or 0) > 0 then
+      local pot = D.L("POT %dG", e.combo_pot)
+      text(pot, 1190 - face:getWidth(pot), 238, face, C.gold)
+      text(D.L("BREAK LOSES POT"), 1000, 304, ui.f16, C.red)
+    end
   end
 
   -- this level's modifier (from level 2 on)
@@ -351,7 +356,10 @@ local function draw_encounter()
     color(C.muted)
     love.graphics.printf(D.L(hint), 70, 690, 240)
   end
-  if ui.game.dealt and not ui.flip_animation and not ui.holding then
+  local combo_choice = ui.holding and ui.game.dealt ~= nil and Game.can_bank_combo(ui.game)
+  if combo_choice then
+    button(D.L("BANK %dG", e.combo_pot), 330, 676, 200, 64, C.green, A.bank_combo, true, "Y")
+  elseif ui.game.dealt and not ui.flip_animation and not ui.holding then
     D.icon_button("DISCARD", ui.ui_images.discard, 330, 676, 200, 64, C.red, A.discard_current, nil, "Y") -- only the current coin
   end
   local empty_stack = not ui.game.dealt and not ui.game.mulligan and not ui.game.pending
@@ -361,20 +369,27 @@ local function draw_encounter()
     -- the run is about to end: a notice over the stage with the three ways on
     color(C.ink, .72)
     love.graphics.rectangle("fill", 330, 170, 880, 480, 6)
-    box(500, 250, 540, 320, C.panel_dk)
-    outline(500, 250, 540, 320, C.red)
-    centered("OUT OF COINS", 500, 272, 540, ui.f32, C.red)
+    box(500, 230, 540, 380, C.panel_dk)
+    outline(500, 230, 540, 380, C.red)
+    centered("OUT OF COINS", 500, 246, 540, ui.f32, C.red)
     centered(D.L("%d POINTS SHORT OF THE QUOTA", e.quota) .. "  -  " .. D.L("EXCHANGES LEFT: %d", Game.exchanges_left(ui.game)),
-      500, 316, 540, ui.f16, C.muted)
+      500, 290, 540, ui.f16, C.muted)
+    local offset = 0
+    if Game.can_bank_combo(ui.game) then
+      D.button(D.L("BANK %dG", e.combo_pot), 530, 326, 480, 48, C.green, A.bank_combo)
+      offset = 58
+    end
     D.icon_button(D.L("BUY MORE COINS  %d GOLD > %d", Game.exchange_cost(ui.game), Game.EXCHANGE_GAIN),
-      ui.ui_images.exchange, 530, 356, 480, 56, C.green, A.exchange)
-    D.icon_button("START AGAIN", ui.ui_images.start_level, 530, 424, 480, 56, C.gold, function() A.start() end)
-    D.icon_button("BACK TO MENU", ui.ui_images.give_up, 530, 492, 480, 56, C.panel_light, A.open_menu)
+      ui.ui_images.exchange, 530, 356 + offset, 480, 56, C.green, A.exchange)
+    D.icon_button("START AGAIN", ui.ui_images.start_level, 530, 424 + offset, 480, 56, C.gold, function() A.start() end)
+    D.icon_button("BACK TO MENU", ui.ui_images.give_up, 530, 492 + offset, 480, 56, C.panel_light, A.open_menu)
   elseif empty_stack then
     -- cleared with an empty stack: the shop is the main button, the exchange is the small one in the corner
     if e.cleared then
       D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 550, 676, 260, 64, C.green, A.open_shop, nil, "X")
     end
+  elseif combo_choice then
+    D.icon_button("PUSH", ui.ui_images.flip, 550, 676, 260, 64, C.blue, A.push_combo, Game.can_flip(ui.game), "X")
   else
     -- after the last coin there is nothing left to deal, but the result is still shown: the button must still work
     local flip_label = ui.flip_animation and "FLIPPING..." or ui.holding and (ui.game.dealt and "NEXT COIN" or "CONTINUE") or "FLIP"

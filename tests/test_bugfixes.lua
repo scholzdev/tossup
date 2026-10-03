@@ -157,9 +157,9 @@ equal(#Profile.sets(Profile.decode("return {tokens=1,unlocked={},sets={blade={{n
 
 -- options: only known keys with the right type survive, and encode never writes unloadable text or raises
 do
-  local junk = Profile.decode("return {tokens=1,unlocked={},options={volume_master=500,volume_sfx=-3,volume_music=0/0,language='fr',screen_shake='yes',[1]=2,['a b']=1,evil={},[2.5]=1}}")
+  local junk = Profile.decode("return {tokens=1,unlocked={},options={volume_master=500,volume_sfx=-3,volume_music='bad',language='fr',screen_shake='yes',[1]=2,['a b']=1,evil={},[2.5]=1}}")
   local o = junk.options
-  equal(o.volume_master, 100, "volume clamped") equal(o.volume_sfx, 0, "volume clamped low") equal(o.volume_music, 40, "NaN volume defaults")
+  equal(o.volume_master, 100, "volume clamped") equal(o.volume_sfx, 0, "volume clamped low") equal(o.volume_music, 40, "wrong type defaults")
   equal(o.language, "en", "unknown language") equal(o.screen_shake, true, "wrong type defaults") equal(o["a b"], nil, "unknown key dropped")
   local n = 0
   for _ in pairs(o) do n = n + 1 end

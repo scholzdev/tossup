@@ -391,6 +391,20 @@ function A.use_item(slot)
   if not ui.flip_animation then Game.use_item(ui.game, slot) end
 end
 
+function A.bank_combo()
+  if not ui.holding then return 0 end
+  local amount = Game.bank_combo(ui.game)
+  if amount > 0 then ui.holding = false end
+  return amount
+end
+
+function A.push_combo()
+  if not ui.holding or not Game.can_flip(ui.game) then return false end
+  ui.holding = false
+  A.flip_next_coin()
+  return true
+end
+
 function A.flip_next_coin()
   local game = ui.game
   if not Game.flip(game) then return end

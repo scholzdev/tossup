@@ -399,9 +399,10 @@ assert(Game.flip(k) and Game.resolve(k))
 equal(k.player.gold, gold + Game.route[1].payout + 2, "4 extra points in total pay 2 gold")
 equal(k.cleared, 1, "cleared is counted once")
 local before = k.player.gold
+local combo_payout = k.encounter.combo_pot
 assert(Game.end_level(k))
 equal(k.phase, "SHOP")
-equal(k.player.gold, before, "ending pays nothing more")
+equal(k.player.gold, before + combo_payout, "ending banks any unbanked combo gold")
 
 -- the stack running dry after the quota is met goes to the shop (not game over)
 local d3 = Game.new(42, "blade")

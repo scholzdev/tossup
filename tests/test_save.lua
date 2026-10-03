@@ -15,6 +15,8 @@ equal(back.c[3], true)
 equal(back.f, nil, "functions are not saved")
 equal(back.s, "quote\"d")
 equal(Serialize.decode("garbage {"), nil)
+equal(Serialize.decode("return (function() while true do end end)()"), nil, "save data cannot execute code")
+equal(Serialize.decode("return " .. string.rep("{", 66) .. "0" .. string.rep("}", 66)), nil, "save nesting is bounded")
 equal(Serialize.encode(data), Serialize.encode(data), "deterministic")
 
 -- play a deterministic script on a game: flip everything in the level

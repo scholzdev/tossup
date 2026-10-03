@@ -2,6 +2,7 @@
 -- Pure data + (de)serialization; the LÖVE layer decides where the string is stored.
 local characters = require("content.characters")
 local coin_catalog = require("content.coins")
+local Serialize = require("src.serialize")
 
 local Profile = {}
 
@@ -267,9 +268,8 @@ end
 
 -- Returns a fresh profile if the text is missing or malformed.
 function Profile.decode(text)
-  local chunk = text and load(text, "profile", "t", {})
-  local ok, data = pcall(chunk or function() end)
-  if not ok or type(data) ~= "table" or type(data.tokens) ~= "number" or type(data.unlocked) ~= "table" then
+  local data = Serialize.decode(text)
+  if type(data) ~= "table" or type(data.tokens) ~= "number" or type(data.unlocked) ~= "table" then
     return Profile.new()
   end
   -- fill what older save files lack, and drop or default anything of the wrong type (damaged or hand-edited files)

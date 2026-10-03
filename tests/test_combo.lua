@@ -41,6 +41,22 @@ equal(g.encounter.combo_len, 4)
 equal(scored(g, "Tails"), 1, "a different result breaks the combo (Tails pays 1)")
 equal(g.encounter.combo_len, 1)
 equal(g.encounter.combo_side, "Tails")
+equal(g.encounter.combo_pot, 0, "breaking the combo loses its unbanked pot")
+
+-- bank the rising gold pot to lock it in and end the combo; otherwise a break loses it
+g = level({"dagger", "dagger", "dagger", "dagger", "dagger", "dagger"})
+scored(g, "Heads"); scored(g, "Heads")
+equal(g.encounter.combo_pot, 1, "two matching flips build a 1 gold pot")
+assert(Game.can_bank_combo(g))
+equal(Game.bank_combo(g), 1)
+equal(g.player.gold, Game.START_GOLD + 1)
+equal(g.encounter.combo_len, 0, "banking ends the combo")
+equal(g.encounter.combo_pot, 0)
+scored(g, "Heads"); scored(g, "Heads"); scored(g, "Heads")
+equal(g.encounter.combo_pot, 3, "pushing a third matching flip grows the pot")
+scored(g, "Tails")
+equal(g.encounter.combo_pot, 0, "a broken streak forfeits the pot")
+equal(g.player.gold, Game.START_GOLD + 1, "unbanked gold is lost")
 
 -- cap at x3
 g = level({"dagger", "dagger"})
@@ -72,6 +88,8 @@ g = level({"dagger", "dagger", "cash_out"})
 scored(g, "Heads"); scored(g, "Heads")
 equal(scored(g, "Heads"), math.floor(3 * 1.5 * 1.5 + .5), "cash out squares the multiplier")
 equal(g.encounter.combo_len, 0, "combo reset")
+equal(g.player.gold, Game.START_GOLD + 3, "Cash Out banks the combo pot automatically")
+equal(g.encounter.combo_pot, 0)
 
 -- cold streak: Tails pays per Tails in a row
 g = level({"normal", "cold_streak", "cold_streak"})

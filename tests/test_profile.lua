@@ -21,6 +21,7 @@ equal(copy.tokens, 2)
 assert(Profile.is_unlocked(copy, "blade", "hammer"), "survives save and load")
 
 equal(Profile.decode("garbage {").tokens, 0, "bad file gives a fresh profile")
+equal(Profile.decode("return {tokens = (function() while true do end end)(), unlocked = {}}").tokens, 0, "profile data cannot execute code")
 equal(Profile.decode(nil).tokens, 0)
 equal(Profile.decode("return 5").tokens, 0)
 
