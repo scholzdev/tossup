@@ -68,6 +68,14 @@ COLORS = {
     "lifeline": "d9534f",
     "horoscope": "4a5fa8",
     "crystal_ball": "6f9fd0",
+    "compost": "786a46",
+    "square_dance": "9b6bc0",
+    "good_dog": "b88960",
+    "whetstone": "6d8490",
+    "blood_pact": "8f394d",
+    "counterfeiter": "518774",
+    "doppelganger": "79549d",
+    "conductor": "487e9b",
 }
 
 
@@ -306,6 +314,42 @@ def emblem(image, coin_id):
         d.ellipse(box(36, 34, 92, 90), outline=ivory, width=p(6))
         d.polygon(points([(46, 92), (82, 92), (90, 102), (38, 102)]), fill=ivory)
         d.arc(box(46, 44, 70, 68), 200, 280, fill=ivory, width=p(5))
+    elif coin_id == "compost":  # a heap growing a little leaf
+        d.ellipse(box(39, 68, 89, 94), fill=ivory)
+        d.ellipse(box(45, 54, 75, 78), fill=ivory)
+        d.line(points([(65, 60), (65, 38)]), fill=ivory, width=p(5))
+        d.ellipse(box(65, 34, 84, 47), fill=ivory)
+        d.ellipse(box(45, 39, 64, 52), fill=ivory)
+    elif coin_id == "square_dance":  # nested squares, rotated like dance steps
+        d.rectangle(box(42, 42, 86, 86), outline=ivory, width=p(6))
+        d.line(points([(64, 28), (100, 64), (64, 100), (28, 64), (64, 28)]), fill=ivory, width=p(6), joint="curve")
+        d.rectangle(box(57, 57, 71, 71), fill=ivory)
+    elif coin_id == "good_dog":  # paw print
+        for x, y in ((44, 48), (57, 38), (72, 38), (85, 48)):
+            d.ellipse(box(x - 6, y - 8, x + 6, y + 5), fill=ivory)
+        d.ellipse(box(46, 62, 82, 93), fill=ivory)
+    elif coin_id == "whetstone":  # blade across a sharpening stone
+        d.rounded_rectangle(box(35, 68, 94, 87), radius=p(7), fill=ivory)
+        d.line(points([(50, 59), (78, 33)]), fill=ivory, width=p(7))
+        d.polygon(points([(77, 33), (90, 28), (84, 42)]), fill=ivory)
+    elif coin_id == "blood_pact":  # two drops joined by a line
+        for x in (47, 81):
+            d.polygon(points([(x, 40), (x - 12, 65), (x + 12, 65)]), fill=ivory)
+            d.ellipse(box(x - 12, 54, x + 12, 80), fill=ivory)
+        d.line(points([(50, 87), (78, 87)]), fill=ivory, width=p(6))
+    elif coin_id == "counterfeiter":  # two overlapping stamped coins
+        d.ellipse(box(33, 39, 76, 82), outline=ivory, width=p(5))
+        d.ellipse(box(53, 50, 96, 93), outline=ivory, width=p(5))
+        d.line(points([(68, 63), (82, 80), (68, 80), (82, 63)]), fill=ivory, width=p(4))
+    elif coin_id == "doppelganger":  # mirrored faces
+        d.ellipse(box(30, 41, 69, 88), outline=ivory, width=p(5))
+        d.ellipse(box(59, 41, 98, 88), outline=ivory, width=p(5))
+        for x in (44, 78):
+            d.ellipse(box(x, 59, x + 5, 64), fill=ivory)
+    elif coin_id == "conductor":  # baton and three beats
+        d.line(points([(37, 91), (88, 37)]), fill=ivory, width=p(6))
+        for x, y in ((45, 43), (64, 36), (85, 65)):
+            d.ellipse(box(x - 5, y - 5, x + 5, y + 5), fill=ivory)
     elif coin_id == "back":
         d.arc(box(44, 37, 84, 76), 190, 350, fill=ivory, width=p(8))
         d.line(points([(83, 59), (64, 77), (64, 82)]), fill=ivory, width=p(8))

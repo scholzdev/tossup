@@ -43,12 +43,13 @@ for _, id in ipairs({"domino", "mirror", "lucky", "hourglass"}) do
   for _, uid in ipairs(g.encounter.pile) do assert(not seen[uid], id .. ": a uid is in the pile twice") seen[uid] = true end
 end
 
--- extra_draw never puts a coin into the pile twice
+-- extra_draw never puts a coin into the bank twice, even when the pile already contains it
 local g = level({"lucky", "normal", "normal"})
 g.encounter.pile = {g.coins[1].uid}
 flip(g, "Heads")
 local n = 0
 for _, uid in ipairs(g.encounter.pile) do if uid == g.coins[1].uid then n = n + 1 end end
+for _, uid in ipairs(g.encounter.queue) do if uid == g.coins[1].uid then n = n + 1 end end
 equal(n, 1, "extra_draw guard")
 
 -- Echo repeats Megaphone (effects with coins)
@@ -274,7 +275,12 @@ do
   while g.encounter_index < 4 and guard < 500 do
     guard = guard + 1
     if g.mulligan then Game.mulligan_done(g)
-    elseif g.phase == "ENCOUNTER" and g.dealt then g.player.energy = 99 Game.flip(g) Game.resolve(g)
+    elseif g.phase == "ENCOUNTER" and g.dealt then
+      -- This is save-format coverage; keep it independent of balance changes to route quotas.
+      g.encounter.quota = -1000000
+      g.player.energy = 99
+      Game.flip(g)
+      Game.resolve(g)
     elseif g.phase == "ENCOUNTER" and g.encounter.cleared then Game.end_level(g)
     elseif g.phase == "ENCOUNTER" and Game.can_exchange(g) then Game.exchange(g)
     elseif g.phase == "SHOP" then Game.leave_shop(g)

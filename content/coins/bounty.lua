@@ -2,6 +2,7 @@
 return {
   name = "Bounty", description = "Pays 1 gold for every 2 points it scores.",
   rarity = "SR",
+  coin_types = {"greed"},
   energy_cost = 1,
   probability = .4,
   heads = {{type = "score", amount = 4}}, tails = {{type = "score", amount = 2}},

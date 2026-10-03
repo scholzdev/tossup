@@ -96,13 +96,15 @@ equal(p.encounter.queue[Game.VISIBLE], 70, "the peeked coin refilled the bank")
 
 -- extra draw: a played coin returns to the pile (max RETURN_CAP per level); refuses when none played / at the cap
 local e = fresh({"extra_draw", "extra_draw", "extra_draw", "extra_draw", "extra_draw"})
+e.reshuffle = false -- keep played coins out of the waiting bank, as in a normal run
 assert(not Game.use_item(e, 1), "nothing has been played yet: refused")
 equal(#e.items, 5, "refused item is kept")
-for _ = 1, 4 do flip_resolve(e) end
-local left = Game.coins_left(e)
-assert(Game.use_item(e, 1))
-equal(Game.coins_left(e), left + 1, "a coin came back")
-for _ = 1, Game.RETURN_CAP - 1 do assert(Game.use_item(e, 1)) end
+for _ = 1, Game.RETURN_CAP do
+  flip_resolve(e)
+  local left = Game.coins_left(e)
+  assert(Game.use_item(e, 1))
+  equal(Game.coins_left(e), left + 1, "a coin came back")
+end
 assert(not Game.use_item(e, 1), "cap reached")
 
 -- shop: buy with gold, slot limit, cost

@@ -2,6 +2,7 @@
 return {
   name = "Cursed", description = "A powerful, dangerous wager.",
   rarity = "SR",
+  coin_types = {"chaos"},
   probability = .25,
   heads = {{type = "score", amount = 15}},
   tails = {{type = "penalty", amount = 2}},

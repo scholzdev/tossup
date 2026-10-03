@@ -432,11 +432,45 @@ equal(bossy.pending.result, "Heads")
 assert(Game.resolve(bossy))
 equal(bossy.phase, "VICTORY")
 
--- quotas scale with the number of coins in the deck (a level lasts as long as the stack)
+-- Base quotas scale with deck size; strong scoring decks carry a surcharge at level start.
 equal(Game.quota_for(1, 5), 4)
 equal(Game.quota_for(1, 10), 7)
 equal(Game.quota_for(4, 10), 45)
 equal(Game.quota_for(2, 1), 1, "never below 1")
-equal(Game.new(51, "blade").encounter.quota, Game.quota_for(1, 3), "a level's quota comes from the deck size at level start")
+equal(Game.new_sandbox({seed = 51, coins = {"normal", "sword", "dagger"}}).encounter.quota, 2,
+  "starter quota follows Opening's configured per-coin value")
+local dances = Game.new_sandbox({seed = 51, coins = {"square_dance", "square_dance", "square_dance", "megaphone", "gambler"}})
+equal(dances.encounter.quota, 20, "three Square Dances must not clear with one 18-point Heads")
+equal(dances.encounter.max_quota, 20)
+local ten = Game.new_sandbox({seed = 51, coins = {"square_dance", "square_dance", "square_dance", "megaphone", "chain", "hammer", "snowball", "dagger", "sword", "normal"}})
+equal(ten.encounter.quota, 24, "large power deck gets a larger quota")
+local persistent = Game.new(51, "blade", {"square_dance", "megaphone", "gambler"},
+  {"square_dance", "square_dance", "square_dance", "megaphone", "gambler"}, true)
+local saved = Game.restore(Game.snapshot(persistent))
+assert(saved, "strong deck save restores")
+equal(saved.encounter.quota, 20, "saved quota survives restore")
+saved.phase = "SHOP"
+assert(Game.next_encounter(saved))
+equal(saved.encounter.quota, 23, "surcharge scales with the next stage")
+saved.phase = "SHOP"
+saved.coins[1].id = "normal"
+assert(Game.next_encounter(saved))
+assert(saved.encounter.quota < 29, "removing a Square Dance lowers the next quota")
+local high_stake = Game.new_sandbox({seed = 51, stake = 2, coins = {"square_dance", "square_dance", "square_dance", "megaphone", "gambler"}})
+assert(high_stake.encounter.quota > dances.encounter.quota, "stake multiplier applies to power surcharge")
+local fuse_deck = Game.new_sandbox({seed = 51, coins = {"fuse", "normal", "dagger"}})
+local uncharged_quota = fuse_deck.encounter.quota
+fuse_deck.coins[1].charge = 30
+fuse_deck.phase = "SHOP"
+assert(Game.next_encounter(fuse_deck))
+assert(fuse_deck.encounter.quota > Game.quota_for(2, 3) + uncharged_quota - Game.quota_for(1, 3),
+  "stored Fuse charge raises the next quota")
+local miser_deck = Game.new_sandbox({seed = 51, coins = {"miser", "normal", "dagger"}})
+local poor_quota = miser_deck.encounter.quota
+miser_deck.player.gold = 200
+miser_deck.phase = "SHOP"
+assert(Game.next_encounter(miser_deck))
+assert(miser_deck.encounter.quota > poor_quota + Game.quota_for(2, 3) - Game.quota_for(1, 3),
+  "Miser's current gold raises the next quota")
 
 print("game tests passed")

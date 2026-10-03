@@ -2,6 +2,7 @@
 return {
   name = "Copper", description = "Funds your next move.",
   rarity = "N",
+  coin_types = {"greed"},
   cost = 10,
   probability = .3,
   heads = {{type = "gold", amount = 2}},

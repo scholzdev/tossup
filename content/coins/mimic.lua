@@ -4,6 +4,7 @@ local RNG = require("src.rng")
 return {
   name = "Mimic", description = "Heads: does what the Heads side of a random other coin in your deck does.",
   rarity = "UR",
+  coin_types = {"chaos"},
   probability = .3,
   heads = {}, tails = {{type = "score", amount = 1}},
   on_resolve = function(game, inst, res)
@@ -16,7 +17,8 @@ return {
     if #others == 0 then return end
     local pick = others[RNG.int(game, 1, #others)]
     for _, effect in ipairs(Game.catalog()[pick.id].heads) do
-      res.effects[#res.effects + 1] = {type = effect.type, amount = effect.amount, coins = effect.coins}
+      res.effects[#res.effects + 1] = {type = effect.type, amount = effect.amount, coins = effect.coins,
+        kind = effect.kind}
     end
     Game.log(game, "Mimic copies " .. Game.catalog()[pick.id].name .. ".")
   end,

@@ -47,7 +47,7 @@ local STEPS = {
    text = "Keep flipping for extra gold, or press OPEN SHOP to move on.",
    wait = function(g) return g.phase == "SHOP" end, hint = "PRESS OPEN SHOP"},
   {title = "THE SHOP", rect = {70, 160, 920, 440},
-   text = "Between levels you buy COINS (a bigger deck means a bigger quota, so buy better coins), CHIPS (one-use helpers) and a PRIZE (lasts the run). REROLL refreshes the coins."},
+   text = "Between levels you buy COINS (larger and stronger decks raise the next quota), CHIPS (one-use helpers) and a PRIZE (lasts the run). REROLL refreshes the coins."},
   {title = "DECK TOOL", rect = {1000, 238, 220, 220},
    text = "Select a coin below to remove it from the deck for 8 gold."},
   {title = "YOUR DECK", rect = {70, 600, 920, 150},

@@ -2,6 +2,7 @@
 return {
   name = "Momentum", description = "+5% Heads for every Heads in a row this level.",
   rarity = "SR",
+  coin_types = {"rhythm"},
   probability = .35,
   heads = {{type = "score", amount = 6}},
   tails = {},

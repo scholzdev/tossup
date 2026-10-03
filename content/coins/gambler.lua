@@ -4,11 +4,13 @@ local RNG = require("src.rng")
 return {
   name = "Gambler", description = "Heads is a bet: 50% triple points, otherwise nothing.",
   rarity = "SR",
+  coin_types = {"chaos"},
   cost = 22,
   energy_cost = 1,
   probability = .35,
   heads = {{type = "score", amount = 7}},
   tails = {},
+  quota_extra = function(_, _, heads) return heads * 3.5 end,
   on_resolve = function(game, _, res)
     local Game = require("src.game") -- lazy: src.game loads this file
     if res.result ~= "Heads" then return end

@@ -5,6 +5,7 @@ return {
   energy_cost = 1,
   probability = .35,
   heads = {}, tails = {{type = "penalty", amount = 2}},
+  quota_extra = function(_, _, heads) return heads * 6 end,
   on_resolve = function(game, _, res)
     if res.result ~= "Heads" then return end
     res.effects[#res.effects + 1] = {type = "score", amount = math.min(30, 3 * game.encounter.combo_len)}

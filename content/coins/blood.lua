@@ -2,6 +2,7 @@
 return {
   name = "Blood", description = "Heads: 10 points. Tails: quota +6. Edge: half of both.",
   rarity = "R",
+  coin_types = {"blood"},
   cost = 22,
   energy_cost = 1,
   probability = .37,

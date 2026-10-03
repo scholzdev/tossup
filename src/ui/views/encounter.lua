@@ -62,7 +62,7 @@ local function draw_mulligan()
     end
     local cost = def.energy_cost or 0
     if cost > 0 then text("E" .. cost, x + w - 30, y + 10, ui.f16, C.orange) end
-    coin_hover(owned.id, x, y, w, h, Game.probability(g, owned))
+    coin_hover(owned.id, x, y, w, h, Game.probability(g, owned), nil, owned.upgrade)
     ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = w, h = h, action = function() A.toggle_mark(uid) end}
   end
   centered("CLICK COINS TO MARK THEM, THEN PRESS DISCARD", 0, 560, 1280, ui.f16, C.muted)
@@ -178,7 +178,7 @@ local function draw_encounter()
         love.graphics.rectangle("fill", tab_x, y - 9, 76, 18, 4)
         centered("CURRENT", tab_x, y - 9, 76, ui.f16, C.ink)
       end
-      coin_hover(owned.id, x, y, 214, 84, Game.probability(ui.game, owned)) -- read what the next coins do
+      coin_hover(owned.id, x, y, 214, 84, Game.probability(ui.game, owned), nil, owned.upgrade) -- read what the next coins do
       coin_image(owned.id, x + 8, y + 10, 64)
       text(catalog[owned.id].name:upper(), x + 80, y + 16, ui.f20, C.face)
       text(D.L("%d%% HEADS", math.floor(Game.probability(ui.game, owned) * 100 + .5)), x + 80, y + 46, ui.f16, C.gold)
@@ -197,9 +197,11 @@ local function draw_encounter()
     if buff.kind == "mult" then label = D.L("BUFF x%d  (%d LEFT)", buff.amount, buff.left)
     elseif buff.kind == "odds" then label = D.L("BUFF +%d%% HEADS  (%d LEFT)", math.floor(buff.amount * 100 + .5), buff.left)
     elseif buff.kind == "swap" then label = D.L("BUFF: NEXT COIN SWAPS SIDES")
-    else label = D.L("BUFF: NEXT COIN LANDS HEADS") end
-    if i <= 2 then text(label, 84, 612 + (i - 1) * 18, ui.f16, C.orange) end
+    elseif buff.kind == "heads" then label = D.L("BUFF: NEXT COIN LANDS HEADS")
+    else label = D.L("BUFF %s  (%d LEFT)", D.L(buff.kind:upper()), buff.left) end
+    if i <= 3 then text(label, 84, 612 + (i - 1) * 18, ui.f16, C.orange) end
   end
+  if #e.buffs > 3 then text(D.L("+%d MORE BUFFS", #e.buffs - 3), 84, 666, ui.f16, C.orange) end
 
   -- centre: the stage. One big coin, its two effects either side, the odds under it.
   local SX = 770

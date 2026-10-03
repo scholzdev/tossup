@@ -2,6 +2,7 @@
 return {
   name = "Contrarian", description = "Always lands opposite of the previous flip.",
   rarity = "SR",
+  coin_types = {"chaos"},
   probability = .65,
   heads = {{type = "score", amount = 4}}, tails = {{type = "score", amount = 1}},
   on_flip = function(game, _, flip)

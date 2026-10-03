@@ -57,16 +57,22 @@ local function measure(id, games, flips)
   characters.sim = {name = "Sim", description = "", starter = "normal", pool = {"normal", "sword", "dagger", "hammer"},
     deck = {id, "sword", "dagger", "normal", "normal"}, locked = {}}
   local totals = {points = 0, gold = 0, penalty = 0, energy = 0, flips = 0}
+  local gold_before
   local handles = {
+    Signal.on("coin_flip", function(e) if e.inst.id == id then gold_before = e.game.player.gold end end),
     Signal.on("effect_applied", function(e)
       if e.inst.id ~= id then return end
       local t, amount = e.effect.type, e.effect.amount
       if t == "score" then totals.points = totals.points + amount
-      elseif t == "gold" then totals.gold = totals.gold + amount
       elseif t == "penalty" then totals.penalty = totals.penalty + amount
       elseif t == "energy" then totals.energy = totals.energy + amount end
     end),
-    Signal.on("coin_resolved", function(e) if e.inst.id == id then totals.flips = totals.flips + 1 end end),
+    Signal.on("coin_resolved", function(e)
+      if e.inst.id == id then
+        totals.gold = totals.gold + e.game.player.gold - gold_before
+        totals.flips = totals.flips + 1
+      end
+    end),
   }
   for seed = 1, games do
     local g = Game.new(seed, "sim")

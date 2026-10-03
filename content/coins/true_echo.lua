@@ -9,7 +9,8 @@ return {
     local previous = game.last_result
     if not previous or not previous.base_effects then return end
     for _, effect in ipairs(previous.base_effects) do
-      res.effects[#res.effects + 1] = {type = effect.type, amount = effect.amount, coins = effect.coins}
+      res.effects[#res.effects + 1] = {type = effect.type, amount = effect.amount, coins = effect.coins,
+        kind = effect.kind}
     end
   end,
 }

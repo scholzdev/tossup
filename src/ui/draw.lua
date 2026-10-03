@@ -53,6 +53,10 @@ local function effects(effects_list)
     if e.type == "next_mult" then parts[#parts + 1] = L("NEXT %d x%d", e.coins, e.amount) goto continue end
     if e.type == "next_odds" then parts[#parts + 1] = L("NEXT %d +%d%%", e.coins, math.floor(e.amount * 100 + .5)) goto continue end
     if e.type == "all_odds" then parts[#parts + 1] = L("ALL +%d%%", math.floor(e.amount * 100 + .5)) goto continue end
+    if e.type == "fortune_odds" then parts[#parts + 1] = L("FORTUNE +%d%%", math.floor(e.amount * 100 + .5)) goto continue end
+    if e.type == "type_buff" then parts[#parts + 1] = L("NEXT %d %s", e.coins, L(e.kind:upper())) goto continue end
+    if e.type == "fetch_best" then parts[#parts + 1] = L("FETCH BEST") goto continue end
+    if e.type == "gold_loss" then parts[#parts + 1] = L("-%d GOLD", e.amount) goto continue end
     if e.type == "peek" then parts[#parts + 1] = L("PEEK") goto continue end
     if e.type == "bank_discard" then parts[#parts + 1] = L("DISCARD 1 OF NEXT 3") goto continue end
     if e.type == "extra_exchange" then parts[#parts + 1] = L("+%d EXCHANGE", e.amount) goto continue end
@@ -78,6 +82,7 @@ local function effect_description(effects_list)
     local amount = effect.amount
     if effect.type == "score" then parts[#parts + 1] = amount == 1 and L("Score 1 point") or L("Score %d points", amount)
     elseif effect.type == "gold" then parts[#parts + 1] = L("Gain %d gold", amount)
+    elseif effect.type == "gold_loss" then parts[#parts + 1] = L("Lose up to %d gold", amount)
     elseif effect.type == "energy" then parts[#parts + 1] = L("Gain %d energy", amount)
     elseif effect.type == "penalty" then parts[#parts + 1] = L("Quota +%d", amount)
     elseif effect.type == "extra_draw" then parts[#parts + 1] = L("Goes back into the pile")
@@ -89,6 +94,9 @@ local function effect_description(effects_list)
       local pct = math.floor(amount * 100 + .5)
       parts[#parts + 1] = effect.coins == 1 and L("Next coin: +%d%% Heads", pct) or L("Next %d coins: +%d%% Heads", effect.coins, pct)
     elseif effect.type == "all_odds" then parts[#parts + 1] = L("All coins +%d%% Heads this level", math.floor(amount * 100 + .5))
+    elseif effect.type == "fortune_odds" then parts[#parts + 1] = L("Fortune coins gain +%d%% Heads for the run", math.floor(amount * 100 + .5))
+    elseif effect.type == "type_buff" then parts[#parts + 1] = L("Prepare the next %d %s coins", effect.coins, L(effect.kind:upper()))
+    elseif effect.type == "fetch_best" then parts[#parts + 1] = L("Return the highest-scoring played coin")
     elseif effect.type == "peek" then parts[#parts + 1] = L("Look at the next two coins")
     elseif effect.type == "bank_discard" then parts[#parts + 1] = L("Discard one of the next three coins")
     elseif effect.type == "extra_exchange" then parts[#parts + 1] = L("One more exchange this level")
@@ -102,11 +110,13 @@ local function effect_description(effects_list)
   return table.concat(parts, "; ")
 end
 
-local function coin_hover(id, x, y, w, h, probability, locked)
+local function coin_hover(id, x, y, w, h, probability, locked, upgrade_id)
   local demo_odds = ui.game and ui.game.sandbox and ui.game.sandbox.odds and ui.game.sandbox.odds[id]
+  local upgrade = upgrade_id and catalog[id].upgrades and catalog[id].upgrades[upgrade_id]
   local tie = ui.game and Game.tie_probability(ui.game, {id = id}) or catalog[id].tie_probability or 0
-  local info = {id = id, probability = probability or demo_odds and demo_odds.heads or catalog[id].probability,
-    tie_probability = tie, locked = locked}
+  local base_probability = demo_odds and demo_odds.heads or catalog[id].probability
+  local info = {id = id, probability = probability or base_probability + (upgrade and upgrade.heads_probability or 0),
+    tie_probability = tie, locked = locked, upgrade = upgrade_id}
   ui.regions[#ui.regions + 1] = {x = x, y = y, w = w, h = h, coin = info}
   local mx, my = ui.mouse()
   if mx >= x and mx <= x + w and my >= y and my <= y + h then ui.hovered_coin = info end
@@ -222,53 +232,108 @@ end
 local function draw_coin_tooltip()
   if not ui.hovered_coin then return end
   local coin = catalog[ui.hovered_coin.id]
+  local upgrade = ui.hovered_coin.upgrade and coin.upgrades and coin.upgrades[ui.hovered_coin.upgrade]
   local mx, my = ui.pointer()
-  local w, h = 390, ui.hovered_coin.locked and 222 or 190
-  local _, lines = ui.f16:getWrap(coin.description, w - 92) -- long descriptions wrap and push the rest down
-  local extra = math.max(0, #lines - 1) * 18
-  local heads_line = L("HEADS") .. "  " .. effect_description(coin.heads)
-  local tails_line = L("TAILS") .. "  " .. effect_description(coin.tails)
-  local _, head_lines = ui.f16:getWrap(heads_line, w - 28) -- effect lines wrap too
-  local _, tail_lines = ui.f16:getWrap(tails_line, w - 28)
+  local w = 470
   local tie = ui.hovered_coin.tie_probability or 0
-  local edge_line = tie > 0 and (L("EDGE") .. "  " .. effect_description(Game.tie_effects(ui.hovered_coin.id))) or nil
-  local edge_lines = {}
-  if edge_line then _, edge_lines = ui.f16:getWrap(edge_line, w - 28) end
-  local edge_extra = edge_line and (30 + (#edge_lines - 1) * 18) or 0
-  local locked_line = L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK")
-  local _, locked_lines = ui.f16:getWrap(locked_line, w - 28)
-  local tails_y = 155 + (#head_lines - 1) * 18
-  h = h + extra + (#head_lines - 1) * 18 + (#tail_lines - 1) * 18 +
-    edge_extra + (ui.hovered_coin.locked and (#locked_lines - 1) * 18 or 0)
-  local x = math.min(mx + 18, 1280 - w - 12)
-  local y = my + 18
-  if y + h > 788 then y = my - h - 18 end
-  y = math.max(12, y)
-  box(x, y, w, h, C.ink)
-  outline(x, y, w, h, C.gold)
-  coin_image(ui.hovered_coin.id, x + 9, y + 9, 62)
-  text(coin.name:upper(), x + 78, y + 12, ui.f20, C.face)
-  text(L(RARITY_NAME[coin.rarity]):upper(), x + 78, y + 38, ui.f16, C.rarity[coin.rarity])
-  love.graphics.setFont(ui.f16)
-  color(C.muted)
-  love.graphics.printf(coin.description, x + 78, y + 58, w - 92)
   local heads = math.floor(ui.hovered_coin.probability * 100 + .5)
-  local odds = tie > 0 and L("HEADS %d%%  /  EDGE %d%%  /  TAILS %d%%", heads,
-    math.floor(tie * 100 + .5), math.floor((1 - ui.hovered_coin.probability - tie) * 100 + .5)) or
-    L("HEADS %d%%  /  TAILS %d%%", heads, 100 - heads)
-  text(odds ..
-    ((coin.energy_cost or 0) > 0 and L("  -  COSTS %d ENERGY", coin.energy_cost) or ""), x + 14, y + 96 + extra, ui.f16, C.gold)
-  color(C.blue)
-  love.graphics.printf(heads_line, x + 14, y + 126 + extra, w - 28)
-  color(C.red)
-  love.graphics.printf(tails_line, x + 14, y + tails_y + extra, w - 28)
-  if edge_line then
-    color(C.purple)
-    love.graphics.printf(edge_line, x + 14, y + tails_y + 30 + extra + (#tail_lines - 1) * 18, w - 28)
+  local rows = {
+    {label = L("HEADS"), chance = heads, detail = coin.heads_description or effect_description(coin.heads), tint = C.blue},
+  }
+  if tie > 0 then
+    rows[#rows + 1] = {label = L("EDGE"), chance = math.floor(tie * 100 + .5),
+      detail = effect_description(Game.tie_effects(ui.hovered_coin.id)), tint = C.purple}
+  end
+  rows[#rows + 1] = {label = L("TAILS"), chance = math.floor((1 - ui.hovered_coin.probability - tie) * 100 + .5),
+    detail = effect_description(coin.tails), tint = C.red}
+
+  local header_height = coin.coin_types and 110 or 94
+  local h = header_height
+  for _, row in ipairs(rows) do
+    local _, lines = ui.f16:getWrap(row.detail, w - 52)
+    row.height = 38 + #lines * 18
+    h = h + row.height + 7
+  end
+  local description = coin.heads_description and nil or coin.description
+  local description_lines
+  if description then
+    _, description_lines = ui.f16:getWrap(description, w - 48)
+    h = h + 40 + #description_lines * 18
+  end
+  if (coin.energy_cost or 0) > 0 then h = h + 24 end
+  local upgrade_lines
+  if upgrade then
+    _, upgrade_lines = ui.f16:getWrap(L(upgrade.description), w - 48)
+    h = h + 42 + #upgrade_lines * 18
   end
   if ui.hovered_coin.locked then
+    local _, locked_lines = ui.f16:getWrap(L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"), w - 48)
+    h = h + 14 + #locked_lines * 18
+  end
+  h = h + 8
+  local x, y
+  if ui.screen == "sets" then
+    -- Keep details out of the coin catalog so the panel never blocks coins being browsed.
+    x = 24
+    y = math.max(12, math.min(my + 18, 788 - h - 12))
+  else
+    x = mx > 640 and mx - w - 18 or mx + 18
+    y = my > 400 and my - h - 18 or my + 18
+    x = math.max(12, math.min(x, 1280 - w - 12))
+    y = math.max(12, math.min(y, 788 - h - 12))
+  end
+  box(x, y, w, h, C.ink)
+  outline(x, y, w, h, C.gold)
+  coin_image(ui.hovered_coin.id, x + 14, y + 13, 66)
+  text(coin.name:upper(), x + 94, y + 16, ui.f20, C.face)
+  local rarity = L(RARITY_NAME[coin.rarity]):upper()
+  text(rarity, x + 94, y + 47, ui.f16, C.rarity[coin.rarity])
+  if coin.coin_types then
+    local names = {}
+    for _, kind in ipairs(coin.coin_types) do
+      local name = L(kind:upper())
+      if kind == "fortune" and ui.game and (ui.game.fortune_bonus or 0) > 0 then
+        name = name .. string.format(" +%d%%", math.floor(ui.game.fortune_bonus * 100 + .5))
+      end
+      names[#names + 1] = name
+    end
+    text(L("TYPE: %s", table.concat(names, " / ")), x + 94, y + 69, ui.f16, C.muted)
+  end
+
+  local row_y = y + header_height
+  for _, row in ipairs(rows) do
+    box(x + 12, row_y, w - 24, row.height, C.slot)
+    color(row.tint)
+    love.graphics.rectangle("fill", x + 12, row_y, 4, row.height)
+    text(row.label, x + 26, row_y + 7, ui.f16, row.tint)
+    text(row.chance .. "%", x + w - 78, row_y + 7, ui.f16, row.tint)
+    love.graphics.setFont(ui.f16)
+    color(C.face)
+    love.graphics.printf(row.detail, x + 26, row_y + 29, w - 52)
+    row_y = row_y + row.height + 7
+  end
+  if description then
+    text("DETAILS", x + 24, row_y + 7, ui.f16, C.gold)
+    love.graphics.setFont(ui.f16)
+    color(C.muted)
+    love.graphics.printf(description, x + 24, row_y + 28, w - 48)
+    row_y = row_y + 40 + #description_lines * 18
+  end
+  if (coin.energy_cost or 0) > 0 then
+    text(L("COSTS %d ENERGY", coin.energy_cost), x + 24, row_y + 4, ui.f16, C.gold)
+    row_y = row_y + 24
+  end
+  if upgrade then
+    text(L("UPGRADE: %s", upgrade.name:upper()), x + 24, row_y + 4, ui.f16, C.gold)
+    love.graphics.setFont(ui.f16)
+    color(C.face)
+    love.graphics.printf(L(upgrade.description), x + 24, row_y + 25, w - 48)
+    row_y = row_y + 42 + #upgrade_lines * 18
+  end
+  if ui.hovered_coin.locked then
+    love.graphics.setFont(ui.f16)
     color(C.orange)
-    love.graphics.printf(locked_line, x + 14, y + tails_y + 35 + edge_extra + extra + (#tail_lines - 1) * 18, w - 28)
+    love.graphics.printf(L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"), x + 24, row_y + 8, w - 48)
   end
 end
 

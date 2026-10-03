@@ -4,6 +4,9 @@ return {
   rarity = "SR",
   probability = .3,
   heads = {}, tails = {},
+  quota_extra = function(_, _, heads, _, counts)
+    return heads * 3 * 2 ^ math.min(counts.doubler - 1, 3)
+  end,
   on_resolve = function(game, _, res)
     local e = game.encounter
     local flips = e.doubler or 0

@@ -9,7 +9,6 @@ local C, color, box, outline, text, centered, button = D.C, D.color, D.box, D.ou
 local coin_image, coin_hover = D.coin_image, D.coin_hover
 
 local SLOT, SLOT_GAP = 64, 14
-local RARITY_SHORT = {N = "COM", R = "UNC", SR = "RAR", UR = "EPI"}
 local RARITY_RANK = {N = 1, R = 2, SR = 3, UR = 4}
 
 local function padlock(cx, cy)
@@ -63,8 +62,6 @@ local function draw_sets()
       coin_image(id, x, y, SLOT)
       coin_hover(id, x, y, SLOT, SLOT)
       ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = SLOT, h = SLOT, action = function() A.remove_coin_from_set(i) end}
-      local rarity = ui.catalog[id].rarity
-      centered(D.L(RARITY_SHORT[rarity]), x, y + SLOT + 2, SLOT, ui.f16, C.rarity[rarity])
     end
   end
   centered(dirty and "UNSAVED CHANGES" or "CLICK A COIN HERE TO REMOVE IT", 70, 496, 430, ui.f16,
@@ -105,8 +102,6 @@ local function draw_sets()
       centered(n > 0 and ("x" .. n) or "", x, y + SLOT + 2, SLOT, ui.f16, C.green)
       ui.buttons[#ui.buttons + 1] = {x = x, y = y, w = SLOT, h = SLOT, action = function() A.add_coin_to_set(entry.id) end}
     end
-    local rarity = ui.catalog[entry.id].rarity
-    centered(D.L(RARITY_SHORT[rarity]), x, y + SLOT + 20, SLOT, ui.f16, C.rarity[rarity])
     coin_hover(entry.id, x, y, SLOT, SLOT, nil, entry.locked)
   end
 end

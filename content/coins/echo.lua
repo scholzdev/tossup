@@ -10,7 +10,8 @@ return {
     local Game = require("src.game") -- lazy: src.game loads this file
     local def = Game.catalog()[Game.get_coin(game, previous.uid).id]
     for _, effect in ipairs(def[string.lower(res.result)]) do
-      res.effects[#res.effects + 1] = {type = effect.type, amount = effect.amount, coins = effect.coins}
+      res.effects[#res.effects + 1] = {type = effect.type, amount = effect.amount, coins = effect.coins,
+        kind = effect.kind}
     end
   end,
 }

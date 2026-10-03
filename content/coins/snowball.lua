@@ -7,6 +7,7 @@ return {
   probability = .3,
   heads = {{type = "score", amount = 3}},
   tails = {{type = "score", amount = 1}},
+  quota_extra = function(_, inst, heads) return heads * (inst.stack or 0) end,
   grow = function(inst, event)
     if event == "flip" then inst.stack = math.min(8, (inst.stack or 0) + 1) end
   end,

@@ -2,8 +2,10 @@
 return {
   name = "Orchestra", description = "Heads: 2 points per different coin type in your deck.",
   rarity = "R",
+  coin_types = {"rhythm"},
   probability = .25,
   heads = {}, tails = {{type = "gold", amount = 1}},
+  quota_extra = function(_, _, heads, _, _, distinct) return heads * 2 * distinct end,
   on_resolve = function(game, _, res)
     if res.result ~= "Heads" then return end
     local seen, kinds = {}, 0

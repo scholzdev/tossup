@@ -74,11 +74,13 @@ local function draw_shop()
     local x = X0 + (i - 1) * STEP
     local id = g.shop_offers[i]
     if id then
-      local cost = Game.price(g, catalog[id].cost or 15)
+      local upgrade_id = g.shop_upgrades and g.shop_upgrades[i]
+      local cost = Game.coin_offer_cost(g, i)
       price(cost, x, 186, 110, g.player.gold >= cost and not full)
       coin_image(id, x + 7, 228, 96)
-      coin_hover(id, x, 228, 110, 96)
-      button(full and "FULL" or "BUY", x, 336, 110, 34, C.blue, function() Game.buy(g, i) end,
+      coin_hover(id, x, 228, 110, 96, nil, nil, upgrade_id)
+      if upgrade_id then centered("UPGRADED", x, 326, 110, ui.f16, C.gold) end
+      button(full and "FULL" or "BUY", x, 350, 110, 34, C.blue, function() Game.buy(g, i) end,
         g.player.gold >= cost and not full)
     else
       centered("SOLD", x, 268, 110, ui.f32, C.muted)
@@ -153,7 +155,7 @@ local function draw_shop()
     if item then
       coin_image(item.id, x + 18, 668, 48)
       centered(D.L("%d%% H", math.floor(Game.probability(g, item) * 100 + .5)), x, 718, 84, ui.f16, C.gold)
-      coin_hover(item.id, x, 664, 84, 76, Game.probability(g, item))
+      coin_hover(item.id, x, 664, 84, 76, Game.probability(g, item), nil, item.upgrade)
       ui.buttons[#ui.buttons + 1] = {x = x, y = 664, w = 84, h = 76, action = function() A.coin_action(item) end}
     end
     ::continue::

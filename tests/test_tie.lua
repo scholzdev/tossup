@@ -51,10 +51,11 @@ assert(g.encounter.shield == 1, "Edge does not consume an Anchor shield")
 assert(g.last_result.base_effects[1].amount == 3 and g.last_result.base_effects[2].amount == 5)
 
 local opening = demo(scene.seed)
+local opening_quota = opening.encounter.quota
 assert(Game.flip(opening) and opening.pending.result == "Tie")
-assert(Game.resolve(opening) and opening.encounter.quota == 2, "Edge makes two points of quota progress")
+assert(Game.resolve(opening) and opening.encounter.quota == opening_quota - 2, "Edge makes two points of quota progress")
 assert(Game.flip(opening) and opening.pending.result == "Tie")
-assert(Game.resolve(opening) and opening.encounter.cleared, "two Edges clear the opening quota")
+assert(Game.resolve(opening) and opening.encounter.quota == opening_quota - 4, "a second Edge makes two more points of progress")
 
 -- The House inverts Heads/Tails, but an Edge remains an Edge.
 local boss_edge

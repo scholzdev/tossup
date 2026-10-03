@@ -12,6 +12,7 @@ local MODIFIER_ORDER = {"lucky_day", "cold_snap", "power_surge", "blackout", "go
 local characters = require("content.characters")
 local Profile = require("src.profile")
 local Game = {}
+local TYPE_BUFF_TARGETS = {steel = true, blood = true, greed = true, chaos = true, rhythm = true}
 
 Game.DEV_MODE = os.getenv("TOSSUP_DEV") == "1"
 Game.SANDBOX_MODE = os.getenv("SANDBOX") == "1"
@@ -29,21 +30,22 @@ Game.RETURN_CAP = 3 -- "extra draw" effects (a coin returning to the pile) per l
 Game.START_GOLD = 5
 Game.SURPLUS_RATE = .5 -- gold per point scored beyond the quota (rounded down in total)
 
-local route = {
-  {name = "Opening", per_coin = 0.7, payout = 25},
-  {name = "Second Chance", per_coin = 1.4, payout = 30},
-  {name = "High Stakes", per_coin = 2.5, payout = 35},
-  {name = "The House", per_coin = 4.5, boss = true},
+local levels = {
+  (require("content.levels.opening")),
+  (require("content.levels.second_chance")),
+  (require("content.levels.high_stakes")),
+  (require("content.levels.the_house")),
 }
 
 local function log(game, message)
   game.log[#game.log + 1] = message
 end
 
-local function coin(game, id)
+local function coin(game, id, upgrade)
   assert(catalog[id], "unknown coin: " .. tostring(id))
+  assert(not upgrade or catalog[id].upgrades and catalog[id].upgrades[upgrade], "unknown upgrade for " .. tostring(id))
   game.next_uid = game.next_uid + 1
-  return {uid = game.next_uid, id = id, bonus = 0}
+  return {uid = game.next_uid, id = id, bonus = 0, upgrade = upgrade}
 end
 
 local function find_coin(game, uid)
@@ -52,12 +54,19 @@ local function find_coin(game, uid)
   end
 end
 
+local function has_type(item, wanted)
+  for _, kind in ipairs(catalog[item.id].coin_types or {}) do
+    if kind == wanted then return true end
+  end
+  return false
+end
+
 local function active_count(game)
   return #game.coins
 end
 
-local function add_to_deck(game, id)
-  local item = coin(game, id)
+local function add_to_deck(game, id, upgrade)
+  local item = coin(game, id, upgrade)
   game.coins[#game.coins + 1] = item
   game.selected_uid = item.uid
   return item
@@ -103,9 +112,27 @@ local function shop_pool(game)
   return pool
 end
 
--- Four distinct coin offers from the whole coin list.
+-- Four distinct coin offers; one can occasionally carry an upgrade.
 local function shop_stock(game)
-  return offers(game, shop_pool(game), 4)
+  local pool = shop_pool(game)
+  local ids = offers(game, pool, 4)
+  local upgrades, available = {}, {}
+  for i = 1, #ids do upgrades[i] = false end
+  for _, id in ipairs(pool) do
+    local coin_upgrades = catalog[id].upgrades or {}
+    local keys = {}
+    for key in pairs(coin_upgrades) do keys[#keys + 1] = key end
+    table.sort(keys)
+    for _, key in ipairs(keys) do available[#available + 1] = {id = id, upgrade = key} end
+  end
+  if #available > 0 and #ids > 0 and RNG.int(game, 1, 3) == 1 then
+    local variant = available[RNG.int(game, 1, #available)]
+    local index
+    for i, id in ipairs(ids) do if id == variant.id then index = i break end end
+    index = index or RNG.int(game, 1, #ids)
+    ids[index], upgrades[index] = variant.id, variant.upgrade
+  end
+  return ids, upgrades
 end
 
 -- Draw pile: every owned coin that is not discarded this level and not already waiting in the bank.
@@ -137,7 +164,10 @@ function Game.probability(game, item)
     end
   end
   local override = game.sandbox and game.sandbox.odds and game.sandbox.odds[item.id]
-  local p = (override and override.heads or catalog[item.id].probability) + item.bonus + bonus + magnet + boost
+  local fortune = has_type(item, "fortune") and (game.fortune_bonus or 0) or 0
+  local upgrade = item.upgrade and catalog[item.id].upgrades and catalog[item.id].upgrades[item.upgrade]
+  local p = (override and override.heads or catalog[item.id].probability) + (upgrade and upgrade.heads_probability or 0)
+    + item.bonus + bonus + magnet + boost + fortune
   local max_heads = 1 - Game.tie_probability(game, item)
   if game.phase ~= "ENCOUNTER" then return math.max(0, math.min(max_heads, p)) end -- odds hooks read the level: none in the shop
   return math.max(0, math.min(max_heads, Hooks.odds(game, item, p)))
@@ -154,7 +184,7 @@ function Game.tie_effects(id)
   local effects = {}
   for _, side in ipairs({"tails", "heads"}) do -- penalties first, so score is not clamped before quota rises
     for _, effect in ipairs(def[side]) do
-      assert((effect.type == "score" or effect.type == "gold" or effect.type == "energy" or effect.type == "penalty")
+      assert((effect.type == "score" or effect.type == "gold" or effect.type == "gold_loss" or effect.type == "energy" or effect.type == "penalty")
         and effect.amount % 2 == 0, "Edge requires even numeric effects: " .. id)
       effects[#effects + 1] = {type = effect.type, amount = effect.amount / 2}
     end
@@ -179,18 +209,63 @@ function Game.coins_left(game)
   return #e.queue + #e.pile
 end
 
--- A level's quota scales with the size of your deck (points per coin), because a level lasts exactly as
--- long as your stack: a bigger deck means more flips.
+-- A level's base quota scales with deck size because a bigger deck means more flips.
 -- A level of the run. Beyond the route (after the boss) the levels are endless: each asks 0.5 more points per
 -- coin than the one before, pays more, and inverts every 5th flip like The House.
 function Game.stage(level)
-  if route[level] then return route[level] end
-  local k = level - #route
-  return {name = "Endless", endless = k, per_coin = route[#route].per_coin + 0.5 * k, payout = 40 + 5 * k, inverts = true}
+  if levels[level] then return levels[level] end
+
+  local k = level - #levels
+
+  return {
+    name = "Endless",
+    endless = k,
+    per_coin = levels[#levels].per_coin + 0.5 * k,
+    payout = 40 + 5 * k,
+    inverts = true,
+  }
 end
 
 function Game.quota_for(level, coin_count, mult)
   return math.max(1, math.floor(Game.stage(level).per_coin * coin_count * (mult or 1) + .5))
+end
+
+local function printed_net(effects)
+  local points = 0
+  for _, effect in ipairs(effects) do
+    if effect.type == "score" then points = points + effect.amount
+    elseif effect.type == "penalty" then points = points - effect.amount end
+  end
+  return points
+end
+
+-- Strong decks ask for more than the size-only quota. Use printed expected points plus each coin's
+-- estimate for scoring hooks; no RNG is consumed, so inspecting a deck cannot change its flips.
+local function deck_quota(game)
+  local counts, distinct = {}, 0
+  for _, item in ipairs(game.coins) do
+    if not counts[item.id] then distinct = distinct + 1 end
+    counts[item.id] = (counts[item.id] or 0) + 1
+  end
+  local power = 0
+  for _, item in ipairs(game.coins) do
+    local def = catalog[item.id]
+    local upgrade = item.upgrade and def.upgrades and def.upgrades[item.upgrade]
+    local odds = game.sandbox and game.sandbox.odds and game.sandbox.odds[item.id]
+    local tie = odds and odds.tie or def.tie_probability or 0
+    local heads = (odds and odds.heads or def.probability) + (upgrade and upgrade.heads_probability or 0) + item.bonus
+    if has_type(item, "fortune") then heads = heads + (game.fortune_bonus or 0) end
+    heads = math.max(0, math.min(1 - tie, heads))
+    local tails = 1 - heads - tie
+    local expected = heads * (printed_net(def.heads) + (upgrade and upgrade.heads_score or 0)) + tails * printed_net(def.tails)
+    if tie > 0 then expected = expected + tie * printed_net(Game.tie_effects(item.id)) end
+    if def.quota_extra then expected = expected + def.quota_extra(game, item, heads, tails, counts, distinct) end
+    power = power + math.max(0, expected)
+  end
+  local mult = Game.rule(game, "quota_mult", 1)
+  local base = Game.quota_for(game.encounter_index, #game.coins, mult)
+  local excess = math.max(0, power - 1.5 * #game.coins)
+  return base + math.floor(excess * 1.3 * mult + .5)
 end
 
 -- The stage (difficulty) of a run: the value of a rule, from the highest stage that sets it (see content/stakes.lua).
@@ -208,14 +283,22 @@ function Game.price(game, base)
   return math.floor(base * Game.rule(game, "price_mult", 1) + .5)
 end
 
+function Game.coin_offer_cost(game, index)
+  local id = game.phase == "SHOP" and game.shop_offers[index]
+  if not id then return nil end
+  local upgrade_id = game.shop_upgrades and game.shop_upgrades[index]
+  local upgrade = upgrade_id and catalog[id].upgrades and catalog[id].upgrades[upgrade_id]
+  return Game.price(game, (catalog[id].cost or 15) + (upgrade and upgrade.cost or 0))
+end
+
 local function start_encounter(game)
   local stage = Game.stage(game.encounter_index)
-  local quota = Game.quota_for(game.encounter_index, #game.coins, Game.rule(game, "quota_mult", 1))
+  local quota = deck_quota(game)
   game.encounter = nil -- discards from the previous level must not carry over
   game.encounter = {name = stage.name, quota = quota, max_quota = quota,
     boss = stage.boss or false, inverts = stage.boss or stage.inverts or false, endless = stage.endless, payout = stage.payout,
     flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {}, combo_side = nil, combo_len = 0, shield = 0, combo_step = Game.COMBO_STEP, combo_cap = Game.COMBO_CAP,
-    returned = 0, played = {}, pile = shuffle_deck(game), queue = {}}
+    returned = 0, played = {}, best_scores = {}, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
   if Game.use_modifiers ~= false and game.encounter_index >= Game.rule(game, "modifiers_from", 2) then -- every level from the second on has a modifier (tests can switch this off)
     local id = MODIFIER_ORDER[RNG.int(game, 1, #MODIFIER_ORDER)]
@@ -309,7 +392,8 @@ function Game.new(seed, character_id, unlocked, loadout, manual_mulligan, stake,
     character_id = character_id,
     phase = "ENCOUNTER", player = {gold = Game.START_GOLD, energy = 3, max_energy = 3},
     coins = {}, relics = {}, items = {}, shop_items = {}, unlocked = unlocked or {}, purchased = {}, cleared = 0, shop_relic = nil, next_uid = 0, encounter_index = 1, encounter = nil,
-    pending = nil, shop_offers = {}, log = {}, selected_uid = nil, slots = Game.START_MAX, sandbox = sandbox}
+    pending = nil, shop_offers = {}, shop_upgrades = {}, log = {}, selected_uid = nil, slots = Game.START_MAX, sandbox = sandbox,
+    fortune_bonus = 0}
   local def = characters[character_id]
   game.stake = math.max(1, math.min(#stake_catalog, stake or 1))
   game.player.gold = Game.DEV_MODE and 5000 or Game.rule(game, "start_gold", Game.START_GOLD)
@@ -398,11 +482,11 @@ local function buff_active(game, kind)
   end
 end
 
-local function tick_buffs(game)
+local function tick_buffs(game, item)
   local list, kept = game.encounter.buffs, {}
   for _, buff in ipairs(list) do
     if buff.fresh then buff.fresh = false
-    else buff.left = buff.left - 1 end
+    elseif not TYPE_BUFF_TARGETS[buff.kind] or has_type(item, buff.kind) then buff.left = buff.left - 1 end
     if buff.left > 0 then kept[#kept + 1] = buff end
   end
   game.encounter.buffs = kept
@@ -516,12 +600,32 @@ function Game.force(game, side)
   return true
 end
 
+local function return_played_coin(game, uid)
+  local e = game.encounter
+  if not uid or e.returned >= Game.RETURN_CAP or e.discarded[uid] then return false end
+  for _, waiting in ipairs(e.queue) do if waiting == uid then return false end end
+  for _, waiting in ipairs(e.pile) do if waiting == uid then return false end end
+  for index, played in ipairs(e.played) do
+    if played == uid then
+      table.remove(e.played, index)
+      table.insert(e.pile, RNG.int(game, 1, #e.pile + 1), uid)
+      e.returned = e.returned + 1
+      return true
+    end
+  end
+  return false
+end
+
 local function apply_effect(game, item, effect)
   local p, e = game.player, game.encounter
   if effect.type == "gold" then
     local amount = effect.amount * (e.gold_mult or 1)
     p.gold = p.gold + amount
     return "+" .. amount .. " gold"
+  elseif effect.type == "gold_loss" then
+    local lost = math.min(p.gold, effect.amount)
+    p.gold = p.gold - lost
+    return "-" .. lost .. " gold"
   elseif effect.type == "score" then
     e.quota = math.max(0, e.quota - effect.amount) -- quota is what is still missing
     e.scored = e.scored + effect.amount -- points earned this level (may overshoot on the last flip)
@@ -532,6 +636,14 @@ local function apply_effect(game, item, effect)
   elseif effect.type == "all_odds" then
     e.magnet = e.magnet + effect.amount
     return "all coins +" .. math.floor(effect.amount * 100 + .5) .. "% Heads"
+  elseif effect.type == "fortune_odds" then
+    if item.compost_level == game.encounter_index then return "Fortune already fertilized this level" end
+    item.compost_level = game.encounter_index
+    game.fortune_bonus = math.min(.55, (game.fortune_bonus or 0) + effect.amount)
+    return "Fortune +" .. math.floor(game.fortune_bonus * 100 + .5) .. "% Heads for the run"
+  elseif effect.type == "type_buff" then
+    Game.add_buff(game, effect.kind, 0, effect.coins)
+    return "next " .. effect.coins .. " " .. effect.kind .. " coins"
   elseif effect.type == "peek" then
     local peek = {}
     for i = 1, 2 do if e.pile[i] then peek[#peek + 1] = e.pile[i] end end
@@ -588,16 +700,19 @@ local function apply_effect(game, item, effect)
         if #candidates == 0 then break end
         uid = candidates[RNG.int(game, 1, #candidates)]
       end
-      for index, played in ipairs(e.played) do
-        if played == uid then table.remove(e.played, index) break end
-      end
-      for _, waiting in ipairs(e.pile) do if waiting == uid then uid = nil break end end -- never twice in the pile
-      if not uid then break end
-      table.insert(e.pile, RNG.int(game, 1, #e.pile + 1), uid)
-      e.returned = e.returned + 1
-      back = back + 1
+      if return_played_coin(game, uid) then back = back + 1 else break end
     end
     return back > 0 and (back .. " coin back in the pile") or "no coin could return"
+  elseif effect.type == "fetch_best" then
+    if item.fetched_level == game.encounter_index then return "already fetched this level" end
+    local best_uid, best_score = nil, 0
+    for _, uid in ipairs(e.played) do
+      local score = e.best_scores[uid] or 0
+      if uid ~= item.uid and score > best_score then best_uid, best_score = uid, score end
+    end
+    if not return_played_coin(game, best_uid) then return "no scored coin to fetch" end
+    item.fetched_level = game.encounter_index
+    return catalog[find_coin(game, best_uid).id].name .. " fetched back into the pile"
   elseif effect.type == "probability" then
     e.bonus[item.uid] = (e.bonus[item.uid] or 0) + effect.amount
     return "+" .. math.floor(effect.amount * 100 + .5) .. "% Heads this encounter"
@@ -609,7 +724,7 @@ end
 local function enter_shop(game)
   game.phase = "SHOP"
   game.reroll_cost = 4
-  game.shop_offers = shop_stock(game)
+  game.shop_offers, game.shop_upgrades = shop_stock(game)
   game.shop_relic = nil
   local owned = {}
   for _, id in ipairs(game.relics) do owned[id] = true end
@@ -660,26 +775,57 @@ function Game.resolve(game)
   if final == "Heads" then e.streak = e.streak + 1
   elseif final == "Tails" then e.streak = 0 end -- Edge holds the current streak
   -- combo: consecutive identical results. A shield (Anchor) lets one different result pass without breaking it.
+  local previous_combo_side = e.combo_side
   if final ~= "Tie" then
     if e.combo_side == final then e.combo_len = e.combo_len + 1
     elseif e.combo_side and e.shield > 0 then e.shield = e.shield - 1
     else e.combo_side, e.combo_len = final, 1 end
   end
+  local combo_broke = previous_combo_side ~= nil and e.combo_side ~= previous_combo_side
   -- hooks get a private copy of the effect list so they can edit it without touching the def
   local res = {result = final, raw = result.raw, effects = {}}
+  local side
   if final == "Tie" then
     res.effects = Game.tie_effects(item.id)
   else
-    local side = buff_active(game, "swap") and (final == "Heads" and "tails" or "heads") or string.lower(final)
+    side = buff_active(game, "swap") and (final == "Heads" and "tails" or "heads") or string.lower(final)
     for i, effect in ipairs(catalog[item.id][side]) do
-      res.effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins}
+      res.effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins, kind = effect.kind}
     end
   end
+  local upgrade = item.upgrade and catalog[item.id].upgrades and catalog[item.id].upgrades[item.upgrade]
+  if side == "heads" and upgrade and upgrade.heads_score then
+    res.effects[#res.effects + 1] = {type = "score", amount = upgrade.heads_score}
+  end
   Signal.emit("coin_resolve", {game = game, inst = item, res = res})
+  for _, buff in ipairs(e.buffs) do
+    if not buff.fresh and TYPE_BUFF_TARGETS[buff.kind] and has_type(item, buff.kind) then
+      if buff.kind == "steel" then
+        if final == "Heads" then res.effects[#res.effects + 1] = {type = "score", amount = 3}
+        elseif final == "Tails" then res.effects[#res.effects + 1] = {type = "penalty", amount = 2} end
+      elseif buff.kind == "blood" then
+        if final == "Heads" or final == "Tie" then res.effects[#res.effects + 1] = {type = "score", amount = final == "Tie" and 4 or 8} end
+        if final == "Tails" or final == "Tie" then res.effects[#res.effects + 1] = {type = "penalty", amount = final == "Tie" and 2 or 4} end
+      elseif buff.kind == "chaos" then
+        local count = #res.effects
+        for i = 1, count do
+          local effect = res.effects[i]
+          res.effects[#res.effects + 1] = {type = effect.type, amount = effect.amount, coins = effect.coins,
+            kind = effect.kind}
+        end
+      elseif buff.kind == "rhythm" then
+        if combo_broke then res.effects[#res.effects + 1] = {type = "penalty", amount = 5}
+        else
+          local points = math.min(8, 2 * math.max(0, e.combo_len - 1))
+          if points > 0 then res.effects[#res.effects + 1] = {type = "score", amount = points} end
+        end
+      end
+    end
+  end
   if final == "Tails" then e.tails = (e.tails or 0) + 1 end -- Tails flipped this level (Martyr reads it)
   result.base_effects = {} -- what this coin did before multipliers (True Echo repeats it)
   for i, effect in ipairs(res.effects) do
-    result.base_effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins}
+    result.base_effects[i] = {type = effect.type, amount = effect.amount, coins = effect.coins, kind = effect.kind}
   end
   local multiplier = 1
   for _, buff in ipairs(e.buffs) do
@@ -697,14 +843,35 @@ function Game.resolve(game)
   if res.cash_out then e.combo_side, e.combo_len = nil, 0 end
   local messages = {}
   local scored_before, quota_total_before = e.scored, e.max_quota
+  local greed = 0
+  if has_type(item, "greed") then
+    for _, buff in ipairs(e.buffs) do
+      if buff.kind == "greed" and not buff.fresh then greed = greed + 1 end
+    end
+  end
   for _, effect in ipairs(res.effects) do
+    local gold_before = game.player.gold
     local text = apply_effect(game, item, effect)
     messages[#messages + 1] = text
     Signal.emit("effect_applied", {game = game, inst = item, effect = effect, text = text})
+    local gained_gold = math.max(0, game.player.gold - gold_before)
+    if greed > 0 and gained_gold > 0 then
+      local extra = gained_gold * (2 ^ greed - 1)
+      game.player.gold = game.player.gold + extra
+      messages[#messages + 1] = "+" .. extra .. " greed gold"
+    end
   end
-  tick_buffs(game)
+  if greed > 0 then
+    if final == "Tails" then
+      local lost = math.min(game.player.gold, 3 * greed)
+      game.player.gold = game.player.gold - lost
+      messages[#messages + 1] = "-" .. lost .. " greed gold"
+    end
+  end
+  tick_buffs(game, item)
   result.gained = e.scored - scored_before -- for the UI: what this flip was worth
   result.penalty = e.max_quota - quota_total_before
+  e.best_scores[item.uid] = math.max(e.best_scores[item.uid] or 0, result.gained)
   Signal.emit("coin_resolved", {game = game, inst = item, res = res})
   Hooks.unbind()
   Hooks.grow(item, "flip")
@@ -873,13 +1040,18 @@ end
 
 function Game.buy(game, index)
   local id = game.phase == "SHOP" and game.shop_offers[index]
-  if not id or game.player.gold < Game.price(game, catalog[id].cost or 15) then return false end
+  local upgrade_id = id and game.shop_upgrades and game.shop_upgrades[index] or nil
+  if upgrade_id and not (catalog[id].upgrades and catalog[id].upgrades[upgrade_id]) then upgrade_id = nil end
+  local cost = id and Game.coin_offer_cost(game, index)
+  if not id or not cost or game.player.gold < cost then return false end
   if #game.coins >= game.slots then return false end -- a full deck needs a free slot (buy one) or must lose a coin
   game.shop_offers[index] = false
+  if game.shop_upgrades then game.shop_upgrades[index] = false end
   game.purchased[id] = true -- the UI turns purchases of locked coins into permanent unlocks
-  game.player.gold = game.player.gold - Game.price(game, catalog[id].cost or 15)
-  add_to_deck(game, id)
-  log(game, "Bought " .. catalog[id].name .. " for " .. Game.price(game, catalog[id].cost or 15) .. " gold.")
+  game.player.gold = game.player.gold - cost
+  add_to_deck(game, id, upgrade_id)
+  local suffix = upgrade_id and (" (" .. catalog[id].upgrades[upgrade_id].name .. ")") or ""
+  log(game, "Bought " .. catalog[id].name .. suffix .. " for " .. cost .. " gold.")
   return true
 end
 
@@ -889,7 +1061,7 @@ function Game.reroll_shop(game)
   if game.phase ~= "SHOP" or game.player.gold < cost then return false end
   game.player.gold = game.player.gold - cost
   game.reroll_cost = cost + 2
-  game.shop_offers = shop_stock(game)
+  game.shop_offers, game.shop_upgrades = shop_stock(game)
   log(game, "Shop rerolled for " .. cost .. " gold.")
   return true
 end
@@ -941,7 +1113,7 @@ function Game.run_tokens(game)
   return game.cleared + (game.phase == "VICTORY" and 3 or 0)
 end
 
-Game.route = route -- level quotas, draws and payouts; tools/sim.lua overrides them for balance sweeps
+Game.route = levels -- level definitions; tools/sim.lua overrides them for balance sweeps
 Game.apply_effect = apply_effect -- for hooks: apply an effect table to the running game
 Game.log = log
 function Game.catalog() return catalog end
@@ -971,6 +1143,9 @@ local function valid_run(data)
   local uids = {}
   for _, coin in ipairs(data.coins) do
     if type(coin) ~= "table" or not catalog[coin.id] or not whole(coin.uid) or uids[coin.uid] or not num(coin.bonus) then return false end
+    if coin.upgrade ~= nil and (type(coin.upgrade) ~= "string" or not catalog[coin.id].upgrades or not catalog[coin.id].upgrades[coin.upgrade]) then return false end
+    if coin.compost_level ~= nil and not whole(coin.compost_level, 1) then return false end
+    if coin.fetched_level ~= nil and not whole(coin.fetched_level, 1) then return false end
     uids[coin.uid] = true
   end
   if not list(data.coins, function(c) return type(c) == "table" end) then return false end
@@ -982,6 +1157,7 @@ local function valid_run(data)
   end
   local p = data.player
   if not (num(p.gold, 0) and num(p.energy) and num(p.max_energy)) then return false end
+  if data.fortune_bonus ~= nil and not num(data.fortune_bonus, 0, .55) then return false end
   if not (whole(data.slots, 1, 99) and whole(data.next_uid, 0) and whole(data.encounter_index, 1) and whole(data.cleared, 0)
       and whole(data.rng_state, 1, 2147483646) and whole(data.stake, 1, #stake_catalog)) then return false end
   for uid in pairs(uids) do if uid > data.next_uid then return false end end
@@ -992,6 +1168,16 @@ local function valid_run(data)
   if not (list(data.shop_offers, function(id) return id == false or catalog[id] ~= nil end)
       and list(data.shop_items, function(id) return id == false or item_catalog[id] ~= nil end)
       and type(data.purchased) == "table") then return false end
+  if data.shop_upgrades ~= nil then
+    if not list(data.shop_upgrades, function(id) return id == false or type(id) == "string" end)
+        or #data.shop_upgrades > #data.shop_offers then return false end
+    for i, upgrade_id in ipairs(data.shop_upgrades) do
+      if upgrade_id ~= false then
+        local id = data.shop_offers[i]
+        if not id or id == false or not catalog[id].upgrades or not catalog[id].upgrades[upgrade_id] then return false end
+      end
+    end
+  end
   for id, on in pairs(data.purchased) do if not catalog[id] or on ~= true then return false end end
   if data.shop_relic ~= nil and not relic_catalog[data.shop_relic] then return false end
   local e = data.encounter
@@ -1007,6 +1193,7 @@ local function valid_run(data)
   if e.bank_discards ~= nil and not num(e.bank_discards) then return false end
   if not (uid_list(e.queue) and uid_list(e.pile) and uid_list(e.played) and uid_map(e.discarded, function(v) return v == true end)
       and uid_map(e.bonus, num)) then return false end
+  if e.best_scores ~= nil and not uid_map(e.best_scores, function(v) return num(v, 0) end) then return false end
   if not list(e.buffs, function(b) return type(b) == "table" and type(b.kind) == "string" and num(b.amount) and num(b.left) end) then return false end
   if data.mulligan ~= nil and not (type(data.mulligan) == "table" and uid_list(data.mulligan.hand)) then return false end
   return true
@@ -1024,6 +1211,8 @@ function Game.restore(data)
   if not valid_run(data) then return nil end
   Hooks.unbind()
   Items.clear()
+  data.fortune_bonus = data.fortune_bonus or 0
+  if data.phase == "ENCOUNTER" then data.encounter.best_scores = data.encounter.best_scores or {} end
   data.paused = false
   Relics.bind(data)
   return data

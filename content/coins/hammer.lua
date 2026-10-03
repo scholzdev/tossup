@@ -2,6 +2,7 @@
 return {
   name = "Hammer", description = "A rare but crushing hit.",
   rarity = "R",
+  coin_types = {"steel"},
   cost = 22,
   energy_cost = 2,
   probability = .25,
