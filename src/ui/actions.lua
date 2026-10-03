@@ -54,6 +54,7 @@ function A.load_run()
   local ok, game = pcall(function() return type(data) == "table" and data.version == 1 and Game.restore(data.game) end)
   if not ok then game = nil end
   if not game then delete_run() return false end
+  game.contracts_enabled = true -- old safe-point saves gain contracts when they reach their next level
   ui.game, ui.selected_character = game, game.character_id
   ui.flip_animation, ui.holding, ui.marked, ui.resolve_timer, ui.notice = nil, false, {}, 0, ""
   saved_key = nil
@@ -77,7 +78,7 @@ end
 -- Quitting asks first (popup) while a level is in progress, because only the start of a level and the shop are saved.
 function A.quit()
   local g = ui.game
-  local running = g and g.phase == "ENCOUNTER" and not g.mulligan and not g.tutorial -- the level in progress is not saved; levels and the shop are
+  local running = g and (g.phase == "CONTRACT" or g.phase == "ENCOUNTER" and not g.mulligan) and not g.tutorial -- the level in progress is not saved; levels and the shop are
   if running then
     ui.confirm = {title = "QUIT", text = "THIS LEVEL STARTS OVER WHEN YOU CONTINUE.", ok = love.event.quit}
     return
@@ -296,6 +297,8 @@ function A.start(seed)
   if not Profile.character_unlocked(ui.profile, ui.selected_character) then return end -- win a run with the one before first
   ui.game = Game.new(seed or (os.time() + math.floor(love.timer.getTime() * 1000000)),
     ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character), A.loadout(), true, A.stake())
+  ui.game.contracts_enabled = true
+  Game.offer_contract(ui.game)
   ui.flip_animation = nil
   ui.resolve_timer = 0
   ui.holding = false
@@ -386,6 +389,9 @@ end
 
 function A.exchange() Game.exchange(ui.game) end
 function A.give_up() Game.give_up(ui.game) end
+function A.side_bet(side) return Game.place_side_bet(ui.game, side) end
+function A.choose_contract(id) return Game.choose_contract(ui.game, id) end
+function A.skip_contract() return Game.skip_contract(ui.game) end
 
 function A.use_item(slot)
   if not ui.flip_animation then Game.use_item(ui.game, slot) end
@@ -445,7 +451,8 @@ function A.update(dt)
     if unlocked_now then save_profile() end
   end
   do -- autosave at the safe points; drop the save when the run is over
-    local safe = game and not game.tutorial and (game.phase == "SHOP" or (game.phase == "ENCOUNTER" and game.mulligan))
+    local safe = game and not game.tutorial and (game.phase == "SHOP" or
+      ((game.phase == "CONTRACT" or game.phase == "ENCOUNTER") and game.mulligan))
     if safe then
       local key = game.phase .. game.encounter_index .. (game.endless and "e" or "") .. ":" .. game.player.gold .. ":" ..
         #game.coins .. ":" .. game.slots .. ":" .. #game.items .. ":" .. #game.relics .. ":" .. (game.reroll_cost or 0)

@@ -10,6 +10,7 @@ local Pad = require("src.ui.pad")
 local views = {
   ENCOUNTER = require("src.ui.views.encounter"),
   SHOP = require("src.ui.views.shop"),
+  CONTRACT = require("src.ui.views.contracts"),
 }
 local screens = {
   title = require("src.ui.views.title"),
@@ -28,6 +29,7 @@ local function draw_game()
   local game = ui.game
   if game.phase == "ENCOUNTER" then views.ENCOUNTER()
   elseif game.phase == "SHOP" then views.SHOP()
+  elseif game.phase == "CONTRACT" then views.CONTRACT()
   elseif game.phase == "GAME_OVER" and not game.over_seen then
     -- the last coin is gone and nothing can be exchanged: say so on the round screen before the run-over screen
     views.ENCOUNTER()

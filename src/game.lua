@@ -9,6 +9,11 @@ local item_catalog = require("content.items")
 local modifier_catalog = require("content.modifiers")
 local stake_catalog = require("content.stakes")
 local MODIFIER_ORDER = {"lucky_day", "cold_snap", "power_surge", "blackout", "gold_rush", "high_stakes", "good_rhythm", "bonus_exchange"}
+local CONTRACTS, CONTRACT_ORDER = {}, {}
+for _, def in ipairs(require("content.contracts")) do
+  CONTRACTS[def.id] = def
+  CONTRACT_ORDER[#CONTRACT_ORDER + 1] = def.id
+end
 local characters = require("content.characters")
 local Profile = require("src.profile")
 local Game = {}
@@ -44,6 +49,10 @@ local levels = {
 
 local function log(game, message)
   game.log[#game.log + 1] = message
+end
+
+local function contract_def(encounter)
+  return encounter and encounter.contract and CONTRACTS[encounter.contract.id]
 end
 
 local function coin(game, id, upgrade)
@@ -175,7 +184,10 @@ function Game.probability(game, item)
     + item.bonus + bonus + magnet + boost + fortune
   local max_heads = 1 - Game.tie_probability(game, item)
   if game.phase ~= "ENCOUNTER" then return math.max(0, math.min(max_heads, p)) end -- odds hooks read the level: none in the shop
-  return math.max(0, math.min(max_heads, Hooks.odds(game, item, p)))
+  p = Hooks.odds(game, item, p)
+  local contract = contract_def(game.encounter)
+  if contract then p = p - (contract.heads_penalty or 0) end
+  return math.max(0, math.min(max_heads, p))
 end
 
 function Game.tie_probability(game, item)
@@ -303,7 +315,7 @@ local function start_encounter(game)
   game.encounter = {name = stage.name, quota = quota, max_quota = quota,
     boss = stage.boss or false, inverts = stage.boss or stage.inverts or false, endless = stage.endless, payout = stage.payout,
     flips = 0, scored = 0, cleared = false, surplus_paid = 0, discarded = {}, discards = 0, bonus = {}, magnet = 0, streak = 0, buffs = {}, combo_side = nil, combo_len = 0, combo_pot = 0, shield = 0, combo_step = Game.COMBO_STEP, combo_cap = Game.COMBO_CAP,
-    returned = 0, played = {}, best_scores = {}, pile = shuffle_deck(game), queue = {}}
+    returned = 0, played = {}, best_scores = {}, best_combo_len = 0, pile = shuffle_deck(game), queue = {}}
   game.player.energy = game.player.max_energy
   if Game.use_modifiers ~= false and game.encounter_index >= Game.rule(game, "modifiers_from", 2) then -- every level from the second on has a modifier (tests can switch this off)
     local id = MODIFIER_ORDER[RNG.int(game, 1, #MODIFIER_ORDER)]
@@ -325,6 +337,74 @@ local function start_encounter(game)
   game.mulligan = {hand = hand}
   game.dealt = nil
   if not game.manual_mulligan then Game.mulligan_done(game) end
+end
+
+function Game.offer_contract(game)
+  local e = game.encounter
+  if game.phase ~= "ENCOUNTER" or not e or e.flips > 0 then return false end
+  local pool = {}
+  for _, id in ipairs(CONTRACT_ORDER) do
+    if id ~= "amazon_prime" or not e.boss then pool[#pool + 1] = id end
+  end
+  e.contract_options = offers(game, pool, 3)
+  game.phase = "CONTRACT"
+  return true
+end
+
+function Game.choose_contract(game, id)
+  if game.phase ~= "CONTRACT" then return false end
+  local e = game.encounter
+  for _, offered_id in ipairs(e.contract_options or {}) do
+    if offered_id == id and CONTRACTS[id] then
+      local def = CONTRACTS[id]
+      e.contract = {id = id}
+      e.contract_options = nil
+      game.phase = "ENCOUNTER"
+      log(game, "Accepted contract: " .. def.name .. " (" .. (def.reward_text or (def.reward .. " gold")) .. ").")
+      return true
+    end
+  end
+  return false
+end
+
+function Game.contract_def(id) return CONTRACTS[id] end
+
+function Game.skip_contract(game)
+  if game.phase ~= "CONTRACT" or not game.encounter then return false end
+  game.encounter.contract_options = nil
+  game.phase = "ENCOUNTER"
+  log(game, "Contract skipped.")
+  return true
+end
+
+local function settle_contract(game)
+  local e, contract = game.encounter, game.encounter.contract
+  if not contract or contract.result then return end
+  local def = CONTRACTS[contract.id]
+  if not def then return end
+  local complete = def.complete(e)
+  contract.result = complete and "COMPLETE" or "MISSED"
+  if complete then
+    local reward = def.reward or 0
+    game.player.gold = game.player.gold + reward
+    if reward > 0 then
+      log(game, "Contract complete: +" .. reward .. " gold.")
+    else
+      log(game, "Contract complete: " .. def.name .. ".")
+    end
+  else
+    log(game, "Contract missed: " .. def.name .. ".")
+  end
+end
+
+local function apply_contract_callback(game, encounter)
+  local contract = encounter.contract
+  if not contract or not contract.result then return end
+  local def = CONTRACTS[contract.id]
+  if not def then return end
+  local callback
+  if contract.result == "COMPLETE" then callback = def.on_success else callback = def.on_failure end
+  if callback then callback({game = game}, encounter) end
 end
 
 -- Deal the coin at the front of the bank; the player may discard it or flip it.
@@ -526,6 +606,21 @@ function Game.flip(game)
   return true
 end
 
+-- One optional odds bet per encounter, available only before its first flip.
+function Game.place_side_bet(game, side)
+  local e = game.encounter
+  if game.phase ~= "ENCOUNTER" or not e or e.flips ~= 0 or not game.dealt or e.side_bet then return false end
+  if side ~= "Heads" and side ~= "Tails" then return false end
+  local stake = 5
+  local odds = side == "Heads" and game.dealt.probability or
+    1 - game.dealt.probability - (game.dealt.tie_probability or 0)
+  if odds <= 0 or game.player.gold < stake then return false end
+  game.player.gold = game.player.gold - stake
+  e.side_bet = {side = side, stake = stake, payout = math.max(stake, math.floor(stake / odds + .5))}
+  log(game, "Bet 5 gold on " .. side .. " (" .. e.side_bet.payout .. " gold payout).")
+  return true
+end
+
 -- Energy a coin costs to flip (0 for most coins).
 function Game.flip_cost(game, uid)
   return catalog[find_coin(game, uid).id].energy_cost or 0
@@ -545,10 +640,11 @@ function Game.can_bank_combo(game)
     and (e.combo_pot or 0) > 0
 end
 
-local function bank_combo_pot(game)
+local function bank_combo_pot(game, counts_for_contract)
   local e, amount = game.encounter, game.encounter.combo_pot or 0
   if amount <= 0 then return 0 end
   game.player.gold = game.player.gold + amount
+  if counts_for_contract then e.combo_banked = true end
   e.combo_pot, e.combo_side, e.combo_len = 0, nil, 0
   log(game, "Banked " .. amount .. " combo gold.")
   return amount
@@ -556,7 +652,7 @@ end
 
 function Game.bank_combo(game)
   if not Game.can_bank_combo(game) then return 0 end
-  return bank_combo_pot(game)
+  return bank_combo_pot(game, true)
 end
 
 -- Spend one "bank_discard" (Crystal Ball Tails): throw away any of the visible bank coins, free. Returns true if it worked.
@@ -749,6 +845,7 @@ end
 local function enter_shop(game)
   game.phase = "SHOP"
   game.reroll_cost = 4
+  game.reroll_step = 2
   game.shop_offers, game.shop_upgrades = shop_stock(game)
   game.shop_relic = nil
   local owned = {}
@@ -787,26 +884,47 @@ function Game.end_level(game)
   close_encounter(game)
   Signal.emit("encounter_end", {game = game, won = true})
   if e.boss then game.phase = "VICTORY" else enter_shop(game) end
+  apply_contract_callback(game, e)
   return true
 end
 
 function Game.resolve(game)
   if game.phase ~= "ENCOUNTER" or not game.pending then return false end
   local e = game.encounter
+  local contract_def_active = contract_def(e)
   local result = game.pending
   local item = find_coin(game, result.uid)
   e.flips = e.flips + 1
   local final = result.result -- already decided (relics, boss inversion) when the coin was flipped
   result.final = final
+  if e.side_bet and not e.side_bet.settled then
+    local bet = e.side_bet
+    bet.settled = true
+    if final == "Tie" then
+      game.player.gold = game.player.gold + bet.stake
+      bet.outcome = "PUSH"
+      log(game, "Side bet pushed; stake returned.")
+    elseif final == bet.side then
+      game.player.gold = game.player.gold + bet.payout
+      bet.outcome = "WON"
+      log(game, "Side bet won: +" .. bet.payout .. " gold.")
+    else
+      bet.outcome = "LOST"
+      log(game, "Side bet lost.")
+    end
+  end
   if final == "Heads" then e.streak = e.streak + 1
   elseif final == "Tails" then e.streak = 0 end -- Edge holds the current streak
   -- combo: consecutive identical results. A shield (Anchor) lets one different result pass without breaking it.
   local previous_combo_side = e.combo_side
-  if final ~= "Tie" then
+  if final == "Tie" and contract_def_active and contract_def_active.tie_breaks_combo and e.combo_side then
+    e.combo_side, e.combo_len = nil, 0
+  elseif final ~= "Tie" then
     if e.combo_side == final then e.combo_len = e.combo_len + 1
     elseif e.combo_side and e.shield > 0 then e.shield = e.shield - 1
     else e.combo_side, e.combo_len = final, 1 end
   end
+  e.best_combo_len = math.max(e.best_combo_len or 0, e.combo_len)
   local combo_broke = previous_combo_side ~= nil and e.combo_side ~= previous_combo_side
   local combo_lost = combo_broke and (e.combo_pot or 0) or 0
   if combo_broke then e.combo_pot = 0 end
@@ -861,6 +979,9 @@ function Game.resolve(game)
   end
   local combo = math.min(e.combo_cap, 1 + e.combo_step * (math.max(e.combo_len, 1) - 1))
   if res.cash_out then combo = combo * combo end -- Cash Out spends the combo twice (then resets it)
+  if contract_def_active and contract_def_active.combo_multiplier_cap then
+    combo = math.min(combo, contract_def_active.combo_multiplier_cap)
+  end
   result.combo = {len = e.combo_len, mult = combo, side = e.combo_side}
   multiplier = multiplier * combo
   if multiplier ~= 1 then -- buffs ("next coins pay double") and the combo multiply points and gold
@@ -889,6 +1010,10 @@ function Game.resolve(game)
       messages[#messages + 1] = "+" .. extra .. " greed gold"
     end
   end
+  if final == "Tails" and contract_def_active and contract_def_active.tails_quota_penalty then
+    messages[#messages + 1] = "contract: " .. apply_effect(game, item,
+      {type = "penalty", amount = contract_def_active.tails_quota_penalty})
+  end
   if greed > 0 then
     if final == "Tails" then
       local lost = math.min(game.player.gold, 3 * greed)
@@ -898,7 +1023,7 @@ function Game.resolve(game)
   end
   e.combo_pot = combo_pot(e.combo_len)
   if res.cash_out then
-    local banked = bank_combo_pot(game)
+    local banked = bank_combo_pot(game, true)
     if banked > 0 then messages[#messages + 1] = "banked " .. banked .. " combo gold" end
     e.combo_side, e.combo_len, e.combo_pot = nil, 0, 0
   end
@@ -918,6 +1043,7 @@ function Game.resolve(game)
     e.cleared = true
     game.cleared = game.cleared + 1
     log(game, "Quota met! " .. e.name .. " cleared.")
+    settle_contract(game)
     if not e.boss then
       game.player.gold = game.player.gold + e.payout
       log(game, "+" .. e.payout .. " gold level payout.")
@@ -1099,7 +1225,7 @@ function Game.reroll_shop(game)
   local cost = game.reroll_cost or 4
   if game.phase ~= "SHOP" or game.player.gold < cost then return false end
   game.player.gold = game.player.gold - cost
-  game.reroll_cost = cost + 2
+  game.reroll_cost = cost + (game.reroll_step or 2)
   game.shop_offers, game.shop_upgrades = shop_stock(game)
   log(game, "Shop rerolled for " .. cost .. " gold.")
   return true
@@ -1144,6 +1270,7 @@ function Game.next_encounter(game)
   if game.phase ~= "SHOP" or active_count(game) == 0 then return false end
   game.encounter_index = game.encounter_index + 1
   start_encounter(game)
+  if game.contracts_enabled then Game.offer_contract(game) end
   return true
 end
 
@@ -1180,6 +1307,7 @@ local function valid_run(data)
     return true
   end
   local uids = {}
+  if data.contracts_enabled ~= nil and type(data.contracts_enabled) ~= "boolean" then return false end
   for _, coin in ipairs(data.coins) do
     if type(coin) ~= "table" or not catalog[coin.id] or not whole(coin.uid) or uids[coin.uid] or not num(coin.bonus) then return false end
     if coin.upgrade ~= nil and (type(coin.upgrade) ~= "string" or not catalog[coin.id].upgrades or not catalog[coin.id].upgrades[coin.upgrade]) then return false end
@@ -1197,6 +1325,7 @@ local function valid_run(data)
   local p = data.player
   if not (num(p.gold, 0) and num(p.energy) and num(p.max_energy)) then return false end
   if data.fortune_bonus ~= nil and not num(data.fortune_bonus, 0, .55) then return false end
+  if data.reroll_step ~= nil and not whole(data.reroll_step, 1, 2) then return false end
   if not (whole(data.slots, 1, 99) and whole(data.next_uid, 0) and whole(data.encounter_index, 1) and whole(data.cleared, 0)
       and whole(data.rng_state, 1, 2147483646) and whole(data.stake, 1, #stake_catalog)) then return false end
   for uid in pairs(uids) do if uid > data.next_uid then return false end end
@@ -1224,6 +1353,17 @@ local function valid_run(data)
   -- leaves its uid in it, so it is not checked further
   if data.phase == "SHOP" then return e == nil or type(e) == "table" end
   if type(e) ~= "table" or type(e.name) ~= "string" or (e.modifier ~= nil and not modifier_catalog[e.modifier]) then return false end
+  if e.best_combo_len ~= nil and not whole(e.best_combo_len, 0) then return false end
+  if e.combo_banked ~= nil and type(e.combo_banked) ~= "boolean" then return false end
+  if e.contract ~= nil and (type(e.contract) ~= "table" or not CONTRACTS[e.contract.id]
+    or (e.contract.result ~= nil and e.contract.result ~= "COMPLETE" and e.contract.result ~= "MISSED")) then return false end
+  if e.contract_options ~= nil then
+    if data.phase ~= "CONTRACT" or e.contract ~= nil
+      or not list(e.contract_options, function(id) return CONTRACTS[id] ~= nil end) or #e.contract_options ~= 3 then return false end
+    local seen = {}
+    for _, id in ipairs(e.contract_options) do if seen[id] then return false else seen[id] = true end end
+  end
+  if data.phase == "CONTRACT" and (data.contracts_enabled ~= true or e.contract_options == nil or data.mulligan == nil) then return false end
   for _, key in ipairs({"quota", "max_quota", "flips", "scored", "surplus_paid", "discards", "magnet", "streak", "combo_len", "shield",
       "combo_step", "combo_cap", "returned"}) do
     if not num(e[key]) then return false end
@@ -1243,7 +1383,7 @@ end
 -- mid-flip, so only the owned relics need binding again. Returns nil for data that is not a run.
 function Game.restore(data)
   if type(data) ~= "table" or type(data.coins) ~= "table" or type(data.player) ~= "table" or not characters[data.character_id] then return nil end
-  if data.phase ~= "SHOP" and not (data.phase == "ENCOUNTER" and data.mulligan and data.encounter) then return nil end
+  if data.phase ~= "SHOP" and not ((data.phase == "ENCOUNTER" or data.phase == "CONTRACT") and data.mulligan and data.encounter) then return nil end
   -- a run saved by another build may name content that no longer exists
   if type(data.relics) ~= "table" or type(data.items) ~= "table" then return nil end
   for _, id in ipairs(data.relics) do if not relic_catalog[id] then return nil end end
@@ -1252,9 +1392,10 @@ function Game.restore(data)
   Hooks.unbind()
   Items.clear()
   data.fortune_bonus = data.fortune_bonus or 0
-  if data.phase == "ENCOUNTER" then
+  if data.phase == "ENCOUNTER" or data.phase == "CONTRACT" then
     data.encounter.best_scores = data.encounter.best_scores or {}
     data.encounter.combo_pot = data.encounter.combo_pot or 0
+    data.encounter.best_combo_len = data.encounter.best_combo_len or 0
   end
   data.paused = false
   Relics.bind(data)

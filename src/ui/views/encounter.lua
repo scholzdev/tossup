@@ -108,6 +108,19 @@ local function draw_encounter()
   love.graphics.draw(ui.ui_images.logo, 70, 46, 0, logo_scale, logo_scale)
   text(e.endless and D.L("LEVEL %d", ui.game.encounter_index) or D.L("LEVEL %d / 4", ui.game.encounter_index), 70, 118, ui.f16, C.muted)
   text(e.endless and D.L("ENDLESS %d", e.endless) or e.boss and D.L("THE HOUSE") or D.L(e.name):upper(), 70, 136, ui.f20, e.boss and C.red or C.face)
+  if e.contract then
+    local def = Game.contract_def(e.contract.id)
+    local progress = def and e.contract.id == "quick_clear" and D.L("FLIPS %d / 6", e.flips)
+      or def and e.contract.id == "clean_run" and D.L("DISCARDS %d", e.discards)
+      or def and e.contract.id == "hot_streak" and D.L("BEST COMBO %d / 4", e.best_combo_len or 0)
+      or def and e.contract.id == "bank_once" and D.L(e.combo_banked and "BANKED" or "NOT BANKED")
+      or def and e.contract.id == "amazon_prime" and D.L("COINS LEFT %d / 3", Game.coins_left(ui.game))
+    local contract_text = e.contract.result == "COMPLETE" and D.L("CONTRACT COMPLETE")
+      or e.contract.result == "MISSED" and D.L("CONTRACT MISSED")
+      or def and D.L("CONTRACT: %s", D.L(def.name)) .. "  " .. progress .. "  " ..
+        D.L(def.drawback)
+    if contract_text then centered(contract_text, 330, 152, 880, ui.f16, e.contract.result == "COMPLETE" and C.green or C.gold) end
+  end
   local met = e.quota <= 0
   local every = Game.rule(ui.game, "boss_every", 5)
   local caption, caption_color = "POINTS", C.muted
@@ -242,9 +255,20 @@ local function draw_encounter()
     text(big, 1190 - ui.f32:getWidth(big), 202, ui.f32, len < 2 and C.muted or C.gold)
     if e.shield > 0 then text(D.L("SHIELD %d", e.shield), 940, 238, face, C.green) end
     if (e.combo_pot or 0) > 0 then
-      local pot = D.L("POT %dG", e.combo_pot)
-      text(pot, 1190 - face:getWidth(pot), 238, face, C.gold)
+      if ui.holding and Game.can_bank_combo(ui.game) then
+        button(D.L("BANK %dG", e.combo_pot), 1040, 232, 150, 34, C.green, A.bank_combo, true)
+      else
+        local pot = D.L("POT %dG", e.combo_pot)
+        text(pot, 1190 - face:getWidth(pot), 238, face, C.gold)
+      end
       text(D.L("BREAK LOSES POT"), 1000, 304, ui.f16, C.red)
+    end
+    if e.side_bet then
+      local bet = e.side_bet
+      local label = bet.outcome == "WON" and D.L("BET WON  +%dG", bet.payout)
+        or bet.outcome == "LOST" and D.L("BET LOST  -%dG", bet.stake)
+        or bet.outcome == "PUSH" and D.L("BET PUSHED") or D.L("BET %s  %dG", D.L(bet.side:upper()), bet.stake)
+      text(label, 940, 270, face, bet.outcome == "WON" and C.green or bet.outcome == "LOST" and C.red or C.gold)
     end
   end
 
@@ -311,7 +335,7 @@ local function draw_encounter()
     if tie > 0 then centered(D.L("EDGE %d%%", math.floor(tie * 100 + .5)), SX - 55, 612, 110, ui.f16, C.purple) end
     local tails_text = D.L("TAILS %d%%", math.floor((1 - chance - tie) * 100 + .5))
     text(tails_text, SX + 170 - ui.f16:getWidth(tails_text), 612, ui.f16, C.red)
-    if shown_cost > 0 and not ui.flip_animation then
+    if shown_cost > 0 and not ui.flip_animation and not (e.flips == 0 and not e.side_bet and ui.game.player.gold >= 5) then
       centered(D.L("ENERGY COST %d", shown_cost), SX - 60, tie > 0 and 632 or 612, 120, ui.f16, C.orange)
     end
   elseif not ui.flip_animation then
@@ -356,10 +380,20 @@ local function draw_encounter()
     color(C.muted)
     love.graphics.printf(D.L(hint), 70, 690, 240)
   end
-  local combo_choice = ui.holding and ui.game.dealt ~= nil and Game.can_bank_combo(ui.game)
-  if combo_choice then
-    button(D.L("BANK %dG", e.combo_pot), 330, 676, 200, 64, C.green, A.bank_combo, true, "Y")
-  elseif ui.game.dealt and not ui.flip_animation and not ui.holding then
+  local push_choice = ui.holding and ui.game.dealt ~= nil and Game.can_bank_combo(ui.game)
+  local side_bet = ui.game.dealt and not ui.game.mulligan and not ui.game.pending and not ui.flip_animation
+    and not ui.holding and e.flips == 0 and not e.side_bet and ui.game.player.gold >= 5
+  if side_bet then
+    local heads = ui.game.dealt.probability
+    local tails = 1 - heads - (ui.game.dealt.tie_probability or 0)
+    local heads_pay = heads > 0 and math.max(5, math.floor(5 / heads + .5)) or 0
+    local tails_pay = tails > 0 and math.max(5, math.floor(5 / tails + .5)) or 0
+    button(D.L("BET HEADS 5G  >  %dG", heads_pay), 420, 632, 190, 34, C.blue,
+      function() A.side_bet("Heads") end, true)
+    button(D.L("BET TAILS 5G  >  %dG", tails_pay), 630, 632, 190, 34, C.red,
+      function() A.side_bet("Tails") end, true)
+  end
+  if ui.game.dealt and not ui.flip_animation and not ui.holding then
     D.icon_button("DISCARD", ui.ui_images.discard, 330, 676, 200, 64, C.red, A.discard_current, nil, "Y") -- only the current coin
   end
   local empty_stack = not ui.game.dealt and not ui.game.mulligan and not ui.game.pending
@@ -388,8 +422,10 @@ local function draw_encounter()
     if e.cleared then
       D.icon_button("OPEN SHOP", ui.ui_images.open_shop, 550, 676, 260, 64, C.green, A.open_shop, nil, "X")
     end
-  elseif combo_choice then
-    D.icon_button("PUSH", ui.ui_images.flip, 550, 676, 260, 64, C.blue, A.push_combo, Game.can_flip(ui.game), "X")
+  elseif push_choice then
+    local can_push = Game.can_flip(ui.game)
+    D.icon_button(can_push and "PUSH" or D.L("NEED %d ENERGY", Game.flip_cost(ui.game, ui.game.dealt.uid)),
+      ui.ui_images.flip, 550, 676, 260, 64, C.blue, A.push_combo, can_push, "X")
   else
     -- after the last coin there is nothing left to deal, but the result is still shown: the button must still work
     local flip_label = ui.flip_animation and "FLIPPING..." or ui.holding and (ui.game.dealt and "NEXT COIN" or "CONTINUE") or "FLIP"
