@@ -19,7 +19,9 @@ local function draw_run_modifiers(x, y, size)
     if def and image then
       local at_x = x + (i - 1) * (size + 5)
       D.image_at(image, at_x, y, size)
-      D.text_hover(D.L(def.name), D.L(def.description), at_x, y, size, size)
+      local selected = def.selected_label and def.selected_label(game)
+      local description = D.L(def.description) .. (selected and ("  [" .. D.L(selected) .. "]") or "")
+      D.text_hover(D.L(def.name), description, at_x, y, size, size)
     end
   end
 end

@@ -85,7 +85,7 @@ function app.load()
   for id in pairs(ui.item_catalog) do ui.item_images[id] = load_image("assets/items/" .. id .. ".png") end
   for id in pairs(Game.relics()) do ui.relic_images[id] = load_image("assets/relics/" .. id .. ".png") end
   for _, name in ipairs({"next_round", "reroll", "gold", "energy", "coins_left", "open_shop", "exchange", "give_up",
-    "flip", "discard", "next_coin", "start_level", "shop_title", "logo", "title_scene",
+    "flip", "next_coin", "start_level", "shop_title", "logo", "title_scene",
     "title_play", "title_sets", "title_collection", "title_options", "title_help",
     "title_play_de", "title_sets_de", "title_collection_de", "title_options_de", "title_help_de"}) do
     ui.ui_images[name] = load_image("assets/ui/" .. name .. ".png")
@@ -167,7 +167,6 @@ function app.activate(b, x)
   if x and b.drag then ui.dragging = b b.drag(x) end -- sliders follow the mouse until it is released
 end
 
-function app.discard_current() A.discard_current() end
 function app.cycle_character(direction) A.cycle_character(direction) end
 function app.change_collection_page(direction) A.change_collection_page(direction) end
 
@@ -215,7 +214,7 @@ function app.mousereleased()
   if slider and slider.release then slider.release() end
 end
 
--- Keyboard: arrows move the focus ring, Enter presses the focused button, Esc = back, Space = flip / next coin, D = discard,
+-- Keyboard: arrows move the focus ring, Enter presses the focused button, Esc = back, Space = flip / next coin,
 -- 1-3 = chips, O = open shop, Q / E = previous / next page, tab or character. They map onto the same actions as the controller.
 local KEYS = {up = "dpup", down = "dpdown", left = "dpleft", right = "dpright", ["return"] = "a", kpenter = "a",
   q = "leftshoulder", e = "rightshoulder", i = "inspect"}
@@ -249,7 +248,6 @@ function app.keypressed(key)
   if in_run and not ui.tutorial and game.phase == "ENCOUNTER" and not game.mulligan and not ui.flip_animation then
     local slot = tonumber(key)
     if slot and slot >= 1 and slot <= 3 and ui.game.items[slot] and not ui.holding then A.use_item(slot) return end
-    if key == "d" then Pad.pressed("y", app) return end
     if key == "o" and game.encounter.cleared and not game.pending then A.open_shop() return end
   end
   if not in_run and ui.screen == "select" then

@@ -36,7 +36,7 @@ local function save_profile()
   love.filesystem.write(PROFILE_FILE, Profile.encode(ui.profile))
 end
 
--- ---- run saving: the opening hand of a level and the shop are safe points (no coin is mid-flip)
+-- ---- run saving: the start of a level and the shop are safe points (no coin is mid-flip)
 function A.has_saved_run() return not Game.SANDBOX_MODE and love.filesystem.getInfo(RUN_FILE) ~= nil end
 
 local function delete_run()
@@ -54,10 +54,12 @@ function A.load_run()
   local ok, game = pcall(function() return type(data) == "table" and data.version == 1 and Game.restore(data.game) end)
   if not ok then game = nil end
   if not game then delete_run() return false end
-  game.contracts_enabled = true -- old safe-point saves gain contracts when they reach their next level
+  if game.phase == "CONTRACT" then Game.skip_contract(game) end -- finish an older save waiting for a contract choice
+  game.contracts_enabled = false
+  if game.mulligan then Game.mulligan_done(game) end
   ui.game, ui.selected_character = game, game.character_id
   ui.encounter_reveal = nil
-  ui.flip_animation, ui.holding, ui.marked, ui.resolve_timer, ui.notice = nil, false, {}, 0, ""
+  ui.flip_animation, ui.holding, ui.resolve_timer, ui.notice = nil, false, 0, ""
   saved_key = nil
   return true
 end
@@ -150,7 +152,7 @@ function A.do_clear_progress()
   ui.profile = Profile.new()
   ui.profile.options = options
   if Game.DEV_MODE then Profile.unlock_all(ui.profile) end
-  ui.game, ui.set_draft, ui.marked, ui.flip_animation, ui.holding = nil, nil, {}, nil, false
+  ui.game, ui.set_draft, ui.flip_animation, ui.holding = nil, nil, nil, false
   delete_run()
   save_profile()
 end
@@ -252,44 +254,17 @@ function A.cycle_active_set(delta)
   save_profile()
 end
 
--- ---- marking coins to discard (opening hand and bank)
-function A.toggle_mark(uid)
-  ui.marked[uid] = not ui.marked[uid] or nil
-end
-
-local function marked_list(allowed)
-  local list = {}
-  for _, uid in ipairs(allowed) do if ui.marked[uid] then list[#list + 1] = uid end end
-  return list
-end
-
-function A.marked_count()
-  local game = ui.game
-  local pool = game.mulligan and game.mulligan.hand or game.encounter.queue
-  return #marked_list(pool)
-end
-
--- Discard every marked coin in one go (does nothing when none are marked).
-function A.discard_marked()
-  local game = ui.game
-  if game.mulligan then
-    Game.mulligan_discard(game, marked_list(game.mulligan.hand))
-  else
-    Game.discard(game, marked_list(game.encounter.queue))
-  end
-  ui.marked = {}
-end
-
--- After the opening hand only the coin in play can be discarded (the bank cards are not clickable).
-function A.discard_current()
-  Game.discard(ui.game)
-  ui.marked = {}
-end
-
 -- Crystal Ball Tails: click a bank coin to discard it.
 function A.discard_bank(uid)
   Game.discard_bank(ui.game, uid)
-  ui.marked = {}
+  ui.bank_discard_mode = false
+end
+
+function A.toggle_bank_discard_mode()
+  local game = ui.game
+  if not game or not game.encounter or (game.encounter.bank_discards or 0) < 1 then return false end
+  ui.bank_discard_mode = not ui.bank_discard_mode
+  return true
 end
 
 function A.start(seed)
@@ -299,12 +274,11 @@ function A.start(seed)
   ui.game = Game.new(seed or (os.time() + math.floor(love.timer.getTime() * 1000000)),
     ui.selected_character, Profile.unlocked_list(ui.profile, ui.selected_character), A.loadout(), true, A.stake())
   ui.encounter_reveal = {elapsed = 0, duration = 3.4}
-  ui.game.contracts_enabled = true
-  Game.offer_contract(ui.game)
+  ui.game.contracts_enabled = false
   ui.flip_animation = nil
   ui.resolve_timer = 0
   ui.holding = false
-  ui.marked = {}
+  ui.bank_discard_mode = false
   ui.notice = ""
 end
 
@@ -330,6 +304,7 @@ function A.start_sandbox(path)
   game.paused = menu_screens[screen] or false
   saved_key = nil
   ui.game = game
+  ui.bank_discard_mode = false
   ui.encounter_reveal = nil
   ui.selected_character = game.character_id
   ui.sets_character = game.character_id
@@ -337,7 +312,7 @@ function A.start_sandbox(path)
   ui.set_draft = nil
   ui.tutorial = nil
   A.go(game.paused and screen or "title")
-  ui.flip_animation, ui.holding, ui.marked, ui.resolve_timer, ui.notice = nil, false, {}, 0, ""
+  ui.flip_animation, ui.holding, ui.resolve_timer, ui.notice = nil, false, 0, ""
   return true
 end
 
@@ -382,20 +357,32 @@ end
 
 function A.coin_action(item)
   ui.notice = ""
+  ui.bank_discard_mode = false
   Game.select(ui.game, item.uid)
 end
 
 -- Leave the level for the shop; only possible once the quota is met.
 function A.open_shop()
+  ui.bank_discard_mode = false
   if not ui.flip_animation then Game.end_level(ui.game) end
 end
 
 function A.exchange() Game.exchange(ui.game) end
 function A.give_up() Game.give_up(ui.game) end
 function A.side_bet(side) return Game.place_side_bet(ui.game, side) end
-function A.choose_contract(id) return Game.choose_contract(ui.game, id) end
-function A.skip_contract() return Game.skip_contract(ui.game) end
+function A.choose_contract(id)
+  local chosen = Game.choose_contract(ui.game, id)
+  if chosen and ui.game.mulligan then Game.mulligan_done(ui.game) end
+  return chosen
+end
+
+function A.skip_contract()
+  local skipped = Game.skip_contract(ui.game)
+  if skipped and ui.game.mulligan then Game.mulligan_done(ui.game) end
+  return skipped
+end
 function A.choose_augment(id) return Game.choose_augment(ui.game, id) end
+function A.choose_augment_option(key) return Game.choose_augment_option(ui.game, key) end
 
 function A.use_item(slot)
   if not ui.flip_animation then Game.use_item(ui.game, slot) end
@@ -416,6 +403,7 @@ end
 
 function A.flip_next_coin(pushing)
   local game = ui.game
+  ui.bank_discard_mode = false
   if not Game.flip(game) then return false end
   if pushing then game.encounter.pushing = true end
   if game.tutorial and (game.tutorial_heads or 0) > 0 then -- the scripted tutorial run always shows Heads first
@@ -446,11 +434,6 @@ function A.update(dt)
       ui.encounter_reveal.elapsed + dt)
   end
   if game and game.phase ~= "ENCOUNTER" then ui.holding = false end
-  if game and next(ui.marked) then -- marks only make sense while the coin is still in the bank or hand
-    local live = {}
-    for _, uid in ipairs(game.mulligan and game.mulligan.hand or game.encounter and game.encounter.queue or {}) do live[uid] = true end
-    for uid in pairs(ui.marked) do if not live[uid] then ui.marked[uid] = nil end end
-  end
   if game and next(game.purchased) then -- buying a locked coin in the shop unlocks it for good
     local unlocked_now = false
     for id in pairs(game.purchased) do
@@ -465,11 +448,18 @@ function A.update(dt)
     if safe then
       local key = game.phase .. game.encounter_index .. (game.endless and "e" or "") .. ":" .. game.player.gold .. ":" ..
         #game.coins .. ":" .. game.slots .. ":" .. #game.items .. ":" .. #game.relics .. ":" .. (game.reroll_cost or 0)
+      if game.phase == "AUGMENT" then
+        key = key .. ":" .. #game.augments .. ":" .. (game.augment_pending and game.augment_pending.id or "")
+          .. ":" .. (game.augment_pending and game.augment_pending.reward_id or "")
+      end
       if key ~= saved_key then saved_key = key save_run(game) end -- every shop purchase is saved too (no reroll scumming)
     elseif game and not game.tutorial and (game.phase == "GAME_OVER" or game.phase == "VICTORY") and saved_key ~= "over" then
       saved_key = "over"
       delete_run()
     end
+  end
+  if game and game.phase == "ENCOUNTER" and game.mulligan and not game.tutorial then
+    Game.mulligan_done(game) -- save the untouched level first, then show its full bank
   end
   local record = game and not game.tutorial and game -- a tutorial run is a throwaway: nothing is saved or logged
   if record then -- anything that has been in your deck counts as collected

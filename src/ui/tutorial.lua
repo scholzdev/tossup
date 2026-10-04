@@ -16,16 +16,8 @@ local STEPS = {
    text = "Each level has a QUOTA: points you must score before your coins run out. The bar fills as you score."},
   {title = "YOUR RESOURCES", rect = {930, 96, 290, 46},
    text = "Coins left in your stack, your gold, and your energy. Strong coins cost energy to flip."},
-  {title = "THE OPENING HAND", rect = {183, 270, 914, 480},
-   text = "Every level starts with an OPENING HAND. Click coins to mark them, then Discard throws them away for free. This time keep them all and press START LEVEL.",
-   wait = function(g) return not g.mulligan end, hint = "PRESS START LEVEL"},
   {title = "THE COIN BANK", rect = {70, 170, 240, 480},
-   enter = function(g) -- discarding in the opening hand must not make the quota unreachable (a Normal coin scores 1)
-     local e = g.encounter
-     e.quota = math.min(e.quota, Game.coins_left(g))
-     e.max_quota = e.quota
-   end,
-   text = "Your next three coins. The first one is up next. A level lasts exactly as long as your stack: every coin is played once."},
+   text = "Your remaining coins stay visible in the bank. Click any coin to choose what to play next. Playing is free unless a coin shows an energy cost."},
   {title = "THE COIN IN PLAY", rect = {330, 170, 880, 480},
    text = "The coin with its Heads effect (blue, left) and Tails effect (red, right), and its odds below. Read them before you flip."},
   {title = "FLIP", rect = {550, 676, 260, 64},
@@ -36,8 +28,6 @@ local STEPS = {
    wait = function(g) return g.last_result ~= nil and not ui.holding end, hint = "PRESS NEXT COIN"},
   {title = "CHIPS", rect = {830, 676, 376, 64},
    text = "These three slots hold CHIPS: one-use helpers you buy in the shop. Click one while a coin is in play to use it, for example an Energy Drink for 2 more energy. You can hold three."},
-  {title = "DISCARD", rect = {330, 676, 200, 64},
-   text = "Don't like the coin in play? DISCARD throws it away for the level, for free, but you lose that flip. Only the current coin can be discarded."},
   {title = "FLIP AGAIN", rect = {550, 676, 260, 64},
    text = "Flip this one too. Two Heads in a row start a COMBO.",
    wait = function(g) return g.encounter and g.encounter.cleared end, hint = "PRESS FLIP"},
@@ -56,12 +46,11 @@ local STEPS = {
    text = "Press the red button when you are ready for the next level.",
    wait = function(g) return g.phase == "ENCOUNTER" end, hint = "PRESS NEXT ROUND"},
   {title = "A NEW MODIFIER", rect = {330, 540, 300, 110},
-   enter = function(g) if g.mulligan then Game.mulligan_done(g) end end,
    text = "From level 2 on, every level has a MODIFIER: a bonus or a twist for this level only. Read it here before you flip."},
   {title = "RUNNING OUT OF COINS", rect = {930, 96, 100, 46},
    text = "If your coins run out before the quota is met, pay gold to EXCHANGE: three played coins come back, only a limited number of times per level. After that the run is over."},
   {title = "THAT'S IT", rect = {330, 280, 620, 200},
-   text = "Beat three levels and then The House. Build a deck that scores, keep your combos going, and spend your gold well. Win a run to unlock the next character. Good luck!"},
+   text = "Beat eight levels ending with The House. An Encounter shapes the run; choose Augments before levels 3 and 6 to improve your bank or playstyle. Win to unlock the next character."},
 }
 
 -- Start the tutorial on a fresh throwaway run.
@@ -74,12 +63,13 @@ function Tutorial.start()
   game.items = {"energy_drink"} -- so the chip slots are not empty
   game.encounter.quota, game.encounter.max_quota = 2, 2
   game.paused = false
-  ui.game, ui.flip_animation, ui.holding, ui.marked, ui.resolve_timer = game, nil, false, {}, 0
+  Game.mulligan_done(game)
+  ui.game, ui.flip_animation, ui.holding, ui.resolve_timer = game, nil, false, 0
   ui.tutorial = {step = 1}
 end
 
 function Tutorial.finish()
-  ui.tutorial, ui.game, ui.flip_animation, ui.holding, ui.marked = nil, nil, nil, false, {}
+  ui.tutorial, ui.game, ui.flip_animation, ui.holding = nil, nil, nil, false
   ui.screen = "title"
 end
 

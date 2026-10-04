@@ -52,7 +52,6 @@ local KEYBOARD = {
   {"IN A LEVEL"},
   {"Flip / next coin", "SPACE"},
   {"Inspect: show the details of the focused item", "I", "Q", "E"},
-  {"Discard the coin in play", "D"},
   {"Use chip 1 / 2 / 3", "1", "2", "3"},
   {"Open the shop (quota met)", "O"},
   {"Debug info", "F3"},
@@ -66,7 +65,6 @@ local CONTROLLER = {
   {"IN A LEVEL"},
   {"Flip / next coin", {"X", "blue"}},
   {"Inspect: show the details of the focused item", "LB", "RB", "LT", "RT"},
-  {"Discard the coin in play", {"Y", "gold"}},
   {"Use a chip or open the shop", "D-PAD", {"A", "green"}},
   {"Menu", "START"},
 }

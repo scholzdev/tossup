@@ -9,9 +9,13 @@ One Encounter sets a global rule for the whole run. Numbers are starting points 
 
 # Augments
 
-Draft one Augment immediately before level 3 and another immediately before level 6. Each takes effect on that level and stays active through the rest of the run.
+Draft one Augment immediately before level 3 and another immediately before level 6. Some change the coin bank immediately; others remain active for the rest of the run.
 
 1. **Banker's Cut** — Banked combo pots grant 2 extra gold; each bank adds 2 quota to the next level.
 2. **All-In** — The first successful push each level doubles its combo payout; a failed push also costs 2 gold.
 3. **Hedge Fund** — A winning side bet pays 25% extra; losing one also adds 2 quota to the next level.
 4. **Scrap Dealer** — Discarding a coin grants 1 gold, but each discard adds 2 quota to the current level.
+5. **Epic Windfall** — At level 6, gain a random Epic coin; replace one if the bank is full.
+6. **Reforger** — Immediately reroll one coin into a different coin of the same rarity.
+7. **Type Specialist** — Choose a type you own; each coin of that type scores +1 on its first Heads each level.
+8. **Upgrade Press** — Choose one of your coins and give it an available upgrade.

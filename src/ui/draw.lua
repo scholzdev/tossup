@@ -324,7 +324,7 @@ local function draw_coin_tooltip()
     row_y = row_y + 24
   end
   if upgrade then
-    text(L("UPGRADE: %s", upgrade.name:upper()), x + 24, row_y + 4, ui.f16, C.gold)
+    text(L("UPGRADE: %s", L(upgrade.name):upper()), x + 24, row_y + 4, ui.f16, C.gold)
     love.graphics.setFont(ui.f16)
     color(C.face)
     love.graphics.printf(L(upgrade.description), x + 24, row_y + 25, w - 48)

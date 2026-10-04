@@ -1,5 +1,5 @@
 -- Controller support. The D-pad or left stick moves a focus between the clickable buttons of the current screen (the same
--- list the mouse uses), A presses the focused button, B / Start = Esc, X = Space (flip / next coin), Y = discard the coin in play,
+-- list the mouse uses), A presses the focused button, B / Start = Esc, X = Space (flip / next coin),
 -- the shoulder buttons = Left / Right (pages, characters). Sliders: left / right changes the focused slider.
 -- The focus ring only shows after a controller was used; moving the mouse hides it again.
 local ui = require("src.ui.state")
@@ -158,12 +158,6 @@ function Pad.pressed(button, app)
     app.keypressed("escape")
   elseif button == "x" then
     app.keypressed("space")
-  elseif button == "y" then
-    local game = ui.game
-    if game and not game.paused and game.phase == "ENCOUNTER" and game.dealt and not ui.flip_animation and not ui.holding
-      and not game.mulligan and not ui.tutorial and not ui.confirm then
-      app.discard_current()
-    end
   elseif button == "inspect" then
     if not ui.confirm and not ui.tutorial then Pad.inspecting = not Pad.inspecting end
   elseif button == "leftshoulder" then

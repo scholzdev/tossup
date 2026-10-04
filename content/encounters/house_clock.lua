@@ -5,7 +5,7 @@ return {
   on_trigger = function(ctx)
     if ctx.event == "throw" then
       local throw = ctx.game.run.throw
-      if throw and throw.count % 5 == 0 and throw.result ~= "Tie" and not throw.stage_inverted then
+      if throw and throw.count % 3 == 0 and throw.result ~= "Tie" and not throw.stage_inverted then
         throw.result = throw.result == "Heads" and "Tails" or "Heads"
         throw.altered = (throw.altered and throw.altered .. " + " or "") .. "THE HOUSE'S CLOCK"
       end

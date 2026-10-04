@@ -11,7 +11,7 @@ local C = {
   green = hex("4bc292"), purple = hex("c990f5"), white = {1, 1, 1}, black = {0, 0, 0},
   -- the teal "screen" look shared by the shop and the round view
   screen = hex("17454d"), panel_dk = hex("0f333b"), card = hex("1d4f58"), line = hex("2f6670"),
-  slot_dk = hex("0b2a30"), marked = hex("2c6a74"),
+  slot_dk = hex("0b2a30"),
 }
 C.rarity = {N = C.muted, R = C.green, SR = C.blue, UR = C.purple}
 

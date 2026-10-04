@@ -42,6 +42,10 @@ AUGMENTS = {
     "all_in": "all_in",
     "hedge_fund": "shield",
     "scrap_dealer": "scrap",
+    "epic_windfall": "epic",
+    "reforger": "reforge",
+    "type_specialist": "types",
+    "upgrade_press": "upgrade",
 }
 
 
@@ -122,6 +126,31 @@ def draw_emblem(draw, kind):
         draw.line(points([(34, 96), (97, 96)]), fill=IVORY, width=p(5))
         draw.line(points([(47, 55), (37, 44), (49, 31)]), fill=IVORY, width=p(5))
         draw.line(points([(81, 45), (93, 34), (83, 25)]), fill=IVORY, width=p(5))
+    elif kind == "epic":
+        draw.ellipse(box(36, 37, 92, 93), fill=GOLD, outline=INK, width=p(4))
+        draw.ellipse(box(45, 46, 83, 84), outline=IVORY, width=p(4))
+        draw.polygon(points([(64, 40), (71, 57), (89, 64), (71, 71), (64, 89),
+                             (57, 71), (39, 64), (57, 57)]), fill=IVORY, outline=INK)
+        for x, y in ((33, 30), (94, 29), (30, 95), (96, 96)):
+            draw.ellipse(box(x - 3, y - 3, x + 3, y + 3), fill=IVORY)
+    elif kind == "reforge":
+        draw.ellipse(box(43, 43, 85, 85), fill=GOLD, outline=INK, width=p(4))
+        draw.arc(box(26, 27, 102, 101), 205, 35, fill=IVORY, width=p(6))
+        draw.polygon(points([(98, 44), (105, 58), (89, 55)]), fill=IVORY)
+        draw.arc(box(26, 27, 102, 101), 25, 215, fill=GOLD, width=p(6))
+        draw.polygon(points([(30, 84), (23, 70), (39, 73)]), fill=GOLD)
+    elif kind == "types":
+        draw.polygon(points([(64, 24), (75, 47), (100, 50), (82, 69), (88, 96),
+                             (64, 82), (40, 96), (46, 69), (28, 50), (53, 47)]),
+                     fill=GOLD, outline=INK)
+        draw.ellipse(box(51, 51, 77, 77), fill=NAVY, outline=IVORY, width=p(3))
+        draw.line(points([(64, 39), (64, 51)]), fill=IVORY, width=p(4))
+        draw.line(points([(64, 77), (64, 89)]), fill=IVORY, width=p(4))
+    elif kind == "upgrade":
+        draw.ellipse(box(31, 48, 83, 100), fill=GOLD, outline=INK, width=p(4))
+        draw.ellipse(box(39, 56, 75, 92), outline=IVORY, width=p(3))
+        draw.polygon(points([(79, 21), (104, 46), (90, 46), (90, 74), (68, 74),
+                             (68, 46), (54, 46)]), fill=IVORY, outline=INK)
 
 
 def make_icon(kind, accent, tier=None):
@@ -169,7 +198,7 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             make_icon(symbol, accent, tier).save(path)
 
-    print("Generated 4 Encounter icons and 12 tiered Augment icons.")
+    print(f"Generated {len(ENCOUNTERS)} Encounter icons and {len(AUGMENTS) * len(TIERS)} tiered Augment icons.")
 
 
 if __name__ == "__main__":
