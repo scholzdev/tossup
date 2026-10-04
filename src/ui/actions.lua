@@ -389,7 +389,6 @@ function A.use_item(slot)
 end
 
 function A.bank_combo()
-  if not ui.holding then return 0 end
   local amount = Game.bank_combo(ui.game)
   if amount > 0 then ui.holding = false end
   return amount

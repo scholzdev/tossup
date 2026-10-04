@@ -1,7 +1,7 @@
 return {
   id = "house_clock",
   name = "The House's Clock",
-  description = "Every fifth flip is inverted. Clearing a level pays 25% more.",
+  description = "Every third flip is inverted. Clearing a level pays 25% more.",
   on_trigger = function(ctx)
     if ctx.event == "throw" then
       local throw = ctx.game.run.throw

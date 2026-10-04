@@ -80,21 +80,6 @@ local function new_shop_state()
   return {refresh_cost = 4, coin_offer_count = 4, coin_price_discount = 0}
 end
 
--- Run Encounters run first, then owned Augments in pick order. Hooks receive the same direct game
--- access and can edit in-flight values under game.run (throw, coin_effects, bank, side_bet, push, discard).
-local function trigger_hooks(game, event)
-  game.run = game.run or {}
-  local function context()
-    return {game = game, event = event, encounter = game.encounter, shop = game.shop}
-  end
-  local encounter_def = game.run_encounter_id and ENCOUNTERS[game.run_encounter_id]
-  if encounter_def and encounter_def.on_trigger then encounter_def.on_trigger(context()) end
-  for _, id in ipairs(game.augments or {}) do
-    local augment = AUGMENTS[id]
-    if augment and augment.on_trigger then augment.on_trigger(context()) end
-  end
-end
-
 local function coin(game, id, upgrade)
   assert(catalog[id], "unknown coin: " .. tostring(id))
   assert(not upgrade or catalog[id].upgrades and catalog[id].upgrades[upgrade], "unknown upgrade for " .. tostring(id))
@@ -184,6 +169,35 @@ local function shop_pool(game)
     if not seen[entry[1]] then pool[#pool + 1] = entry[1] seen[entry[1]] = true end
   end
   return pool
+end
+
+-- Run Encounters run first, then owned Augments in pick order. Hooks receive direct game access,
+-- plus safe helpers for adding coins from the character's available pool.
+local function trigger_hooks(game, event)
+  game.run = game.run or {}
+  local function context()
+    return {game = game, event = event, encounter = game.encounter, shop = game.shop,
+      coins_of_rarity = function(rarity)
+        local pool = {}
+        for _, id in ipairs(usable_pool(game)) do
+          if catalog[id].rarity == rarity then pool[#pool + 1] = id end
+        end
+        return pool
+      end,
+      add_coin = function(id)
+        if #game.coins >= game.slots then
+          if event ~= "run_start" or game.slots >= Game.DECK_MAX then return false end
+          game.slots = game.slots + 1
+        end
+        return add_to_deck(game, id)
+      end}
+  end
+  local encounter_def = game.run_encounter_id and ENCOUNTERS[game.run_encounter_id]
+  if encounter_def and encounter_def.on_trigger then encounter_def.on_trigger(context()) end
+  for _, id in ipairs(game.augments or {}) do
+    local augment = AUGMENTS[id]
+    if augment and augment.on_trigger then augment.on_trigger(context()) end
+  end
 end
 
 -- Up to four distinct coin offers; one can occasionally carry an upgrade.

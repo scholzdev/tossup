@@ -230,7 +230,10 @@ local function draw_text_tooltip()
 end
 
 local function draw_coin_tooltip()
-  if not ui.hovered_coin then return end
+  local game = ui.game
+  local encounter_visible = game and (game.phase == "ENCOUNTER"
+    or game.phase == "GAME_OVER" and not game.over_seen)
+  if not ui.hovered_coin or encounter_visible then return end
   local coin = catalog[ui.hovered_coin.id]
   local upgrade = ui.hovered_coin.upgrade and coin.upgrades and coin.upgrades[ui.hovered_coin.upgrade]
   local mx, my = ui.pointer()
