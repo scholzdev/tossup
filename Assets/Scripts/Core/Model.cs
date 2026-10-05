@@ -143,7 +143,7 @@ namespace Tossup
         public ContractState Contract;
         public List<string> ContractOptions;
         public int SideBets;
-        public string SideBetSide;
+        public string SideBetSide, SideBetOutcome;
         public int SideBetCost;
         public double SideBetPayout;
         public bool PushAvailable;
@@ -227,7 +227,7 @@ namespace Tossup
         // presentation flags kept on the run, as the original did
         public bool Paused;
         public int? TokensPaid;
-        public bool EndlessLogged;
+        public bool EndlessLogged, EndlessRecord, OverSeen;
         public bool WinRecorded, EndlessRecorded;
         public string UnlockedCharacter;
         public int? UnlockedStake;

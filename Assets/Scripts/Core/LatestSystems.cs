@@ -67,12 +67,12 @@ namespace Tossup
             void A(string id,string name,string desc,string tier="silver")=>d[id]=new AugmentDef{Id=id,Name=name,Description=desc,Tier=tier};
             A("bankers_cut","Banker's Cut","Banked combo pots grant 2 extra gold. Each bank adds 2 quota to the next level.");
             A("all_in","All-In","The first successful push each level doubles its combo payout. A failed push costs 2 gold.");
-            A("hedge_fund","Hedge Fund","Winning side bets pay 25% extra. Losing adds 2 quota to the next level.");
-            A("scrap_dealer","Scrap Dealer","Discarding grants 1 gold, but adds 2 quota.");
-            A("epic_windfall","Epic Windfall","Gain a random Epic coin; replace one if full.","gold");
-            A("reforger","Reforger","Reforge a coin into another of the same rarity.");
-            A("type_specialist","Type Specialist","Choose a type; its first Heads per coin each level scores +1.");
-            A("upgrade_press","Upgrade Press","Give one owned coin an available upgrade.");
+            A("hedge_fund","Hedge Fund","A winning side bet pays 25% extra. Losing one adds 2 quota to the next level.");
+            A("scrap_dealer","Scrap Dealer","Discarding a coin grants 1 gold, but each discard adds 2 quota to the current level.");
+            A("epic_windfall","Epic Windfall","Gain a random Epic coin. If your bank is full, choose a coin to replace.","gold");
+            A("reforger","Reforger","Reforge one coin now into a random different coin of the same rarity. Its upgrade is lost.");
+            A("type_specialist","Type Specialist","Choose a coin type you own. Each coin of that type scores +1 on its first Heads each level.");
+            A("upgrade_press","Upgrade Press","Choose an owned coin and give it one of its available upgrades.");
             return d;
         }
 
@@ -160,15 +160,87 @@ namespace Tossup
         static void SettleContract(GameState g){var c=g.Encounter.Contract;if(c==null||c.Result!=null)return;var d=Contracts[c.Id];bool ok=d.Complete==null||d.Complete(g,g.Encounter);c.Result=ok?"COMPLETE":"MISSED";if(ok){g.Player.Gold+=d.Reward;Log(g,"Contract complete: +"+d.Reward+" gold.");}else{Log(g,"Contract missed: "+d.Name+".");if(c.Id=="amazon_prime"){int lost=Math.Min(2,Math.Max(0,g.Coins.Count-1));for(int i=0;i<lost;i++){var removed=g.Coins[Rng.Int(g,1,g.Coins.Count)-1];g.Coins.Remove(removed);g.Encounter.Queue.Remove(removed.Uid);g.Encounter.Pile.Remove(removed.Uid);g.Encounter.Played.Remove(removed.Uid);g.Encounter.Discarded.Remove(removed.Uid);if(g.SelectedUid==removed.Uid)g.SelectedUid=g.Coins[0].Uid;}}}}
 
         public static bool OfferAugment(GameState g,int level)
-        {if(g.Phase!=Phase.Shop||(level!=3&&level!=6))return false;var pool=new List<string>();foreach(var id in AugmentOrder)if(!g.Augments.Contains(id)&&AugmentAvailable(g,id))pool.Add(id);if(pool.Count<3)return false;g.AugmentLevel=level;g.AugmentOptions=Offers(g,pool,3);g.Phase=Phase.Augment;return true;}
-        static bool AugmentAvailable(GameState g,string id){if(id=="epic_windfall")return g.EncounterIndex+1==6;if(id=="type_specialist")foreach(var c in g.Coins)if(Content.Coins[c.Id].CoinTypes.Count>0)return true;if(id=="upgrade_press")foreach(var c in g.Coins)if(c.Upgrade==null&&Content.Coins[c.Id].Upgrades.Count>0)return true;return true;}
+        {if(g.Phase!=Phase.Shop||g.Sandbox!=null||(level!=3&&level!=6))return false;var pool=new List<string>();foreach(var id in AugmentOrder)if(!g.Augments.Contains(id)&&AugmentAvailable(g,id))pool.Add(id);if(pool.Count<3)return false;g.AugmentLevel=level;g.AugmentOptions=Offers(g,pool,3);g.Phase=Phase.Augment;return true;}
+        static bool AugmentAvailable(GameState g,string id)
+        {
+            if (id == "epic_windfall")
+            {
+                if (g.EncounterIndex + 1 != 6) return false;
+                foreach (var coinId in Content.CoinOrder) if (Content.Coins[coinId].Rarity == "UR") return true;
+                return false;
+            }
+            if (id == "reforger")
+            {
+                foreach (var owned in g.Coins)
+                    foreach (var coinId in Content.CoinOrder)
+                        if (coinId != owned.Id && Content.Coins[coinId].Rarity == Content.Coins[owned.Id].Rarity) return true;
+                return false;
+            }
+            if (id == "type_specialist")
+            {
+                foreach (var coin in g.Coins) if (Content.Coins[coin.Id].CoinTypes.Count > 0) return true;
+                return false;
+            }
+            if (id == "upgrade_press")
+            {
+                foreach (var coin in g.Coins) if (coin.Upgrade == null && Content.Coins[coin.Id].Upgrades.Count > 0) return true;
+                return false;
+            }
+            return true;
+        }
         public static bool ChooseAugment(GameState g,string id){if(g.Phase!=Phase.Augment||g.AugmentPending!=null||g.AugmentOptions==null||!g.AugmentOptions.Contains(id))return false;g.Augments.Add(id);g.AugmentOptions=null;Log(g,"Chosen augment: "+AugmentDefs[id].Name+".");if(id=="epic_windfall"){var ids=new List<string>();foreach(var x in Content.CoinOrder)if(Content.Coins[x].Rarity=="UR")ids.Add(x);string reward=ids[Rng.Int(g,1,ids.Count)-1];if(g.Coins.Count<g.Slots){AddToDeck(g,reward);FinishAugment(g);}else g.AugmentPending=new AugmentPending{Id=id,RewardId=reward};}else if(id=="reforger"||id=="type_specialist"||id=="upgrade_press")g.AugmentPending=new AugmentPending{Id=id};else FinishAugment(g);return true;}
         static void FinishAugment(GameState g){int level=g.AugmentLevel??g.EncounterIndex+1;g.AugmentLevel=null;g.AugmentOptions=null;g.AugmentPending=null;g.EncounterIndex=level;StartEncounter(g);}
-        public static List<AugmentChoice> AugmentChoices(GameState g){var result=new List<AugmentChoice>();var p=g.AugmentPending;if(g.Phase!=Phase.Augment||p==null)return result;if(p.Id=="type_specialist"){var seen=new HashSet<string>();foreach(var c in g.Coins)foreach(var t in Content.Coins[c.Id].CoinTypes)if(seen.Add(t))result.Add(new AugmentChoice{Key=t,Title=t.ToUpper(),Detail="First Heads per coin each level: +1 point"});}else if(p.Id=="upgrade_press"){foreach(var c in g.Coins)if(c.Upgrade==null)foreach(var pair in Content.Coins[c.Id].Upgrades)result.Add(new AugmentChoice{Key=c.Uid+":"+pair.Key,CoinId=c.Id,UpgradeId=pair.Key,UpgradeName=pair.Value.Name,Detail=pair.Value.Description});}else foreach(var c in g.Coins)result.Add(new AugmentChoice{Key=c.Uid.ToString(),CoinId=c.Id,CurrentUpgrade=c.Upgrade,Detail=p.Id=="reforger"?"Random coin of the same rarity.":"Replace this coin."});return result;}
+        public static List<AugmentChoice> AugmentChoices(GameState g)
+        {
+            var result = new List<AugmentChoice>();
+            var pending = g.AugmentPending;
+            if (g.Phase != Phase.Augment || pending == null) return result;
+            if (pending.Id == "type_specialist")
+            {
+                var seen = new HashSet<string>();
+                foreach (var coin in g.Coins)
+                    foreach (var type in Content.Coins[coin.Id].CoinTypes)
+                        if (seen.Add(type)) result.Add(new AugmentChoice { Key = type, Title = type.ToUpper(), Detail = "First Heads per coin each level: +1 point" });
+                result.Sort((a, b) => StringComparer.Ordinal.Compare(a.Key, b.Key));
+            }
+            else if (pending.Id == "upgrade_press")
+            {
+                foreach (var coin in g.Coins)
+                {
+                    if (coin.Upgrade != null) continue;
+                    var upgrades = Content.Coins[coin.Id].Upgrades;
+                    var keys = new List<string>(upgrades.Keys);
+                    keys.Sort(StringComparer.Ordinal);
+                    foreach (var key in keys)
+                    {
+                        var upgrade = upgrades[key];
+                        result.Add(new AugmentChoice { Key = coin.Uid + ":" + key, CoinId = coin.Id, UpgradeId = key,
+                            UpgradeName = upgrade.Name, Detail = upgrade.Description });
+                    }
+                }
+            }
+            else
+            {
+                foreach (var coin in g.Coins)
+                {
+                    if (pending.Id == "reforger")
+                    {
+                        bool hasAlternative = false;
+                        foreach (var coinId in Content.CoinOrder)
+                            if (coinId != coin.Id && Content.Coins[coinId].Rarity == Content.Coins[coin.Id].Rarity)
+                            { hasAlternative = true; break; }
+                        if (!hasAlternative) continue;
+                    }
+                    result.Add(new AugmentChoice { Key = coin.Uid.ToString(), CoinId = coin.Id, CurrentUpgrade = coin.Upgrade,
+                        Detail = pending.Id == "reforger" ? "Random coin of the same rarity." : "Replace this coin." });
+                }
+            }
+            return result;
+        }
         public static bool ChooseAugmentOption(GameState g,string key){var p=g.AugmentPending;if(p==null)return false;var options=AugmentChoices(g);AugmentChoice chosen=null;foreach(var x in options)if(x.Key==key)chosen=x;if(chosen==null)return false;if(p.Id=="type_specialist")g.AugmentData["type_specialist"]=key;else if(p.Id=="upgrade_press"){var bits=key.Split(':');var c=GetCoin(g,int.Parse(bits[0]));c.Upgrade=bits[1];}else{var old=GetCoin(g,int.Parse(key));string id=p.RewardId;if(p.Id=="reforger"){var ids=new List<string>();foreach(var x in Content.CoinOrder)if(x!=old.Id&&Content.Coins[x].Rarity==Content.Coins[old.Id].Rarity)ids.Add(x);id=ids[Rng.Int(g,1,ids.Count)-1];}int index=g.Coins.IndexOf(old);var replacement=NewCoin(g,id);g.Coins[index]=replacement;g.SelectedUid=replacement.Uid;}FinishAugment(g);return true;}
 
         public static SideBetQuote SideBetQuote(GameState g,string side){if(g.Dealt==null||(side!=Side.Heads&&side!=Side.Tails))return null;double odds=side==Side.Heads?g.Dealt.Probability:1-g.Dealt.Probability-g.Dealt.TieProbability;if(odds<=0)return null;int stake=5,payout=Math.Max(stake,(int)Math.Floor(stake/odds+.5));if(g.RunEncounterId=="high_roller_table"){stake*=2;payout*=2;}if(HasAugment(g,"hedge_fund"))payout=(int)Math.Floor(payout*1.25+.5);return new SideBetQuote{Side=side,Stake=stake,Payout=payout};}
-        public static bool PlaceSideBet(GameState g,string side){var e=g.Encounter;if(g.Phase!=Phase.Encounter||e==null||e.Flips!=0||g.Dealt==null||e.SideBetSide!=null)return false;var q=SideBetQuote(g,side);if(q==null||g.Player.Gold<q.Stake)return false;g.Player.Gold-=q.Stake;e.SideBetSide=side;e.SideBetCost=q.Stake;e.SideBetPayout=q.Payout;Log(g,"Bet "+q.Stake+" gold on "+side+" ("+q.Payout+" gold payout).");return true;}
+        public static bool PlaceSideBet(GameState g,string side){var e=g.Encounter;if(g.Phase!=Phase.Encounter||e==null||e.Flips!=0||g.Dealt==null||e.SideBetSide!=null)return false;var q=SideBetQuote(g,side);if(q==null||g.Player.Gold<q.Stake)return false;g.Player.Gold-=q.Stake;e.SideBetSide=side;e.SideBetOutcome=null;e.SideBetCost=q.Stake;e.SideBetPayout=q.Payout;Log(g,"Bet "+q.Stake+" gold on "+side+" ("+q.Payout+" gold payout).");return true;}
 
         static double ComboPot(double len)=>Math.Max(0,(len-1)*len/2);
         public static bool CanBankCombo(GameState g)=>g!=null&&g.Phase==Phase.Encounter&&g.Encounter!=null&&g.Pending==null&&g.Mulligan==null&&g.Encounter.ComboPot>0;

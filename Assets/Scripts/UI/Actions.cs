@@ -149,6 +149,17 @@ namespace Tossup.UI
 
         public static void SaveOptions() => SaveProfile();
 
+        public static void RestoreSoundDefaults()
+        {
+            var current = Ui.Profile.Options;
+            var defaults = new Options();
+            current.VolumeMaster = defaults.VolumeMaster;
+            current.VolumeMusic = defaults.VolumeMusic;
+            current.VolumeSfx = defaults.VolumeSfx;
+            Sound.Apply(current);
+            SaveOptions();
+        }
+
         // Cycle through the available languages (English, Deutsch).
         public static void CycleLanguage()
         {
@@ -227,14 +238,18 @@ namespace Tossup.UI
 
         public static void OpenSets(string characterId)
         {
+            Ui.SetsReturn = Ui.Screen == "select" ? "select" : "title";
             Ui.SetsCharacter = characterId ?? Ui.SelectedCharacter;
             Ui.SetsIndex = Tossup.Profile.Active(Ui.Profile, Ui.SetsCharacter);
             Ui.SetDraft = null;
             Go("sets");
         }
 
+        public static void BackFromSets() => Go(Ui.SetsReturn == "select" ? "select" : "title");
+
         public static void SetsPickCharacter(string id)
         {
+            if (!Tossup.Profile.CharacterUnlocked(Ui.Profile, id)) return;
             Ui.SetsCharacter = id;
             Ui.SetsIndex = Tossup.Profile.Active(Ui.Profile, id);
             Ui.SetDraft = null;
@@ -473,7 +488,7 @@ namespace Tossup.UI
             {
                 game.WinRecorded=true;game.UnlockedStake=Tossup.Profile.RecordStakeWin(Ui.Profile,game.CharacterId,game.Stake);game.UnlockedCharacter=Tossup.Profile.RecordWin(Ui.Profile,game.CharacterId);SaveProfile();
             }
-            if(game!=null&&!RuntimeMode.Sandbox&&!game.Tutorial&&game.Sandbox==null&&game.Endless&&game.Phase==Phase.GameOver&&!game.EndlessRecorded){game.EndlessRecorded=true;Tossup.Profile.RecordEndless(Ui.Profile,game.CharacterId,game.Cleared-Game.Route.Count);SaveProfile();}
+            if(game!=null&&!RuntimeMode.Sandbox&&!game.Tutorial&&game.Sandbox==null&&game.Endless&&game.Phase==Phase.GameOver&&!game.EndlessRecorded){game.EndlessRecorded=true;game.EndlessRecord=Tossup.Profile.RecordEndless(Ui.Profile,game.CharacterId,game.Cleared-Game.Route.Count);SaveProfile();}
             if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox==null && game.Endless && game.Phase == Phase.GameOver && !game.EndlessLogged)
             {
                 game.EndlessLogged = true;

@@ -680,10 +680,9 @@ namespace Tossup
             result.Final = final;
             if (e.SideBetSide != null)
             {
-                if (final == Side.Tie && game.RunEncounterId != "high_roller_table") { game.Player.Gold += e.SideBetCost; Log(game, "Side bet pushed; stake returned."); }
-                else if (final == e.SideBetSide) { game.Player.Gold += e.SideBetPayout; Log(game, "Side bet won: +" + N(e.SideBetPayout) + " gold."); }
-                else { Log(game, "Side bet lost."); if (HasAugment(game, "hedge_fund")) game.NextLevelQuotaBonus += 2; }
-                e.SideBetSide = null;
+                if (final == Side.Tie && game.RunEncounterId != "high_roller_table") { game.Player.Gold += e.SideBetCost; e.SideBetOutcome = "PUSH"; Log(game, "Side bet pushed; stake returned."); }
+                else if (final == e.SideBetSide) { game.Player.Gold += e.SideBetPayout; e.SideBetOutcome = "WON"; Log(game, "Side bet won: +" + N(e.SideBetPayout) + " gold."); }
+                else { e.SideBetOutcome = "LOST"; Log(game, "Side bet lost."); if (HasAugment(game, "hedge_fund")) game.NextLevelQuotaBonus += 2; }
             }
             if (final == Side.Heads) e.Streak++;
             else if (final == Side.Tails) e.Streak = 0; // a Tie holds the streak

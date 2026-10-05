@@ -132,12 +132,13 @@ namespace Tossup.UI
         }
     }
 
-    // Coin Sets: every character with all of its coins. Build up to three sets of up to 10 coins per
+    // Coin Sets: every character with all of its coins. Build up to three sets of up to 5 coins per
     // character. Locked coins are unlocked by buying them in the shop during a run.
     public static class SetsView
     {
         const float SlotSize = 64, SlotGap = 14;
         static readonly Dictionary<string, string> Labels = new Dictionary<string, string> { { "blade", "BLADE" }, { "seer", "SEER" }, { "trader", "TRADER" } };
+        static readonly Dictionary<string, int> RarityRank = new Dictionary<string, int> { { "N", 1 }, { "R", 2 }, { "SR", 3 }, { "UR", 4 } };
 
         static void Padlock(float cx, float cy)
         {
@@ -152,13 +153,14 @@ namespace Tossup.UI
 
         public static void Draw()
         {
-            Frame(Title("sets"), "BACK", () => A.Go("title"));
+            Frame(Title("sets"), "BACK", A.BackFromSets);
 
             // every character
             for (int i = 0; i < Content.CharacterOrder.Count; i++)
             {
                 string id = Content.CharacterOrder[i];
-                Button(L(Labels[id]), 340 + i * 210, 148, 190, 44, id == Ui.SetsCharacter ? C.Gold : C.PanelLight, () => A.SetsPickCharacter(id));
+                Button(L(Labels[id]), 340 + i * 210, 148, 190, 44, id == Ui.SetsCharacter ? C.Gold : C.PanelLight,
+                    () => A.SetsPickCharacter(id), Profile.CharacterUnlocked(Ui.Profile, id));
             }
 
             string characterId = Ui.SetsCharacter;
@@ -192,22 +194,29 @@ namespace Tossup.UI
             Centered(dirty ? "UNSAVED CHANGES" : "CLICK A COIN HERE TO REMOVE IT", 70, 496, 430, Ui.F16, dirty ? C.Orange : C.Muted);
             Button(dirty ? "SAVE SET" : "SAVED", 100, 530, 370, 48, dirty ? C.Blue : C.PanelLight, A.SaveSet, dirty);
             Button("CLEAR SET", 100, 592, 370, 44, C.Red, A.ClearSet, coins.Count > 0);
-            Centered(L("MAX %d OF THE SAME COIN  -  NORMAL: UP TO %d", Game.MaxCopies, Game.StartMax), 70, 702, 430, Ui.F16, C.Muted);
+            Centered("PER SET: COMMON 3  -  UNCOMMON 2", 70, 680, 430, Ui.F16, C.Muted);
+            Centered("RARE 1  -  EPIC 1", 70, 704, 430, Ui.F16, C.Muted);
 
             // right: all of this character's coins
             Box(520, 212, 700, 528, C.PanelDk);
             Outline(520, 212, 700, 528, C.Line);
             Centered(L("%s  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP", Lang.Upper(Lang.CharacterName(characterId))),
                 520, 226, 700, Ui.F16, C.Gold);
-            var entries = new List<(string id, bool locked)>();
-            foreach (var id in def.Pool) entries.Add((id, false));
-            foreach (var entry in def.Locked) entries.Add((entry.Id, !Profile.IsUnlocked(Ui.Profile, characterId, entry.Id)));
+            var entries = new List<(string id, bool locked, int order)>();
+            foreach (var id in def.Pool) entries.Add((id, false, entries.Count));
+            foreach (var entry in def.Locked) entries.Add((entry.Id, !Profile.IsUnlocked(Ui.Profile, characterId, entry.Id), entries.Count));
+            entries.Sort((a, b) =>
+            {
+                int rankA = RarityRank.TryGetValue(Content.Coins[a.id].Rarity, out int aRank) ? aRank : 9;
+                int rankB = RarityRank.TryGetValue(Content.Coins[b.id].Rarity, out int bRank) ? bRank : 9;
+                return rankA != rankB ? rankA.CompareTo(rankB) : a.order.CompareTo(b.order);
+            });
             const int columns = 8;
             const float step = 82;
             float gx = 520 + (700 - ((columns - 1) * step + SlotSize)) / 2;
             for (int i = 0; i < entries.Count; i++)
             {
-                var (id, locked) = entries[i];
+                var (id, locked, _) = entries[i];
                 float x = gx + (i % columns) * step;
                 float y = 262 + (i / columns) * (SlotSize + 40);
                 CoinImage(id, x, y, SlotSize);
@@ -282,7 +291,7 @@ namespace Tossup.UI
                 }
                 else if (Ui.CollectionSort == "name")
                 {
-                    int byName = string.CompareOrdinal(Lang.CoinName(a.id), Lang.CoinName(b.id));
+                    int byName = string.CompareOrdinal(Content.Coins[a.id].Name, Content.Coins[b.id].Name);
                     if (byName != 0) return byName;
                 }
                 return a.index.CompareTo(b.index);
@@ -419,6 +428,12 @@ namespace Tossup.UI
             {
                 X = x - 10, Y = y + 16, W = w + 20, H = 44, Action = () => { },
                 Drag = mouseX => A.SetVolume(key, (mouseX - x) / w * 100),
+                Adjust = direction =>
+                {
+                    A.SetVolume(key, Ui.Profile.Options.GetVolume(key) + direction * 5);
+                    A.SaveOptions();
+                    Sound.Play("score");
+                },
                 Release = () => { A.SaveOptions(); Sound.Play("score"); },
             });
         }
@@ -467,6 +482,11 @@ namespace Tossup.UI
             else if (Ui.OptionsTab == "sound")
             {
                 for (int i = 0; i < Sliders.Length; i++) Slider(Sliders[i].key, Sliders[i].label, Sliders[i].hint, 214 + i * 96);
+                Button("RESTORE DEFAULTS", 440, 510, 400, 48, C.PanelLight, () =>
+                {
+                    A.RestoreSoundDefaults();
+                    Sound.Play("score");
+                });
             }
             else
             {
@@ -561,39 +581,51 @@ namespace Tossup.UI
             Color(won ? C.Green : C.Red);
             Gfx.Print(headline, (float)Math.Floor(640 - width / 2), 90, 2, 2);
 
-            // the character
-            Box(380, 250, 230, 300, C.PanelDk);
-            Outline(380, 250, 230, 300, C.Line);
+            // the character and their starting coin
+            Box(380, 206, 230, 300, C.PanelDk);
+            Outline(380, 206, 230, 300, C.Line);
             var portrait = Ui.CharacterImages[g.CharacterId];
             float scale = Math.Min(210f / portrait.Width, 240f / portrait.Height);
             Color(C.White);
-            Gfx.Draw(portrait, 380 + (230 - portrait.Width * scale) / 2, 258 + (250 - portrait.Height * scale) / 2, scale, scale);
-            Centered(Lang.Upper(Lang.CharacterName(g.CharacterId)), 380, 520, 230, Ui.F20, C.Gold);
+            Gfx.Draw(portrait, 380 + (230 - portrait.Width * scale) / 2, 214 + (250 - portrait.Height * scale) / 2, scale, scale);
+            Centered(Lang.Upper(Lang.CharacterName(g.CharacterId)), 380, 476, 230, Ui.F20, C.Gold);
 
             // what the run reached
-            Box(650, 250, 250, 300, C.PanelDk);
-            Outline(650, 250, 250, 300, C.Line);
-            Centered(g.Endless ? "ENDLESS MODE" : won ? "YOU WON THE RUN" : "TRY A NEW SET", 650, 266, 250, Ui.F20, C.Face);
-            Centered((g.Endless ? g.Cleared - 4 : g.Cleared).ToString(), 650, 320, 250, Ui.F48, won ? C.Green : C.Gold);
-            Centered(g.Endless ? "ENDLESS LEVELS CLEARED" : "LEVELS CLEARED OF 4", 650, 380, 250, Ui.F16, C.Muted);
-            ImageAt(Ui.UiImages["gold"], 690, 430, 44);
-            Text(GameText.Num(g.Player.Gold), 746, 436, Ui.F32, C.Gold);
-            Text("GOLD LEFT", 690, 484, Ui.F16, C.Muted);
-            Text(L("SEED %s", g.Seed), 690, 512, Ui.F16, C.Muted);
+            Box(650, 206, 250, 300, C.PanelDk);
+            Outline(650, 206, 250, 300, C.Line);
+            Centered(g.Endless ? "ENDLESS MODE" : won ? "YOU WON THE RUN" : "TRY A NEW SET", 650, 222, 250, Ui.F20, C.Face);
+            Centered((g.Endless ? g.Cleared - Game.Route.Count : g.Cleared).ToString(), 650, 276, 250, Ui.F48, won ? C.Green : C.Gold);
+            Centered(g.Endless ? "ENDLESS LEVELS CLEARED" : "LEVELS CLEARED OF " + Game.Route.Count, 650, 336, 250, Ui.F16, C.Muted);
+            ImageAt(Ui.UiImages["gold"], 690, 386, 44);
+            Text(GameText.Num(g.Player.Gold), 746, 392, Ui.F32, C.Gold);
+            Text("GOLD LEFT", 690, 440, Ui.F16, C.Muted);
+            Text(L("SEED %s", g.Seed), 690, 468, Ui.F16, C.Muted);
+            if (g.EndlessRecord) Centered("NEW RECORD!", 380, 514, 520, Ui.F20, C.Gold);
+            if (won && !g.Endless)
+            {
+                float y = 514;
+                if (g.UnlockedCharacter != null)
+                {
+                    Centered(L("NEW CHARACTER UNLOCKED: %s", Lang.Upper(Lang.CharacterName(g.UnlockedCharacter))), 380, y, 520, Ui.F20, C.Gold);
+                    y += 32;
+                }
+                if (g.UnlockedStake.HasValue) Centered(L("STAGE %d UNLOCKED", g.UnlockedStake.Value), 380, y, 520, Ui.F20, C.Gold);
+            }
             if (!won && g.LostWhy != null)
             {
                 Gfx.SetFont(Ui.F16);
                 Color(C.Red);
                 string why = L(g.LostWhy);
-                Gfx.Printf(Lang.Upper(why.Substring(0, 1)) + why.Substring(1), 380, 570, 520, Align.Center);
+                string capitalized = why.Length == 0 ? why : Lang.Upper(why.Substring(0, 1)) + why.Substring(1);
+                Gfx.Printf(capitalized, 380, g.EndlessRecord ? 546 : 520, 520, Align.Center);
             }
 
             if (won && !g.Endless)
             {
-                // the boss fell: keep going through endless levels, or start over
+                // the boss fell: keep going through endless levels or leave for the menu
                 IconButton("ENDLESS MODE", Ui.UiImages["next_coin"], 470, 584, 340, 60, C.Gold, A.ContinueEndless);
-                IconButton("NEW RUN", Ui.UiImages["start_level"], 470, 652, 340, 56, C.Green, () => A.Start());
-                Button("BACK TO MENU", 520, 718, 240, 36, C.PanelLight, A.OpenMenu);
+                IconButton("BACK TO MENU", Ui.UiImages["give_up"], 470, 652, 340, 56, C.Blue, A.OpenMenu);
+                Button("NEW RUN", 520, 718, 240, 36, C.Green, () => A.Start());
             }
             else
             {

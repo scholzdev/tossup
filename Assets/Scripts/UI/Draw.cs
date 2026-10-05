@@ -202,7 +202,7 @@ namespace Tossup.UI
             return Ui.UiImages["title_" + name];
         }
 
-        // A modal popup (Ui.Confirm): dims the screen, shows the text with OK and Cancel, and replaces every
+        // A modal popup (Ui.Confirm): dims the screen and replaces every
         // other clickable while it is open. Draw it last.
         public static void ConfirmDialog()
         {
@@ -217,8 +217,13 @@ namespace Tossup.UI
             Gfx.SetFont(Ui.F20);
             Color(C.Face);
             Gfx.Printf(L(c.Text), 410, 352, 460, Align.Center);
-            Button("OK", 420, 454, 200, 52, C.Red, () => { Ui.Confirm = null; c.Ok(); });
-            Button("CANCEL", 660, 454, 200, 52, C.PanelLight, () => Ui.Confirm = null);
+            if (c.Single)
+                Button("OK", 540, 454, 200, 52, C.Red, () => { Ui.Confirm = null; c.Ok(); });
+            else
+            {
+                Button("OK", 420, 454, 200, 52, C.Red, () => { Ui.Confirm = null; c.Ok(); });
+                Button("CANCEL", 660, 454, 200, 52, C.PanelLight, () => Ui.Confirm = null);
+            }
         }
 
         // Plain title + text tooltip (items, relics). Register while drawing; drawn once per frame on top.

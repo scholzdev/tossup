@@ -77,6 +77,11 @@ namespace Tossup.UI
             active = true;
             UpdateContext();
             var current = FocusedButton();
+            if (dx != 0 && current?.Adjust != null)
+            {
+                current.Adjust(dx);
+                return;
+            }
             if (current == null)
             {
                 var nearest = Nearest(focusX, focusY, out _);
@@ -140,7 +145,16 @@ namespace Tossup.UI
                     var order = Content.CharacterOrder;
                     int index = order.IndexOf(Ui.SetsCharacter);
                     if (index >= 0 && order.Count > 0)
-                        A.SetsPickCharacter(order[((index + direction) % order.Count + order.Count) % order.Count]);
+                    {
+                        for (int step = 1; step <= order.Count; step++)
+                        {
+                            int candidateIndex = ((index + direction * step) % order.Count + order.Count) % order.Count;
+                            string candidate = order[candidateIndex];
+                            if (!Profile.CharacterUnlocked(Ui.Profile, candidate)) continue;
+                            A.SetsPickCharacter(candidate);
+                            break;
+                        }
+                    }
                     break;
             }
         }
@@ -226,7 +240,7 @@ namespace Tossup.UI
         static void DefaultFocus(out float x, out float y)
         {
             var game = Ui.Game;
-            if (Ui.Confirm != null) { x = 760; y = 480; return; }
+            if (Ui.Confirm != null) { x = Ui.Confirm.Single ? 640 : 760; y = 480; return; }
             if (Ui.Tutorial != null) { x = 640; y = 400; return; }
             if (game != null && !game.Paused)
             {

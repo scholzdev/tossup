@@ -9,6 +9,7 @@ namespace Tossup.UI
         public float X, Y, W, H;
         public string Label; // the untranslated caption, for tests
         public Action Action;
+        public Action<int> Adjust;
         public bool Disabled;
         public Action<float> Drag; // sliders follow the mouse until it is released
         public Action Release;
@@ -32,6 +33,7 @@ namespace Tossup.UI
     {
         public string Title, Text;
         public Action Ok;
+        public bool Single;
     }
 
     public sealed class FlipAnimation
@@ -61,6 +63,7 @@ namespace Tossup.UI
         public static string SelectedCharacter = "blade";
         public static string Screen = "title"; // title | select | sets | collection | options | help
         public static string SetsCharacter = "blade"; // coin set editor: which character and which of its sets is open
+        public static string SetsReturn = "title";
         public static int SetsIndex = 1;
         public static SetDraft SetDraft; // unsaved edits of the open coin set
         public static HashSet<int> Marked = new HashSet<int>(); // coins marked for discarding in the opening hand

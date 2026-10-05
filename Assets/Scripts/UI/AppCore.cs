@@ -37,8 +37,8 @@ namespace Tossup.UI
             Ui.CoinImages["back"] = platform.LoadImage("coins/back");
             foreach (var id in Content.ItemOrder) Ui.ItemImages[id] = platform.LoadImage("items/" + id);
             foreach (var id in Content.RelicOrder) Ui.RelicImages[id] = platform.LoadImage("relics/" + id);
-            foreach (var id in Game.AugmentOrder) Ui.AugmentImages[id] = platform.LoadImage("augments/" + (id == "epic_windfall" ? "gold/" : "silver/") + id);
-            foreach (var id in new[] { "house_clock", "dead_heat", "high_roller_table", "thin_market" }) Ui.EncounterImages[id] = platform.LoadImage("encounters/" + id);
+            foreach (var id in Game.AugmentOrder) Ui.AugmentImages[id] = platform.LoadImage("augments/" + Game.AugmentDefs[id].Tier + "/" + id);
+            foreach (var id in Game.EncounterOrder) Ui.EncounterImages[id] = platform.LoadImage("encounters/" + id);
             foreach (var name in UiImageNames) Ui.UiImages[name] = platform.LoadImage("ui/" + name);
             Ui.UiImages["title_shop"] = Ui.UiImages["shop_title"];
             foreach (var id in Content.CharacterOrder) Ui.CharacterImages[id] = platform.LoadImage("characters/" + id);
@@ -54,6 +54,18 @@ namespace Tossup.UI
             else if (game.Phase == Phase.Contract) ContractView.Draw();
             else if (game.Phase == Phase.Augment) AugmentView.Draw();
             else if (game.Phase == Phase.Shop) ShopView.Draw();
+            else if (game.Phase == Phase.GameOver && !game.OverSeen)
+            {
+                EncounterView.Draw();
+                if (Ui.Confirm == null)
+                    Ui.Confirm = new Confirm
+                    {
+                        Title = "GAME OVER",
+                        Text = "NO COINS LEFT AND NO EXCHANGE POSSIBLE. THE RUN IS OVER.",
+                        Single = true,
+                        Ok = () => game.OverSeen = true,
+                    };
+            }
             else FinishView.Draw(); // Victory and GameOver
             if (Ui.Notice != "") Text(Ui.Notice, 300, 762, Ui.F16, C.Red);
             if (Ui.DebugVisible)
@@ -171,7 +183,18 @@ namespace Tossup.UI
             }
             if (Ui.Confirm != null)
             {
-                if (key == "escape") Ui.Confirm = null;
+                if (key == "escape")
+                {
+                    var confirm = Ui.Confirm;
+                    Ui.Confirm = null;
+                    if (confirm.Single) confirm.Ok();
+                }
+                else if (key == "return" && Ui.Confirm.Single)
+                {
+                    var confirm = Ui.Confirm;
+                    Ui.Confirm = null;
+                    confirm.Ok();
+                }
                 else PadNavigation.HandleKeyboardKey(key);
                 return;
             }
@@ -180,6 +203,7 @@ namespace Tossup.UI
             {
                 var game = Ui.Game;
                 if (game != null && !game.Paused) A.OpenMenu();
+                else if (Ui.Screen == "sets") A.BackFromSets();
                 else if (Ui.Screen != "title") A.Go("title");
                 else if (game != null) game.Paused = false;
                 return;
