@@ -8,7 +8,7 @@ namespace Tossup
     public static class Side
     {
         public const string Heads = "Heads", Tails = "Tails", Tie = "Tie";
-        public static string Other(string side) => side == Heads ? Tails : side == Tails ? Heads : Tie;
+         public static string Other(string side) => side == Heads ? Tails : side == Tails ? Heads : Tie;
     }
 
     // An effect of a coin side: {type, amount, coins}. Types: score, gold, energy, penalty, probability,
