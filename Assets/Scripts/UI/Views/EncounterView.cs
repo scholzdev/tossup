@@ -9,12 +9,13 @@ namespace Tossup.UI
         static GameState G => Ui.Game;
         static double Pct(double p) => Math.Floor(p * 100 + .5);
 
-        // The coins shown in the left panel: the next Visible coins of the bank (or the opening hand).
+        // The full bank in play order: queued coins followed by the draw pile.
         static List<CoinInst> BankCoins()
         {
-            var uids = G.Mulligan != null ? G.Mulligan.Hand : G.Encounter.Queue;
+            var uids = G.Mulligan != null ? G.Mulligan.Hand : new List<int>(G.Encounter.Queue);
+            if (G.Mulligan == null) uids.AddRange(G.Encounter.Pile);
             var list = new List<CoinInst>();
-            for (int i = 0; i < Math.Min(Game.Visible, uids.Count); i++) list.Add(Game.GetCoin(G, uids[i]));
+            for (int i = 0; i < Math.Min(Game.DeckMax, uids.Count); i++) list.Add(Game.GetCoin(G, uids[i]));
             return list;
         }
 
@@ -147,38 +148,50 @@ namespace Tossup.UI
                 Text(stats[i].Item2, x + 36, 106, Ui.F32, stats[i].Item3);
             }
 
-            // left: coin bank, three big cards and one quiet line of numbers
+            // left: full bank, with a separate mode for Crystal Ball's free discard
             var remaining = BankCoins();
             Box(70, 170, 240, 480, C.PanelDk);
             Outline(70, 170, 240, 480, C.Line);
             Text("COIN BANK", 84, 184, Ui.F20, C.Gold);
-            for (int i = 0; i < Game.Visible; i++)
+            bool discardAvailable = e.BankDiscards > 0 && g.Dealt != null && g.Pending == null &&
+                Ui.FlipAnimation == null && !Ui.Holding && g.Mulligan == null;
+            if (!discardAvailable) Ui.BankDiscardMode = false;
+            bool picking = discardAvailable && Ui.BankDiscardMode;
+            bool bankSelectable = !picking && g.Dealt != null && g.Pending == null &&
+                Ui.FlipAnimation == null && !Ui.Holding && g.Mulligan == null;
+            if (discardAvailable)
+                Button(picking ? "DISCARD MODE: ON" : "DISCARD MODE: OFF", 84, 205, 214, 24,
+                    picking ? C.Orange : C.PanelLight, () => A.ToggleBankDiscardMode());
+            else if (bankSelectable) Text("CLICK A COIN TO PLAY IT", 84, 208, Ui.F16, C.Muted);
+            if (picking) Text("CLICK A COIN TO DISCARD IT", 84, 630, Ui.F16, C.Orange);
+            int rowStart = discardAvailable ? 236 : 226;
+            for (int i = 0; i < Game.DeckMax; i++)
             {
-                float x = 83, y = 236 + i * 112;
+                float x = 83, y = rowStart + i * (discardAvailable ? 34 : 36);
                 var owned = i < remaining.Count ? remaining[i] : null; // flipped and discarded coins drop off the list
                 bool current = owned != null && g.Dealt != null && owned.Uid == g.Dealt.Uid;
                 bool marked = owned != null && g.Mulligan != null && Ui.Marked.Contains(owned.Uid); // marking only exists in the opening hand
-                Box(x, y, 214, 84, marked ? C.Marked : owned != null ? C.Card : C.SlotDk);
-                Outline(x, y, 214, 84, marked ? C.Red : current ? C.Gold : owned != null ? C.Line : C.Ink);
+                bool discardable = owned != null && i < Game.Visible;
+                Box(x, y, 214, 32, marked ? C.Marked : owned != null ? C.Card : C.SlotDk);
+                Outline(x, y, 214, 32, picking && discardable ? C.Orange : marked ? C.Red : current ? C.Gold : owned != null ? C.Line : C.Ink);
                 if (owned != null)
                 {
-                    float tabX = x + 130;
-                    if (marked) Tab(tabX, y - 9, C.Red, "DISCARD");
-                    if (current && !marked) Tab(tabX, y - 9, C.Gold, "CURRENT"); // tab on the card's top edge
-                    CoinImage(owned.Id, x + 8, y + 10, 64);
-                    Text(Lang.Upper(Lang.CoinName(owned.Id)), x + 80, y + 16, Ui.F20, C.Face);
-                    Text(L("%d%% HEADS", Pct(Game.Probability(g, owned))), x + 80, y + 46, Ui.F16, C.Gold);
+                    CoinImage(owned.Id, x + 3, y + 2, 28);
+                    Text(Lang.Upper(Lang.CoinName(owned.Id)), x + 39, y + 8, Ui.F16,
+                        picking && !discardable ? C.Muted : current ? C.Gold : C.Face);
+                    Text(L("%d%% H", Pct(Game.Probability(g, owned))), x + 124, y + 8, Ui.F16, C.Gold);
                     int cost = Content.Coins[owned.Id].EnergyCost;
-                    if (cost > 0) Text("E" + cost, x + 188, y + 60, Ui.F16, C.Orange);
+                    if (cost > 0) Text("E" + cost, x + 180, y + 8, Ui.F16, C.Orange);
                     int uid=owned.Uid;
-                    if(g.Mulligan==null) AddButton(x,y,214,84,()=> { if(e.BankDiscards>0) Game.DiscardBank(g,uid); else Game.Select(g,uid); },"BANK COIN");
+                    if (picking && discardable) AddButton(x,y,214,32,()=>A.DiscardBank(uid),"BANK DISCARD");
+                    else if (bankSelectable && !current) AddButton(x,y,214,32,()=>A.CoinAction(owned),"BANK COIN");
                 }
-                else Centered("EMPTY SLOT", x, y + 34, 214, Ui.F16, C.Muted);
+                else if (i < g.Coins.Count) Centered("EMPTY", x, y + 7, 214, Ui.F16, C.Muted);
             }
 
             if(e.Modifier!=null&&Game.Modifiers.TryGetValue(e.Modifier,out var modifier))
                 Text(modifier.Name.ToUpper()+": "+modifier.Description,330,151,Ui.F16,C.Orange);
-            Text(L("PILE %d   OUT %d   DECK %d/%d", e.Pile.Count, e.Discards, g.Coins.Count, g.Slots), 84, 590, Ui.F16, C.Muted);
+            Text(L("BANK %d   OUT %d   DECK %d/%d", Game.CoinsLeft(g), e.Discards, g.Coins.Count, g.Slots), 84, 590, Ui.F16, C.Muted);
 
             // active buffs ("next N coins ...") so they are never invisible
             for (int i = 0; i < e.Buffs.Count; i++)

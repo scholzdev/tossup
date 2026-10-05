@@ -54,6 +54,7 @@ namespace Tossup.UI
             if (game == null) { DeleteRun(); return false; }
             game.Paused = false;
             Ui.Game = game;
+            Ui.BankDiscardMode = false;
             Ui.SelectedCharacter = game.CharacterId;
             Ui.EncounterReveal = null;
             Ui.FlipAnimation = null;
@@ -172,6 +173,7 @@ namespace Tossup.UI
             Ui.Profile = Tossup.Profile.New();
             Ui.Profile.Options = options;
             Ui.Game = null;
+            Ui.BankDiscardMode = false;
             Ui.SandboxConfig = null;
             DeleteRun();
             Ui.SetDraft = null;
@@ -318,6 +320,7 @@ namespace Tossup.UI
             if(!Tossup.Profile.CharacterUnlocked(Ui.Profile,Ui.SelectedCharacter))return;
             Ui.Game = Game.New(seed ?? p.UnixTime + Math.Floor(p.Time * 1000000), Ui.SelectedCharacter,
                 Tossup.Profile.UnlockedList(Ui.Profile, Ui.SelectedCharacter), Loadout(), true, Stake());
+            Ui.BankDiscardMode = false;
             Ui.FlipAnimation = null;
             Ui.ResolveTimer = 0;
             Ui.Holding = false;
@@ -335,6 +338,7 @@ namespace Tossup.UI
             var game = Game.NewSandbox(config);
             Ui.SandboxConfig = config;
             Ui.Game = game;
+            Ui.BankDiscardMode = false;
             Ui.SelectedCharacter = Ui.SetsCharacter = game.CharacterId;
             Ui.Tutorial = null;
             Ui.EncounterReveal = null;
@@ -361,7 +365,22 @@ namespace Tossup.UI
         public static void CoinAction(CoinInst item)
         {
             Ui.Notice = "";
+            Ui.BankDiscardMode = false;
             Game.Select(Ui.Game, item.Uid);
+        }
+
+        public static void DiscardBank(int uid)
+        {
+            Game.DiscardBank(Ui.Game, uid);
+            Ui.BankDiscardMode = false;
+        }
+
+        public static bool ToggleBankDiscardMode()
+        {
+            var game = Ui.Game;
+            if (game == null || game.Encounter == null || game.Encounter.BankDiscards < 1) return false;
+            Ui.BankDiscardMode = !Ui.BankDiscardMode;
+            return true;
         }
 
         // Leave the level for the shop; only possible once the quota is met.

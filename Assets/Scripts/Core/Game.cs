@@ -267,7 +267,12 @@ namespace Tossup
                         m.Hand.RemoveAt(index);
                         e.Discarded.Add(uid);
                         e.Discards++;
-                        Log(game, CoinName(GetCoin(game, uid)) + " #" + uid + " discarded from the opening hand.");
+                        var inst = GetCoin(game, uid);
+                        Log(game, CoinName(inst) + " #" + uid + " discarded from the opening hand.");
+                        Hooks.Bind(game, inst);
+                        Signal.Emit("coin_discard", new GameEvent { Game = game, Inst = inst });
+                        Hooks.Unbind();
+                        Hooks.Grow(inst, "discard");
                         count++;
                         break;
                     }
@@ -494,7 +499,11 @@ namespace Tossup
                 TriggerRunHook(game, "discard");
             }
             if (seen.Contains(front)) Deal(game);
-            else Hooks.Bind(game, GetCoin(game, front)); // the dealt coin stays dealt; restore its hooks
+            else
+            {
+                Refill(game);
+                Hooks.Bind(game, GetCoin(game, front)); // the dealt coin stays dealt; restore its hooks
+            }
             return targets.Count;
         }
 

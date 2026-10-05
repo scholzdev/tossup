@@ -16,11 +16,53 @@ static class FeatureParityTests
         TutorialFlow();
         RuntimeModesAndSandbox();
         TitleAndEncounterScreens();
+        DiscardParity();
         EncounterRevealFlow();
         int seeds=1000;
         if(int.TryParse(Environment.GetEnvironmentVariable("TOSSUP_SEED_SWEEP"),out var requested))seeds=Math.Max(1,requested);
         SeedSweep(1, seeds);
         Console.WriteLine("features: saves, tutorial, modes, reveal and "+seeds+" full-run seed sweep passed");
+    }
+
+    static void DiscardParity()
+    {
+        RuntimeMode.Configure(false, false);
+        var opening = Game.New(77101, "trader", null, new List<string> { "loaded", "normal", "normal" }, true);
+        int fuseUid = opening.Mulligan.Hand[0];
+        var fuse = Game.GetCoin(opening, fuseUid);
+        fuse.Id = "fuse";
+        Check(Game.MulliganDiscard(opening, new List<int> { fuseUid }) == 1, "opening-hand discard removes a marked coin");
+        Check(fuse.Charge == 6, "opening-hand discard fires the coin discard hook and growth");
+
+        for (int i = 0; i < 2; i++)
+        {
+            int uid = opening.NextUid++;
+            opening.Coins.Add(new CoinInst { Uid = uid, Id = "normal" });
+            opening.Encounter.Pile.Add(uid);
+        }
+        Game.MulliganDone(opening);
+        Ui.Game = opening;
+        Ui.FlipAnimation = null;
+        Ui.Holding = false;
+        opening.Encounter.BankDiscards = 1;
+        AppCore.Draw();
+        Check(Ui.Buttons.Exists(b => b.Label == "DISCARD MODE: OFF"), "Crystal Ball exposes an explicit discard-mode toggle");
+        Check(Ui.Buttons.Exists(b => b.Label == "BANK COIN"), "bank coins remain selectable while a discard is armed");
+        var toggle = Ui.Buttons.Find(b => b.Label == "DISCARD MODE: OFF");
+        toggle.Action();
+        AppCore.Draw();
+        Check(Ui.Buttons.Exists(b => b.Label == "DISCARD MODE: ON"), "discard mode can be enabled");
+        Check(Ui.Buttons.Exists(b => b.Label == "BANK DISCARD"), "discard mode exposes a bank coin action");
+        var discard = Ui.Buttons.Find(b => b.Label == "BANK DISCARD" && Math.Abs(b.Y - 270) < .01f);
+        int discardUid = opening.Encounter.Queue[1];
+        discard.Action();
+        Check(opening.Encounter.BankDiscards == 0 && opening.Encounter.Discards == 2,
+            "bank discard spends the Crystal Ball charge (charges=" + opening.Encounter.BankDiscards + ", discards=" + opening.Encounter.Discards + ", phase=" + opening.Phase + ", target=" + discardUid + ")");
+        Check(opening.Encounter.Queue.Count == Game.Visible, "discarding a non-front coin refills the visible bank");
+        Check(opening.Dealt != null && opening.Dealt.Uid == opening.Encounter.Queue[0] && !opening.Encounter.Queue.Contains(discardUid),
+            "discarding a later bank coin keeps the dealt coin active");
+        Check(!Ui.BankDiscardMode, "bank discard exits discard mode");
+        Ui.Game = null;
     }
 
     static void SavedRunRoundTrip()
