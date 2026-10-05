@@ -13,27 +13,33 @@ namespace Tossup
     }
 
     // The rules. Pure C# (no UnityEngine), so the whole game can be simulated and tested outside Unity.
-    public static class Game
+    public static partial class Game
     {
         public const int Visible = 3; // coins shown in the bank; the first one is the coin you are about to play
         public const int MulliganSize = 5; // coins drawn at the start of a level, from which you may discard
-        public const int StartMax = 10; // coins in a coin set you can take into a run
+        public const int StartMax = 5; // starting deck slots; more can be bought in shops
         public const int DeckMax = 10; // the shop cannot grow the deck past this: buying is refused when it is full
-        public const int ExchangeBase = 10; // gold for the first exchange of a level (empty stack): played coins come back
+        public const int SlotCost = 5, SlotStep = 2;
+        public const int ExchangeBase = 7; // gold for the first exchange of a level (empty stack): played coins come back
         public const int ExchangeStep = 5; // every further exchange in the same level costs this much more
         public const int ExchangeGain = 3; // played coins that come back into the stack in exchange
+        public const int ExchangeMax = 3;
         public const double ComboStep = 0.25, ComboCap = 3; // combo: x1 + 0.25 per extra same result in a row, up to x3
         public const int ReturnCap = 3; // "extra draw" effects (a coin returning to the pile) per level
-        public const int StartGold = 25;
+        public const int StartGold = 5;
         public const double SurplusRate = .5; // gold per point scored beyond the quota (rounded down in total)
         public const int MaxCopies = 3; // copies of one coin in a set; the plain Normal coin is exempt (up to the set size)
 
         public static readonly List<StageDef> Route = new List<StageDef>
         {
-            new StageDef { Name = "Opening", PerCoin = 0.6, Payout = 25 },
-            new StageDef { Name = "Second Chance", PerCoin = 0.9, Payout = 30 },
-            new StageDef { Name = "High Stakes", PerCoin = 1.6, Payout = 35 },
-            new StageDef { Name = "The House", PerCoin = 3.0, Boss = true },
+            new StageDef { Name = "Opening", PerCoin = 0.7, Payout = 25 },
+            new StageDef { Name = "Second Chance", PerCoin = 1.4, Payout = 30 },
+            new StageDef { Name = "High Stakes", PerCoin = 2.5, Payout = 20 },
+            new StageDef { Name = "Rising Tide", PerCoin = 3.2, Payout = 35 },
+            new StageDef { Name = "Double Down", PerCoin = 3.9, Payout = 40 },
+            new StageDef { Name = "Last Call", PerCoin = 4.5, Payout = 45 },
+            new StageDef { Name = "Final Table", PerCoin = 5.2, Payout = 50 },
+            new StageDef { Name = "The House", PerCoin = 6.0, Boss = true },
         };
 
         public static void Log(GameState game, string message) => game.Log.Add(message);
@@ -134,8 +140,13 @@ namespace Tossup
                 foreach (var buff in e.Buffs)
                     if (buff.Kind == "odds" && !buff.Fresh) boost += buff.Amount;
             }
-            double p = Content.Coins[item.Id].Probability + item.Bonus + bonus + magnet + boost;
-            return Math.Max(0, Math.Min(1, Hooks.Odds(game, item, p)));
+            var def = Content.Coins[item.Id];
+            double upgrade = item.Upgrade != null && def.Upgrades.TryGetValue(item.Upgrade, out var up) ? up.HeadsProbability : 0;
+            double fortune = HasType(item, "fortune") ? game.FortuneBonus : 0;
+            double p = def.Probability + item.Bonus + bonus + magnet + boost + upgrade + fortune;
+            p = Hooks.Odds(game, item, p);
+            if (e != null && e.Contract != null && Contracts.TryGetValue(e.Contract.Id, out var contract)) p -= contract.HeadsPenalty;
+            return Math.Max(0, Math.Min(1 - def.TieProbability, p));
         }
 
         // Top the bank up to Visible coins from the draw pile. The pile is never reshuffled: a level lasts
@@ -169,13 +180,14 @@ namespace Tossup
 
         // A level's quota scales with the size of your deck, because a level lasts exactly as long as your
         // stack: a bigger deck means more flips.
-        public static double QuotaFor(int level, int coinCount) =>
-            Math.Max(1, Math.Floor(Stage(level).PerCoin * coinCount + .5));
+        public static double QuotaFor(int level, int coinCount, double mult = 1) =>
+            Math.Max(1, Math.Floor(Stage(level).PerCoin * coinCount * mult + .5));
 
         static void StartEncounter(GameState game)
         {
             var stage = Stage(game.EncounterIndex);
-            double quota = QuotaFor(game.EncounterIndex, game.Coins.Count);
+            double quota = DeckQuota(game) + game.NextLevelQuotaBonus;
+            game.NextLevelQuotaBonus = 0;
             game.Encounter = null; // discards from the previous level must not carry over
             var pile = ShuffleDeck(game);
             game.Encounter = new Encounter
@@ -184,6 +196,8 @@ namespace Tossup
                 Endless = stage.Endless, Payout = stage.Payout, ComboStep = ComboStep, ComboCap = ComboCap, Pile = pile,
             };
             game.Player.Energy = game.Player.MaxEnergy;
+            ApplyModifier(game);
+            TriggerRunHook(game, "encounter_start");
             game.Pending = null;
             game.LastResult = null;
             game.Phase = Phase.Encounter;
@@ -204,10 +218,12 @@ namespace Tossup
         }
 
         // Deal the coin at the front of the bank; the player may discard it or flip it.
-        static void Deal(GameState game)
+        static void Deal(GameState game, int? preferredUid = null)
         {
             var e = game.Encounter;
             Refill(game);
+            if (preferredUid.HasValue && !e.Queue.Contains(preferredUid.Value) && e.Pile.Remove(preferredUid.Value))
+                e.Queue.Add(preferredUid.Value);
             if (e.Queue.Count == 0)
             {
                 game.Dealt = null;
@@ -215,7 +231,7 @@ namespace Tossup
                 StackEmpty(game);
                 return;
             }
-            int uid = e.Queue[0];
+            int uid = preferredUid.HasValue && e.Queue.Contains(preferredUid.Value) ? preferredUid.Value : e.Queue[0];
             var inst = GetCoin(game, uid);
             game.Dealt = new FlipState { Uid = uid };
             game.SelectedUid = uid;
@@ -224,6 +240,7 @@ namespace Tossup
             Hooks.Bind(game, inst);
             Signal.Emit("coin_deal", new GameEvent { Game = game, Inst = inst });
             game.Dealt.Probability = Probability(game, inst); // on_deal may have changed the odds
+            game.Dealt.TieProbability = Content.Coins[inst.Id].TieProbability;
         }
 
         // Discard coins from the opening hand (free). They stay out of play for the level, and at least
@@ -267,7 +284,7 @@ namespace Tossup
         // StartMax, from the character's pool plus unlocked coins); defaults to the character's deck.
         // manualMulligan: the UI sets this and calls MulliganDone itself.
         public static GameState New(double seed, string characterId = null, List<string> unlocked = null,
-            List<string> loadout = null, bool manualMulligan = false)
+            List<string> loadout = null, bool manualMulligan = false, int stake = 1)
         {
             characterId = characterId ?? "blade";
             if (!Content.Characters.ContainsKey(characterId)) throw new GameRuleException("unknown character: " + characterId);
@@ -276,9 +293,10 @@ namespace Tossup
             {
                 Seed = normalized, RngState = normalized, CharacterId = characterId, Phase = Phase.Encounter,
                 Player = new Player { Gold = StartGold, Energy = 3, MaxEnergy = 3 },
-                Unlocked = unlocked ?? new List<string>(), EncounterIndex = 1,
+                Unlocked = unlocked ?? new List<string>(), EncounterIndex = 1, Slots = StartMax, Stake = Math.Max(1, Math.Min(8, stake)),
             };
             var def = Content.Characters[characterId];
+            game.Player.Gold = Rule(game, "start_gold", StartGold);
             game.ManualMulligan = manualMulligan;
             if (loadout != null)
             {
@@ -289,9 +307,8 @@ namespace Tossup
                 foreach (var id in loadout)
                 {
                     if (!allowed.Contains(id)) throw new GameRuleException("coin not available to this character: " + id);
-                    copies.TryGetValue(id, out int n);
-                    copies[id] = n + 1;
-                    if (id != "normal" && copies[id] > MaxCopies) throw new GameRuleException("too many copies of " + id);
+                    string rarity=Content.Coins[id].Rarity;copies.TryGetValue(rarity, out int n);copies[rarity] = n + 1;
+                    if (copies[rarity] > Profile.RarityLimit(id)) throw new GameRuleException("too many " + rarity + " coins");
                 }
             }
             var ids = loadout ?? def.Deck ?? new List<string> { def.Starter };
@@ -300,7 +317,10 @@ namespace Tossup
             Log(game, "Seed: " + normalized);
             Relics.Bind(game);
             Items.Clear();
+            game.RunEncounterId = EncounterOrder[Rng.Int(game, 1, EncounterOrder.Count) - 1];
+            TriggerRunHook(game, "run_start");
             StartEncounter(game);
+            Log(game, "Run Encounter: " + Encounters[game.RunEncounterId].Name + ".");
             return game;
         }
 
@@ -308,6 +328,9 @@ namespace Tossup
         {
             if (GetCoin(game, uid) == null) return false;
             game.SelectedUid = uid;
+            if (game.Phase == Phase.Encounter && game.Pending == null && game.Mulligan == null && game.Encounter != null &&
+                (game.Encounter.Queue.Contains(uid) || game.Encounter.Pile.Contains(uid)) && (game.Dealt == null || game.Dealt.Uid != uid))
+                Deal(game, uid);
             return true;
         }
 
@@ -322,10 +345,13 @@ namespace Tossup
             Signal.Emit("coin_outcome", outcome);
             string final = outcome.Result;
             flip.Altered = final != before ? "RELIC" : null; // shown in the UI so a changed side is never a mystery
-            if ((e.Boss || e.Inverts) && nth % 5 == 0)
+            int interval = (int)Rule(game, "boss_every", 5);
+            bool stageInvert = final != Side.Tie && (e.Boss || e.Inverts) && nth % interval == 0;
+            bool clockInvert = final != Side.Tie && game.RunEncounterId == "house_clock" && nth % 3 == 0 && !stageInvert;
+            if (stageInvert || clockInvert)
             {
                 final = Side.Other(final);
-                flip.Altered = (flip.Altered != null ? flip.Altered + " + " : "") + "THE HOUSE";
+                flip.Altered = (flip.Altered != null ? flip.Altered + " + " : "") + (clockInvert ? "THE HOUSE'S CLOCK" : "THE HOUSE");
             }
             flip.Result = final;
         }
@@ -333,9 +359,9 @@ namespace Tossup
         // Buffs: "the next N coins ..." effects. kind: "mult" (x amount on score and gold), "odds" (+amount
         // Heads), "swap" (use the other side's effects), "heads" (guaranteed Heads). A buff made while a coin
         // resolves is "fresh" and starts with the following coin; every resolved coin uses up one coin.
-        public static void AddBuff(GameState game, string kind, double amount, int? coins)
+        public static void AddBuff(GameState game, string kind, double amount, int? coins, bool immediate = false)
         {
-            game.Encounter.Buffs.Add(new Buff { Kind = kind, Amount = amount, Left = coins ?? 1, Fresh = true });
+            game.Encounter.Buffs.Add(new Buff { Kind = kind, Amount = amount, Left = coins ?? 1, Fresh = !immediate });
         }
 
         static Buff BuffActive(GameState game, string kind)
@@ -345,13 +371,13 @@ namespace Tossup
             return null;
         }
 
-        static void TickBuffs(GameState game)
+        static void TickBuffs(GameState game, CoinInst item)
         {
             var kept = new List<Buff>();
             foreach (var buff in game.Encounter.Buffs)
             {
                 if (buff.Fresh) buff.Fresh = false;
-                else buff.Left--;
+                else if (!IsTypeBuff(buff.Kind) || HasType(item, buff.Kind)) buff.Left--;
                 if (buff.Left > 0) kept.Add(buff);
             }
             game.Encounter.Buffs = kept;
@@ -360,7 +386,8 @@ namespace Tossup
         // Roll the dice for a pending flip, then let on_flip hooks change the outcome.
         static void Roll(GameState game, CoinInst item, FlipState flip)
         {
-            flip.Raw = Rng.Random(game) < flip.Probability ? Side.Heads : Side.Tails;
+            double value = Rng.Random(game);
+            flip.Raw = value < flip.Probability ? Side.Heads : value < flip.Probability + flip.TieProbability ? Side.Tie : Side.Tails;
             flip.Result = flip.Raw;
             flip.Forced = false;
             flip.Altered = null;
@@ -374,12 +401,12 @@ namespace Tossup
             if (game.Phase != Phase.Encounter || game.Pending != null || game.Dealt == null) return false;
             if (!CanFlip(game)) return false;
             int uid = game.Dealt.Uid;
-            double probability = game.Dealt.Probability;
+            double probability = game.Dealt.Probability, tieProbability = game.Dealt.TieProbability;
             var item = GetCoin(game, uid);
             game.Player.Energy -= Math.Min(FlipCost(game, uid), game.Player.Energy);
-            game.Pending = new FlipState { Uid = uid, Probability = probability };
+            game.Pending = new FlipState { Uid = uid, Probability = probability, TieProbability = tieProbability };
             game.Dealt = null;
-            game.Encounter.Queue.RemoveAt(0); // a flipped coin leaves the bank at once
+            game.Encounter.Queue.Remove(uid); // the selected coin leaves the bank at once
             game.Encounter.Played.Add(uid);
             Refill(game);
             Roll(game, item, game.Pending);
@@ -407,6 +434,7 @@ namespace Tossup
             var e = game.Encounter;
             if (game.Phase != Phase.Encounter || game.Pending != null || game.Mulligan != null || game.Dealt == null) return 0;
             var inBank = new HashSet<int>(e.Queue);
+            foreach (var uid in e.Pile) inBank.Add(uid);
             var targets = new List<int>();
             var seen = new HashSet<int>();
             foreach (int uid in uids ?? new List<int> { game.Dealt.Uid })
@@ -416,7 +444,7 @@ namespace Tossup
             Hooks.Unbind();
             foreach (int uid in targets)
             {
-                e.Queue.Remove(uid);
+                e.Queue.Remove(uid); e.Pile.Remove(uid); e.DealHooksFired.Remove(uid);
                 e.Discarded.Add(uid);
                 e.Discards++;
                 var inst = GetCoin(game, uid);
@@ -425,6 +453,7 @@ namespace Tossup
                 Signal.Emit("coin_discard", new GameEvent { Game = game, Inst = inst });
                 Hooks.Unbind();
                 Hooks.Grow(inst, "discard");
+                TriggerRunHook(game, "discard");
             }
             if (seen.Contains(front)) Deal(game);
             else Hooks.Bind(game, GetCoin(game, front)); // the dealt coin stays dealt; restore its hooks
@@ -461,8 +490,11 @@ namespace Tossup
             switch (effect.Type)
             {
                 case "gold":
-                    p.Gold += effect.Amount;
-                    return "+" + N(effect.Amount) + " gold";
+                    double gold = effect.Amount * e.GoldMult;
+                    p.Gold += gold;
+                    return "+" + N(gold) + " gold";
+                case "gold_loss":
+                    double lost = Math.Min(p.Gold, effect.Amount); p.Gold -= lost; return "-" + N(lost) + " gold";
                 case "score":
                     e.Quota = Math.Max(0, e.Quota - effect.Amount); // quota is what is still missing
                     e.Scored += effect.Amount; // points earned this level (may overshoot on the last flip)
@@ -470,6 +502,18 @@ namespace Tossup
                 case "energy":
                     p.Energy += effect.Amount;
                     return "+" + N(effect.Amount) + " energy";
+                case "all_odds":
+                    e.Magnet += effect.Amount; return "all coins +" + N(Math.Floor(effect.Amount * 100 + .5)) + "% Heads";
+                case "fortune_odds":
+                    if (item.CompostLevel == game.EncounterIndex) return "Fortune already fertilized this level";
+                    item.CompostLevel = game.EncounterIndex; game.FortuneBonus = Math.Min(.55, game.FortuneBonus + effect.Amount);
+                    return "Fortune +" + N(Math.Floor(game.FortuneBonus * 100 + .5)) + "% Heads for the run";
+                case "type_buff":
+                    AddBuff(game, effect.Kind, 0, effect.Coins); return "next " + (effect.Coins ?? 1) + " " + effect.Kind + " coins";
+                case "bank_discard":
+                    e.BankDiscards += (int)effect.Amount; return "discard one";
+                case "extra_exchange":
+                    e.ExtraExchanges += (int)effect.Amount; return "+" + N(effect.Amount) + " exchange";
                 case "amplify":
                     // every active buff lasts one coin longer and gets stronger (x2 -> x3, +20% -> +40% Heads)
                     foreach (var buff in e.Buffs)
@@ -526,6 +570,13 @@ namespace Tossup
                         }
                         return back > 0 ? back + " coin back in the pile" : "no coin could return";
                     }
+                case "fetch_best":
+                    if (item.FetchedLevel == game.EncounterIndex) return "already fetched this level";
+                    int bestUid = 0; double bestScore = 0;
+                    foreach (int uid in e.Played) if (uid != item.Uid && e.BestScores.TryGetValue(uid, out var score) && score > bestScore) { bestUid = uid; bestScore = score; }
+                    if (bestUid == 0 || e.Returned >= ReturnCap || !e.Played.Remove(bestUid)) return "no scored coin to fetch";
+                    e.Pile.Insert(Rng.Int(game, 1, e.Pile.Count + 1) - 1, bestUid); e.Returned++; item.FetchedLevel = game.EncounterIndex;
+                    return CoinName(GetCoin(game, bestUid)) + " fetched back into the pile";
                 case "probability":
                     e.Bonus.TryGetValue(item.Uid, out double bonus);
                     e.Bonus[item.Uid] = bonus + effect.Amount;
@@ -538,8 +589,9 @@ namespace Tossup
         static void EnterShop(GameState game)
         {
             game.Phase = Phase.Shop;
-            game.RerollCost = 4;
-            game.ShopOffers = ShopStock(game);
+            game.RerollCost = game.Shop.RefreshCost;
+            game.RerollStep = 2;
+            SetShopStock(game);
             game.ShopRelic = null;
             var owned = new HashSet<string>(game.Relics);
             var unowned = new List<string>();
@@ -558,12 +610,14 @@ namespace Tossup
         {
             var e = game.Encounter;
             if (game.Phase != Phase.Encounter || !e.Cleared || game.Pending != null || game.Mulligan != null) return false;
+            if (e.ComboPot > 0) BankComboPot(game, false);
             Hooks.Unbind();
             game.Dealt = null;
             Items.Clear();
             Signal.Emit("encounter_end", new GameEvent { Game = game, Won = true });
             if (e.Boss) game.Phase = Phase.Victory;
             else EnterShop(game);
+            if (e.Contract?.Result == "COMPLETE" && Contracts[e.Contract.Id].RewardAction != null) Contracts[e.Contract.Id].RewardAction(game, e);
             return true;
         }
 
@@ -577,24 +631,54 @@ namespace Tossup
             e.Flips++;
             string final = result.Result; // already decided (relics, boss inversion) when the coin was flipped
             result.Final = final;
-            e.Streak = final == Side.Heads ? e.Streak + 1 : 0;
+            if (e.SideBetSide != null)
+            {
+                if (final == Side.Tie && game.RunEncounterId != "high_roller_table") { game.Player.Gold += e.SideBetCost; Log(game, "Side bet pushed; stake returned."); }
+                else if (final == e.SideBetSide) { game.Player.Gold += e.SideBetPayout; Log(game, "Side bet won: +" + N(e.SideBetPayout) + " gold."); }
+                else { Log(game, "Side bet lost."); if (HasAugment(game, "hedge_fund")) game.NextLevelQuotaBonus += 2; }
+                e.SideBetSide = null;
+            }
+            if (final == Side.Heads) e.Streak++;
+            else if (final == Side.Tails) e.Streak = 0; // a Tie holds the streak
             // combo: consecutive identical results. A shield (Anchor) lets one different result pass without breaking it.
-            if (e.ComboSide == final) e.ComboLen += 1;
-            else if (e.ComboSide != null && e.Shield > 0) e.Shield -= 1;
-            else { e.ComboSide = final; e.ComboLen = 1; }
+            string previousComboSide = e.ComboSide;
+            bool tieBreaks = e.Contract?.Id == "hot_streak" || game.RunEncounterId == "dead_heat";
+            if (final == Side.Tie && e.ComboSide != null && tieBreaks) { e.ComboSide = null; e.ComboLen = 0; }
+            else if (final != Side.Tie)
+            {
+                if (e.ComboSide == final) e.ComboLen += 1;
+                else if (e.ComboSide != null && e.Shield > 0) e.Shield -= 1;
+                else { e.ComboSide = final; e.ComboLen = 1; }
+            }
+            e.BestComboLen = Math.Max(e.BestComboLen, e.ComboLen);
+            bool comboBroke = previousComboSide != null && e.ComboSide != previousComboSide;
+            if (comboBroke) e.ComboPot = 0;
             // hooks get a private copy of the effect list so they can edit it without touching the def
             var res = new Res { Result = final, Raw = result.Raw };
             bool swap = BuffActive(game, "swap") != null;
-            var sideEffects = (swap ? final != Side.Heads : final == Side.Heads) ? def.Heads : def.Tails;
+            var sideEffects = final == Side.Tie ? TieEffects(item.Id) : (swap ? final != Side.Heads : final == Side.Heads) ? def.Heads : def.Tails;
             foreach (var effect in sideEffects) res.Effects.Add(effect.Copy());
+            if (final == Side.Heads && item.Upgrade != null && def.Upgrades.TryGetValue(item.Upgrade, out var upgrade) && upgrade.HeadsScore != 0)
+                res.Effects.Add(new Effect("score", upgrade.HeadsScore));
             Signal.Emit("coin_resolve", new GameEvent { Game = game, Inst = item, Res = res });
+            ApplyTypeBuffs(game, item, final, comboBroke, res.Effects);
+            if (final == Side.Heads && game.AugmentData.TryGetValue("type_specialist", out var specialist) && HasType(item, specialist) && e.TypeSpecialistPaid.Add(item.Uid))
+                res.Effects.Add(new Effect("score", 1));
+            if(final==Side.Tails)e.Tails++;
             result.BaseEffects = new List<Effect>(); // what this coin did before multipliers (True Echo repeats it)
             foreach (var effect in res.Effects) result.BaseEffects.Add(effect.Copy());
             double multiplier = 1;
+            string messagesAllIn = null;
             foreach (var buff in e.Buffs)
                 if (buff.Kind == "mult" && !buff.Fresh) multiplier *= buff.Amount;
             double combo = Math.Min(e.ComboCap, 1 + e.ComboStep * (Math.Max(e.ComboLen, 1) - 1));
+            if (e.PushUsed && HasAugment(game, "all_in"))
+            {
+                if (final == previousComboSide && !e.AllInPaid) { combo *= 2; e.AllInPaid = true; messagesAllIn = "All-In push succeeded: combo payout doubled."; }
+                else { double pushLoss=Math.Min(2,game.Player.Gold);game.Player.Gold-=pushLoss;messagesAllIn="All-In push failed: -"+N(pushLoss)+" gold."; }
+            }
             if (res.CashOut) combo *= combo; // Cash Out spends the combo twice (then resets it)
+            if (e.Contract?.Id == "bank_once") combo = Math.Min(combo, 2);
             result.Combo = new Combo { Len = e.ComboLen, Mult = combo, Side = e.ComboSide };
             multiplier *= combo;
             if (multiplier != 1) // buffs ("next coins pay double") and the combo multiply points and gold
@@ -602,19 +686,29 @@ namespace Tossup
                 foreach (var effect in res.Effects)
                     if (effect.Type == "score" || effect.Type == "gold") effect.Amount = Math.Floor(effect.Amount * multiplier + .5);
             }
-            if (res.CashOut) { e.ComboSide = null; e.ComboLen = 0; }
             var messages = new List<string>();
+            if (messagesAllIn != null) messages.Add(messagesAllIn);
             double scoredBefore = e.Scored, quotaTotalBefore = e.MaxQuota;
+            int greed = HasType(item, "greed") ? ActiveTypeBuffs(e, "greed") : 0;
             for (int i = 0; i < res.Effects.Count; i++)
             {
                 var effect = res.Effects[i];
+                double goldBefore = game.Player.Gold;
                 string text = ApplyEffect(game, item, effect);
                 messages.Add(text);
                 Signal.Emit("effect_applied", new GameEvent { Game = game, Inst = item, Effect = effect, Text = text });
+                double gainedGold = Math.Max(0, game.Player.Gold - goldBefore);
+                if (greed > 0 && gainedGold > 0) { double extra = gainedGold * (Math.Pow(2, greed) - 1); game.Player.Gold += extra; messages.Add("+" + N(extra) + " greed gold"); }
             }
-            TickBuffs(game);
+            if (final == Side.Tails && e.Contract?.Id == "clean_run") messages.Add("contract: " + ApplyEffect(game, item, new Effect("penalty", 2)));
+            if (greed > 0 && final == Side.Tails) { double loss = Math.Min(game.Player.Gold, 3 * greed); game.Player.Gold -= loss; messages.Add("-" + N(loss) + " greed gold"); }
+            e.ComboPot = ComboPot(e.ComboLen);
+            e.PushUsed = false;
+            if (res.CashOut) { int banked = BankComboPot(game); if (banked > 0) messages.Add("banked " + banked + " combo gold"); }
+            TickBuffs(game, item);
             result.Gained = e.Scored - scoredBefore; // for the UI: what this flip was worth
             result.Penalty = e.MaxQuota - quotaTotalBefore;
+            e.BestScores.TryGetValue(item.Uid, out var previousBest); e.BestScores[item.Uid] = Math.Max(previousBest, result.Gained.Value);
             Signal.Emit("coin_resolved", new GameEvent { Game = game, Inst = item, Res = res });
             Hooks.Unbind();
             Hooks.Grow(item, "flip");
@@ -627,6 +721,7 @@ namespace Tossup
                 e.Cleared = true;
                 game.Cleared++;
                 Log(game, "Quota met! " + e.Name + " cleared.");
+                SettleContract(game);
                 if (!e.Boss)
                 {
                     game.Player.Gold += e.Payout ?? 0;
@@ -679,6 +774,7 @@ namespace Tossup
         {
             if (game.Phase != Phase.Encounter || game.Pending != null || game.Mulligan != null || game.Dealt != null) return false;
             if (CoinsLeft(game) > 0) return false;
+            if (ExchangesLeft(game) <= 0) return false;
             return game.Player.Gold >= ExchangeCost(game) && Returnable(game).Count >= 1;
         }
 
@@ -722,7 +818,7 @@ namespace Tossup
                 if (!canExchange) EndLevel(game);
             }
             else if (canExchange) game.ExchangeOpen = true;
-            else LoseLevel(game, "out of coins, and not enough gold to exchange.");
+            else LoseLevel(game, ExchangesLeft(game) <= 0 ? "out of coins, and all exchanges are used." : "out of coins, and not enough gold to exchange.");
         }
 
         // Give up instead of exchanging (only while the stack is empty and the quota is unmet).
@@ -744,11 +840,12 @@ namespace Tossup
         public static bool BuyItem(GameState game, int index)
         {
             string id = game.Phase == Phase.Shop && index >= 0 && index < game.ShopItems.Count ? game.ShopItems[index] : null;
-            if (id == null || game.Items.Count >= Items.Max || game.Player.Gold < Content.Items[id].Cost) return false;
+            int cost = id == null ? 0 : Price(game, Content.Items[id].Cost);
+            if (id == null || game.Items.Count >= Items.Max || game.Player.Gold < cost) return false;
             game.ShopItems[index] = null;
-            game.Player.Gold -= Content.Items[id].Cost;
+            game.Player.Gold -= cost;
             game.Items.Add(id);
-            Log(game, "Bought " + Content.Items[id].Name + " for " + Content.Items[id].Cost + " gold.");
+            Log(game, "Bought " + Content.Items[id].Name + " for " + cost + " gold.");
             return true;
         }
 
@@ -758,10 +855,11 @@ namespace Tossup
 
         public static bool BuyRelic(GameState game)
         {
-            if (game.Phase != Phase.Shop || game.ShopRelic == null || game.Player.Gold < RelicCost) return false;
-            game.Player.Gold -= RelicCost;
+            int cost = Price(game, RelicCost);
+            if (game.Phase != Phase.Shop || game.ShopRelic == null || game.Player.Gold < cost) return false;
+            game.Player.Gold -= cost;
             AddRelic(game, game.ShopRelic);
-            Log(game, "Bought relic " + Content.Relics[game.ShopRelic].Name + " for " + RelicCost + " gold.");
+            Log(game, "Bought relic " + Content.Relics[game.ShopRelic].Name + " for " + cost + " gold.");
             game.ShopRelic = null;
             return true;
         }
@@ -771,13 +869,15 @@ namespace Tossup
         public static bool Buy(GameState game, int index)
         {
             string id = game.Phase == Phase.Shop && index >= 0 && index < game.ShopOffers.Count ? game.ShopOffers[index] : null;
-            if (id == null || game.Player.Gold < CoinCost(id)) return false;
-            if (game.Coins.Count >= DeckMax) return false; // a full deck must lose a coin before it can gain one
+            int cost = id == null ? -1 : CoinOfferCost(game, index);
+            if (id == null || game.Player.Gold < cost) return false;
+            if (game.Coins.Count >= game.Slots) return false;
+            string upgrade = index < game.ShopUpgrades.Count ? game.ShopUpgrades[index] : null;
             game.ShopOffers[index] = null;
             game.Purchased.Add(id); // the UI turns purchases of locked coins into permanent unlocks
-            game.Player.Gold -= CoinCost(id);
-            AddToDeck(game, id);
-            Log(game, "Bought " + Content.Coins[id].Name + " for " + CoinCost(id) + " gold.");
+            game.Player.Gold -= cost;
+            var bought = AddToDeck(game, id); bought.Upgrade = upgrade;
+            Log(game, "Bought " + Content.Coins[id].Name + " for " + cost + " gold.");
             return true;
         }
 
@@ -787,8 +887,8 @@ namespace Tossup
             int cost = game.RerollCost;
             if (game.Phase != Phase.Shop || game.Player.Gold < cost) return false;
             game.Player.Gold -= cost;
-            game.RerollCost = cost + 2;
-            game.ShopOffers = ShopStock(game);
+            game.RerollCost = cost + game.RerollStep;
+            SetShopStock(game);
             Log(game, "Shop rerolled for " + cost + " gold.");
             return true;
         }
@@ -848,7 +948,9 @@ namespace Tossup
         public static bool NextEncounter(GameState game)
         {
             if (game.Phase != Phase.Shop || ActiveCount(game) == 0) return false;
-            game.EncounterIndex++;
+            int next = game.EncounterIndex + 1;
+            if (!game.Endless && OfferAugment(game, next)) return true;
+            game.EncounterIndex = next;
             StartEncounter(game);
             return true;
         }

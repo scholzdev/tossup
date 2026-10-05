@@ -11,6 +11,9 @@ namespace Tossup
         public double Probability;
         public int? Cost; // shop price; null means 15
         public int EnergyCost;
+        public double TieProbability;
+        public List<string> CoinTypes = new List<string>();
+        public Dictionary<string, CoinUpgradeDef> Upgrades = new Dictionary<string, CoinUpgradeDef>();
         public List<Effect> Heads = new List<Effect>(), Tails = new List<Effect>();
         public Action<GameState, CoinInst> OnDeal, OnDiscard;
         public Action<GameState, CoinInst, FlipState> OnFlip;
@@ -18,6 +21,13 @@ namespace Tossup
         public Action<GameState, CoinInst, Odds> OnOdds;
         public Action<CoinInst, string> Grow;
         public Action<CoinCtx> Register;
+    }
+
+    public sealed class CoinUpgradeDef
+    {
+        public string Id, Name, Description;
+        public int Cost;
+        public double HeadsScore, HeadsProbability;
     }
 
     // A chip (consumable item). Use returns false to refuse; the item is then kept.
@@ -55,5 +65,42 @@ namespace Tossup
         public string Id, Name, Description, Starter;
         public List<string> Deck, Pool;
         public List<LockedCoin> Locked = new List<LockedCoin>();
+    }
+
+    public sealed class ModifierDef
+    {
+        public string Id, Name, Description;
+        public Action<GameState, Encounter> Apply;
+    }
+
+    public sealed class StakeDef
+    {
+        public string Text, Info;
+        public Dictionary<string, double> Rules = new Dictionary<string, double>();
+    }
+
+    public sealed class ContractDef
+    {
+        public string Id, Name, Description, Drawback, RewardText;
+        public int Reward;
+        public double HeadsPenalty;
+        public Action<GameState, Encounter> Apply;
+        public Func<GameState, Encounter, bool> Complete;
+        public Action<GameState, Encounter> RewardAction;
+    }
+
+    public sealed class RunEncounterDef
+    {
+        public string Id, Name, Description;
+        public Action<GameState, string> Trigger;
+    }
+
+    public sealed class AugmentDef
+    {
+        public string Id, Name, Description, Tier;
+        public Action<GameState, string> Trigger;
+        public Func<GameState, AugmentPending> Choose;
+        public Func<GameState, AugmentPending, List<AugmentChoice>> Choices;
+        public Func<GameState, AugmentPending, string, bool> ApplyChoice;
     }
 }

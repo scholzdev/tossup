@@ -114,11 +114,11 @@ namespace Tossup
                         body = ((char)(int)ToNumber(value)).ToString();
                         break;
                     case 's':
-                        body = ToLuaString(value);
+                        body = PlainString(value);
                         if (precision >= 0 && body.Length > precision) body = body.Substring(0, precision);
                         break;
                     case 'q':
-                        body = Quote(ToLuaString(value));
+                        body = Quote(PlainString(value));
                         break;
                     default:
                         throw new FormatException("invalid option '%" + conv + "' to 'format'");
@@ -154,7 +154,7 @@ namespace Tossup
             return sb.Append('"').ToString();
         }
 
-        public static string ToLuaString(object value)
+        public static string PlainString(object value)
         {
             switch (value)
             {

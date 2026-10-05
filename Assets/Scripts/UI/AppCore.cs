@@ -37,6 +37,8 @@ namespace Tossup.UI
             Ui.CoinImages["back"] = platform.LoadImage("coins/back");
             foreach (var id in Content.ItemOrder) Ui.ItemImages[id] = platform.LoadImage("items/" + id);
             foreach (var id in Content.RelicOrder) Ui.RelicImages[id] = platform.LoadImage("relics/" + id);
+            foreach (var id in Game.AugmentOrder) Ui.AugmentImages[id] = platform.LoadImage("augments/" + (id == "epic_windfall" ? "gold/" : "silver/") + id);
+            foreach (var id in new[] { "house_clock", "dead_heat", "high_roller_table", "thin_market" }) Ui.EncounterImages[id] = platform.LoadImage("encounters/" + id);
             foreach (var name in UiImageNames) Ui.UiImages[name] = platform.LoadImage("ui/" + name);
             Ui.UiImages["title_shop"] = Ui.UiImages["shop_title"];
             foreach (var id in Content.CharacterOrder) Ui.CharacterImages[id] = platform.LoadImage("characters/" + id);
@@ -49,6 +51,8 @@ namespace Tossup.UI
         {
             var game = Ui.Game;
             if (game.Phase == Phase.Encounter) EncounterView.Draw();
+            else if (game.Phase == Phase.Contract) ContractView.Draw();
+            else if (game.Phase == Phase.Augment) AugmentView.Draw();
             else if (game.Phase == Phase.Shop) ShopView.Draw();
             else FinishView.Draw(); // Victory and GameOver
             if (Ui.Notice != "") Text(Ui.Notice, 300, 762, Ui.F16, C.Red);
@@ -178,6 +182,7 @@ namespace Tossup.UI
             if (game.Phase == Phase.Encounter && Ui.FlipAnimation != null) return;
             if (key == "space" && game.Phase == Phase.Encounter) A.NextOrFlip();
             else if (key == "return" && game.Phase == Phase.Shop) Game.LeaveShop(game);
+            else if (key == "escape" && game.Phase == Phase.Contract) A.SkipContract();
         }
     }
 }

@@ -5,7 +5,7 @@ namespace Tossup
 {
     // Every coin, chip, prize and character. Add a coin here and to CoinOrder (the collection order).
     // Hook reference: Core/Hooks.cs. Randomness inside a hook must use Rng.Random(game) / Rng.Int(game, a, b).
-    public static class Content
+    public static partial class Content
     {
         static Effect E(string type, double amount = 0, int? coins = null) => new Effect(type, amount, coins);
         static List<Effect> L(params Effect[] effects) => new List<Effect>(effects);
@@ -13,24 +13,46 @@ namespace Tossup
         // Display order of all coins (collection screen).
         public static readonly List<string> CoinOrder = new List<string>
         {
-            "normal", "copper", "sword", "lucky", "cursed", "loaded", "dagger", "hammer", "blood", "spark", "focus",
-            "snowball", "gambler", "momentum", "echo", "vampire", "miser", "fuse", "phoenix", "contrarian", "chain", "bank",
-            "lucky_seven", "hourglass", "capacitor", "martyr", "bounty", "jester", "flock", "megaphone", "cheerleader",
-            "mirror", "twin", "pot", "domino", "hot_hand", "anchor", "bettor", "cash_out", "cold_streak", "amplifier",
-            "true_echo", "doubler",
+            "normal", "copper", "sword", "lucky", "cursed", "loaded", "dagger", "compost", "square_dance", "hammer",
+            "whetstone", "blood", "spark", "focus", "snowball", "gambler", "momentum", "echo", "vampire", "miser",
+            "counterfeiter", "fuse", "phoenix", "contrarian", "chain", "bank", "lucky_seven", "hourglass", "capacitor",
+            "martyr", "blood_pact", "bounty", "jester", "doppelganger", "flock", "megaphone", "cheerleader", "mirror",
+            "twin", "pot", "domino", "hot_hand", "anchor", "bettor", "cash_out", "cold_streak", "amplifier", "true_echo",
+            "doubler", "jackpot", "mimic", "good_dog", "orchestra", "conductor", "lifeline", "horoscope", "crystal_ball",
         };
 
         public static readonly List<string> ItemOrder = new List<string>
-            { "force_heads", "force_tails", "weighted", "double_down", "swap", "peek", "extra_draw" };
+            { "force_heads", "force_tails", "weighted", "double_down", "swap", "peek", "extra_draw", "energy_drink", "shortcut", "safety_net", "lucky_charm" };
 
         public static readonly List<string> RelicOrder = new List<string> { "magnet", "penny", "clock", "metronome", "baton" };
 
         public static readonly List<string> CharacterOrder = new List<string> { "blade", "seer", "trader" };
 
-        public static readonly Dictionary<string, CoinDef> Coins = Index(BuildCoins(), c => c.Id);
-        public static readonly Dictionary<string, ItemDef> Items = Index(BuildItems(), i => i.Id);
+        public static readonly Dictionary<string, CoinDef> Coins = BuildCoinMap();
+        public static readonly Dictionary<string, ItemDef> Items = BuildItemMap();
         public static readonly Dictionary<string, RelicDef> Relics = Index(BuildRelics(), r => r.Id);
-        public static readonly Dictionary<string, CharacterDef> Characters = Index(BuildCharacters(), c => c.Id);
+        public static readonly Dictionary<string, CharacterDef> Characters = BuildCharacterMap();
+
+        static Dictionary<string, CoinDef> BuildCoinMap()
+        {
+            var map = Index(BuildCoins(), c => c.Id);
+            ApplyLatestCoins(map);
+            return map;
+        }
+
+        static Dictionary<string, ItemDef> BuildItemMap()
+        {
+            var map = Index(BuildItems(), i => i.Id);
+            ApplyLatestItems(map);
+            return map;
+        }
+
+        static Dictionary<string, CharacterDef> BuildCharacterMap()
+        {
+            var map = Index(BuildCharacters(), c => c.Id);
+            ApplyLatestCharacters(map);
+            return map;
+        }
 
         static Dictionary<string, T> Index<T>(List<T> list, Func<T, string> key)
         {
@@ -498,7 +520,8 @@ namespace Tossup
                 {
                     global::Tossup.Items.Arm("coin_resolve", e =>
                     {
-                        foreach (var effect in e.Res.Effects) effect.Amount *= 2;
+                        foreach (var effect in e.Res.Effects)
+                            if (effect.Type == "score" || effect.Type == "gold" || effect.Type == "energy" || effect.Type == "penalty") effect.Amount *= 2;
                     });
                     return true;
                 },
@@ -557,7 +580,7 @@ namespace Tossup
                 Id = "weighted", Name = "Weighted", Short = "WEIGHT", Cost = 8, Description = "+25% Heads, one flip",
                 Use = game =>
                 {
-                    game.Dealt.Probability = Math.Min(1, game.Dealt.Probability + .25);
+                    game.Dealt.Probability = Math.Min(1 - game.Dealt.TieProbability, game.Dealt.Probability + .25);
                     return true;
                 },
             },

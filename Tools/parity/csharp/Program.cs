@@ -1,4 +1,4 @@
-// Parity bot for the C# rules: the same scripted policy as Tools/parity/bot.lua, printing the same state
+// Deterministic parity bot for the C# rules, printing a stable state trace.
 // dump after every action, so the two outputs can be diffed line by line.
 // Usage: dotnet run -c Release -- <runs> <output file>
 using System;
@@ -26,7 +26,7 @@ static class Program
 
     static void Print(string line) => output.Write(line + "\n");
 
-    static string S(object v) => v == null ? "nil" : GameText.ToLuaString(v);
+    static string S(object v) => v == null ? "nil" : GameText.PlainString(v);
     static string S(double? v) => v.HasValue ? GameText.Num(v.Value) : "nil";
     static string S(int? v) => v.HasValue ? v.Value.ToString() : "nil";
     static string S(bool v) => v ? "true" : "false";

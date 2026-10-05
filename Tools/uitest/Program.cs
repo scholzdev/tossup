@@ -120,6 +120,7 @@ static class Program
         var backend = new HeadlessBackend();
         Gfx.Backend = backend;
         AppCore.Load(platform);
+        LatestTests.Run();
 
         // 1. the screenshot tour
         foreach (var shot in Shots.Script())
@@ -233,6 +234,7 @@ static class Program
         Lang.Set("en");
         Ui.Game = null;
         Ui.Confirm = null;
+        Ui.SelectedCharacter = "blade";
         A.Go("title");
         int runs = 0, shops = 0, wins = 0, losses = 0, endless = 0, items = 0, bought = 0, exchanges = 0, maxLevel = 0;
         Phase? lastPhase = null;
@@ -253,7 +255,7 @@ static class Program
                 }
                 if (g != null) maxLevel = Math.Max(maxLevel, g.EncounterIndex);
                 if (Environment.GetEnvironmentVariable("UITEST_TRACE") != null && frame % 5000 == 0)
-                    Console.WriteLine($"[{frame}] screen={Ui.Screen} phase={g?.Phase} paused={g?.Paused} mull={g?.Mulligan != null} dealt={g?.Dealt != null} " +
+                    Console.WriteLine($"[{frame}] screen={Ui.Screen} phase={g?.Phase} paused={g?.Paused} level={g?.EncounterIndex} flips={g?.Encounter?.Flips} left={(g?.Encounter!=null?Game.CoinsLeft(g):-1)} quota={g?.Encounter?.Quota} cleared={g?.Encounter?.Cleared} mull={g?.Mulligan != null} dealt={g?.Dealt != null} " +
                         $"pending={g?.Pending != null} hold={Ui.Holding} anim={Ui.FlipAnimation != null} timer={Ui.ResolveTimer:F2} buttons=" +
                         string.Join("|", Ui.Buttons.ConvertAll(b => b.Label ?? "?")));
                 if (Ui.Confirm != null) { Click(platform, Find("CANCEL")); continue; }
@@ -276,6 +278,12 @@ static class Program
                     }
                     if (rng.Next(6) == 0 && Click(platform, Find("OPEN SHOP"))) continue;
                     if (rng.Next(12) == 0 && Click(platform, Find("ITEM"))) { items++; continue; }
+                    Button bankCombo=All("BANK ").Find(b=>b.Label!="BANK COIN");
+                    if (bankCombo != null || Find("PUSH") != null)
+                    {
+                        if (rng.Next(3) == 0) Click(platform, bankCombo); else Click(platform, Find("PUSH"));
+                        continue;
+                    }
                     if (Click(platform, Find("FLIP")) || Click(platform, Find("NEXT COIN"))) continue;
                     if (rng.Next(3) == 0 && Click(platform, Find("DISCARD"))) continue;
                     var pay = Find("PAY") ?? Find("BUY MORE COINS");
@@ -292,6 +300,17 @@ static class Program
                     else if (r == 4) { var coins = All("COIN"); if (coins.Count > 0) Click(platform, coins[rng.Next(coins.Count)]); Click(platform, Find("UPGRADE")); }
                     else if (r == 5 && rng.Next(3) == 0) { var coins = All("COIN"); if (coins.Count > 0) Click(platform, coins[rng.Next(coins.Count)]); Click(platform, Find("REMOVE")); }
                     else if (r >= 7) Click(platform, Find("NEXT ROUND"));
+                    continue;
+                }
+                if (g.Phase == Phase.Contract)
+                {
+                    Click(platform, All("TAKE CONTRACT").Count > 0 ? All("TAKE CONTRACT")[rng.Next(All("TAKE CONTRACT").Count)] : Find("SKIP CONTRACT"));
+                    continue;
+                }
+                if (g.Phase == Phase.Augment)
+                {
+                    if (!Click(platform, All("CHOOSE AUGMENT").Count > 0 ? All("CHOOSE AUGMENT")[rng.Next(All("CHOOSE AUGMENT").Count)] : null))
+                        Click(platform, All("CHOOSE").Count > 0 ? All("CHOOSE")[rng.Next(All("CHOOSE").Count)] : null);
                     continue;
                 }
                 // finish screen

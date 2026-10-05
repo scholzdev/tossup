@@ -3,12 +3,12 @@ using System.Collections.Generic;
 
 namespace Tossup
 {
-    public enum Phase { Encounter, Shop, Victory, GameOver }
+    public enum Phase { Encounter, Contract, Augment, Shop, Victory, GameOver }
 
     public static class Side
     {
-        public const string Heads = "Heads", Tails = "Tails";
-        public static string Other(string side) => side == Heads ? Tails : Heads;
+        public const string Heads = "Heads", Tails = "Tails", Tie = "Tie";
+        public static string Other(string side) => side == Heads ? Tails : side == Tails ? Heads : Tie;
     }
 
     // An effect of a coin side: {type, amount, coins}. Types: score, gold, energy, penalty, probability,
@@ -18,6 +18,7 @@ namespace Tossup
         public string Type;
         public double Amount;
         public int? Coins; // "next N coins" effects; null means 1
+        public string Kind; // coin type for type_buff
 
         public Effect(string type, double amount = 0, int? coins = null)
         {
@@ -26,7 +27,9 @@ namespace Tossup
             Coins = coins;
         }
 
-        public Effect Copy() => new Effect(Type, Amount, Coins);
+        public Effect Copy() => new Effect(Type, Amount, Coins) { Kind = Kind };
+
+        public Effect WithKind(string kind) { Kind = kind; return this; }
     }
 
     // An owned coin. It lives for the whole run, so a coin's own counters are how it scales itself.
@@ -40,6 +43,9 @@ namespace Tossup
         public double Debt; // Martyr
         public double Stack; // Snowball
         public double Anger; // Phoenix
+        public string Upgrade;
+        public int CompostLevel;
+        public int FetchedLevel;
     }
 
     // A "next N coins ..." buff. Kind: mult, odds, swap, heads. A buff made while a coin resolves is
@@ -65,6 +71,7 @@ namespace Tossup
     {
         public int Uid;
         public double Probability;
+        public double TieProbability;
         public string Raw, Result, Final;
         public bool Forced;
         public string Altered; // "BUFF", "RELIC", "THE HOUSE": shown so a changed side is never a mystery
@@ -123,6 +130,53 @@ namespace Tossup
         public List<int> Queue = new List<int>();
         public int Exchanges;
         public int Doubler; // Doubler flips this level
+        public int Tails;
+        public string Modifier;
+        public double GoldMult = 1;
+        public int ExtraExchanges;
+        public int BankDiscards;
+        public double ComboPot;
+        public bool ComboBanked;
+        public double BestComboLen;
+        public Dictionary<int, double> BestScores = new Dictionary<int, double>();
+        public HashSet<int> DealHooksFired = new HashSet<int>();
+        public ContractState Contract;
+        public List<string> ContractOptions;
+        public int SideBets;
+        public string SideBetSide;
+        public int SideBetCost;
+        public double SideBetPayout;
+        public bool PushAvailable;
+        public bool PushUsed;
+        public double PushScore;
+        public bool AllInPaid;
+        public HashSet<int> TypeSpecialistPaid = new HashSet<int>();
+    }
+
+    public sealed class ContractState
+    {
+        public string Id;
+        public string Result;
+        public double StartGold;
+        public int StartDiscards;
+    }
+
+    public sealed class ShopState
+    {
+        public int RefreshCost = 4;
+        public int CoinOfferCount = 4;
+        public double CoinPriceDiscount;
+    }
+
+    public sealed class AugmentPending
+    {
+        public string Id;
+        public string RewardId;
+    }
+
+    public sealed class AugmentChoice
+    {
+        public string Key, Title, Detail, CoinId, UpgradeId, UpgradeName, CurrentUpgrade;
     }
 
     public sealed class GameState
@@ -156,10 +210,27 @@ namespace Tossup
         public bool ExchangeOpen;
         public string LostWhy;
         public bool Endless;
+        public int Slots;
+        public int Stake = 1;
+        public double FortuneBonus;
+        public int RerollStep = 2;
+        public bool ContractsEnabled = true;
+        public string RunEncounterId;
+        public List<string> Augments = new List<string>();
+        public Dictionary<string, string> AugmentData = new Dictionary<string, string>();
+        public int? AugmentLevel;
+        public List<string> AugmentOptions;
+        public AugmentPending AugmentPending;
+        public double NextLevelQuotaBonus;
+        public ShopState Shop = new ShopState();
+        public List<string> ShopUpgrades = new List<string>();
         // presentation flags kept on the run, as the original did
         public bool Paused;
         public int? TokensPaid;
         public bool EndlessLogged;
+        public bool WinRecorded, EndlessRecorded;
+        public string UnlockedCharacter;
+        public int? UnlockedStake;
     }
 
     public sealed class GameRuleException : Exception

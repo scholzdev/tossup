@@ -79,6 +79,13 @@ namespace Tossup.UI
                     case "combo_shield": parts.Add(L("COMBO SHIELD")); continue;
                     case "next_swap": parts.Add(L("NEXT: SWAP")); continue;
                     case "next_heads": parts.Add(L("NEXT: HEADS")); continue;
+                    case "gold_loss": parts.Add(L("-%d GOLD", e.Amount)); continue;
+                    case "all_odds": parts.Add(L("ALL +%d%%", Math.Floor(e.Amount*100+.5))); continue;
+                    case "fortune_odds": parts.Add(L("FORTUNE +%d%%", Math.Floor(e.Amount*100+.5))); continue;
+                    case "type_buff": parts.Add(L("NEXT %d %s", e.Coins??1, (e.Kind??"").ToUpper())); continue;
+                    case "bank_discard": parts.Add(L("DISCARD ONE")); continue;
+                    case "extra_exchange": parts.Add(L("+%d EXCHANGE", e.Amount)); continue;
+                    case "fetch_best": parts.Add(L("FETCH BEST")); continue;
                 }
                 double amount = e.Type == "probability" ? Math.Floor(e.Amount * 100 + .5) : e.Amount;
                 string label;
@@ -125,6 +132,13 @@ namespace Tossup.UI
                     case "combo_shield": parts.Add(L("The next combo break is prevented")); break;
                     case "next_swap": parts.Add(L("Next coin uses its other side")); break;
                     case "next_heads": parts.Add(L("Next coin lands Heads")); break;
+                    case "gold_loss": parts.Add(L("Lose up to %d gold", amount)); break;
+                    case "all_odds": parts.Add(L("All coins gain %d%% Heads this level", Math.Floor(amount*100+.5))); break;
+                    case "fortune_odds": parts.Add(L("Fortune coins gain %d%% Heads for the run", Math.Floor(amount*100+.5))); break;
+                    case "type_buff": parts.Add(L("Buff the next %d %s coins", effect.Coins??1, effect.Kind)); break;
+                    case "bank_discard": parts.Add(L("Discard one bank coin")); break;
+                    case "extra_exchange": parts.Add(L("Gain one exchange this level")); break;
+                    case "fetch_best": parts.Add(L("Return the best played coin")); break;
                 }
             }
             return string.Join("; ", parts);

@@ -74,15 +74,31 @@ namespace Tossup
         public HashSet<string> Collected = new HashSet<string>();
         public Dictionary<string, List<CoinSet>> Sets = new Dictionary<string, List<CoinSet>>();
         public Dictionary<string, int> ActiveSet = new Dictionary<string, int>();
+        public HashSet<string> Wins = new HashSet<string>();
+        public Dictionary<string, int> Stakes = new Dictionary<string, int>();
+        public Dictionary<string, int> BestEndless = new Dictionary<string, int>();
         public Options Options = new Options();
     }
 
-    // Pure data + JSON serialization. Legacy LÖVE profiles are accepted only by DecodeLegacy.
+    // Pure data + JSON serialization.
     public static class Profile
     {
         public const int SetCount = 3; // coin sets per character
+        public static int RarityLimit(string coinId)
+        {
+            switch(Content.Coins[coinId].Rarity){case "N":return 3;case "R":return 2;case "SR":case "UR":return 1;default:return 0;}
+        }
 
         public static ProfileData New() => new ProfileData();
+
+        public static bool CharacterUnlocked(ProfileData profile, string id)
+        {
+            int i=Content.CharacterOrder.IndexOf(id);return i==0||(i>0&&profile.Wins.Contains(Content.CharacterOrder[i-1]));
+        }
+        public static string RecordWin(ProfileData profile,string id){if(!profile.Wins.Add(id))return null;int i=Content.CharacterOrder.IndexOf(id);return i>=0&&i+1<Content.CharacterOrder.Count?Content.CharacterOrder[i+1]:null;}
+        public static int MaxStake(ProfileData profile,string id)=>profile.Stakes.TryGetValue(id,out var n)?n:profile.Wins.Contains(id)?2:1;
+        public static int? RecordStakeWin(ProfileData profile,string id,int stake){int max=MaxStake(profile,id);if(stake>=max&&stake<Game.Stakes.Count){profile.Stakes[id]=stake+1;return stake+1;}return null;}
+        public static bool RecordEndless(ProfileData profile,string id,int levels){if(levels<=0)return false;profile.BestEndless.TryGetValue(id,out var old);if(levels<=old)return false;profile.BestEndless[id]=levels;return true;}
 
         // Mark a coin as seen in the collection. Returns true if it was new.
         public static bool Collect(ProfileData profile, string coinId) => profile.Collected.Add(coinId);
@@ -149,9 +165,9 @@ namespace Tossup
         public static bool CanAdd(ProfileData profile, string characterId, List<string> coins, string coinId, int max, int maxCopies)
         {
             if (coins.Count >= max || !Available(profile, characterId).Contains(coinId)) return false;
-            int copies = 0;
-            foreach (var id in coins) if (id == coinId) copies++;
-            return coinId == "normal" || copies < maxCopies;
+            int copies = 0; string rarity=Content.Coins[coinId].Rarity;
+            foreach (var id in coins) if (Content.Coins[id].Rarity==rarity) copies++;
+            return copies < RarityLimit(coinId);
         }
 
         public static bool AddToSet(ProfileData profile, string characterId, int index, string coinId, int max, int maxCopies)
@@ -183,9 +199,8 @@ namespace Tossup
                 var copies = new Dictionary<string, int>();
                 foreach (var id in source)
                 {
-                    copies.TryGetValue(id, out int n);
-                    copies[id] = ++n;
-                    if (ok.Contains(id) && list.Count < max && (id == "normal" || n <= maxCopies)) list.Add(id);
+                    if(!Content.Coins.ContainsKey(id))continue;string rarity=Content.Coins[id].Rarity;copies.TryGetValue(rarity,out int n);copies[rarity]=++n;
+                    if (ok.Contains(id) && list.Count < max && n <= RarityLimit(id)) list.Add(id);
                 }
                 return list;
             }
@@ -243,6 +258,12 @@ namespace Tossup
             }
             var o = profile.Options;
             lines.Add("  },");
+            var wins=new List<string>(profile.Wins);wins.Sort(string.CompareOrdinal);for(int i=0;i<wins.Count;i++)wins[i]=JsonData.Quote(wins[i]);
+            lines.Add("  \"wins\": ["+string.Join(", ",wins)+"],");
+            WriteIntMap(lines,"stakes",profile.Stakes);
+            lines[lines.Count-1] += ",";
+            WriteIntMap(lines,"bestEndless",profile.BestEndless);
+            lines[lines.Count-1] += ",";
             lines.Add("  \"options\": {");
             lines.Add("    \"fastFlip\": " + Bool(o.FastFlip) + ",");
             lines.Add("    \"fullscreen\": " + Bool(o.Fullscreen) + ",");
@@ -273,6 +294,9 @@ namespace Tossup
                 foreach (var pair in unlocked.Object)
                     profile.Unlocked[pair.Key] = new HashSet<string>(Strings(pair.Value));
             profile.Collected = new HashSet<string>(Strings(data["collected"]));
+            profile.Wins = new HashSet<string>(Strings(data["wins"]));
+            ReadIntMap(data["stakes"],profile.Stakes);
+            ReadIntMap(data["bestEndless"],profile.BestEndless);
             var sets = data["sets"];
             if (sets?.Kind == JsonKind.Object)
             {
@@ -324,77 +348,13 @@ namespace Tossup
 
         static string Bool(bool b) => b ? "true" : "false";
 
-        // One-time importer for saves created by the LÖVE edition.
-        public static ProfileData DecodeLegacy(string text)
+        static void WriteIntMap(List<string> lines,string name,Dictionary<string,int> map)
         {
-            LegacyProfileData data;
-            try { data = string.IsNullOrEmpty(text) ? null : LegacyProfileData.Parse(text); }
-            catch (FormatException) { data = null; }
-            if (data == null || !(data["tokens"] is double tokens) || !(data["unlocked"] is LegacyProfileData unlocked)) return New();
-
-            var profile = New();
-            profile.Tokens = tokens;
-            foreach (var pair in unlocked.Hash)
-            {
-                if (!(pair.Key is string characterId) || !(pair.Value is LegacyProfileData ids)) continue;
-                var set = new HashSet<string>();
-                foreach (var id in ids.Hash) if (id.Key is string coinId && Truthy(id.Value)) set.Add(coinId);
-                profile.Unlocked[characterId] = set;
-            }
-            if (data["collected"] is LegacyProfileData collected)
-                foreach (var pair in collected.Hash)
-                    if (pair.Key is string coinId && Truthy(pair.Value)) profile.Collected.Add(coinId);
-            if (data["sets"] is LegacyProfileData sets)
-            {
-                foreach (var pair in sets.Hash)
-                {
-                    if (!(pair.Key is string characterId) || !(pair.Value is LegacyProfileData list)) continue;
-                    var parsed = new List<CoinSet>();
-                    foreach (var entry in list.Array)
-                    {
-                        if (!(entry is LegacyProfileData t)) continue;
-                        var set = new CoinSet { Name = t["name"] as string ?? "SET " + (parsed.Count + 1) };
-                        if (t["coins"] is LegacyProfileData coins) set.Coins = LegacyStrings(coins);
-                        parsed.Add(set);
-                    }
-                    profile.Sets[characterId] = parsed;
-                }
-            }
-            if (data["active_set"] is LegacyProfileData active)
-                foreach (var pair in active.Hash)
-                    if (pair.Key is string characterId && pair.Value is double index) profile.ActiveSet[characterId] = (int)index;
-            // older saves kept a single loadout per character: it becomes set 1
-            if (data["loadouts"] is LegacyProfileData loadouts)
-            {
-                foreach (var pair in loadouts.Hash)
-                {
-                    if (!(pair.Key is string characterId) || !Content.Characters.ContainsKey(characterId)) continue;
-                    if (profile.Sets.ContainsKey(characterId) || !(pair.Value is LegacyProfileData list)) continue;
-                    Sets(profile, characterId)[0].Coins = LegacyStrings(list);
-                }
-            }
-            if (data["options"] is LegacyProfileData options)
-            {
-                var o = profile.Options;
-                if (options["screen_shake"] is bool shake) o.ScreenShake = shake;
-                if (options["fast_flip"] is bool fast) o.FastFlip = fast;
-                if (options["fullscreen"] is bool full) o.Fullscreen = full;
-                if (options["seen_help"] is bool seen) o.SeenHelp = seen;
-                if (options["language"] is string language) o.Language = language;
-                if (options["volume_master"] is double master) o.VolumeMaster = master;
-                if (options["volume_music"] is double music) o.VolumeMusic = music;
-                if (options["volume_sfx"] is double sfx) o.VolumeSfx = sfx;
-            }
-            return profile;
+            lines.Add("  "+JsonData.Quote(name)+": {");var keys=SortedKeys(map);
+            for(int i=0;i<keys.Count;i++)lines.Add("    "+JsonData.Quote(keys[i])+": "+map[keys[i]]+(i+1<keys.Count?",":""));
+            lines.Add("  }");
         }
+        static void ReadIntMap(JsonData data,Dictionary<string,int> map){if(data?.Kind!=JsonKind.Object)return;foreach(var p in data.Object)if(p.Value.Kind==JsonKind.Number)map[p.Key]=(int)p.Value.Number;}
 
-        static bool Truthy(object value) => value != null && !(value is bool b && !b);
-
-        static List<string> LegacyStrings(LegacyProfileData list)
-        {
-            var result = new List<string>();
-            foreach (var entry in list.Array) if (entry is string id) result.Add(id);
-            return result;
-        }
     }
 }

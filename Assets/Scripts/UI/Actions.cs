@@ -7,7 +7,6 @@ namespace Tossup.UI
     public static class A
     {
         const string ProfileFile = "profile.json";
-        const string LegacyProfileFile = "profile.lua";
 
         static void ApplyOptions()
         {
@@ -19,13 +18,7 @@ namespace Tossup.UI
         public static void LoadProfile()
         {
             string json = Ui.Platform.ReadSave(ProfileFile);
-            if (json != null) Ui.Profile = Tossup.Profile.Decode(json);
-            else
-            {
-                string legacy = Ui.Platform.ReadSave(LegacyProfileFile);
-                Ui.Profile = legacy == null ? Tossup.Profile.New() : Tossup.Profile.DecodeLegacy(legacy);
-                if (legacy != null) SaveProfile();
-            }
+            Ui.Profile = json != null ? Tossup.Profile.Decode(json) : Tossup.Profile.New();
             ApplyOptions();
         }
 
@@ -142,6 +135,11 @@ namespace Tossup.UI
         // The coins the selected character starts a run with (its active coin set).
         public static List<string> Loadout() =>
             Tossup.Profile.Loadout(Ui.Profile, Ui.SelectedCharacter, Game.StartMax, Game.MaxCopies);
+        public static int Stake()
+        {
+            int top=Tossup.Profile.MaxStake(Ui.Profile,Ui.SelectedCharacter);return Math.Max(1,Math.Min(top,Ui.StakePick.TryGetValue(Ui.SelectedCharacter,out var n)?n:top));
+        }
+        public static void CycleStake(int delta){Ui.StakePick[Ui.SelectedCharacter]=Math.Max(1,Math.Min(Tossup.Profile.MaxStake(Ui.Profile,Ui.SelectedCharacter),Stake()+delta));}
 
         // ---- coin set editor: edits go to a draft and only reach the profile when Save is pressed
 
@@ -259,8 +257,9 @@ namespace Tossup.UI
         public static void Start(double? seed = null)
         {
             var p = Ui.Platform;
+            if(!Tossup.Profile.CharacterUnlocked(Ui.Profile,Ui.SelectedCharacter))return;
             Ui.Game = Game.New(seed ?? p.UnixTime + Math.Floor(p.Time * 1000000), Ui.SelectedCharacter,
-                Tossup.Profile.UnlockedList(Ui.Profile, Ui.SelectedCharacter), Loadout(), true);
+                Tossup.Profile.UnlockedList(Ui.Profile, Ui.SelectedCharacter), Loadout(), true, Stake());
             Ui.FlipAnimation = null;
             Ui.ResolveTimer = 0;
             Ui.Holding = false;
@@ -293,6 +292,19 @@ namespace Tossup.UI
 
         public static void Exchange() => Game.Exchange(Ui.Game);
         public static void GiveUp() => Game.GiveUp(Ui.Game);
+        public static void SideBet(string side) => Game.PlaceSideBet(Ui.Game, side);
+        public static void BankCombo() { if (Game.BankCombo(Ui.Game) > 0) Ui.Holding = false; }
+        public static void PushCombo()
+        {
+            if (!Ui.Holding || Ui.FlipAnimation != null) return;
+            Ui.Holding = false;
+            if (!Game.PushCombo(Ui.Game)) return;
+            Ui.FlipAnimation = new FlipAnimation { Id = Game.GetCoin(Ui.Game, Ui.Game.Pending.Uid).Id, Outcome = Ui.Game.Pending.Result, Elapsed = 0, Duration = Ui.Profile.Options.FastFlip ? .8 : 1.6 };
+        }
+        public static void ChooseContract(string id) { if (Game.ChooseContract(Ui.Game, id) && Ui.Game.Mulligan != null) Game.MulliganDone(Ui.Game); }
+        public static void SkipContract() { if (Game.SkipContract(Ui.Game) && Ui.Game.Mulligan != null) Game.MulliganDone(Ui.Game); }
+        public static void ChooseAugment(string id) => Game.ChooseAugment(Ui.Game, id);
+        public static void ChooseAugmentOption(string key) => Game.ChooseAugmentOption(Ui.Game, key);
 
         public static void UseItem(int slot)
         {
@@ -314,7 +326,7 @@ namespace Tossup.UI
         {
             if (Ui.Game.Mulligan != null)
             {
-                Game.MulliganDone(Ui.Game);
+                if (!Game.OfferContract(Ui.Game)) Game.MulliganDone(Ui.Game);
                 return;
             }
             if (Ui.Holding)
@@ -355,6 +367,11 @@ namespace Tossup.UI
                 Ui.Profile.Tokens += game.TokensPaid.Value;
                 SaveProfile();
             }
+            if(game!=null&&game.Phase==Phase.Victory&&!game.WinRecorded)
+            {
+                game.WinRecorded=true;game.UnlockedStake=Tossup.Profile.RecordStakeWin(Ui.Profile,game.CharacterId,game.Stake);game.UnlockedCharacter=Tossup.Profile.RecordWin(Ui.Profile,game.CharacterId);SaveProfile();
+            }
+            if(game!=null&&game.Endless&&game.Phase==Phase.GameOver&&!game.EndlessRecorded){game.EndlessRecorded=true;Tossup.Profile.RecordEndless(Ui.Profile,game.CharacterId,game.Cleared-Game.Route.Count);SaveProfile();}
             if (game != null && game.Endless && game.Phase == Phase.GameOver && !game.EndlessLogged)
             {
                 game.EndlessLogged = true;

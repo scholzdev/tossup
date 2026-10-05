@@ -72,8 +72,7 @@ namespace Tossup.UI
             int markedCount = A.MarkedCount();
             IconButton(markedCount > 0 ? L("DISCARD %d", markedCount) : "DISCARD", Ui.UiImages["discard"], 330, 676, 200, 64,
                 C.Red, A.DiscardMarked, markedCount > 0 && markedCount < hand.Count);
-            var game = G;
-            IconButton("START LEVEL", Ui.UiImages["start_level"], 550, 676, 260, 64, C.Green, () => Game.MulliganDone(game));
+            IconButton("START LEVEL", Ui.UiImages["start_level"], 550, 676, 260, 64, C.Green, A.NextOrFlip);
         }
 
         static void DrawFlipAnimation()
@@ -87,7 +86,7 @@ namespace Tossup.UI
             float squash = (float)Math.Max(.06, Math.Abs(Math.Cos(phase * Math.PI)));
             bool heads = (long)Math.Floor(phase + .5) % 2 == 1; // the side changes at the thin edge-on moments
             float lift = (float)(45 * Math.Sin(Math.Min(1, progress / .75) * Math.PI));
-            string word = L(heads ? "HEADS" : "TAILS");
+            string word = anim.Outcome == Side.Tie ? "EDGE" : L(heads ? "HEADS" : "TAILS");
             Gfx.Push();
             Gfx.Translate(770, 385 - lift);
             Gfx.Scale(squash, 1);
@@ -113,7 +112,7 @@ namespace Tossup.UI
             var logo = Ui.UiImages["logo"];
             float logoScale = 64f / logo.Height;
             Gfx.Draw(logo, 70, 46, logoScale, logoScale);
-            Text(e.Endless != null ? L("LEVEL %d", g.EncounterIndex) : L("LEVEL %d / 4", g.EncounterIndex), 70, 118, Ui.F16, C.Muted);
+            Text(e.Endless != null ? L("LEVEL %d", g.EncounterIndex) : L("LEVEL %d / 8", g.EncounterIndex), 70, 118, Ui.F16, C.Muted);
             Text(e.Endless != null ? L("ENDLESS %d", e.Endless.Value) : e.Boss ? L("THE HOUSE") : Lang.Upper(L(e.Name)), 70, 136, Ui.F20,
                 e.Boss ? C.Red : C.Face);
             bool met = e.Quota <= 0;
@@ -130,6 +129,7 @@ namespace Tossup.UI
             Gfx.Rectangle(true, 330, 128, 580 * (float)Math.Min(1, e.Scored / e.MaxQuota), 20, 4);
             Outline(330, 128, 580, 20, C.Line, 4);
             Button("MENU", 1120, 56, 100, 34, C.PanelLight, A.OpenMenu);
+            RunModifierView.Draw(220,106,34);
             if (e.Cleared)
                 IconButton("OPEN SHOP", Ui.UiImages["open_shop"], 930, 54, 170, 38, C.Green, A.OpenShop,
                     Ui.FlipAnimation == null && g.Pending == null && g.Mulligan == null);
@@ -170,10 +170,15 @@ namespace Tossup.UI
                     Text(L("%d%% HEADS", Pct(Game.Probability(g, owned))), x + 80, y + 46, Ui.F16, C.Gold);
                     int cost = Content.Coins[owned.Id].EnergyCost;
                     if (cost > 0) Text("E" + cost, x + 188, y + 60, Ui.F16, C.Orange);
+                    int uid=owned.Uid;
+                    if(g.Mulligan==null) AddButton(x,y,214,84,()=> { if(e.BankDiscards>0) Game.DiscardBank(g,uid); else Game.Select(g,uid); },"BANK COIN");
                 }
                 else Centered("EMPTY SLOT", x, y + 34, 214, Ui.F16, C.Muted);
             }
-            Text(L("PILE %d   OUT %d   DECK %d/%d", e.Pile.Count, e.Discards, g.Coins.Count, Game.DeckMax), 84, 590, Ui.F16, C.Muted);
+
+            if(e.Modifier!=null&&Game.Modifiers.TryGetValue(e.Modifier,out var modifier))
+                Text(modifier.Name.ToUpper()+": "+modifier.Description,330,151,Ui.F16,C.Orange);
+            Text(L("PILE %d   OUT %d   DECK %d/%d", e.Pile.Count, e.Discards, g.Coins.Count, g.Slots), 84, 590, Ui.F16, C.Muted);
 
             // active buffs ("next N coins ...") so they are never invisible
             for (int i = 0; i < e.Buffs.Count; i++)
@@ -266,7 +271,7 @@ namespace Tossup.UI
                 else if (result.Gained != null) note = "NO POINTS";
                 if (!(g.Dealt != null && !Ui.Holding))
                 {
-                    var accent = outcome == Side.Heads ? C.Blue : C.Red;
+                    var accent = outcome == Side.Heads ? C.Blue : outcome == Side.Tie ? C.Gold : C.Red;
                     Box(SX - 130, 456, 260, 62, C.Ink);
                     Outline(SX - 130, 456, 260, 62, accent);
                     Centered(Lang.Upper(outcome), SX - 130, 460, 260, Ui.F32, accent);
@@ -288,10 +293,12 @@ namespace Tossup.UI
                 double chance = result.Probability;
                 Color(C.Blue);
                 Gfx.Rectangle(true, SX - 170, 596, 340 * (float)chance, 10);
+                Color(C.Gold);
+                Gfx.Rectangle(true, SX - 170 + 340 * (float)chance, 596, 340 * (float)result.TieProbability, 10);
                 Color(C.Red);
-                Gfx.Rectangle(true, SX - 170 + 340 * (float)chance, 596, 340 * (float)(1 - chance), 10);
+                Gfx.Rectangle(true, SX - 170 + 340 * (float)(chance + result.TieProbability), 596, 340 * (float)(1 - chance - result.TieProbability), 10);
                 Text(L("HEADS %d%%", Pct(chance)), SX - 170, 612, Ui.F16, C.Blue);
-                string tailsText = L("TAILS %d%%", Math.Floor((1 - chance) * 100 + .5));
+                string tailsText = L("TAILS %d%%", Math.Floor((1 - chance - result.TieProbability) * 100 + .5));
                 Text(tailsText, SX + 170 - Ui.F16.GetWidth(tailsText), 612, Ui.F16, C.Red);
                 if (shownCost > 0 && Ui.FlipAnimation == null) Centered(L("ENERGY COST %d", shownCost), SX - 60, 612, 120, Ui.F16, C.Orange);
             }
@@ -343,6 +350,12 @@ namespace Tossup.UI
             }
             if (g.Dealt != null && Ui.FlipAnimation == null && !Ui.Holding)
                 IconButton("DISCARD", Ui.UiImages["discard"], 330, 676, 200, 64, C.Red, A.DiscardCurrent); // only the current coin
+            if(g.Dealt!=null&&e.Flips==0&&e.SideBetSide==null&&g.Mulligan==null&&!Ui.Holding&&Ui.FlipAnimation==null)
+            {
+                var h=Game.SideBetQuote(g,Side.Heads);var t=Game.SideBetQuote(g,Side.Tails);
+                if(h!=null)Button("BET H "+h.Stake+"G",340,642,90,28,C.Blue,()=>A.SideBet(Side.Heads),g.Player.Gold>=h.Stake);
+                if(t!=null)Button("BET T "+t.Stake+"G",438,642,90,28,C.Red,()=>A.SideBet(Side.Tails),g.Player.Gold>=t.Stake);
+            }
             bool emptyStack = g.Dealt == null && g.Mulligan == null && g.Pending == null && Ui.FlipAnimation == null && !Ui.Holding;
             bool outOfCoins = emptyStack && !e.Cleared && Game.CanExchange(g);
             if (outOfCoins)
@@ -377,7 +390,12 @@ namespace Tossup.UI
                     flipLabel = L("NEED %d ENERGY", Game.FlipCost(g, g.Dealt.Uid));
                     canAct = false;
                 }
-                IconButton(flipLabel, Ui.Holding ? Ui.UiImages["next_coin"] : Ui.UiImages["flip"], 550, 676, 260, 64, C.Blue,
+                if(Ui.Holding&&Game.CanBankCombo(g))
+                {
+                    Button("BANK "+GameText.Num(e.ComboPot)+"G",550,676,125,64,C.Green,A.BankCombo);
+                    Button("PUSH",685,676,125,64,C.Blue,A.PushCombo,Game.CanFlip(g));
+                }
+                else IconButton(flipLabel, Ui.Holding ? Ui.UiImages["next_coin"] : Ui.UiImages["flip"], 550, 676, 260, 64, C.Blue,
                     A.NextOrFlip, canAct);
             }
             if (g.Mulligan != null) DrawMulligan(); // covers the play area and takes over the bottom bar

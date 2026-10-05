@@ -196,11 +196,6 @@ namespace Tossup
         {
             string path = Path.Combine(saveDir, name);
             if (File.Exists(path)) return File.ReadAllText(path);
-            if (shotMode || name != "profile.lua") return null;
-            // first start: carry the progress over from the original LÖVE version, if it was played here
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            foreach (var legacy in new[] { Path.Combine(appData, "tossup", name), Path.Combine(appData, "LOVE", "tossup", name) })
-                if (File.Exists(legacy)) return File.ReadAllText(legacy);
             return null;
         }
 

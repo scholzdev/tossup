@@ -38,6 +38,7 @@ namespace Tossup.UI
             Button("MENU", 1120, 56, 100, 34, C.PanelLight, A.OpenMenu);
             ImageAt(Ui.UiImages["gold"], 1010, 100, 44);
             Text(GameText.Num(g.Player.Gold), 1062, 104, Ui.F32, C.Gold);
+            RunModifierView.Draw(250,104,32);
 
             // reroll (coin offers only), level with the coin icons
             int rerollCost = g.RerollCost;
@@ -49,7 +50,7 @@ namespace Tossup.UI
             Button("REROLL", 90, 322, 150, 36, C.Orange, () => Game.RerollShop(g), g.Player.Gold >= rerollCost);
 
             // COIN row
-            bool full = g.Coins.Count >= Game.DeckMax;
+            bool full = g.Coins.Count >= g.Slots;
             VerticalLabel("Coin", 290, 232);
             for (int i = 0; i < 4; i++)
             {
@@ -57,10 +58,11 @@ namespace Tossup.UI
                 string id = i < g.ShopOffers.Count ? g.ShopOffers[i] : null;
                 if (id != null)
                 {
-                    int cost = Game.CoinCost(id);
+                    int cost = Game.CoinOfferCost(g, i);
                     Price(cost, x, 186, 110, g.Player.Gold >= cost && !full);
                     CoinImage(id, x + 7, 228, 96);
                     CoinHover(id, x, 228, 110, 96);
+                    if (i < g.ShopUpgrades.Count && g.ShopUpgrades[i] != null) Centered("UPGRADED", x, 326, 110, Ui.F16, C.Gold);
                     int index = i;
                     Button(full ? "FULL" : "BUY", x, 336, 110, 34, C.Blue, () => Game.Buy(g, index), g.Player.Gold >= cost && !full);
                 }
@@ -76,11 +78,12 @@ namespace Tossup.UI
                 if (id != null)
                 {
                     var def = Content.Items[id];
-                    Price(def.Cost, x, 392, 110, g.Player.Gold >= def.Cost && g.Items.Count < Items.Max);
+                    int cost = Game.Price(g, def.Cost);
+                    Price(cost, x, 392, 110, g.Player.Gold >= cost && g.Items.Count < Items.Max);
                     ImageAt(Ui.ItemImages[id], x + 7, 434, 96);
                     TextHover(Lang.ItemName(id), Lang.ItemDescription(id), x + 7, 434, 96, 96);
                     int index = i;
-                    Button("BUY", x, 542, 110, 34, C.Blue, () => Game.BuyItem(g, index), g.Player.Gold >= def.Cost && g.Items.Count < Items.Max);
+                    Button("BUY", x, 542, 110, 34, C.Blue, () => Game.BuyItem(g, index), g.Player.Gold >= cost && g.Items.Count < Items.Max);
                 }
                 else Centered("SOLD", x, 474, 110, Ui.F32, C.Muted);
             }
@@ -90,10 +93,11 @@ namespace Tossup.UI
             VerticalLabel("Prize", px - 50, 396);
             if (g.ShopRelic != null)
             {
-                Price(Game.RelicCost, px, 392, 110, g.Player.Gold >= Game.RelicCost);
+                int relicCost=Game.Price(g,Game.RelicCost);
+                Price(relicCost, px, 392, 110, g.Player.Gold >= relicCost);
                 ImageAt(Ui.RelicImages[g.ShopRelic], px + 7, 434, 96);
                 TextHover(Lang.RelicName(g.ShopRelic), Lang.RelicDescription(g.ShopRelic), px + 7, 434, 96, 96);
-                Button("BUY", px, 542, 110, 34, C.Blue, () => Game.BuyRelic(g), g.Player.Gold >= Game.RelicCost);
+                Button("BUY", px, 542, 110, 34, C.Blue, () => Game.BuyRelic(g), g.Player.Gold >= relicCost);
             }
             else Centered("SOLD", px, 474, 110, Ui.F32, C.Muted);
 
@@ -115,8 +119,8 @@ namespace Tossup.UI
                 g.Player.Gold >= 8 && g.Coins.Count > 1);
 
             // your deck
-            Text(L("YOUR DECK  %d / %d", g.Coins.Count, Game.DeckMax), 70, 612, Ui.F20, C.Gold);
-            Text(full ? "DECK FULL  -  REMOVE A COIN TO BUY ANOTHER" : "CLICK A COIN TO SELECT IT", 340, 618, Ui.F16, full ? C.Orange : C.Muted);
+            Text(L("YOUR DECK  %d / %d", g.Coins.Count, g.Slots), 70, 612, Ui.F20, C.Gold);
+            Text(full ? "DECK FULL  -  BUY A SLOT OR REMOVE A COIN" : "CLICK A COIN TO SELECT IT", 340, 618, Ui.F16, full ? C.Orange : C.Muted);
             var held = new List<string>();
             foreach (var id in g.Items) held.Add(Lang.ItemShort(id));
             foreach (var id in g.Relics) held.Add(Lang.Upper(Lang.RelicName(id)));
@@ -126,6 +130,12 @@ namespace Tossup.UI
                 float x = 70 + i * 92;
                 var item = i < g.Coins.Count ? g.Coins[i] : null;
                 bool chosen = item != null && item.Uid == g.SelectedUid;
+                if (i >= g.Slots)
+                {
+                    bool next=i==g.Slots;Box(x,664,84,76,C.SlotDk);Outline(x,664,84,76,next?C.Gold:C.Line);
+                    if(next){int slotCost=Game.SlotPrice(g);Centered("+"+slotCost+" GOLD",x,710,84,Ui.F16,g.Player.Gold>=slotCost?C.Gold:C.Red);AddButton(x,664,84,76,()=>Game.BuySlot(g),"BUY SLOT");}
+                    continue;
+                }
                 Box(x, 664, 84, 76, item != null ? PanelColor : C.Slot);
                 Outline(x, 664, 84, 76, chosen ? C.Orange : C.PanelLight);
                 if (item == null) continue;

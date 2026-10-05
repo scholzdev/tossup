@@ -42,6 +42,7 @@ namespace Tossup.UI
             Frame(Title("play"), "BACK", () => A.Go("title"));
 
             string characterId = Ui.SelectedCharacter;
+            bool locked=!Profile.CharacterUnlocked(Ui.Profile,characterId);
             int active = Profile.Active(Ui.Profile, characterId);
             var set = Profile.Sets(Ui.Profile, characterId)[active - 1];
 
@@ -56,9 +57,10 @@ namespace Tossup.UI
             var portrait = Ui.CharacterImages[characterId];
             float scale = Math.Min(366f / portrait.Width, 380f / portrait.Height);
             float width = portrait.Width * scale, height = portrait.Height * scale;
-            Color(C.White);
+            Color(C.White, locked ? .22f : 1f);
             Gfx.Draw(portrait, 70 + (384 - width) / 2, 226 + (388 - height) / 2, scale, scale);
-            Centered(Lang.Upper(Lang.CharacterDescription(characterId)), 70, 632, 384, Ui.F16, C.Muted);
+            if(locked){Centered("LOCKED",70,440,384,Ui.F32,C.Face);int ci=Content.CharacterOrder.IndexOf(characterId);string required=ci>0?Lang.CharacterName(Content.CharacterOrder[ci-1]):"";Centered("WIN A RUN WITH: "+Lang.Upper(required),70,632,384,Ui.F16,C.Orange);}
+            else {Centered(Lang.Upper(Lang.CharacterDescription(characterId)), 70, 632, 384, Ui.F16, C.Muted);if(Ui.Profile.BestEndless.TryGetValue(characterId,out var best))Centered("BEST ENDLESS: "+best,70,596,384,Ui.F16,C.Gold);}
 
             // right: the coin set you will play
             Box(484, 160, 736, 460, C.PanelDk);
@@ -85,9 +87,14 @@ namespace Tossup.UI
                 }
             }
             if (set.Coins.Count == 0) Centered("THIS SET IS EMPTY  -  THE DEFAULT DECK IS USED", 484, 490, 736, Ui.F16, C.Orange);
-            Button("EDIT COIN SETS", 674, 540, 356, 52, C.Gold, () => A.OpenSets(Ui.SelectedCharacter));
+            int stake=A.Stake(),top=Profile.MaxStake(Ui.Profile,characterId);
+            Button("<",510,486,50,52,C.PanelLight,()=>A.CycleStake(-1),stake>1&&!locked);
+            Centered("STAGE "+stake+" / "+Game.Stakes.Count,570,490,504,Ui.F20,stake==top?C.Gold:C.Face);
+            Centered(Game.Stakes[stake-1].Text,570,518,504,Ui.F16,C.Muted);
+            Button(">",1084,486,50,52,C.PanelLight,()=>A.CycleStake(1),stake<top&&!locked);
+            Button("EDIT COIN SETS", 674, 555, 356, 52, C.Gold, () => A.OpenSets(Ui.SelectedCharacter),!locked);
 
-            IconButton("START RUN", Ui.UiImages["start_level"], 470, 660, 340, 68, C.Green, () => A.Start());
+            IconButton("START RUN", Ui.UiImages["start_level"], 470, 660, 340, 68, C.Green, () => A.Start(),!locked);
         }
     }
 

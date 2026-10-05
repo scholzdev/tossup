@@ -61,6 +61,7 @@ namespace Tossup.UI
         public static SetDraft SetDraft; // unsaved edits of the open coin set
         public static HashSet<int> Marked = new HashSet<int>(); // coins marked for discarding in the opening hand
         public static int CollectionPage = 1;
+        public static readonly Dictionary<string,int> StakePick = new Dictionary<string,int>();
         public static string CollectionFilter = "ALL";
         public static string CollectionSort = "rarity";
         public static GameState Game;
@@ -74,6 +75,8 @@ namespace Tossup.UI
         public static readonly Dictionary<string, Img> RelicImages = new Dictionary<string, Img>();
         public static readonly Dictionary<string, Img> UiImages = new Dictionary<string, Img>();
         public static readonly Dictionary<string, Img> CharacterImages = new Dictionary<string, Img>();
+        public static readonly Dictionary<string, Img> AugmentImages = new Dictionary<string, Img>();
+        public static readonly Dictionary<string, Img> EncounterImages = new Dictionary<string, Img>();
         public static HoveredCoin HoveredCoin;
         public static HoveredText HoveredText;
         public static Button Dragging; // the slider being dragged
