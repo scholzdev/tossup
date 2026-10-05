@@ -10,6 +10,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="LatestTests.cs" />
+    <Compile Include="FeatureParityTests.cs" />
     <Compile Include="../../Assets/Scripts/Core/**/*.cs" />
     <Compile Include="../../Assets/Scripts/Content/**/*.cs" />
     <Compile Include="../../Assets/Scripts/UI/**/*.cs" />

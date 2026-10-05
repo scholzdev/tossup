@@ -65,6 +65,7 @@ static class LatestTests
         Check(Profile.RecordStakeWin(profile,"blade",1)==2&&Profile.MaxStake(profile,"blade")==2,"winning unlocks next stake");
         string json=Profile.Encode(profile);var restored=Profile.Decode(json);
         Check(Profile.MaxStake(restored,"blade")==2,"stake progression survives JSON");
+        FeatureParityTests.Run();
         Console.WriteLine("latest: focused gameplay checks passed");
     }
 }
