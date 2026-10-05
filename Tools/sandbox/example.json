@@ -1,0 +1,12 @@
+{
+  "character": "blade",
+  "coins": ["normal", "sword", "dagger", "focus"],
+  "stake": 1,
+  "gold": 100,
+  "energy": 3,
+  "seed": 424242,
+  "screen": "encounter",
+  "odds": {
+    "normal": { "heads": 0.75, "tie": 0.0 }
+  }
+}

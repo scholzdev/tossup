@@ -20,6 +20,7 @@ namespace Tossup.UI
         string ReadSave(string name); // null if missing
         void WriteSave(string name, string text);
         void AppendSave(string name, string text);
+        void DeleteSave(string name);
 
         void PlaySound(string name, float pitch, float volume);
         void SetMusicVolume(float volume);

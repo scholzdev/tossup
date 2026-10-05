@@ -86,6 +86,8 @@ namespace Tossup.UI
             else DrawGame();
             CoinTooltip();
             TextTooltip();
+            if(Ui.EncounterReveal!=null)EncounterRevealView.Draw();
+            if(Ui.Tutorial!=null)Tutorial.Draw();
             ConfirmDialog();
             Gfx.Pop();
         }
@@ -110,6 +112,7 @@ namespace Tossup.UI
         // Left button only; x, y in window pixels.
         public static void MousePressed(float x, float y)
         {
+            if(Ui.EncounterReveal!=null){DismissEncounterReveal();return;}
             Ui.ToCanvas(x, y, out float cx, out float cy);
             for (int i = Ui.Buttons.Count - 1; i >= 0; i--)
             {
@@ -144,6 +147,12 @@ namespace Tossup.UI
         // key: LÖVE key names ("f3", "escape", "space", "return", "left", "right", "1".."9").
         public static void KeyPressed(string key)
         {
+            if(Ui.EncounterReveal!=null){DismissEncounterReveal();return;}
+            if(Ui.Tutorial!=null)
+            {
+                if(key=="escape"){Tutorial.Finish();return;}
+                if((key=="space"||key=="return")&&!Tutorial.Interactive){Tutorial.Next();return;}
+            }
             var game = Ui.Game;
             if (key == "f3")
             {
@@ -183,6 +192,13 @@ namespace Tossup.UI
             if (key == "space" && game.Phase == Phase.Encounter) A.NextOrFlip();
             else if (key == "return" && game.Phase == Phase.Shop) Game.LeaveShop(game);
             else if (key == "escape" && game.Phase == Phase.Contract) A.SkipContract();
+        }
+
+        public static bool DismissEncounterReveal()
+        {
+            if(Ui.EncounterReveal==null)return false;
+            Ui.EncounterReveal=null;
+            return true;
         }
     }
 }

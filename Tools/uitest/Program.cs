@@ -98,6 +98,7 @@ sealed class HeadlessPlatform : IPlatform
     public string ReadSave(string name) => File.Exists(Path.Combine(saveDir, name)) ? File.ReadAllText(Path.Combine(saveDir, name)) : null;
     public void WriteSave(string name, string text) => File.WriteAllText(Path.Combine(saveDir, name), text);
     public void AppendSave(string name, string text) => File.AppendAllText(Path.Combine(saveDir, name), text);
+    public void DeleteSave(string name) { string path = Path.Combine(saveDir, name); if (File.Exists(path)) File.Delete(path); }
     public void PlaySound(string name, float pitch, float volume)
     {
         if (Array.IndexOf(Sound.Names, name) < 0) throw new InvalidOperationException("unknown sound " + name);
@@ -232,6 +233,8 @@ static class Program
     {
         var rng = new Random(seed * 31 + 1);
         Lang.Set("en");
+        Ui.Profile.Options.SeenHelp = true;
+        A.DeleteRun();
         Ui.Game = null;
         Ui.Confirm = null;
         Ui.SelectedCharacter = "blade";
@@ -246,6 +249,7 @@ static class Program
                 AppCore.Update(.1);
                 AppCore.Draw();
                 var g = Ui.Game;
+                if (Ui.EncounterReveal != null) { AppCore.KeyPressed("return"); continue; }
                 if (g != null && g.Phase != lastPhase)
                 {
                     if (g.Phase == Phase.Shop) shops++;

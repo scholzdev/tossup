@@ -131,6 +131,7 @@ namespace Tossup
 
         static void ApplyModifier(GameState game)
         {
+            if (game.Sandbox != null) return;
             if(game.EncounterIndex<(int)Rule(game,"modifiers_from",2))return;
             string id=ModifierOrder[Rng.Int(game,1,ModifierOrder.Count)-1];game.Encounter.Modifier=id;Modifiers[id].Apply(game,game.Encounter);
         }

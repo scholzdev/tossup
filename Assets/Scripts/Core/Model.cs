@@ -231,6 +231,9 @@ namespace Tossup
         public bool WinRecorded, EndlessRecorded;
         public string UnlockedCharacter;
         public int? UnlockedStake;
+        public bool Tutorial;
+        public int TutorialHeads;
+        public SandboxConfig Sandbox;
     }
 
     public sealed class GameRuleException : Exception

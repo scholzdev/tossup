@@ -7,6 +7,11 @@ namespace Tossup.UI
     public static class A
     {
         const string ProfileFile = "profile.json";
+        const string RunFile = "run.json";
+        const string DevRunFile = "run-dev.json";
+        static string savedKey;
+        static bool? savedRunExists;
+        static string CurrentRunFile => RuntimeMode.Dev ? DevRunFile : RunFile;
 
         static void ApplyOptions()
         {
@@ -19,10 +24,49 @@ namespace Tossup.UI
         {
             string json = Ui.Platform.ReadSave(ProfileFile);
             Ui.Profile = json != null ? Tossup.Profile.Decode(json) : Tossup.Profile.New();
+            RuntimeMode.ApplyProfile(Ui.Profile);
             ApplyOptions();
         }
 
-        static void SaveProfile() => Ui.Platform.WriteSave(ProfileFile, Tossup.Profile.Encode(Ui.Profile));
+        static void SaveProfile()
+        {
+            if (RuntimeMode.Dev || RuntimeMode.Sandbox) return;
+            Ui.Platform.WriteSave(ProfileFile, Tossup.Profile.Encode(Ui.Profile));
+        }
+
+        public static bool HasSavedRun()
+        {
+            if(RuntimeMode.Sandbox)return false;
+            if(!savedRunExists.HasValue)savedRunExists=Ui.Platform.ReadSave(CurrentRunFile)!=null;
+            return savedRunExists.Value;
+        }
+        public static void SaveRun()
+        {
+            if (!RuntimeMode.Sandbox && Ui.Game != null && !Ui.Game.Tutorial && Ui.Game.Sandbox == null && RunSave.IsSafePoint(Ui.Game))
+            {Ui.Platform.WriteSave(CurrentRunFile, RunSave.Encode(Ui.Game));savedRunExists=true;}
+        }
+        public static void DeleteRun() { Ui.Platform.DeleteSave(CurrentRunFile); savedRunExists=false;savedKey = "over"; }
+
+        public static bool LoadRun()
+        {
+            string text=Ui.Platform.ReadSave(CurrentRunFile);savedRunExists=text!=null;
+            var game = RunSave.Decode(text);
+            if (game == null) { DeleteRun(); return false; }
+            game.Paused = false;
+            game.ContractsEnabled = false;
+            if (game.Phase == Phase.Contract) Game.SkipContract(game);
+            if (game.Mulligan != null) Game.MulliganDone(game);
+            Ui.Game = game;
+            Ui.SelectedCharacter = game.CharacterId;
+            Ui.EncounterReveal = null;
+            Ui.FlipAnimation = null;
+            Ui.Holding = false;
+            Ui.ResolveTimer = 0;
+            Ui.Tutorial = null;
+            Ui.Marked.Clear();
+            savedKey = null;
+            return true;
+        }
 
         public static void Go(string screen)
         {
@@ -34,6 +78,12 @@ namespace Tossup.UI
         // "Play" / "New Run": the very first time, show How To Play before the character screen.
         public static void Play()
         {
+            if (RuntimeMode.Sandbox && Ui.SandboxConfig != null) { StartSandbox(Ui.SandboxConfig); return; }
+            if (HasSavedRun())
+            {
+                Ui.Confirm = new Confirm { Title = "NEW RUN", Text = "YOUR SAVED RUN WILL BE REPLACED.", Ok = () => { DeleteRun(); Go("select"); } };
+                return;
+            }
             if (Ui.Profile.Options.SeenHelp)
             {
                 Go("select");
@@ -41,18 +91,26 @@ namespace Tossup.UI
             }
             Ui.Profile.Options.SeenHelp = true;
             SaveProfile();
-            Ui.HelpNext = "select";
-            Go("help");
+            Tutorial.Start();
+        }
+
+        public static void StartTutorial()
+        {
+            Ui.Profile.Options.SeenHelp = true;
+            SaveProfile();
+            if(Ui.Game!=null&&Ui.Game.Phase!=Phase.GameOver&&Ui.Game.Phase!=Phase.Victory)
+                Ui.Confirm=new Confirm{Title="TUTORIAL",Text="THIS LEVEL STARTS OVER WHEN YOU CONTINUE.",Ok=Tutorial.Start};
+            else Tutorial.Start();
         }
 
         // Quitting asks first (popup) while a run is in progress, because runs are not saved.
         public static void Quit()
         {
             var g = Ui.Game;
-            bool running = g != null && g.Phase != Phase.GameOver && g.Phase != Phase.Victory;
+            bool running = g != null && !RuntimeMode.Sandbox && !g.Tutorial && g.Sandbox == null && g.Phase != Phase.GameOver && g.Phase != Phase.Victory;
             if (running)
             {
-                Ui.Confirm = new Confirm { Title = "QUIT", Text = "THE CURRENT RUN WILL BE LOST.", Ok = Ui.Platform.Quit };
+                Ui.Confirm = new Confirm { Title = "QUIT", Text = "THIS LEVEL STARTS OVER WHEN YOU CONTINUE.", Ok = Ui.Platform.Quit };
                 return;
             }
             Ui.Platform.Quit();
@@ -117,6 +175,8 @@ namespace Tossup.UI
             Ui.Profile = Tossup.Profile.New();
             Ui.Profile.Options = options;
             Ui.Game = null;
+            Ui.SandboxConfig = null;
+            DeleteRun();
             Ui.SetDraft = null;
             Ui.Marked = new HashSet<int>();
             Ui.FlipAnimation = null;
@@ -256,15 +316,39 @@ namespace Tossup.UI
 
         public static void Start(double? seed = null)
         {
+            if(RuntimeMode.Sandbox&&Ui.SandboxConfig!=null){StartSandbox(Ui.SandboxConfig);return;}
             var p = Ui.Platform;
             if(!Tossup.Profile.CharacterUnlocked(Ui.Profile,Ui.SelectedCharacter))return;
             Ui.Game = Game.New(seed ?? p.UnixTime + Math.Floor(p.Time * 1000000), Ui.SelectedCharacter,
                 Tossup.Profile.UnlockedList(Ui.Profile, Ui.SelectedCharacter), Loadout(), true, Stake());
+            Ui.Game.ContractsEnabled = false;
             Ui.FlipAnimation = null;
             Ui.ResolveTimer = 0;
             Ui.Holding = false;
             Ui.Marked = new HashSet<int>();
             Ui.Notice = "";
+            Ui.EncounterReveal = RuntimeMode.Dev || RuntimeMode.Sandbox ? null : new EncounterReveal { Elapsed = 0 };
+            Ui.Game.Tutorial = false;
+            savedKey = null;
+        }
+
+        public static void StartSandbox(SandboxConfig config)
+        {
+            RuntimeMode.Configure(RuntimeMode.Dev, true);
+            RuntimeMode.ApplyProfile(Ui.Profile);
+            var game = Game.NewSandbox(config);
+            Ui.SandboxConfig = config;
+            Ui.Game = game;
+            Ui.SelectedCharacter = Ui.SetsCharacter = game.CharacterId;
+            Ui.Tutorial = null;
+            Ui.EncounterReveal = null;
+            Ui.FlipAnimation = null;
+            Ui.Holding = false;
+            Ui.ResolveTimer = 0;
+            Ui.Screen = config.Screen;
+            game.Paused = config.Screen != "encounter" && config.Screen != "shop";
+            if (config.Screen == "shop") Game.OpenSandboxShop(game);
+            savedKey = null;
         }
 
         public static void SelectCharacter(string id) => Ui.SelectedCharacter = id;
@@ -341,41 +425,58 @@ namespace Tossup.UI
         {
             var game = Ui.Game;
             Ui.Shake = Math.Max(0, Ui.Shake - dt);
+            if (Ui.EncounterReveal != null && game != null && !game.Paused)
+                Ui.EncounterReveal.Elapsed = Math.Min(3.4, Ui.EncounterReveal.Elapsed + dt);
+            Tutorial.Update();
             if (game != null && game.Phase != Phase.Encounter) Ui.Holding = false;
             if (game != null && Ui.Marked.Count > 0) // marks only make sense while the coin is still in the bank or hand
             {
                 var live = new HashSet<int>(game.Mulligan != null ? game.Mulligan.Hand : game.Encounter != null ? game.Encounter.Queue : new List<int>());
                 Ui.Marked.RemoveWhere(uid => !live.Contains(uid));
             }
-            if (game != null && game.Purchased.Count > 0) // buying a locked coin in the shop unlocks it for good
+            if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox==null && game.Purchased.Count > 0) // buying a locked coin in the shop unlocks it for good
             {
                 bool unlockedNow = false;
                 foreach (var id in game.Purchased) unlockedNow = Tossup.Profile.Grant(Ui.Profile, game.CharacterId, id) || unlockedNow;
                 game.Purchased.Clear();
                 if (unlockedNow) SaveProfile();
             }
-            if (game != null) // anything that has been in your deck counts as collected
+            if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox == null) // anything that has been in your deck counts as collected
             {
                 bool fresh = false;
                 foreach (var owned in game.Coins) fresh = Tossup.Profile.Collect(Ui.Profile, owned.Id) || fresh;
                 if (fresh) SaveProfile();
             }
-            if (game != null && (game.Phase == Phase.GameOver || game.Phase == Phase.Victory) && game.TokensPaid == null)
+            if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox == null && (game.Phase == Phase.GameOver || game.Phase == Phase.Victory) && game.TokensPaid == null)
             {
                 game.TokensPaid = Game.RunTokens(game);
                 LogRun(game);
                 Ui.Profile.Tokens += game.TokensPaid.Value;
                 SaveProfile();
             }
-            if(game!=null&&game.Phase==Phase.Victory&&!game.WinRecorded)
+            if(game!=null&&!RuntimeMode.Sandbox&&!game.Tutorial&&game.Sandbox==null&&game.Phase==Phase.Victory&&!game.WinRecorded)
             {
                 game.WinRecorded=true;game.UnlockedStake=Tossup.Profile.RecordStakeWin(Ui.Profile,game.CharacterId,game.Stake);game.UnlockedCharacter=Tossup.Profile.RecordWin(Ui.Profile,game.CharacterId);SaveProfile();
             }
-            if(game!=null&&game.Endless&&game.Phase==Phase.GameOver&&!game.EndlessRecorded){game.EndlessRecorded=true;Tossup.Profile.RecordEndless(Ui.Profile,game.CharacterId,game.Cleared-Game.Route.Count);SaveProfile();}
-            if (game != null && game.Endless && game.Phase == Phase.GameOver && !game.EndlessLogged)
+            if(game!=null&&!RuntimeMode.Sandbox&&!game.Tutorial&&game.Sandbox==null&&game.Endless&&game.Phase==Phase.GameOver&&!game.EndlessRecorded){game.EndlessRecorded=true;Tossup.Profile.RecordEndless(Ui.Profile,game.CharacterId,game.Cleared-Game.Route.Count);SaveProfile();}
+            if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox==null && game.Endless && game.Phase == Phase.GameOver && !game.EndlessLogged)
             {
                 game.EndlessLogged = true;
                 LogRun(game); // an endless run is logged again when it ends, with the levels cleared beyond the boss
+            }
+            if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox == null)
+            {
+                bool safe = game.Phase == Phase.Shop || game.Phase == Phase.Augment ||
+                    ((game.Phase == Phase.Contract || game.Phase == Phase.Encounter) && game.Mulligan != null);
+                if (safe)
+                {
+                    string key = game.Phase + ":" + game.EncounterIndex + ":" + game.Player.Gold + ":" + game.Coins.Count + ":" +
+                        game.Slots + ":" + game.Items.Count + ":" + game.Relics.Count + ":" + game.RerollCost + ":" + game.RngState + ":" + game.Augments.Count;
+                    if (game.AugmentPending != null) key += ":" + game.AugmentPending.Id + ":" + game.AugmentPending.RewardId;
+                    if (key != savedKey) { savedKey = key; SaveRun(); }
+                }
+                else if ((game.Phase == Phase.GameOver || game.Phase == Phase.Victory) && savedKey != "over") DeleteRun();
+                if (game.Phase == Phase.Encounter && game.Mulligan != null) Game.MulliganDone(game);
             }
             if (Ui.ResolveTimer > 0 && game != null && !game.Paused)
             {

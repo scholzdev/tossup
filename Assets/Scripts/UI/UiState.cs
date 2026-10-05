@@ -39,6 +39,9 @@ namespace Tossup.UI
         public double Elapsed, Duration;
     }
 
+    public sealed class TutorialState { public int Step = 1; }
+    public sealed class EncounterReveal { public double Elapsed; }
+
     public sealed class SetDraft
     {
         public string Character;
@@ -88,6 +91,9 @@ namespace Tossup.UI
         public static double Shake;
         public static bool Holding; // landed coin stays in view until the player asks for the next one
         public static double ResolveTimer; // hold on the flipped result before effects apply
+        public static TutorialState Tutorial;
+        public static EncounterReveal EncounterReveal;
+        public static SandboxConfig SandboxConfig;
 
         public static void Layout(out float scale, out float ox, out float oy)
         {

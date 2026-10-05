@@ -131,6 +131,7 @@ namespace Tossup
 
         public static double Probability(GameState game, CoinInst item)
         {
+            if (game.Sandbox != null && game.Sandbox.Odds.TryGetValue(item.Id, out var sandboxOdds)) return sandboxOdds.Heads;
             double bonus = 0, magnet = 0, boost = 0;
             var e = game.Encounter;
             if (game.Phase == Phase.Encounter && e != null)
@@ -147,6 +148,12 @@ namespace Tossup
             p = Hooks.Odds(game, item, p);
             if (e != null && e.Contract != null && Contracts.TryGetValue(e.Contract.Id, out var contract)) p -= contract.HeadsPenalty;
             return Math.Max(0, Math.Min(1 - def.TieProbability, p));
+        }
+
+        public static double TieProbability(GameState game, CoinInst item)
+        {
+            if (game.Sandbox != null && game.Sandbox.Odds.TryGetValue(item.Id, out var sandboxOdds)) return sandboxOdds.Tie;
+            return Content.Coins[item.Id].TieProbability;
         }
 
         // Top the bank up to Visible coins from the draw pile. The pile is never reshuffled: a level lasts
@@ -240,7 +247,7 @@ namespace Tossup
             Hooks.Bind(game, inst);
             Signal.Emit("coin_deal", new GameEvent { Game = game, Inst = inst });
             game.Dealt.Probability = Probability(game, inst); // on_deal may have changed the odds
-            game.Dealt.TieProbability = Content.Coins[inst.Id].TieProbability;
+            game.Dealt.TieProbability = TieProbability(game, inst);
         }
 
         // Discard coins from the opening hand (free). They stay out of play for the level, and at least
@@ -284,7 +291,7 @@ namespace Tossup
         // StartMax, from the character's pool plus unlocked coins); defaults to the character's deck.
         // manualMulligan: the UI sets this and calls MulliganDone itself.
         public static GameState New(double seed, string characterId = null, List<string> unlocked = null,
-            List<string> loadout = null, bool manualMulligan = false, int stake = 1)
+            List<string> loadout = null, bool manualMulligan = false, int stake = 1, bool applyRunEncounter = true, SandboxConfig sandbox = null)
         {
             characterId = characterId ?? "blade";
             if (!Content.Characters.ContainsKey(characterId)) throw new GameRuleException("unknown character: " + characterId);
@@ -293,12 +300,12 @@ namespace Tossup
             {
                 Seed = normalized, RngState = normalized, CharacterId = characterId, Phase = Phase.Encounter,
                 Player = new Player { Gold = StartGold, Energy = 3, MaxEnergy = 3 },
-                Unlocked = unlocked ?? new List<string>(), EncounterIndex = 1, Slots = StartMax, Stake = Math.Max(1, Math.Min(8, stake)),
+                Unlocked = unlocked ?? new List<string>(), EncounterIndex = 1, Slots = StartMax, Stake = Math.Max(1, Math.Min(8, stake)), Sandbox=sandbox,
             };
             var def = Content.Characters[characterId];
-            game.Player.Gold = Rule(game, "start_gold", StartGold);
+            game.Player.Gold = RuntimeMode.Dev ? 5000 : Rule(game, "start_gold", StartGold);
             game.ManualMulligan = manualMulligan;
-            if (loadout != null)
+            if (loadout != null && sandbox == null)
             {
                 if (loadout.Count < 1 || loadout.Count > StartMax)
                     throw new GameRuleException("loadout must have 1-" + StartMax + " coins");
@@ -311,18 +318,42 @@ namespace Tossup
                     if (copies[rarity] > Profile.RarityLimit(id)) throw new GameRuleException("too many " + rarity + " coins");
                 }
             }
-            var ids = loadout ?? def.Deck ?? new List<string> { def.Starter };
+            var ids = sandbox?.Coins ?? loadout ?? def.Deck ?? new List<string> { def.Starter };
             foreach (var id in ids) game.Coins.Add(NewCoin(game, id));
             game.SelectedUid = game.Coins[0].Uid;
             Log(game, "Seed: " + normalized);
+            Hooks.Unbind();
             Relics.Bind(game);
             Items.Clear();
-            game.RunEncounterId = EncounterOrder[Rng.Int(game, 1, EncounterOrder.Count) - 1];
-            TriggerRunHook(game, "run_start");
+            if (applyRunEncounter && !RuntimeMode.Sandbox)
+            {
+                game.RunEncounterId = EncounterOrder[Rng.Int(game, 1, EncounterOrder.Count) - 1];
+                TriggerRunHook(game, "run_start");
+            }
             StartEncounter(game);
-            Log(game, "Run Encounter: " + Encounters[game.RunEncounterId].Name + ".");
+            if(game.RunEncounterId!=null) Log(game, "Run Encounter: " + Encounters[game.RunEncounterId].Name + ".");
             return game;
         }
+
+        public static GameState NewSandbox(SandboxConfig config)
+        {
+            if (config == null) throw new GameRuleException("sandbox scene is missing");
+            RuntimeMode.Configure(RuntimeMode.Dev, true);
+            var game = New(config.Seed ?? DateTime.UtcNow.Ticks, config.Character, null, null, false, config.Stake, false, config);
+            game.ContractsEnabled = false;
+            game.Slots = Math.Max(game.Slots, game.Coins.Count);
+            if (config.Gold.HasValue) game.Player.Gold = config.Gold.Value;
+            if (config.Energy.HasValue) game.Player.Energy = game.Player.MaxEnergy = config.Energy.Value;
+            if (game.Dealt != null)
+            {
+                var item = GetCoin(game, game.Dealt.Uid);
+                game.Dealt.Probability = Probability(game, item);
+                game.Dealt.TieProbability = TieProbability(game, item);
+            }
+            return game;
+        }
+
+        public static void OpenSandboxShop(GameState game) => EnterShop(game);
 
         public static bool Select(GameState game, int uid)
         {
@@ -391,6 +422,13 @@ namespace Tossup
             flip.Result = flip.Raw;
             flip.Forced = false;
             flip.Altered = null;
+            if (game.Tutorial && game.TutorialHeads > 0)
+            {
+                game.TutorialHeads--;
+                flip.Raw = flip.Result = Side.Heads;
+                flip.Forced = true;
+                flip.Altered = "TUTORIAL";
+            }
             if (BuffActive(game, "heads") != null) { flip.Result = Side.Heads; flip.Altered = "BUFF"; }
             Signal.Emit("coin_flip", new GameEvent { Game = game, Inst = item, Flip = flip });
             Finalize(game, item, flip);

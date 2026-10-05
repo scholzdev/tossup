@@ -33,6 +33,8 @@ namespace Tossup
         // -tossup-shots <folder>: capture the scripted screenshot tour and quit
         string shotsDir;
         bool shotMode;
+        string sandboxScenePath;
+        bool devMode;
         float shotMouseX = -50, shotMouseY = -50;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -57,6 +59,15 @@ namespace Tossup
             string[] args = Environment.GetCommandLineArgs();
             for (int i = 0; i + 1 < args.Length; i++)
                 if (args[i] == "-tossup-shots") shotsDir = args[i + 1];
+            devMode = Environment.GetEnvironmentVariable("TOSSUP_DEV") == "1";
+            sandboxScenePath = Environment.GetEnvironmentVariable("TOSSUP_SANDBOX_SCENE");
+            for(int i=0;i<args.Length;i++)
+            {
+                if(args[i]=="-tossup-dev")devMode=true;
+                if(args[i]=="-tossup-sandbox"&&i+1<args.Length)sandboxScenePath=args[++i];
+            }
+            bool sandboxMode=Environment.GetEnvironmentVariable("TOSSUP_SANDBOX")=="1"||!string.IsNullOrEmpty(sandboxScenePath);
+            RuntimeMode.Configure(devMode,sandboxMode);
             shotMode = shotsDir != null;
             saveDir = shotMode ? Path.Combine(Application.temporaryCachePath, "shots-save") : Application.persistentDataPath;
             if (shotMode && Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
@@ -84,6 +95,15 @@ namespace Tossup
             cursorClick = Resources.Load<Texture2D>("ui/cursor_click");
 
             AppCore.Load(this);
+            if(!string.IsNullOrEmpty(sandboxScenePath))
+            {
+                try
+                {
+                    if(Path.GetExtension(sandboxScenePath)!=".json")throw new FormatException("sandbox scene must be a JSON file");
+                    Ui.SandboxConfig=SandboxConfig.Decode(File.ReadAllText(sandboxScenePath));A.StartSandbox(Ui.SandboxConfig);
+                }
+                catch(Exception ex){Debug.LogError("Could not load Tossup sandbox JSON: "+ex.Message);}
+            }
             if (music.clip != null && !shotMode) music.Play();
             loaded = true;
             lastMouse = Input.mousePosition;
@@ -101,6 +121,12 @@ namespace Tossup
             }
             if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1) || Input.GetMouseButtonUp(2)) AppCore.MouseReleased();
             if (Input.GetKeyDown(KeyCode.F3)) AppCore.KeyPressed("f3");
+            if (Ui.EncounterReveal != null && Input.anyKeyDown) AppCore.KeyPressed("any");
+            if (Input.GetKeyDown(KeyCode.F5) && !string.IsNullOrEmpty(sandboxScenePath))
+            {
+                try { if(Path.GetExtension(sandboxScenePath)!=".json")throw new FormatException("sandbox scene must be a JSON file");A.StartSandbox(SandboxConfig.Decode(File.ReadAllText(sandboxScenePath))); }
+                catch(Exception ex){Debug.LogError("Could not reload Tossup sandbox JSON: "+ex.Message);}
+            }
             if (Input.GetKeyDown(KeyCode.Escape)) AppCore.KeyPressed("escape");
             if (Input.GetKeyDown(KeyCode.Space)) AppCore.KeyPressed("space");
             if (Input.GetKeyDown(KeyCode.Return)) AppCore.KeyPressed("return");
@@ -201,6 +227,11 @@ namespace Tossup
 
         public void WriteSave(string name, string text) => File.WriteAllText(Path.Combine(saveDir, name), text);
         public void AppendSave(string name, string text) => File.AppendAllText(Path.Combine(saveDir, name), text);
+        public void DeleteSave(string name)
+        {
+            string path = Path.Combine(saveDir, name);
+            if (File.Exists(path)) File.Delete(path);
+        }
 
         public void PlaySound(string name, float pitch, float volume)
         {

@@ -56,4 +56,23 @@ namespace Tossup.UI
             for(int i=0;i<choices.Count;i++){var c=choices[i];float x=start+(i%cols)*(width+gap),y=190+(i/cols)*105;Box(x,y,width,92,C.PanelDk);Outline(x,y,width,92,C.Line);if(c.CoinId!=null){CoinImage(c.CoinId,x+10,y+10,48);Text(Content.Coins[c.CoinId].Name,x+68,y+10,Ui.F20,C.Gold);}else Text(c.Title,x+16,y+10,Ui.F20,C.Gold);Text(c.UpgradeName??c.Detail,x+68,y+40,Ui.F16,C.Face);Button("CHOOSE",x+width-100,y+50,88,30,C.Blue,()=>A.ChooseAugmentOption(c.Key));}
         }
     }
+
+    public static class EncounterRevealView
+    {
+        public static void Draw()
+        {
+            var reveal=Ui.EncounterReveal;var game=Ui.Game;
+            if(reveal==null||game==null||game.RunEncounterId==null||!Game.Encounters.TryGetValue(game.RunEncounterId,out var encounter))return;
+            Ui.Buttons.Clear();
+            float alpha=(float)Math.Max(0,Math.Min(1,reveal.Elapsed/.32));
+            float rise=1-(float)Math.Pow(1-alpha,3);float pulse=1+(float)Math.Sin(reveal.Elapsed*5.5)*.025f;
+            Color(C.Ink,.88f*alpha);Gfx.Rectangle(true,0,0,1280,800);
+            float panelY=95+(1-rise)*84;Box(255,panelY,770,545,C.PanelDk);Outline(255,panelY,770,545,C.Gold);Outline(270,panelY+15,740,515,C.Line);
+            Centered("RUN ENCOUNTER",295,panelY+34,690,Ui.F20,C.Gold);Centered("ONE RULE FOR THE WHOLE RUN",295,panelY+74,690,Ui.F16,C.Muted);
+            if(Ui.EncounterImages.TryGetValue(game.RunEncounterId,out var image)){float size=190*pulse*(.72f+.28f*rise);ImageAt(image,640-size/2,250+(1-rise)*40,size);}
+            else {Color(C.Gold,alpha);Gfx.Circle(false,640,342,84*pulse);Centered("UPGRADE",540,324,200,Ui.F32,C.Gold);}
+            Centered(encounter.Name.ToUpper(),295,panelY+374,690,Ui.F32,C.Face);Gfx.SetFont(Ui.F16);Color(C.Muted,alpha);Gfx.Printf(encounter.Description,365,panelY+420,550,Align.Center);
+            if(reveal.Elapsed>.65){Centered("CLICK OR PRESS ANY KEY TO CONTINUE",300,690,680,Ui.F16,C.Muted);Ui.Buttons.Add(new Button{X=0,Y=0,W=1280,H=800,Label="DISMISS ENCOUNTER REVEAL",Action=()=>AppCore.DismissEncounterReveal()});}
+        }
+    }
 }

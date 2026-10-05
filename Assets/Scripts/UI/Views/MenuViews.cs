@@ -21,14 +21,20 @@ namespace Tossup.UI
                 entries.Add(("CONTINUE", C.Blue, () => Ui.Game.Paused = false));
                 entries.Add(("NEW RUN", C.Gold, A.Play));
             }
-            else entries.Add(("PLAY", C.Blue, A.Play));
+            else if(A.HasSavedRun())
+            {
+                entries.Add(("CONTINUE",C.Blue,()=>A.LoadRun()));
+                entries.Add(("NEW RUN",C.Gold,A.Play));
+            }
+            else entries.Add((RuntimeMode.Sandbox&&Ui.SandboxConfig!=null?"RELOAD SANDBOX":"PLAY", C.Blue, A.Play));
             entries.Add(("COIN SETS", C.Gold, () => A.OpenSets(Ui.SelectedCharacter)));
             entries.Add(("COLLECTION", C.Green, () => A.Go("collection")));
+            entries.Add(("TUTORIAL", C.Green, A.StartTutorial));
             entries.Add(("HOW TO PLAY", C.Green, () => { Ui.HelpNext = null; A.Go("help"); }));
             entries.Add(("OPTIONS", C.PanelLight, () => A.Go("options")));
             entries.Add(("QUIT", C.Red, A.Quit));
             for (int i = 0; i < entries.Count; i++)
-                Button(entries[i].Item1, 470, 250 + i * 68, 340, 54, entries[i].Item2, entries[i].Item3);
+                Button(entries[i].Item1, 470, 250 + i * 58, 340, 48, entries[i].Item2, entries[i].Item3);
         }
     }
 
