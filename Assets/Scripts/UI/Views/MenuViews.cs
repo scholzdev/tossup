@@ -370,7 +370,7 @@ namespace Tossup.UI
         {
             ("screen_shake", "SCREEN SHAKE", "Shake the screen when a coin lands."),
             ("fast_flip", "FAST FLIP", "Half-length coin flip animation."),
-            ("fullscreen", "FULLSCREEN", "Switch between windowed and fullscreen."),
+            ("fullscreen", "BORDERLESS FULLSCREEN", "Use a borderless fullscreen window."),
         };
         static readonly (string key, string label, string hint)[] Sliders =
         {

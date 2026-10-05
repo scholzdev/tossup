@@ -50,7 +50,7 @@ helpers in `src/ui/actions.lua` for everything that changes state.
 
 `./Tools/build mac` and `./Tools/build windows` invoke Unity's `TossupBuild` methods in `Assets/Editor/TossupBuild.cs`. The Editor sets up URP and player settings, stamps the build ID temporarily, builds the player and restores the version file. The macOS app is signed for local use. Native Windows builds use `Tools/build_windows.ps1`.
 
-`./Tools/build_all.sh` builds macOS and Windows and packages each with `Tools/package_unity.py`. The packager keeps macOS app permissions and omits Unity's non-shipping Windows backup folder. `./Tools/build_all.sh release --dry-run` calls `Tools/release.py`, which runs gameplay and docs checks, builds both platforms, and prepares artifacts and notes. An actual release requires an explicit publish step. `Tools/run_macos.sh` builds and launches the macOS app; `Tools/run_unity.sh` opens the project in the Editor.
+`./Tools/build_all.sh` builds macOS and Windows and packages each with `Tools/package_unity.py`. The packager keeps macOS app permissions and omits Unity's non-shipping Windows backup folder. `./Tools/build_all.sh release --dry-run` calls `Tools/release.py`, which runs gameplay and docs checks, builds both platforms, and prepares artifacts and notes. An actual release requires an explicit publish step. `./Tools/run mac|windows|linux` builds and launches the matching native player; Windows uses `Tools/build_windows.ps1`. `Tools/run_unity.sh` opens the project in the Editor.
 
 `Tools/game_tools.sh` runs the live C# content exporter. `Tools/build_docs.sh` and `Tools/build_wiki.sh` use its JSON output to update documentation and the local wiki. `.github/workflows/wiki.yml` publishes the wiki from the same exporter.
 

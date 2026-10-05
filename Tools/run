@@ -1,0 +1,45 @@
+#!/bin/sh
+set -eu
+
+ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+if [ "$#" -ne 1 ]; then
+  echo "usage: $0 mac|windows|linux" >&2
+  exit 2
+fi
+
+PLATFORM=$1
+HOST=$(uname -s)
+case "$PLATFORM:$HOST" in
+  mac:Darwin|macos:Darwin)
+    "$ROOT/Tools/build" mac
+    exec open "$ROOT/Builds/macOS/Tossup.app"
+    ;;
+  windows:MINGW*|windows:MSYS*|windows:CYGWIN*)
+    POWERSHELL=${POWERSHELL:-powershell.exe}
+    if ! command -v "$POWERSHELL" >/dev/null 2>&1; then
+      echo "PowerShell not found; install it or set POWERSHELL." >&2
+      exit 127
+    fi
+    exec "$POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$ROOT/Tools/build_windows.ps1" -Run
+    ;;
+  linux:Linux)
+    "$ROOT/Tools/build" linux
+    exec "$ROOT/Builds/Linux/Tossup.x86_64"
+    ;;
+  mac|macos)
+    echo "macOS players can only run on macOS (this host is $HOST)." >&2
+    exit 1
+    ;;
+  windows)
+    echo "Windows players can only run on Windows (this host is $HOST). Use ./Tools/build windows to cross-build." >&2
+    exit 1
+    ;;
+  linux)
+    echo "Linux players can only run on Linux (this host is $HOST)." >&2
+    exit 1
+    ;;
+  *)
+    echo "usage: $0 mac|windows|linux" >&2
+    exit 2
+    ;;
+esac

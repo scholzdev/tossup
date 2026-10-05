@@ -1,5 +1,5 @@
 # Build and package a Windows player using the installed Unity Editor.
-param([string]$UnityEditor = $env:UNITY_EDITOR)
+param([string]$UnityEditor = $env:UNITY_EDITOR, [switch]$Run)
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $editorVersion = (Select-String -Path "$projectRoot/ProjectSettings/ProjectVersion.txt" -Pattern '^m_EditorVersion: (.+)$').Matches.Groups[1].Value
@@ -37,3 +37,4 @@ New-Item -ItemType Directory -Force $packageDir | Out-Null
 $shippingFiles = Get-ChildItem $buildDir | Where-Object { $_.Name -ne 'Tossup_BackUpThisFolder_ButDontShipItWithYourGame' }
 Compress-Archive -Path $shippingFiles.FullName -DestinationPath "$packageDir/Tossup-windows.zip" -Force
 Write-Output "Built $playerPath and packaged $packageDir/Tossup-windows.zip"
+if ($Run) { Start-Process -FilePath $playerPath }
