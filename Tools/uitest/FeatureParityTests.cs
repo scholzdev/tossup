@@ -15,6 +15,7 @@ static class FeatureParityTests
         SavedRunRoundTrip();
         TutorialFlow();
         RuntimeModesAndSandbox();
+        TitleAndEncounterScreens();
         EncounterRevealFlow();
         int seeds=1000;
         if(int.TryParse(Environment.GetEnvironmentVariable("TOSSUP_SEED_SWEEP"),out var requested))seeds=Math.Max(1,requested);
@@ -97,6 +98,35 @@ static class FeatureParityTests
         Check(Ui.Buttons.Count == 1 && Ui.Buttons[0].Label == "DISMISS ENCOUNTER REVEAL", "reveal adds dismissal after its opening animation");
         Check(AppCore.DismissEncounterReveal() && Ui.EncounterReveal == null, "reveal closes after its minimum display time");
         Ui.Game = null;
+    }
+
+    static void TitleAndEncounterScreens()
+    {
+        RuntimeMode.Configure(false, false);
+        Ui.Game = null;
+        Ui.Tutorial = null;
+        Ui.EncounterReveal = null;
+        Ui.Screen = "title";
+        Check(Ui.UiImages.ContainsKey("title_scene"), "the original title scene with its three coins is loaded");
+        AppCore.Draw();
+        Check(Ui.Buttons.Exists(b => b.Label == "PLAY" && Math.Abs(b.X - 100) < .01f && Math.Abs(b.Y - 240) < .01f),
+            "title actions use the original left-side menu layout");
+
+        A.Start(6602);
+        Ui.EncounterReveal = null; // inspect the opening hand after its separate run-encounter reveal
+        A.Update(.1);
+        Check(Ui.Game.Mulligan != null, "the opening-hand encounter screen remains interactive");
+        AppCore.Draw();
+        Check(Ui.Buttons.Exists(b => b.Label.StartsWith("START LEVEL")), "the opening-hand screen exposes Start Level");
+        A.NextOrFlip();
+        Check(Ui.Game.Phase == Phase.Contract, "starting a normal level offers its contract screen");
+        AppCore.Draw();
+        Check(Ui.Buttons.Exists(b => b.Label.StartsWith("TAKE CONTRACT")) && Ui.Buttons.Exists(b => b.Label == "SKIP CONTRACT"),
+            "the contract screen exposes its original choices");
+        A.SkipContract();
+        Check(Ui.Game.Phase == Phase.Encounter && Ui.Game.Mulligan == null, "skipping a contract starts the encounter");
+        Ui.Game = null;
+        Ui.EncounterReveal = null;
     }
 
     static void SeedSweep(int first, int count)
