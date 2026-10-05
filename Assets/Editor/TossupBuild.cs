@@ -3,6 +3,9 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using Tossup.UI;
 using Process = System.Diagnostics.Process;
 using ProcessStartInfo = System.Diagnostics.ProcessStartInfo;
 
@@ -59,6 +62,7 @@ namespace Tossup.EditorTools
         [MenuItem("Tossup/Set Up Project")]
         public static void Setup()
         {
+            SetupRenderPipeline();
             if (!File.Exists(ScenePath))
             {
                 var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -83,6 +87,73 @@ namespace Tossup.EditorTools
             if (icon != null) PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Unknown, new[] { icon });
             AssetDatabase.SaveAssets();
             Debug.Log("Tossup: project set up (" + ScenePath + ")");
+        }
+
+        // Serialized assets make URP work immediately on a fresh checkout. Setup is also
+        // idempotent, so CLI builds repair missing assets without duplicating features.
+        static void SetupRenderPipeline()
+        {
+            const string folder = "Assets/Settings";
+            const string rendererPath = folder + "/TossupRenderer.asset";
+            const string pipelinePath = folder + "/TossupURP.asset";
+            if (!AssetDatabase.IsValidFolder(folder)) AssetDatabase.CreateFolder("Assets", "Settings");
+            var renderer = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(rendererPath);
+            if (renderer == null)
+            {
+                renderer = ScriptableObject.CreateInstance<UniversalRendererData>();
+                AssetDatabase.CreateAsset(renderer, rendererPath);
+            }
+            if (!renderer.TryGetRendererFeature<TossupCanvasFeature>(out _))
+            {
+                var feature = ScriptableObject.CreateInstance<TossupCanvasFeature>();
+                feature.name = "Tossup canvas";
+                feature.hideFlags = HideFlags.HideInHierarchy;
+                AssetDatabase.AddObjectToAsset(feature, renderer);
+                renderer.rendererFeatures.Add(feature);
+                renderer.SetDirty();
+                EditorUtility.SetDirty(renderer);
+            }
+            // Keep URP's recovery map in step with the serialized feature subassets.
+            var rendererSettings = new SerializedObject(renderer);
+            var featureMap = rendererSettings.FindProperty("m_RendererFeatureMap");
+            featureMap.arraySize = renderer.rendererFeatures.Count;
+            for (int i = 0; i < renderer.rendererFeatures.Count; i++)
+                if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(renderer.rendererFeatures[i], out string _, out long id))
+                    featureMap.GetArrayElementAtIndex(i).longValue = id;
+            rendererSettings.ApplyModifiedPropertiesWithoutUndo();
+            var pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(pipelinePath);
+            if (pipeline == null)
+            {
+                pipeline = UniversalRenderPipelineAsset.Create(renderer);
+                AssetDatabase.CreateAsset(pipeline, pipelinePath);
+            }
+            // Pixel art is drawn at native resolution, with no lighting or post effects.
+            pipeline.supportsHDR = false;
+            pipeline.msaaSampleCount = 1;
+            pipeline.renderScale = 1;
+            pipeline.supportsCameraDepthTexture = false;
+            pipeline.supportsCameraOpaqueTexture = false;
+            // URP exposes these Inspector settings as read-only runtime properties.
+            var settings = new SerializedObject(pipeline);
+            var renderers = settings.FindProperty("m_RendererDataList");
+            renderers.arraySize = 1;
+            renderers.GetArrayElementAtIndex(0).objectReferenceValue = renderer;
+            settings.FindProperty("m_DefaultRendererIndex").intValue = 0;
+            settings.FindProperty("m_MainLightRenderingMode").intValue = (int)LightRenderingMode.Disabled;
+            settings.FindProperty("m_AdditionalLightsRenderingMode").intValue = (int)LightRenderingMode.Disabled;
+            settings.FindProperty("m_MainLightShadowsSupported").boolValue = false;
+            settings.FindProperty("m_AdditionalLightShadowsSupported").boolValue = false;
+            settings.FindProperty("m_AnyShadowsSupported").boolValue = false;
+            settings.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(pipeline);
+            GraphicsSettings.defaultRenderPipeline = pipeline;
+            int quality = QualitySettings.GetQualityLevel();
+            for (int i = 0; i < QualitySettings.names.Length; i++)
+            {
+                QualitySettings.SetQualityLevel(i, false);
+                QualitySettings.renderPipeline = pipeline;
+            }
+            QualitySettings.SetQualityLevel(quality, false);
         }
 
         [MenuItem("Tossup/Build Windows Player")]

@@ -81,7 +81,7 @@ sh Tools/game_tools.sh sim --runs 20 --bot all --char all
 sh Tools/game_tools.sh sim --coins
 sh Tools/build_docs.sh --check
 sh Tools/build_wiki.sh
-./Tools/build_unity.sh macos
+./Tools/build mac
 Builds/macOS/Tossup.app/Contents/MacOS/Tossup -tossup-shots /tmp/tossup-unity-parity-shots -logFile /tmp/tossup-unity-parity-player.log
 python3 Tools/package_unity.py macos
 ```
@@ -90,15 +90,18 @@ Focused gameplay/UI/save regressions, 1,000 complete-run seeds, 31-screen tour, 
 
 ## Remaining verification limits
 
-- This installation has only `MacStandaloneSupport`. Windows player builds and runtime tests require Windows Build Support and a Windows host for execution. `Tools/build_windows.ps1` provides native Windows build/package orchestration; the shell script and Editor menu also support Windows. Linux remains optional and is excluded from the default build/release targets at the user’s request. AppImage creation additionally requires `appimagetool`; fixture checks covered Windows ZIP, Linux executable tar permissions and clear missing-tool failure.
+- Windows Build Support (Mono) is now installed. `./tools/build windows` successfully cross-built the URP player on macOS; the output is a Windows x86-64 PE executable with its data/runtime files. Execution and visual checks on a Windows host remain outstanding. `./tools/build mac` builds macOS; `Tools/build_windows.ps1` provides native Windows build/package orchestration. Linux remains optional and is excluded from the default build/release targets at the user’s request. AppImage creation additionally requires `appimagetool`; fixture checks covered Windows ZIP, Linux executable tar permissions and clear missing-tool failure.
 - Controller navigation/inspection was exercised through scripted UI state and a native screenshot. A physical-controller check remains outstanding.
-- Release publishing and GitHub workflow execution were not run; no commit, tag, push or release was created. Gate failure and version rollback were tested without contacting remotes.
+- Release publishing and GitHub workflow execution were not run; no release tag or release was created by the parity gate. Gate failure and version rollback were tested without contacting remotes.
 - The German table intentionally matches Lua. Lua itself lacks translations for Mathematician and its +10% Heads upgrade text, so those retain the same English fallback.
 
 These fixes resolve the established audit gaps. They are not an exhaustive proof of equivalence for every possible interaction or platform.
 
 - UI follow-up: centered and enlarged landing/applying feedback; the native system pointer keeps small hover targets visible. Layout regressions cover four window sizes, title background aspect ratio, pointer hit testing and screenshot-tour clickable bounds.
 
-- Latest UI gate passed: 1,000 full-run seeds, 33 scripted screens, 1,000 monkey frames and 1,000 player frames. Fresh native verification is currently blocked by Unity licensing: all built-in packages were withheld during registration, producing missing AudioModule references despite Audio being enabled in the manifest. No latest native package or screenshot verification is claimed.
+- Latest UI gate passed: 1,000 full-run seeds, 33 scripted screens, 1,000 monkey frames and 1,000 player frames. The earlier licensing blockage is resolved. Fresh URP macOS builds and a 33-screen native capture at 1620×800 completed without runtime exceptions, shader errors or Render Graph errors.
 
-- Coin bank follow-up: show the deck’s active slot count with larger rows and icons for starting decks; rows fit all ten coins above the footer at maximum capacity. Focused layout checks cover both sizes.
+- Coin bank follow-up: size the panel around the remaining coins, with larger rows/icons for small banks and enough room for all ten. The footer, buffs, discard hint and tutorial spotlight follow its height. Layout checks cover every size from one to ten, shrinking after a flip, the empty state, and a full bank with buffs/discard controls.
+
+- URP migration: URP 17.6 replaces the built-in pipeline. The immediate canvas API now collects reusable mesh batches, with separate properties for each texture/font/clip batch. `TossupCanvasFeature` draws through Render Graph after post processing; the shader uses URP HLSL and the render target's GPU projection. Fonts, clipping, transparency, rotated/flipping art and primitive order remain intact. Native captures inspected include title, gameplay, shop hover, collection, sets, German augment/upgrade choices, Edge, reveal animation and applying/resolved feedback. Screenshots: `/tmp/tossup-urp-shots`; native log: `/tmp/tossup-urp-player.log`.
+- Pipeline and renderer assets are supplied with Graphics/all Quality levels connected. Running setup again reuses the same renderer feature and asset GUIDs; two successive macOS builds passed. Shader/build API mismatch during initial setup was corrected using Unity's Editor serialization API for URP's read-only runtime settings. No save/content migration is required. Windows rendering still requires verification on Windows.

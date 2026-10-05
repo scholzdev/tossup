@@ -9,7 +9,7 @@ Shader "Hidden/Tossup2D"
     }
     SubShader
     {
-        Tags { "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
+        Tags { "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" "RenderPipeline" = "UniversalPipeline" }
         Blend SrcAlpha OneMinusSrcAlpha
         Cull Off
         ZWrite Off
@@ -17,12 +17,14 @@ Shader "Hidden/Tossup2D"
         Lighting Off
         Pass
         {
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #include "UnityCG.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            sampler2D _MainTex;
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+            float4x4 _CanvasProjection;
             float _AlphaOnly;
             float4 _ClipRect;
 
@@ -37,29 +39,29 @@ Shader "Hidden/Tossup2D"
             {
                 float2 canvas : TEXCOORD1;
                 float4 pos : SV_POSITION;
-                fixed4 color : COLOR;
+                half4 color : COLOR;
                 float2 uv : TEXCOORD0;
             };
 
             v2f vert(appdata v)
             {
                 v2f o;
-                o.pos = UnityObjectToClipPos(v.vertex);
+                o.pos = mul(_CanvasProjection, float4(v.vertex.xy, 0, 1));
                 o.color = v.color;
                 o.uv = v.uv;
                 o.canvas = v.vertex.xy;
                 return o;
             }
 
-            fixed4 frag(v2f i) : SV_Target
+            half4 frag(v2f i) : SV_Target
             {
                 clip(i.canvas - _ClipRect.xy);
                 clip(_ClipRect.zw - i.canvas);
-                fixed4 t = tex2D(_MainTex, i.uv);
-                fixed4 font = fixed4(i.color.rgb, i.color.a * t.a);
+                half4 t = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+                half4 font = half4(i.color.rgb, i.color.a * t.a);
                 return lerp(t * i.color, font, step(0.5, _AlphaOnly));
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }

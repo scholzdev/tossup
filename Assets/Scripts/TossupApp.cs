@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Tossup.UI;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace Tossup
 {
@@ -51,9 +52,16 @@ namespace Tossup
         {
             var cam = GetComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(C.Felt.R, C.Felt.G, C.Felt.B, 1); // fills the bars around the 16:10 canvas
+            cam.backgroundColor = new Color(C.Felt.R, C.Felt.G, C.Felt.B, 1); // fills the bars around the design canvas
             cam.cullingMask = 0;
             cam.orthographic = true;
+            cam.allowHDR = false;
+            cam.allowMSAA = false;
+            var cameraData = cam.GetUniversalAdditionalCameraData();
+            cameraData.renderPostProcessing = false;
+            cameraData.antialiasing = AntialiasingMode.None;
+            cameraData.requiresColorOption = CameraOverrideOption.Off;
+            cameraData.requiresDepthOption = CameraOverrideOption.Off;
             QualitySettings.vSyncCount = 1;
             Application.targetFrameRate = -1;
 
@@ -144,7 +152,12 @@ namespace Tossup
             catch (IOException) { } // Logging must never replace the original exception.
             catch (UnauthorizedAccessException) { }
         }
-        void OnDestroy() { Application.logMessageReceived -= RecordCrash; }
+        void OnDestroy()
+        {
+            Application.logMessageReceived -= RecordCrash;
+            if (Gfx.Backend == backend) Gfx.Backend = null;
+            backend?.Dispose();
+        }
 
         void Update()
         {
@@ -208,12 +221,13 @@ namespace Tossup
             AppCore.Update(UnityEngine.Time.unscaledDeltaTime);
         }
 
-        void OnPostRender()
+        internal UnityGfxBackend PrepareCanvas()
         {
-            if (!loaded) return;
+            if (!loaded) return null;
             backend.BeginFrame();
             try { AppCore.Draw(); }
             finally { backend.EndFrame(); }
+            return backend;
         }
 
         IEnumerator CaptureShots()

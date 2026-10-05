@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
-"""Generate the app/window icon: a gold coin with a pixel "T" on a teal rounded square, a flip arc and a spark.
+"""Generate the Unity player icon at Assets/Resources/ui/icon.png.
 
-Output: assets/ui/icon.ico (Windows) and assets/ui/icon.icns (macOS) for packaged app icons. The LÖVE window uses the shared
-in-game icon at assets/Resources/ui/icon.png.
-Run from the repo root:  python3 tools/gen_app_icon.py   (needs Pillow).
+The Editor assigns this PNG to the player for both macOS and Windows.
+Run from the repo root:  python3 Tools/gen_app_icon.py   (needs Pillow).
 """
 
-import shutil
-import subprocess
-import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
-RESOURCES = ROOT / "assets" / "Resources"
-PACKAGING = ROOT / "assets" / "ui"
+RESOURCES = ROOT / "Assets" / "Resources"
 S = 8                      # supersampling
 N = 512
 TEAL, TEAL_DK = (23, 69, 77), (15, 51, 59)
@@ -56,26 +51,9 @@ def main():
         d.polygon([((cx) * S, (cy - r) * S), ((cx + r // 3) * S, (cy - r // 3) * S), ((cx + r) * S, cy * S),
                    ((cx + r // 3) * S, (cy + r // 3) * S), (cx * S, (cy + r) * S), ((cx - r // 3) * S, (cy + r // 3) * S),
                    ((cx - r) * S, cy * S), ((cx - r // 3) * S, (cy - r // 3) * S)], fill=GREEN + (255,))
-    PACKAGING.mkdir(parents=True, exist_ok=True)
     out = RESOURCES / "ui" / "icon.png"
     img.resize((N, N), Image.Resampling.LANCZOS).save(out)
     print(f"wrote {out}")
-    # Windows icon (used by tools/build_windows.sh for Tossup.exe)
-    sizes = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
-    img.resize((256, 256), Image.Resampling.LANCZOS).save(PACKAGING / "icon.ico", sizes=sizes)
-    print(f"wrote {PACKAGING / 'icon.ico'}")
-    if not shutil.which("iconutil"):
-        print("iconutil not found (not macOS): skipped icon.icns")
-        return
-    with tempfile.TemporaryDirectory() as tmp:
-        iconset = Path(tmp) / "icon.iconset"
-        iconset.mkdir()
-        for size in (16, 32, 128, 256, 512):
-            img.resize((size, size), Image.Resampling.LANCZOS).save(iconset / f"icon_{size}x{size}.png")
-            img.resize((size * 2, size * 2), Image.Resampling.LANCZOS).save(iconset / f"icon_{size}x{size}@2x.png")
-        icns = PACKAGING / "icon.icns"
-        subprocess.run(["iconutil", "-c", "icns", str(iconset), "-o", str(icns)], check=True)
-        print(f"wrote {icns}")
 
 if __name__ == "__main__":
     main()

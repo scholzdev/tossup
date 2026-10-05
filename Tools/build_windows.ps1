@@ -24,12 +24,16 @@ if (-not $buildId) {
 $arguments = @('-batchmode','-nographics','-quit','-projectPath',"`"$projectRoot`"",
     '-buildTarget','StandaloneWindows64','-executeMethod','Tossup.EditorTools.TossupBuild.BuildWindows',
     '-buildOutput',"`"$playerPath`"",'-buildId',$buildId,'-logFile',"`"$logPath`"")
+Set-Content -Path $logPath -Value ""
 $process = Start-Process -FilePath $UnityEditor -ArgumentList $arguments -Wait -PassThru
-if ($process.ExitCode -ne 0 -or -not (Test-Path $playerPath -PathType Leaf)) {
+$expected = "Tossup: build Succeeded -> $([System.IO.Path]::GetFullPath($playerPath))"
+$succeeded = (Test-Path $logPath) -and (Select-String -Path $logPath -SimpleMatch -Quiet -Pattern $expected)
+if ($process.ExitCode -ne 0 -or -not $succeeded -or -not (Test-Path $playerPath -PathType Leaf) -or (Get-Item $playerPath).Length -eq 0) {
     if (Test-Path $logPath) { Get-Content $logPath -Tail 60 }
     throw "Unity Windows build failed. Install Windows Build Support for Unity $editorVersion; see $logPath."
 }
 $packageDir = "$projectRoot/dist/windows"
 New-Item -ItemType Directory -Force $packageDir | Out-Null
-Compress-Archive -Path "$buildDir/*" -DestinationPath "$packageDir/Tossup-windows.zip" -Force
+$shippingFiles = Get-ChildItem $buildDir | Where-Object { $_.Name -ne 'Tossup_BackUpThisFolder_ButDontShipItWithYourGame' }
+Compress-Archive -Path $shippingFiles.FullName -DestinationPath "$packageDir/Tossup-windows.zip" -Force
 Write-Output "Built $playerPath and packaged $packageDir/Tossup-windows.zip"

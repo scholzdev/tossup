@@ -8,6 +8,7 @@ namespace Tossup.UI
     {
         static GameState G => Ui.Game;
         static double Pct(double p) => Math.Floor(p * 100 + .5);
+        public static float BankPanelHeight { get; private set; } = 480;
 
         // The full bank in play order: queued coins followed by the draw pile.
         static List<CoinInst> BankCoins()
@@ -178,50 +179,53 @@ namespace Tossup.UI
 
             // left: full bank, with a separate mode for Crystal Ball's free discard
             var remaining = BankCoins();
-            Box(89, 170, 304, 480, C.PanelDk);
-            Outline(89, 170, 304, 480, C.Line);
-            Text("COIN BANK", 106, 184, Ui.F20, C.Gold);
             bool discardAvailable = e.BankDiscards > 0 && g.Dealt != null && g.Pending == null &&
                 Ui.FlipAnimation == null && !Ui.Holding && g.Mulligan == null;
             if (!discardAvailable) Ui.BankDiscardMode = false;
             bool picking = discardAvailable && Ui.BankDiscardMode;
             bool bankSelectable = !picking && g.Dealt != null && g.Pending == null &&
                 Ui.FlipAnimation == null && !Ui.Holding && g.Mulligan == null;
+            float rowStart = discardAvailable ? 236 : 226;
+            int buffRows = Math.Min(3, e.Buffs.Count) + (e.Buffs.Count > 3 ? 1 : 0);
+            float footerHeight = 40 + buffRows * 18 + (picking ? 22 : 0);
+            int bankRows = Math.Max(1, remaining.Count);
+            float rowStep = Math.Min(60, (650 - rowStart - footerHeight) / bankRows);
+            float rowHeight = rowStep - 4;
+            float iconSize = Math.Min(48, rowHeight - 4);
+            float footerY = rowStart + bankRows * rowStep + 8;
+            BankPanelHeight = rowStart + bankRows * rowStep + footerHeight - 170;
+            Box(89, 170, 304, BankPanelHeight, C.PanelDk);
+            Outline(89, 170, 304, BankPanelHeight, C.Line);
+            Text("COIN BANK", 106, 184, Ui.F20, C.Gold);
             if (discardAvailable)
                 Button(picking ? "DISCARD MODE: ON" : "DISCARD MODE: OFF", 106, 205, 271, 24,
                     picking ? C.Orange : C.PanelLight, () => A.ToggleBankDiscardMode());
             else if (bankSelectable) Text("CLICK A COIN TO PLAY IT", 106, 208, Ui.F16, C.Muted);
-            if (picking) Text("CLICK A COIN TO DISCARD IT", 106, 630, Ui.F16, C.Orange);
-            int rowStart = discardAvailable ? 236 : 226;
-            int bankSlots = g.Slots;
-            float rowStep = Math.Min(52, (586f - rowStart) / bankSlots);
-            float rowHeight = rowStep - 4;
-            float iconSize = Math.Min(40, rowHeight - 4);
-            for (int i = 0; i < bankSlots; i++)
+            if (picking) Text("CLICK A COIN TO DISCARD IT", 106, footerY + 24 + buffRows * 18, Ui.F16, C.Orange);
+            if (remaining.Count == 0)
+                Centered("NO COINS LEFT", 105, rowStart + (rowHeight - Ui.F20.Height) / 2, 271, Ui.F20, C.Muted);
+            for (int i = 0; i < remaining.Count; i++)
             {
                 float x = 105, y = rowStart + i * rowStep;
-                var owned = i < remaining.Count ? remaining[i] : null; // flipped and discarded coins drop off the list
-                bool current = owned != null && g.Dealt != null && owned.Uid == g.Dealt.Uid;
-                bool marked = owned != null && g.Mulligan != null && Ui.Marked.Contains(owned.Uid); // marking only exists in the opening hand
-                bool discardable = owned != null && i < Game.Visible;
-                Box(x, y, 271, rowHeight, marked ? C.Marked : owned != null ? C.Card : C.SlotDk);
-                Outline(x, y, 271, rowHeight, picking && discardable ? C.Orange : marked ? C.Red : current ? C.Gold : owned != null ? C.Line : C.Ink);
-                if (owned != null)
-                {
-                    CoinImage(owned.Id, x + 4, y + (rowHeight - iconSize) / 2, iconSize);
-                    Gfx.SetScissor(x + 48, y, 122, rowHeight);
-                    Text(Lang.Upper(Lang.CoinName(owned.Id)), x + 48, y + (rowHeight - Ui.F20.Height) / 2, Ui.F20,
-                        picking && !discardable ? C.Muted : current ? C.Gold : C.Face);
-                    Gfx.ClearScissor();
-                    CoinHover(owned.Id,x,y,271,rowHeight,Game.Probability(g,owned),upgrade:owned.Upgrade,tieProbability:Game.TieProbability(g,owned));
-                    Text(L("%d%% H", Pct(Game.Probability(g, owned))), x + 176, y + (rowHeight - Ui.F20.Height) / 2, Ui.F20, C.Gold);
-                    int cost = owned.Definition.EnergyCost;
-                    if (cost > 0) Text("E" + cost, x + 238, y + (rowHeight - Ui.F20.Height) / 2, Ui.F20, C.Orange);
-                    int uid=owned.Uid;
-                    if (picking && discardable) AddButton(x,y,271,rowHeight,()=>A.DiscardBank(uid),"BANK DISCARD");
-                    else if (bankSelectable && !current) AddButton(x,y,271,rowHeight,()=>A.CoinAction(owned),"BANK COIN");
-                }
-                else if (i < g.Coins.Count) Centered("EMPTY", x, y + (rowHeight - Ui.F20.Height) / 2, 271, Ui.F20, C.Muted);
+                var owned = remaining[i]; // flipped and discarded coins drop off the list
+                bool current = g.Dealt != null && owned.Uid == g.Dealt.Uid;
+                bool marked = g.Mulligan != null && Ui.Marked.Contains(owned.Uid); // marking only exists in the opening hand
+                bool discardable = i < Game.Visible;
+                Box(x, y, 271, rowHeight, marked ? C.Marked : C.Card);
+                Outline(x, y, 271, rowHeight, picking && discardable ? C.Orange : marked ? C.Red : current ? C.Gold : C.Line);
+                CoinImage(owned.Id, x + 4, y + (rowHeight - iconSize) / 2, iconSize);
+                float nameX = x + iconSize + 10;
+                Gfx.SetScissor(nameX, y, x + 170 - nameX, rowHeight);
+                Text(Lang.Upper(Lang.CoinName(owned.Id)), nameX, y + (rowHeight - Ui.F20.Height) / 2, Ui.F20,
+                    picking && !discardable ? C.Muted : current ? C.Gold : C.Face);
+                Gfx.ClearScissor();
+                CoinHover(owned.Id,x,y,271,rowHeight,Game.Probability(g,owned),upgrade:owned.Upgrade,tieProbability:Game.TieProbability(g,owned));
+                Text(L("%d%% H", Pct(Game.Probability(g, owned))), x + 176, y + (rowHeight - Ui.F20.Height) / 2, Ui.F20, C.Gold);
+                int cost = owned.Definition.EnergyCost;
+                if (cost > 0) Text("E" + cost, x + 238, y + (rowHeight - Ui.F20.Height) / 2, Ui.F20, C.Orange);
+                int uid=owned.Uid;
+                if (picking && discardable) AddButton(x,y,271,rowHeight,()=>A.DiscardBank(uid),"BANK DISCARD");
+                else if (bankSelectable && !current) AddButton(x,y,271,rowHeight,()=>A.CoinAction(owned),"BANK COIN");
             }
 
             if (e.Modifier != null && Game.Modifiers.TryGetValue(e.Modifier, out var modifier))
@@ -232,7 +236,7 @@ namespace Tossup.UI
                 Color(C.Muted);
                 Gfx.Printf(Lang.ModifierDescription(e.Modifier), 438, 602, 316);
             }
-            Text(L("BANK %d   OUT %d   DECK %d/%d", Game.CoinsLeft(g), e.Discards, g.Coins.Count, g.Slots), 106, 590, Ui.F16, C.Muted);
+            Text(L("BANK %d   OUT %d   DECK %d/%d", Game.CoinsLeft(g), e.Discards, g.Coins.Count, g.Slots), 106, footerY, Ui.F16, C.Muted);
 
             // active buffs ("next N coins ...") so they are never invisible
             for (int i = 0; i < e.Buffs.Count; i++)
@@ -244,9 +248,9 @@ namespace Tossup.UI
                 else if (buff.Kind == "swap") label = L("BUFF: NEXT COIN SWAPS SIDES");
                 else if (buff.Kind == "heads") label = L("BUFF: NEXT COIN LANDS HEADS");
                 else label = L("BUFF %s  (%d LEFT)", L(buff.Kind.ToUpper()), buff.Left);
-                if (i < 3) Text(label, 106, 612 + i * 18, Ui.F16, C.Orange);
+                if (i < 3) Text(label, 106, footerY + 24 + i * 18, Ui.F16, C.Orange);
             }
-            if (e.Buffs.Count > 3) Text(L("+%d MORE BUFFS", e.Buffs.Count - 3), 106, 666, Ui.F16, C.Orange);
+            if (e.Buffs.Count > 3) Text(L("+%d MORE BUFFS", e.Buffs.Count - 3), 106, footerY + 24 + 3 * 18, Ui.F16, C.Orange);
 
             // centre: the stage. One big coin, its two effects either side, the odds under it.
             const float SX = 975;

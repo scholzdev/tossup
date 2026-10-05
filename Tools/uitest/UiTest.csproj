@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Runs the game's UI code (everything under Assets/Scripts except the Unity host and GL backend) headless. -->
+  <!-- Runs the game's UI code (everything under Assets/Scripts except the Unity host and URP renderer) headless. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>

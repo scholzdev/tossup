@@ -1,6 +1,6 @@
-# Architecture
+# Architecture of the original Lua game
 
-Lua 5.1 / LuaJIT on LÖVE 11.5. The rules are written without any LÖVE dependency so they can be tested and simulated with plain `lua`.
+This is a historical reference for the LÖVE 11.5 implementation. The active game is the Unity port described in [README.md](../README.md). The Lua rules were written without a LÖVE dependency so they could be tested with plain `lua`.
 
 ## Layers
 
@@ -40,17 +40,19 @@ helpers in `src/ui/actions.lua` for everything that changes state.
 | `tools/sim.lua` | Headless balance simulator (bots: random, greedy, smart) |
 | `tools/gen_coin_icons.py`, `tools/gen_ui_icons.py` | Art generators (Pillow) |
 | `runs.log` (save folder) | One line per finished run: time, seed, character, result, levels cleared, gold, reason, deck. Written by `log_run` in `src/ui/actions.lua` |
-| `tools/build_all.sh` | Builds every platform into `dist/<platform>/` (love, macos, windows, linux); one failing platform does not stop the others. Each platform also has its own script: `build_love.sh` (the plain `.love`, which the others reuse), `build_macos.sh`, `build_windows.sh`, `build_linux.sh` |
-| `tools/build_linux.sh` | Builds `dist/linux/Tossup.AppImage`: the official LÖVE 11.5 AppImage with the game appended (untested on a real Linux machine) |
-| `tools/build_windows.sh` | Builds `dist/windows/Tossup-windows.zip`: `Tossup.exe` (LÖVE's love.exe with the game appended) plus the LÖVE DLLs; downloads the official LÖVE 11.5 Windows build once. Runs from macOS. The exe gets our icon (`assets/ui/icon.ico`) and the name "Tossup" through `tools/set_exe_icon.mjs` (pure JS, `resedit` from npm, so no Windows tools are needed); needs node |
 | `main.lua` | Forwards LÖVE callbacks to `src/ui/app.lua` and wraps `love.errorhandler` so every crash is appended to `crash.log` in the save folder (with `runs.log`) |
-| `src/serialize.lua`, `src/version.lua` | Plain-data serializer (tables to Lua source and back) used for the saved run; the game version number and the commit stamped by `tools/build_love.sh` into `src/build_id.lua` (git-ignored). `Game.snapshot` / `Game.restore` turn a run into data and back; only safe points (opening hand, shop) restore. Autosave is in `src/ui/actions.lua` (`A.load_run`, the key check in `A.update`) |
+| `src/serialize.lua`, `src/version.lua` | Plain-data serializer (tables to Lua source and back) used for the saved run; the historical game version and build ID. `Game.snapshot` / `Game.restore` turn a run into data and back; only safe points (opening hand, shop) restore. Autosave is in `src/ui/actions.lua` (`A.load_run`, the key check in `A.update`) |
 | `src/ui/tutorial.lua` | The interactive tutorial: spotlight steps over a scripted throwaway run (see ui-and-art.md) |
 | `src/ui/sound.lua`, `tools/gen_sounds.py`, `assets/sfx/`, `assets/music/` | Sound effects and the music loop: generated WAVs, volume sliders, and a state watcher that plays the effects (see ui-and-art.md) |
-| `tools/build_wiki.sh`, `tools/dump_content.lua`, `tools/gen_wiki.py` | Builds the local wiki into `wiki/` (git-ignored; open `wiki/index.html`): `dump_content.lua` writes the game's content (coins, chips, prizes, modifiers, characters, constants, German texts) as JSON, `gen_wiki.py` turns it plus `assets/` and `docs/` into static HTML: a filterable coin table, a page per coin / chip / prize / character, the modifiers, and the docs as guide pages; search is client-side. The wiki is built twice: English in `wiki/` and German in `wiki/de/` (names, descriptions and effect texts from `locales/de.lua`, page texts from the `DE` table in `gen_wiki.py`; the guides come from the German documents in `docs/de/` where they exist: `gameplay`, `coins`, `characters`, `items-and-relics`, `design` and `play` (the quick start); the developer guides stay English and are marked (EN). Keep `docs/de/` in step when the English ones change; the coin and chip notes on the wiki pages come from them), with an EN / DE switch in the header that jumps to the same page in the other language. Needs lua and Pillow. It follows the game data, so re-run it after any content change |
-| `tools/run.sh` | `./tools/run.sh` starts the game with LÖVE; `./tools/run.sh app` checks the OS, builds the binary for it (macOS app, Linux AppImage, Windows exe under Git Bash) and launches it |
-| `tools/build_macos.sh` | Builds `dist/macos/Tossup.app` (a renamed copy of LÖVE with the game and `icon.icns` inside, signed ad hoc) so the Dock and the app switcher say "Tossup" with the coin icon. `sh tools/build_macos.sh && open dist/macos/Tossup.app`. `dist/` is git-ignored; `love .` still shows LÖVE |
 | `cli.lua` | `lua cli.lua <seed> <character>` plays and prints one automated run |
+
+## Current Unity build chain
+
+`./Tools/build mac` and `./Tools/build windows` invoke Unity's `TossupBuild` methods in `Assets/Editor/TossupBuild.cs`. The Editor sets up URP and player settings, stamps the build ID temporarily, builds the player and restores the version file. The macOS app is signed for local use. Native Windows builds use `Tools/build_windows.ps1`.
+
+`./Tools/build_all.sh` builds macOS and Windows and packages each with `Tools/package_unity.py`. The packager keeps macOS app permissions and omits Unity's non-shipping Windows backup folder. `./Tools/build_all.sh release --dry-run` calls `Tools/release.py`, which runs gameplay and docs checks, builds both platforms, and prepares artifacts and notes. An actual release requires an explicit publish step. `Tools/run_macos.sh` builds and launches the macOS app; `Tools/run_unity.sh` opens the project in the Editor.
+
+`Tools/game_tools.sh` runs the live C# content exporter. `Tools/build_docs.sh` and `Tools/build_wiki.sh` use its JSON output to update documentation and the local wiki. `.github/workflows/wiki.yml` publishes the wiki from the same exporter.
 
 ## Game state
 
@@ -155,4 +157,4 @@ emblem to `tools/gen_ui_icons.py` and run it.
 
 ## Generated documentation
 
-`./tools/build_docs.sh` rewrites the data tables of the docs from the game's content: the coin overview and the coin headings (rarity, odds, energy, price) in `docs/coins.md` and `docs/de/coins.md`, the level and modifier tables in `gameplay.md`, the character tables, the chip and prize tables (their notes column is kept) and the content tables of `GAME_SPEC.md`. Generated parts sit between `<!-- GEN:name -->` markers; do not edit them by hand. `./tools/build_docs.sh --check` changes nothing and fails if a doc is out of date or a coin has no section; `tests/test_docs.sh` runs it. Prose is still written by hand.
+`./tools/build_docs.sh` rewrites the data tables of the docs from the game's content: the coin overview and the coin headings (rarity, odds, energy, price) in `docs/coins.md` and `docs/de/coins.md`, the level and modifier tables in `gameplay.md`, the character tables, the chip and prize tables (their notes column is kept) and the content tables of `GAME_SPEC.md`. Generated parts sit between `<!-- GEN:name -->` markers; do not edit them by hand. `./tools/build_docs.sh --check` changes nothing and fails if a doc is out of date or a coin has no section; Run `./Tools/build_docs.sh --check` directly. Prose is still written by hand.

@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tarfile
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,7 +23,12 @@ def package(platform):
         source = ROOT / "Builds/Windows"
         if not (source / "Tossup.exe").is_file():
             raise RuntimeError("Missing Windows player")
-        shutil.make_archive(str(out / "Tossup-windows"), "zip", source)
+        with zipfile.ZipFile(out / "Tossup-windows.zip", "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for path in sorted(source.rglob("*")):
+                if "Tossup_BackUpThisFolder_ButDontShipItWithYourGame" in path.relative_to(source).parts:
+                    continue
+                if path.is_file():
+                    archive.write(path, path.relative_to(source))
     else:
         source = ROOT / "Builds/Linux"
         if not (source / "Tossup.x86_64").is_file():

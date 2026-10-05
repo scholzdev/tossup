@@ -279,11 +279,41 @@ static class Program
         var bankIcon = backend.Images["coins/dagger"];
         Check(bankTarget != null && bankTarget.H >= 44 && bankIcon[4]-bankIcon[0] >= 36,
             "starting decks have larger bank rows and coin icons");
-        var fullDeck = new List<string>(); for (int i=0;i<Game.DeckMax;i++) fullDeck.Add("normal");
-        Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = fullDeck, Seed = 6 }); Capture();
-        var bankRegions = Ui.Regions.FindAll(r => r.Coin != null && r.X < 400);
-        Check(bankRegions.Count == Game.DeckMax && bankRegions.TrueForAll(r => r.Y+r.H <= 586),
-            "all ten bank coins remain visible above the footer");
+        float previousBankHeight = 0;
+        for (int count = 1; count <= Game.DeckMax; count++)
+        {
+            var deck = new List<string>(); for (int i=0;i<count;i++) deck.Add("normal");
+            Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = deck, Seed = 6 }); Capture();
+            var bankRegions = Ui.Regions.FindAll(r => r.Coin != null && r.X < 400);
+            var footer = backend.Texts.Find(t => t.Value.StartsWith("BANK ") && t.X < 400);
+            Check(bankRegions.Count == count && bankRegions.TrueForAll(r => r.Y+r.H < footer.Y && r.H >= Ui.F20.Height+4),
+                "every remaining coin fits above the footer for bank size " + count);
+            Check(EncounterView.BankPanelHeight >= previousBankHeight && EncounterView.BankPanelHeight <= 480,
+                "the bank panel grows with its contents within the sidebar");
+            Check(footer.Y+footer.Height <= 170+EncounterView.BankPanelHeight,
+                "the bank summary stays inside the dynamically sized panel");
+            previousBankHeight = EncounterView.BankPanelHeight;
+        }
+        Ui.Game.Encounter.BankDiscards = 1; Ui.BankDiscardMode = true;
+        for (int i=0;i<4;i++) Game.AddBuff(Ui.Game,"mult",2,2,true);
+        Capture();
+        var compactRegions = Ui.Regions.FindAll(r => r.Coin != null && r.X < 400);
+        Check(compactRegions.Count == Game.DeckMax && compactRegions.TrueForAll(r => r.H >= Ui.F20.Height+4),
+            "a full bank fits readable rows with discard controls and buffs");
+        foreach (var text in backend.Texts.FindAll(t => t.X >= 105 && t.X < 400 && t.Y >= 226))
+            Check(text.Y+text.Height <= 170+EncounterView.BankPanelHeight,
+                "bank footer, buffs and discard hint stay inside the panel");
+        Ui.BankDiscardMode = false;
+        Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = new List<string>{"normal","normal","normal"}, Seed = 6 });
+        Ui.Game.Encounter.Quota = Ui.Game.Encounter.MaxQuota = 999; Capture();
+        float openingBankHeight = EncounterView.BankPanelHeight;
+        Game.Flip(Ui.Game); Capture();
+        Check(EncounterView.BankPanelHeight < openingBankHeight,
+            "the bank shrinks when a coin leaves to flip");
+        Game.Resolve(Ui.Game); Game.Discard(Ui.Game); Game.Discard(Ui.Game); Capture();
+        Check(Ui.Regions.FindAll(r => r.Coin != null && r.X < 400).Count == 0 &&
+            backend.Texts.Exists(t => t.Value == "NO COINS LEFT" && t.X < 400),
+            "an exhausted bank shows a compact empty state without phantom slots");
         backend.Capture = false;
         foreach (var shot in Shots.Script())
         {

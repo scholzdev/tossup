@@ -2,28 +2,36 @@
 set -eu
 
 ROOT=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
-TARGET=${1:-macos}
+if [ "$#" -ne 1 ]; then
+  echo "usage: $0 mac|windows|linux" >&2
+  exit 2
+fi
+TARGET=$1
 VERSION=$(sed -n 's/^m_EditorVersion: //p' "$ROOT/ProjectSettings/ProjectVersion.txt")
 UNITY_EDITOR=${UNITY_EDITOR:-/Applications/Unity/Hub/Editor/$VERSION/Unity.app/Contents/MacOS/Unity}
 
 case "$TARGET" in
-  macos)
+  mac|macos)
+    TARGET=macos
+    MENU_TARGET=macOS
     CLI_TARGET=StandaloneOSX
     METHOD=Tossup.EditorTools.TossupBuild.BuildMacOS
     OUTPUT="$ROOT/Builds/macOS/Tossup.app"
     ;;
   windows)
+    MENU_TARGET=Windows
     CLI_TARGET=StandaloneWindows64
     METHOD=Tossup.EditorTools.TossupBuild.BuildWindows
     OUTPUT="$ROOT/Builds/Windows/Tossup.exe"
     ;;
   linux)
+    MENU_TARGET=Linux
     CLI_TARGET=StandaloneLinux64
     METHOD=Tossup.EditorTools.TossupBuild.BuildLinux
     OUTPUT="$ROOT/Builds/Linux/Tossup.x86_64"
     ;;
   *)
-    echo "usage: $0 [macos|windows|linux]" >&2
+    echo "usage: $0 mac|windows|linux" >&2
     exit 2
     ;;
 esac
@@ -43,7 +51,7 @@ if [ -e "$LOCK" ]; then
     exit 1
   fi
   if printf '%s\n' "$RUNNING_EDITORS" | awk -v root="$ROOT" 'index($0, root) && $0 ~ /Unity\.app\/Contents\/MacOS\/Unity([[:space:]]|$)/ { found=1 } END { exit !found }'; then
-    echo "Unity has this project open. Build from the Editor using Tossup > Build macOS Player, or close Unity before running this script." >&2
+    echo "Unity has this project open. Build from the Editor using Tossup > Build $MENU_TARGET Player, or close Unity before running this script." >&2
     exit 1
   fi
   echo "Removing stale Unity project lock at $LOCK."
@@ -51,6 +59,7 @@ if [ -e "$LOCK" ]; then
 fi
 
 echo "Building $CLI_TARGET with Unity $VERSION... (logs: $LOG)"
+: > "$LOG" # A previous success must never count as evidence for this invocation.
 if ! "$UNITY_EDITOR" -batchmode -nographics -quit \
   -projectPath "$ROOT" -buildTarget "$CLI_TARGET" \
   -executeMethod "$METHOD" -buildOutput "$OUTPUT" -buildId "$BUILD_ID" -logFile "$LOG"; then
@@ -59,12 +68,18 @@ if ! "$UNITY_EDITOR" -batchmode -nographics -quit \
   exit 1
 fi
 
-if [ "$TARGET" = macos ] && [ ! -d "$OUTPUT" ]; then
+if ! grep -Fq "Tossup: build Succeeded -> $OUTPUT" "$LOG"; then
+  echo "Unity did not report a successful $MENU_TARGET build; log: $LOG" >&2
+  tail -n 60 "$LOG" >&2 || true
+  exit 1
+fi
+
+if [ "$TARGET" = macos ] && [ ! -x "$OUTPUT/Contents/MacOS/Tossup" ]; then
   echo "Unity exited without creating $OUTPUT; log: $LOG" >&2
   tail -n 60 "$LOG" >&2 || true
   exit 1
 fi
-if [ "$TARGET" != macos ] && [ ! -f "$OUTPUT" ]; then
+if [ "$TARGET" != macos ] && [ ! -s "$OUTPUT" ]; then
   echo "Unity exited without creating $OUTPUT; log: $LOG" >&2
   tail -n 60 "$LOG" >&2 || true
   exit 1

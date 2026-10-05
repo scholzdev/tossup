@@ -1,13 +1,13 @@
 # Tossup (Unity port)
 
-A native C# conversion of **Tossup** for **Unity 6.6 (6000.6.4f1)**. Gameplay, UI, rendering, audio, localization, and persistence run without a Lua runtime or Lua data files.
+A native C# conversion of **Tossup** for **Unity 6.6 (6000.6.4f1)** with **URP 17.6**. Gameplay, UI, rendering, audio, localization, and persistence run without a Lua runtime or Lua data files.
 
 ## Run it
 
 - **Run in the Unity Editor:** `./Tools/run_unity.sh`, then press Play.
 - **Build and launch macOS:** `./Tools/run_macos.sh`
-- **Build macOS without launching:** `./Tools/build_unity.sh macos`
-- **Build Windows from macOS:** `./Tools/build_unity.sh windows`, then `python3 Tools/package_unity.py windows`.
+- **Build macOS without launching:** `./tools/build mac` → `Builds/macOS/Tossup.app`.
+- **Build Windows from macOS:** `./tools/build windows` → `Builds/Windows/Tossup.exe`. Install Windows Build Support (Mono) for Unity 6000.6.4f1; copy the complete `Builds/Windows` folder to Windows, or package it with `python3 Tools/package_unity.py windows`.
 - **Build/package on Windows:** `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/build_windows.ps1` (or the **Tossup → Build Windows Player** Editor menu). Both paths require Windows Build Support installed for Unity 6000.6.4f1.
 - **Package a player:** `python3 Tools/package_unity.py macos|windows|linux`; Linux AppImage packaging requires `appimagetool` or `APPIMAGETOOL`.
 - **Build/package macOS and Windows:** `./Tools/build_all.sh`
@@ -36,10 +36,12 @@ For development, launch the player with `-tossup-dev` (or set `TOSSUP_DEV=1`) to
 | Profile and progression | `Core/Profile.cs` + JSON saves |
 | Localization | `UI/Lang.cs` + `Resources/locales/de.json` |
 | App state, actions, drawing, sound, and screens | `UI/` and `UI/Views/` |
-| `love.graphics` | `Render/Gfx.cs` (same immediate-mode API) drawn by `Render/UnityGfxBackend.cs` (GL) |
+| `love.graphics` | `Render/Gfx.cs` (same immediate-mode API) drawn by `Render/UnityGfxBackend.cs` (mesh batches) and `Render/TossupCanvasFeature.cs` (URP Render Graph) |
 | Former application runtime | `Scripts/TossupApp.cs` (input, audio, saves, cursor, window) |
 
-`Core`, `Content` and `UI` don't depend on UnityEngine. Only `TossupApp.cs` and `UnityGfxBackend.cs` do, so the headless tools can run the same C# game outside Unity. The default window is 1620×800. The views use the full 1620×800 design canvas, with a title menu occupying half its width and wider gameplay/shop layouts. Resizing scales the canvas uniformly; title artwork covers it without stretching. Baked font atlases and JSON metrics keep text placement deterministic.
+`Core`, `Content` and `UI` don't depend on UnityEngine. The Unity host and files under `Render` other than `Gfx.cs` do, so the headless tools can run the same C# game outside Unity. The default window is 1620×800. The views use the full 1620×800 design canvas, with a title menu occupying half its width and wider gameplay/shop layouts. Resizing scales the canvas uniformly; title artwork covers it without stretching. Baked font atlases and JSON metrics keep text placement deterministic.
+
+The URP assets in `Assets/Settings` are assigned in Graphics and every Quality level. The canvas runs after post processing through a Render Graph pass, preserving primitive order, clipping, transparency and pixel art colors in Gamma space. **Tossup → Set Up Project** recreates missing pipeline assets and reconnects them; command-line builds run the same setup. Saves and content definitions have not changed.
 
 ## Coin definitions
 
