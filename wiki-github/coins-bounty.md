@@ -6,7 +6,7 @@
 Pays 1 gold for every 2 points it scores.
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 40%
 - **Shop price:** 15 gold
 - **Energy to flip:** 1
 

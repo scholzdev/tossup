@@ -6,18 +6,18 @@
 Punktet auf beiden Seiten.
 
 - **Seltenheit:** Gewöhnlich
-- **Kopf-Chance:** 75%
+- **Kopf-Chance:** 67%
 - **Shop-Preis:** 12 Gold
 - **Energie zum Werfen:** 0
 
 ## Kopf
-Erzielt 4 Punkte
+Erzielt 2 Punkte
 
 ## Zahl
 Erzielt 1 Punkt
 
 ## Wer sie nutzen kann
-- **Startet im Deck von:** [Die Seherin](DE-characters-seer), [Der Händler](DE-characters-trader)
+- **Startet im Deck von:** [Die Klinge](DE-characters-blade), [Die Seherin](DE-characters-seer), [Der Händler](DE-characters-trader)
 - **Von Anfang an in Münzsets nutzbar:** [Die Klinge](DE-characters-blade), [Die Seherin](DE-characters-seer), [Der Händler](DE-characters-trader)
 - **Im Shop zu finden, durch einmaliges Kaufen freigeschaltet:** keine
 

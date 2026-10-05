@@ -3,10 +3,10 @@
 
 ![Topf](https://scholzdev.github.io/tossup/img/coins/pot.png)
 
-Kopf: Punkte gleich den bisherigen Würfen in diesem Level (max. 12).
+Kopf: Punkte gleich den bisherigen Würfen in diesem Level (max. 8).
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 25%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

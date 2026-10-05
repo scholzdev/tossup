@@ -3,10 +3,10 @@
 
 ![Pot](https://scholzdev.github.io/tossup/img/coins/pot.png)
 
-Heads: points equal to the flips made so far this level (max 12).
+Heads: points equal to the flips made so far this level (max 8).
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 25%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

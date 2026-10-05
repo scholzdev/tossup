@@ -3,10 +3,10 @@
 
 ![Verdoppler](https://scholzdev.github.io/tossup/img/coins/doubler.png)
 
-Kopf: 3 Punkte, verdoppelt mit jedem bisherigen Verdoppler-Wurf in diesem Level (3, 6, 12, 24 ...).
+Kopf: 3 Punkte, verdoppelt mit jedem bisherigen Verdoppler-Wurf in diesem Level (3, 6, 12, 24 ... bis 384).
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 30%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

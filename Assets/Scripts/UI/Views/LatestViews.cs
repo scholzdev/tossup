@@ -24,31 +24,31 @@ namespace Tossup.UI
             var g = Ui.Game;
             var e = g.Encounter;
             Frame(null);
-            Centered(L("LEVEL %d CONTRACT", g.EncounterIndex), 70, 84, 1140, Ui.F32, C.Gold);
-            Centered(L("Choose a challenge for a bonus, or skip it."), 70, 132, 1140, Ui.F20, C.Muted);
+            Centered(L("LEVEL %d CONTRACT", g.EncounterIndex), 89, 84, 1443, Ui.F32, C.Gold);
+            Centered(L("Choose a challenge for a bonus, or skip it."), 89, 132, 1443, Ui.F20, C.Muted);
             string stageName = e.Endless.HasValue ? L("ENDLESS %d", e.Endless.Value) : L(e.Name);
-            Centered(Lang.Upper(stageName), 70, 166, 1140, Ui.F16, C.Face);
+            Centered(Lang.Upper(stageName), 89, 166, 1443, Ui.F16, C.Face);
 
             var options = e.ContractOptions ?? new System.Collections.Generic.List<string>();
             for (int i = 0; i < options.Count; i++)
             {
                 string id = options[i];
                 var d = Game.Contracts[id];
-                float x = 160 + i * 330;
-                Box(x, 220, 300, 360, C.PanelDk);
-                Outline(x, 220, 300, 360, C.Line);
-                Centered(L(d.Name), x + 16, 254, 268, Ui.F20, C.Gold);
-                Centered(d.RewardText != null ? L(d.RewardText) : L("BONUS +%dG", d.Reward), x + 16, 304, 268,
+                float x = 203 + i * 418;
+                Box(x, 220, 380, 360, C.PanelDk);
+                Outline(x, 220, 380, 360, C.Line);
+                Centered(L(d.Name), x + 16, 254, 339, Ui.F20, C.Gold);
+                Centered(d.RewardText != null ? L(d.RewardText) : L("BONUS +%dG", d.Reward), x + 16, 304, 339,
                     d.RewardText != null ? Ui.F20 : Ui.F32, C.Green);
                 Gfx.SetFont(Ui.F16);
                 Color(C.Muted);
-                Gfx.Printf(L(d.Description), x + 28, 358, 244, Align.Center);
-                Centered(L("DRAWBACK"), x + 16, 438, 268, Ui.F16, C.Red);
+                Gfx.Printf(L(d.Description), x + 28, 358, 309, Align.Center);
+                Centered(L("DRAWBACK"), x + 16, 438, 339, Ui.F16, C.Red);
                 Color(C.Red);
-                Gfx.Printf(L(d.Drawback), x + 28, 466, 244, Align.Center);
-                Button(L("TAKE CONTRACT"), x + 24, 516, 252, 52, C.Blue, () => A.ChooseContract(id));
+                Gfx.Printf(L(d.Drawback), x + 28, 466, 309, Align.Center);
+                Button(L("TAKE CONTRACT"), x + 24, 516, 319, 52, C.Blue, () => A.ChooseContract(id));
             }
-            Button(L("SKIP CONTRACT"), 500, 638, 280, 54, C.PanelLight, A.SkipContract);
+            Button(L("SKIP CONTRACT"), 633, 638, 354, 54, C.PanelLight, A.SkipContract);
         }
     }
 
@@ -58,12 +58,12 @@ namespace Tossup.UI
         {
             var g = Ui.Game;
             Frame(null);
-            Centered(L("LEVEL %d AUGMENT", g.AugmentLevel ?? g.EncounterIndex), 70, 82, 1140, Ui.F32, C.Gold);
+            Centered(L("LEVEL %d AUGMENT", g.AugmentLevel ?? g.EncounterIndex), 89, 82, 1443, Ui.F32, C.Gold);
             if (g.AugmentPending != null) { DrawPending(g); return; }
-            Centered(L("Choose a run upgrade or change a coin before this level."), 70, 128, 1140, Ui.F20, C.Muted);
+            Centered(L("Choose a run upgrade or change a coin before this level."), 89, 128, 1443, Ui.F20, C.Muted);
             var options = g.AugmentOptions ?? new System.Collections.Generic.List<string>();
-            const float width = 300, height = 390, gap = 30;
-            float startX = (1280 - (width * 3 + gap * 2)) / 2;
+            const float width = 380, height = 390, gap = 38;
+            float startX = (Ui.Width - (width * 3 + gap * 2)) / 2;
             for (int i = 0; i < options.Count; i++)
             {
                 string id = options[i];
@@ -89,15 +89,15 @@ namespace Tossup.UI
                 pending.Id == "reforger" ? "CHOOSE A COIN TO REFORGE" :
                 pending.Id == "type_specialist" ? "CHOOSE A COIN TYPE" :
                 pending.Id == "upgrade_press" ? "CHOOSE A COIN UPGRADE" : def.Name.ToUpper();
-            Centered(L(heading), 70, 126, 1140, Ui.F20, C.Gold);
+            Centered(L(heading), 89, 126, 1443, Ui.F20, C.Gold);
             string subtitle = pending.RewardId != null
                 ? L("NEW COIN: %s", Lang.CoinName(pending.RewardId))
                 : L(def.Description);
-            Centered(subtitle, 70, 158, 1140, Ui.F16, C.Muted);
+            Centered(subtitle, 89, 158, 1443, Ui.F16, C.Muted);
             if (pending.RewardId != null)
             {
-                CoinImage(pending.RewardId, 1154, 140, 42);
-                CoinHover(pending.RewardId, 1154, 140, 42, 42);
+                CoinImage(pending.RewardId, 1461, 140, 42);
+                CoinHover(pending.RewardId, 1461, 140, 42, 42);
             }
 
             var choices = Game.AugmentChoices(g);
@@ -105,9 +105,9 @@ namespace Tossup.UI
             int cols = choices.Count > 12 ? 4 : choices.Count > 6 ? 3 : 2;
             int rows = (choices.Count + cols - 1) / cols;
             const float gap = 16;
-            float width = (float)Math.Floor((1160 - (cols - 1) * gap) / cols);
+            float width = (float)Math.Floor((1468 - (cols - 1) * gap) / cols);
             float height = Math.Min(116, (float)Math.Floor((510 - (rows - 1) * gap) / rows));
-            float startX = (1280 - (width * cols + gap * (cols - 1))) / 2;
+            float startX = (Ui.Width - (width * cols + gap * (cols - 1))) / 2;
             for (int i = 0; i < choices.Count; i++)
             {
                 var choice = choices[i];
@@ -149,13 +149,27 @@ namespace Tossup.UI
             Ui.Buttons.Clear();
             float alpha=(float)Math.Max(0,Math.Min(1,reveal.Elapsed/.32));
             float rise=1-(float)Math.Pow(1-alpha,3);float pulse=1+(float)Math.Sin(reveal.Elapsed*5.5)*.025f;
-            Color(C.Ink,.88f*alpha);Gfx.Rectangle(true,0,0,1280,800);
-            float panelY=95+(1-rise)*84;Box(255,panelY,770,545,C.PanelDk);Outline(255,panelY,770,545,C.Gold);Outline(270,panelY+15,740,515,C.Line);
-            Centered("RUN ENCOUNTER",295,panelY+34,690,Ui.F20,C.Gold);Centered("ONE RULE FOR THE WHOLE RUN",295,panelY+74,690,Ui.F16,C.Muted);
-            if(Ui.EncounterImages.TryGetValue(game.RunEncounterId,out var image)){float size=190*pulse*(.72f+.28f*rise);ImageAt(image,640-size/2,250+(1-rise)*40,size);}
-            else {Color(C.Gold,alpha);Gfx.Circle(false,640,342,84*pulse);Centered("UPGRADE",540,324,200,Ui.F32,C.Gold);}
-            Centered(encounter.Name.ToUpper(),295,panelY+374,690,Ui.F32,C.Face);Gfx.SetFont(Ui.F16);Color(C.Muted,alpha);Gfx.Printf(encounter.Description,365,panelY+420,550,Align.Center);
-            if(reveal.Elapsed>.65){Centered("CLICK OR PRESS ANY KEY TO CONTINUE",300,690,680,Ui.F16,C.Muted);Ui.Buttons.Add(new Button{X=0,Y=0,W=1280,H=800,Label="DISMISS ENCOUNTER REVEAL",Action=()=>AppCore.DismissEncounterReveal()});}
+            Color(C.Ink,.88f*alpha);Gfx.Rectangle(true,0,0,1620,800);
+            Gfx.Push(); Gfx.Translate(810, 338); Color(C.Gold, .24f * alpha); Gfx.SetLineWidth(3);
+            for (int i = 0; i < 20; i++)
+            {
+                double angle = i * Math.PI / 10 + reveal.Elapsed * .24;
+                float inner = 142 + (float)Math.Sin(reveal.Elapsed * 3 + i) * 8, outer = 226 + (float)Math.Sin(reveal.Elapsed * 2.2 + i * .7) * 12;
+                Gfx.Line((float)Math.Cos(angle) * inner, (float)Math.Sin(angle) * inner, (float)Math.Cos(angle) * outer, (float)Math.Sin(angle) * outer);
+            }
+            for (int i = 1; i <= 3; i++) Gfx.Circle(false, 0, 0, 185 + i * 24 + (float)Math.Sin(reveal.Elapsed * 3 - i) * 7);
+            Gfx.Pop(); Gfx.SetLineWidth(1);
+            float panelY=95+(1-rise)*84;Box(323,panelY,975,545,C.PanelDk);Outline(323,panelY,975,545,C.Gold);Outline(342,panelY+15,937,515,C.Line);
+            Centered("RUN ENCOUNTER",373,panelY+34,873,Ui.F20,C.Gold);Centered("ONE RULE FOR THE WHOLE RUN",373,panelY+74,873,Ui.F16,C.Muted);
+            if(Ui.EncounterImages.TryGetValue(game.RunEncounterId,out var image))
+            {
+                float size=190*pulse*(.72f+.28f*rise);
+                Gfx.Push(); Gfx.Translate(810,326+(1-rise)*40); Gfx.Rotate((float)Math.Sin(reveal.Elapsed*1.8)*.09f);
+                Color(C.White,alpha); Gfx.Draw(image,-size/2,-size/2,size/image.Width,size/image.Height); Gfx.Pop();
+            }
+            else {Color(C.Gold,alpha);Gfx.Circle(false,810,342,84*pulse);Centered("UPGRADE",683,324,253,Ui.F32,C.Gold);}
+            Centered(Lang.Upper(L(encounter.Name)),373,panelY+374,873,Ui.F32,C.Face);Gfx.SetFont(Ui.F16);Color(C.Muted,alpha);Gfx.Printf(L(encounter.Description),462,panelY+420,696,Align.Center);
+            if(reveal.Elapsed>.65){Centered("CLICK OR PRESS ANY KEY TO CONTINUE",380,690,861,Ui.F16,C.Muted);Ui.Buttons.Add(new Button{X=0,Y=0,W=Ui.Width,H=Ui.Height,Label="DISMISS ENCOUNTER REVEAL",Action=()=>AppCore.DismissEncounterReveal()});}
         }
     }
 }

@@ -6,7 +6,7 @@
 Heads: +3 gold, plus 1 per 10 gold held (max +3).
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 40%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

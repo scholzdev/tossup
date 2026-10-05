@@ -3,15 +3,15 @@
 
 ![Fokus](https://scholzdev.github.io/tossup/img/coins/focus.png)
 
-Baut ihre eigene Kopf-Chance auf.
+Kopf: Die nächste Münze erhält +35 % Kopf. Zahl: 4 Punkte.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 65%
 - **Shop-Preis:** 10 Gold
 - **Energie zum Werfen:** 0
 
 ## Kopf
-+15 % Kopf in diesem Level
+Nächste Münze: +35 % Kopf
 
 ## Zahl
 Erzielt 4 Punkte

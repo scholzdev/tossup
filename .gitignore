@@ -21,6 +21,8 @@
 !/Tools/**/*.csproj
 
 # tool outputs
+/dist/
+/Tools/**/__pycache__/
 /Tools/**/bin/
 /Tools/**/obj/
 /Tools/parity/lua.txt

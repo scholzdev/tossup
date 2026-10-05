@@ -6,7 +6,7 @@
 Each Tails stores anger (max 5). Heads: 3 points +2 per anger.
 
 - **Rarity:** Epic
-- **Heads chance:** 50%
+- **Heads chance:** 25%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

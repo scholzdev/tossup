@@ -1,0 +1,9 @@
+{
+  "screen": "encounter",
+  "character": "blade",
+  "coins": [
+    "blood"
+  ],
+  "energy": 99,
+  "gold": 50
+}

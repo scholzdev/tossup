@@ -6,7 +6,7 @@
 Heads: 2 points, and the combo grows by 1 extra step.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 70%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

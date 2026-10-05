@@ -6,7 +6,7 @@
 A plain coin. Barely a scratch.
 
 - **Rarity:** Common
-- **Heads chance:** 50%
+- **Heads chance:** 65%
 - **Shop price:** 5 gold
 - **Energy to flip:** 0
 

@@ -6,7 +6,7 @@
 Heads: 2 points per energy you hold. Tails: +1 energy.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 35%
 - **Shop price:** 15 gold
 - **Energy to flip:** 1
 

@@ -6,7 +6,7 @@
 Kopf: 2 Punkte, und die nächsten 2 Münzen zahlen doppelt.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 45%
+- **Kopf-Chance:** 65%
 - **Shop-Preis:** 20 Gold
 - **Energie zum Werfen:** 1
 

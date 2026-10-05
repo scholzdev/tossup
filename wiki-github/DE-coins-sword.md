@@ -6,12 +6,12 @@
 Sichere Punkte bei Kopf.
 
 - **Seltenheit:** Gewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 35%
 - **Shop-Preis:** 12 Gold
 - **Energie zum Werfen:** 0
 
 ## Kopf
-Erzielt 5 Punkte
+Erzielt 3 Punkte
 
 ## Zahl
 Nichts

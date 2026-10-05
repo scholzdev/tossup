@@ -6,7 +6,7 @@
 Kopf: 3 Punkte je Wurf der aktuellen Serie (max. 30). Zahl: Ziel +2.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 45%
+- **Kopf-Chance:** 35%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 1
 

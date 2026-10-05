@@ -1,0 +1,13 @@
+{
+  "screen": "shop",
+  "character": "blade",
+  "coins": [
+    "blood",
+    "blood",
+    "blood",
+    "blood",
+    "blood"
+  ],
+  "energy": 99,
+  "gold": 50
+}

@@ -6,7 +6,7 @@
 Zahlt 1 Gold für je 2 Punkte, die sie erzielt.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 40%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 1
 

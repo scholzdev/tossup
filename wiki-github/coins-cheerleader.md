@@ -6,7 +6,7 @@
 Heads: 2 points, next 2 coins +20% Heads. Tails: next coin +20%.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 70%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

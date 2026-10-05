@@ -14,7 +14,7 @@ namespace Tossup.UI
     public static class Tutorial
     {
         static TutorialStep S(string title, float x, float y, float w, float h, string text, Func<GameState,bool> wait = null, string hint = null) =>
-            new TutorialStep { Title=title, X=x, Y=y, W=w, H=h, Text=text, Wait=wait, Hint=hint };
+            new TutorialStep { Title=title, X=x * Ui.Width / Ui.Width, Y=y, W=w * Ui.Width / Ui.Width, H=h, Text=text, Wait=wait, Hint=hint };
 
         static readonly List<TutorialStep> Steps = new List<TutorialStep>
         {
@@ -44,7 +44,7 @@ namespace Tossup.UI
 
         public static void Start()
         {
-            var game = Game.New(7, "blade", new List<string>(), new List<string>{"normal","normal","normal"}, true, 1, false);
+            var game = Game.New(7, "blade", new List<string>(), new List<CoinDef>{CoinCatalog.Normal,CoinCatalog.Normal,CoinCatalog.Normal}, true, 1, false);
             game.RunEncounterId = null;
             game.ContractsEnabled = false;
             game.Tutorial = true;
@@ -90,14 +90,14 @@ namespace Tossup.UI
             if (Ui.Tutorial == null) return;
             var step = Steps[Ui.Tutorial.Step-1];
             Color(C.Ink,.72f);
-            Gfx.Rectangle(true,0,0,1280,step.Y);
-            Gfx.Rectangle(true,0,step.Y+step.H,1280,800-step.Y-step.H);
+            Gfx.Rectangle(true,0,0,Ui.Width,step.Y);
+            Gfx.Rectangle(true,0,step.Y+step.H,Ui.Width,800-step.Y-step.H);
             Gfx.Rectangle(true,0,step.Y,step.X,step.H);
-            Gfx.Rectangle(true,step.X+step.W,step.Y,1280-step.X-step.W,step.H);
+            Gfx.Rectangle(true,step.X+step.W,step.Y,Ui.Width-step.X-step.W,step.H);
             Color(C.Orange);Gfx.SetLineWidth(3);Gfx.Rectangle(false,step.X-3,step.Y-3,step.W+6,step.H+6,6);Gfx.SetLineWidth(1);
 
             float width=480;var lines=Ui.F16.GetWrap(L(step.Text),width-40);float height=96+lines.Count*20;
-            float x=Math.Min(1280-width-20,Math.Max(20,step.X+step.W/2-width/2));float y=step.Y+step.H+20;
+            float x=Math.Min(Ui.Width-width-20,Math.Max(20,step.X+step.W/2-width/2));float y=step.Y+step.H+20;
             if(y+height>790)y=step.Y-height-20;if(y<10)y=Math.Max(10,step.Y+16);
             Box(x,y,width,height,C.PanelDk);Outline(x,y,width,height,C.Orange);
             Text(step.Title,x+20,y+14,Ui.F20,C.Orange);Gfx.SetFont(Ui.F16);Color(C.Face);Gfx.Printf(L(step.Text),x+20,y+46,width-40);
@@ -107,9 +107,9 @@ namespace Tossup.UI
             var kept=new List<Button>();
             if(step.Wait!=null)
                 foreach(var b in Ui.Buttons){float cx=b.X+b.W/2,cy=b.Y+b.H/2;if(cx>=step.X&&cx<=step.X+step.W&&cy>=step.Y&&cy<=step.Y+step.H)kept.Add(b);}
-            else kept.Add(new Button{X=0,Y=0,W=1280,H=800,Action=Next});
+            else kept.Add(new Button{X=0,Y=0,W=Ui.Width,H=800,Action=Next});
             Ui.Buttons=kept;
-            Button("SKIP",1110,750,140,36,C.PanelLight,Finish);
+            Button("SKIP",1450,750,140,36,C.PanelLight,Finish);
         }
     }
 

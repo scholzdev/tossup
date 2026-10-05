@@ -6,7 +6,7 @@
 Tails: quota +3. Heads: 4 points, +1 per Tails so far this level.
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 40%
 - **Shop price:** 15 gold
 - **Energy to flip:** 1
 

@@ -6,7 +6,7 @@
 Eine schlichte Münze. Kaum ein Kratzer.
 
 - **Seltenheit:** Gewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 65%
 - **Shop-Preis:** 5 Gold
 - **Energie zum Werfen:** 0
 

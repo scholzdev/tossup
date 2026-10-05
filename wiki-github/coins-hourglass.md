@@ -6,7 +6,7 @@
 +30% Heads when 3 or fewer coins are left. Tails: goes back into the pile.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 40%
+- **Heads chance:** 30%
 - **Shop price:** 10 gold
 - **Energy to flip:** 0
 

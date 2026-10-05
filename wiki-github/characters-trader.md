@@ -6,12 +6,12 @@
 Gold and energy
 
 ## Starting deck
-[Normal](coins-normal), [Normal](coins-normal), [Normal](coins-normal), [Loaded](coins-loaded), [Dagger](coins-dagger)
+[Normal](coins-normal), [Loaded](coins-loaded), [Dagger](coins-dagger)
 
 ## Usable in coin sets from the start
-[Normal](coins-normal), [Copper](coins-copper), [Loaded](coins-loaded), [Dagger](coins-dagger), [Sword](coins-sword)
+[Normal](coins-normal), [Copper](coins-copper), [Loaded](coins-loaded), [Dagger](coins-dagger), [Sword](coins-sword), [Square Dance](coins-square_dance)
 
 ## Found in the shop (unlocked by buying)
-[Spark](coins-spark), [Bank](coins-bank), [Miser](coins-miser), [Hammer](coins-hammer), [Bounty](coins-bounty), [Flock](coins-flock), [Momentum](coins-momentum), [Flux Capacitor](coins-capacitor), [Cheerleader](coins-cheerleader), [Megaphone](coins-megaphone), [Orchestra](coins-orchestra), [Lifeline](coins-lifeline), [Jackpot](coins-jackpot), [Bettor](coins-bettor), [Anchor](coins-anchor), [Doubler](coins-doubler), [True Echo](coins-true_echo)
+[Spark](coins-spark), [Bank](coins-bank), [Miser](coins-miser), [Hammer](coins-hammer), [Bounty](coins-bounty), [Flock](coins-flock), [Momentum](coins-momentum), [Flux Capacitor](coins-capacitor), [Cheerleader](coins-cheerleader), [Megaphone](coins-megaphone), [Orchestra](coins-orchestra), [Lifeline](coins-lifeline), [Jackpot](coins-jackpot), [Bettor](coins-bettor), [Anchor](coins-anchor), [Doubler](coins-doubler), [True Echo](coins-true_echo), [Compost](coins-compost), [Good Dog](coins-good_dog), [Counterfeiter](coins-counterfeiter), [Conductor](coins-conductor)
 
 [Characters](characters)

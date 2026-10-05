@@ -22,11 +22,11 @@ Every character has its own difficulty stage, 1 to 8. You choose it on the play 
 | 5 | Shop prices +20% |
 | 6 | Only 2 exchanges per level |
 | 7 | Level 1 has a modifier too |
-| 8 | Quotas +50% in total |
+| 8 | Quotas +80% in total |
 
 ## Saving
 
-The game saves your run by itself at the start of every level and in the shop, and Continue on the main menu picks it up again, even after you quit. A level in progress starts again from its opening hand. Coins, sets, options and records are saved separately. Options has a Clear Progress button that deletes everything.
+The game saves your run by itself at the start of every level and in the shop, and Continue on the main menu picks it up again, even after you quit. A level in progress starts again from its opening hand. Coins, sets, options and records are saved separately. The Clear Progress button in Options resets unlocks, collection, sets, tokens, stages, wins and endless records, and keeps your options.
 
 
 [Guides](guides)

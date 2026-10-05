@@ -3,7 +3,7 @@
 
 [English](Home)
 
-- [Verdoppeln](DE-items-double_down) — Effekte der nächsten Münze x2
+- [Verdoppeln](DE-items-double_down) — Nächste Münze: Punkte, Gold, Energie und Strafen x2
 - [Energydrink](DE-items-energy_drink) — Erhalte 2 Energie
 - [Nachziehen](DE-items-extra_draw) — Eine gespielte Münze kommt zurück auf den Stapel
 - [Kopf erzwingen](DE-items-force_heads) — Die Münze landet auf Kopf

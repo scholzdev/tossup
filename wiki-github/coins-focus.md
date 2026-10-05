@@ -3,15 +3,15 @@
 
 ![Focus](https://scholzdev.github.io/tossup/img/coins/focus.png)
 
-Builds its own Heads chance.
+Heads: the next coin gets +35% Heads. Tails: 4 points.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 65%
 - **Shop price:** 10 gold
 - **Energy to flip:** 0
 
 ## Heads
-Gain 15% Heads this level
+Next coin: +35% Heads
 
 ## Tails
 Score 4 points

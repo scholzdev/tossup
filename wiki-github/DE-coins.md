@@ -8,18 +8,22 @@
 - [Schwert](DE-coins-sword) — Sichere Punkte bei Kopf.
 - [Glück](DE-coins-lucky) — Kopf: 2 Punkte, und sie kommt zurück auf den Stapel und wird erneut gespielt.
 - [Verflucht](DE-coins-cursed) — Eine mächtige, gefährliche Wette.
-- [Gezinkt](DE-coins-loaded) — Verlässliches Einkommen bei Kopf.
+- [Gezinkt](DE-coins-loaded) — Kopf: 4 Gold. Zahl: verliere bis zu 8 Gold. Edge: verliere bis zu 4, dann erhalte 2 Gold.
 - [Dolch](DE-coins-dagger) — Punktet auf beiden Seiten.
+- [Kompost](DE-coins-compost) — Zahl: Ziel +2; einmal pro Level erhalten Glücksmünzen +11 % Kopf für den Lauf (max. +55 %).
+- [Quadrattanz](DE-coins-square_dance) — Kopf: 2 Punkte mal dem Quadrat der Quadrattanz-Kopien in deinem Deck.
 - [Hammer](DE-coins-hammer) — Selten, aber vernichtend.
-- [Blut](DE-coins-blood) — Viele Punkte, aber Zahl erhöht das Ziel.
+- [Wetzstein](DE-coins-whetstone) — Kopf: Die nächsten 2 Stahlmünzen geben auf Kopf +3 Punkte, auf Zahl aber +2 Ziel.
+- [Blut](DE-coins-blood) — Kopf: 10 Punkte. Zahl: Ziel +6. Kante: die Hälfte von beidem.
 - [Funke](DE-coins-spark) — Energie oder ein kleiner Treffer.
-- [Fokus](DE-coins-focus) — Baut ihre eigene Kopf-Chance auf.
-- [Schneeball](DE-coins-snowball) — Wächst mit jedem Wurf um +1 Punkt für den ganzen Lauf (max. +10).
+- [Fokus](DE-coins-focus) — Kopf: Die nächste Münze erhält +35 % Kopf. Zahl: 4 Punkte.
+- [Schneeball](DE-coins-snowball) — Kopf erhält mit jedem Wurf +1 Punkt für den ganzen Lauf (max. +8).
 - [Spieler](DE-coins-gambler) — Kopf ist eine Wette: 50 % dreifache Punkte, sonst nichts.
 - [Schwung](DE-coins-momentum) — +5 % Kopf für jeden Kopf in Folge in diesem Level.
 - [Echo](DE-coins-echo) — Wiederholt die Effekte der vorherigen Münze für diese Seite.
 - [Vampir](DE-coins-vampire) — Kopf: 2 Punkte, und sie saugt 2 Gold vom Haus ab.
 - [Geizhals](DE-coins-miser) — Kopf: 1 Punkt je 10 Gold, die du hältst.
+- [Fälscher](DE-coins-counterfeiter) — Kopf: Die nächsten 2 Giermünzen verdoppeln erhaltenes Gold. Jede Zahl verliert zusätzlich bis zu 3 Gold.
 - [Lunte](DE-coins-fuse) — Wirf sie ab, um +6 aufzuladen. Kopf verbraucht die ganze Ladung als Punkte.
 - [Phönix](DE-coins-phoenix) — Jede Zahl speichert Wut (max. 5). Kopf: 3 Punkte +2 je Wut.
 - [Querkopf](DE-coins-contrarian) — Landet immer anders als der vorherige Wurf.
@@ -29,26 +33,30 @@
 - [Sanduhr](DE-coins-hourglass) — +30 % Kopf bei 3 oder weniger übrigen Münzen. Zahl: kommt zurück auf den Stapel.
 - [Flux-Kondensator](DE-coins-capacitor) — Kopf: 2 Punkte je gehaltener Energie. Zahl: +1 Energie.
 - [Märtyrer](DE-coins-martyr) — Zahl: Ziel +3. Kopf: 4 Punkte, +1 je Zahl in diesem Level.
+- [Blutpakt](DE-coins-blood_pact) — Kopf: Die nächste Blutmünze gibt auf Kopf +8 Punkte oder auf Zahl +4 Ziel. Edge bekommt die Hälfte von beidem.
 - [Kopfgeld](DE-coins-bounty) — Zahlt 1 Gold für je 2 Punkte, die sie erzielt.
 - [Narr](DE-coins-jester) — Kopf oder Zahl, sie tut etwas Zufälliges.
-- [Schwarm](DE-coins-flock) — +10 % Kopf für jeden anderen Schwarm in deiner Bank.
+- [Doppelgänger](DE-coins-doppelganger) — Kopf: Die nächste Chaosmünze führt ihre Effekte zweimal aus, auch Strafen.
+- [Schwarm](DE-coins-flock) — +10 % Kopf für jeden anderen Schwarm in deinem Deck.
 - [Megafon](DE-coins-megaphone) — Kopf: 2 Punkte, und die nächsten 2 Münzen zahlen doppelt.
 - [Cheerleaderin](DE-coins-cheerleader) — Kopf: 2 Punkte, nächste 2 Münzen +20 % Kopf. Zahl: nächste Münze +20 %.
 - [Spiegel](DE-coins-mirror) — Kopf: Die nächste Münze nutzt die Effekte ihrer anderen Seite. Zahl: 2 Punkte.
 - [Zwilling](DE-coins-twin) — Landet immer wie der vorherige Wurf.
-- [Topf](DE-coins-pot) — Kopf: Punkte gleich den bisherigen Würfen in diesem Level (max. 12).
+- [Topf](DE-coins-pot) — Kopf: Punkte gleich den bisherigen Würfen in diesem Level (max. 8).
 - [Domino](DE-coins-domino) — Kopf: 2 Punkte, und die nächste Münze landet auf Kopf. Zahl: Ziel +1.
 - [Heiße Hand](DE-coins-hot_hand) — Kopf: 2 Punkte, und die Serie wächst um 1 Schritt extra.
 - [Anker](DE-coins-anchor) — Kopf: 2 Punkte, und beim nächsten Serienbruch hält die Serie stattdessen.
 - [Wetter](DE-coins-bettor) — Kopf: 3 Punkte je Wurf der aktuellen Serie (max. 30). Zahl: Ziel +2.
-- [Auszahlung](DE-coins-cash_out) — Kopf: 3 Punkte, der Serienbonus zählt doppelt, dann endet die Serie.
+- [Auszahlung](DE-coins-cash_out) — Kopf: 3 Punkte, quadriert den Serienmultiplikator, sichert den Topf und beendet die Serie.
 - [Kältewelle](DE-coins-cold_streak) — Zahl: 2 Punkte je Zahl in Folge (max. 20). Kopf: 1 Punkt.
-- [Verstärker](DE-coins-amplifier) — Kopf: 1 Punkt, und alle aktiven Boni halten 1 Münze länger und werden stärker. Zahl: 1 Punkt.
+- [Verstärker](DE-coins-amplifier) — Kopf: 1 Punkt. Aktive Boni halten 1 Münze länger; Chancen und Multiplikatoren werden stärker. Zahl: 1 Punkt.
 - [Wahres Echo](DE-coins-true_echo) — Wiederholt, was die vorherige Münze wirklich getan hat, samt Boni und Wachstum, auf jeder Seite.
-- [Verdoppler](DE-coins-doubler) — Kopf: 3 Punkte, verdoppelt mit jedem bisherigen Verdoppler-Wurf in diesem Level (3, 6, 12, 24 ...).
-- [Jackpot](DE-coins-jackpot) — Kopf: 25 Punkte. Nur 20 % Kopf.
+- [Verdoppler](DE-coins-doubler) — Kopf: 3 Punkte, verdoppelt mit jedem bisherigen Verdoppler-Wurf in diesem Level (3, 6, 12, 24 ... bis 384).
+- [Jackpot](DE-coins-jackpot) — Kopf: 25 Punkte. Nur 15 % Kopf.
 - [Nachahmer](DE-coins-mimic) — Kopf: tut, was die Kopf-Seite einer zufälligen anderen Münze in deinem Deck tut.
+- [Braver Hund](DE-coins-good_dog) — Kopf: 2 Punkte; hole die gespielte Münze mit den meisten Punkten in den Ziehstapel zurück. Einmal pro Level.
 - [Orchester](DE-coins-orchestra) — Kopf: 2 Punkte je verschiedenem Münztyp in deinem Deck.
+- [Taktgeber](DE-coins-conductor) — Kopf: Die nächsten 3 Rhythmusmünzen geben +2 Punkte pro Combo-Schritt (max. 8); ein Combo-Bruch erhöht das Ziel um 5.
 - [Rettungsring](DE-coins-lifeline) — Kopf: 1 Punkt, und du darfst in diesem Level einmal mehr tauschen.
 - [Horoskop](DE-coins-horoscope) — Kopf: 1 Punkt, alle Münzen +7 % Kopf in diesem Level. Zahl: alle Münzen +3 %.
 - [Kristallkugel](DE-coins-crystal_ball) — Kopf: 5 Punkte. Zahl: wirf eine der nächsten drei Münzen ab.

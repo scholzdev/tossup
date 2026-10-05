@@ -6,7 +6,7 @@
 Kopf ist eine Wette: 50 % dreifache Punkte, sonst nichts.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 35%
 - **Shop-Preis:** 22 Gold
 - **Energie zum Werfen:** 1
 

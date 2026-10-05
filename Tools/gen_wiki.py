@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate a local, static wiki (wiki/index.html) from the game's own content and the docs.
 
-Reads the JSON that tools/dump_content.lua writes (coins, chips, prizes, modifiers, characters, constants, German
+Reads the JSON that Tools/game_tools.sh content writes (coins, chips, prizes, modifiers, characters, constants, German
 texts), the art in assets/Resources/, and the markdown in docs/ (rendered as guide pages and as notes on the coin pages).
 Needs Pillow. Run through tools/build_wiki.sh, which makes the JSON first.
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-RESOURCES = ROOT / "assets" / "Resources"
+RESOURCES = ROOT / "Assets" / "Resources"
 OUT = ROOT / "wiki"
 DATA = json.load(open(sys.argv[1] if len(sys.argv) > 1 else "/tmp/content.json"))
 
@@ -536,8 +536,7 @@ def build(lang):
 
 
 if __name__ == "__main__":
-    version_file = (ROOT / "src" / "version.lua").read_text()
-    VERSION = re.search(r'number = "([^"]+)"', version_file).group(1)
+    VERSION = json.loads((ROOT / "Assets" / "Resources" / "version.json").read_text())["number"]
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir()

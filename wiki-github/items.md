@@ -3,7 +3,7 @@
 
 [Deutsch](DE-Home)
 
-- [Double Down](items-double_down) — Next coin effects x2
+- [Double Down](items-double_down) — Next coin: points, gold, energy and penalties x2
 - [Energy Drink](items-energy_drink) — Gain 2 energy
 - [Extra Draw](items-extra_draw) — A played coin returns to the pile
 - [Force Heads](items-force_heads) — Dealt coin lands Heads

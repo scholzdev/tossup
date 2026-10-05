@@ -6,7 +6,7 @@
 +5 % Kopf für jeden Kopf in Folge in diesem Level.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 40%
+- **Kopf-Chance:** 35%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

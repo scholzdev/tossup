@@ -1,0 +1,38 @@
+using System;
+using System.Collections.Generic;
+
+namespace Tossup.Coins
+{
+    public sealed class GamblerCoin : CoinDef
+    {
+        public override string Id => "gambler";
+        public override string Name => "Gambler";
+        public override string Description => "Heads is a bet: 50% triple points, otherwise nothing.";
+        public override Rarity Rarity => Rarity.Rare;
+        public override int Cost => 22;
+        public override int EnergyCost => 1;
+        public override double Probability => 0.35;
+        public override double TieProbability => 0;
+        public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Chaos };
+        public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(7) };
+        public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
+        public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+
+        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * 3.5;
+
+        public override void OnResolve(GameState game, CoinInst inst, Res res)
+        {
+            if (res.Result != Side.Heads) return;
+            if (Rng.Random(game) < .5)
+            {
+                foreach (var effect in res.Effects) effect.Amount *= 3;
+                Game.Log(game, "Gambler wins the bet.");
+            }
+            else
+            {
+                res.Effects = new List<Effect>();
+                Game.Log(game, "Gambler loses the bet.");
+            }
+        }
+    }
+}

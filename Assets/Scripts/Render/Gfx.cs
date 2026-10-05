@@ -149,17 +149,18 @@ namespace Tossup.UI
         }
     }
 
-    // What actually puts pixels on screen. Coordinates are on the 1280x800 canvas; the backend maps the
+    // What actually puts pixels on screen. Coordinates are on the 1620x800 canvas; the backend maps the
     // canvas onto the window.
     public interface IGfxBackend
     {
         void Triangles(List<float> xy, Rgba color); // triangle list: x0,y0,x1,y1,x2,y2,...
-        void Image(Img image, float x0, float y0, float x1, float y1, Rgba tint);
+        void Image(Img image, float[] quad, Rgba tint);
+        void Clip(float x, float y, float w, float h);
         void Text(PixFont font, string text, float x, float y, float sx, float sy, Rgba color); // x,y: top left of the line
     }
 
     // An immediate-mode drawing API shaped like love.graphics, so the original views port line by line.
-    // Transforms are translate + scale only (all the game uses).
+    // Affine transforms preserve the original image rotation and scale behavior.
     public static class Gfx
     {
         public static IGfxBackend Backend;
@@ -167,7 +168,7 @@ namespace Tossup.UI
         static Rgba color = new Rgba(1, 1, 1);
         static float lineWidth = 1;
         static PixFont font;
-        static float sx = 1, sy = 1, tx, ty;
+        static float sx = 1, sy = 1, xy, yx, tx, ty;
         static readonly Stack<float[]> stack = new Stack<float[]>();
         static readonly List<float> buffer = new List<float>(256);
         static readonly List<float> path = new List<float>(128);
@@ -177,7 +178,8 @@ namespace Tossup.UI
             color = new Rgba(1, 1, 1);
             lineWidth = 1;
             sx = sy = 1;
-            tx = ty = 0;
+            tx = ty = xy = yx = 0;
+            Backend.Clip(0, 0, -1, -1);
             stack.Clear();
         }
 
@@ -187,7 +189,7 @@ namespace Tossup.UI
         public static void SetFont(PixFont f) => font = f;
         public static PixFont Font => font;
 
-        public static void Push() => stack.Push(new[] { sx, sy, tx, ty });
+        public static void Push() => stack.Push(new[] { sx, sy, tx, ty, xy, yx });
 
         public static void Pop()
         {
@@ -195,23 +197,34 @@ namespace Tossup.UI
             sx = s[0];
             sy = s[1];
             tx = s[2];
-            ty = s[3];
+            ty = s[3]; xy = s[4]; yx = s[5];
         }
 
         public static void Translate(float x, float y)
         {
-            tx += x * sx;
-            ty += y * sy;
+            tx += x * sx + y * xy;
+            ty += x * yx + y * sy;
         }
 
         public static void Scale(float x, float y)
         {
-            sx *= x;
-            sy *= y;
+            sx *= x; yx *= x;
+            sy *= y; xy *= y;
         }
 
-        static float X(float x) => x * sx + tx;
-        static float Y(float y) => y * sy + ty;
+        public static void Rotate(float radians)
+        {
+            float cos = (float)Math.Cos(radians), sin = (float)Math.Sin(radians);
+            float a = sx, b = xy, c = yx, d = sy;
+            sx = a * cos + b * sin; xy = b * cos - a * sin;
+            yx = c * cos + d * sin; sy = d * cos - c * sin;
+        }
+
+        public static void SetScissor(float x, float y, float w, float h) => Backend.Clip(X(x, y), Y(x, y), w * sx, h * sy);
+        public static void ClearScissor() => Backend.Clip(0, 0, -1, -1);
+        static float X(float x, float y) => x * sx + y * xy + tx;
+        static float Y(float x, float y) => x * yx + y * sy + ty;
+        static void Vertex(List<float> target, float x, float y) { target.Add(X(x, y)); target.Add(Y(x, y)); }
 
         static int Segments(float radius) => Math.Max(8, Math.Min(64, (int)Math.Ceiling(radius * Math.Max(Math.Abs(sx), Math.Abs(sy)) * 0.75f)));
 
@@ -261,9 +274,9 @@ namespace Tossup.UI
             for (int k = 0; k < n; k++)
             {
                 int j = (k + 1) % n;
-                buffer.Add(X(cx)); buffer.Add(Y(cy));
-                buffer.Add(X(path[k * 2])); buffer.Add(Y(path[k * 2 + 1]));
-                buffer.Add(X(path[j * 2])); buffer.Add(Y(path[j * 2 + 1]));
+                Vertex(buffer, cx, cy);
+                Vertex(buffer, path[k * 2], path[k * 2 + 1]);
+                Vertex(buffer, path[j * 2], path[j * 2 + 1]);
             }
             Backend.Triangles(buffer, color);
         }
@@ -276,8 +289,8 @@ namespace Tossup.UI
             for (int k = 0; k < n; k++)
             {
                 int j = (k + 1) % n;
-                float ox0 = X(outer[k * 2]), oy0 = Y(outer[k * 2 + 1]), ox1 = X(outer[j * 2]), oy1 = Y(outer[j * 2 + 1]);
-                float ix0 = X(inner[k * 2]), iy0 = Y(inner[k * 2 + 1]), ix1 = X(inner[j * 2]), iy1 = Y(inner[j * 2 + 1]);
+                float ox0 = X(outer[k * 2], outer[k * 2 + 1]), oy0 = Y(outer[k * 2], outer[k * 2 + 1]), ox1 = X(outer[j * 2], outer[j * 2 + 1]), oy1 = Y(outer[j * 2], outer[j * 2 + 1]);
+                float ix0 = X(inner[k * 2], inner[k * 2 + 1]), iy0 = Y(inner[k * 2], inner[k * 2 + 1]), ix1 = X(inner[j * 2], inner[j * 2 + 1]), iy1 = Y(inner[j * 2], inner[j * 2 + 1]);
                 buffer.Add(ox0); buffer.Add(oy0); buffer.Add(ox1); buffer.Add(oy1); buffer.Add(ix1); buffer.Add(iy1);
                 buffer.Add(ox0); buffer.Add(oy0); buffer.Add(ix1); buffer.Add(iy1); buffer.Add(ix0); buffer.Add(iy0);
             }
@@ -371,16 +384,16 @@ namespace Tossup.UI
 
         static void Quad(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
         {
-            buffer.Add(X(x0)); buffer.Add(Y(y0)); buffer.Add(X(x1)); buffer.Add(Y(y1)); buffer.Add(X(x2)); buffer.Add(Y(y2));
-            buffer.Add(X(x0)); buffer.Add(Y(y0)); buffer.Add(X(x2)); buffer.Add(Y(y2)); buffer.Add(X(x3)); buffer.Add(Y(y3));
+            Vertex(buffer, x0, y0); Vertex(buffer, x1, y1); Vertex(buffer, x2, y2);
+            Vertex(buffer, x0, y0); Vertex(buffer, x2, y2); Vertex(buffer, x3, y3);
         }
 
         // love.graphics.draw(image, x, y, 0, scaleX, scaleY)
         public static void Draw(Img image, float x, float y, float scaleX = 1, float scaleY = 1)
         {
             if (image == null) return;
-            float x0 = X(x), y0 = Y(y), x1 = X(x + image.Width * scaleX), y1 = Y(y + image.Height * scaleY);
-            Backend.Image(image, Math.Min(x0, x1), Math.Min(y0, y1), Math.Max(x0, x1), Math.Max(y0, y1), color);
+            float right = x + image.Width * scaleX, bottom = y + image.Height * scaleY;
+            Backend.Image(image, new[] { X(x, y), Y(x, y), X(right, y), Y(right, y), X(right, bottom), Y(right, bottom), X(x, bottom), Y(x, bottom) }, color);
         }
 
         // love.graphics.print(text, x, y, 0, scaleX, scaleY) with the current font.
@@ -389,7 +402,7 @@ namespace Tossup.UI
             if (string.IsNullOrEmpty(text)) return;
             string[] lines = text.Split('\n');
             for (int k = 0; k < lines.Length; k++)
-                Backend.Text(font, lines[k], X(x), Y(y + k * font.Height * scaleY), sx * scaleX, sy * scaleY, color);
+                Backend.Text(font, lines[k], X(x, y + k * font.Height * scaleY), Y(x, y + k * font.Height * scaleY), sx * scaleX, sy * scaleY, color);
         }
 
         // love.graphics.printf(text, x, y, limit, align): wrapped text.
@@ -403,7 +416,7 @@ namespace Tossup.UI
                 float offset = 0;
                 if (align == Align.Center) offset = (float)Math.Floor((limit - widths[k]) / 2);
                 else if (align == Align.Right) offset = limit - widths[k];
-                Backend.Text(font, lines[k], X(x + offset), Y(y + k * font.Height), sx, sy, color);
+                Backend.Text(font, lines[k], X(x + offset, y + k * font.Height), Y(x + offset, y + k * font.Height), sx, sy, color);
             }
         }
     }

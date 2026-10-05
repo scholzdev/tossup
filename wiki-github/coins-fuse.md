@@ -6,7 +6,7 @@
 Discard it to charge +6. Heads spends all charge as points.
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 30%
 - **Shop price:** 10 gold
 - **Energy to flip:** 0
 

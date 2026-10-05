@@ -6,7 +6,7 @@
 Heads: does what the Heads side of a random other coin in your deck does.
 
 - **Rarity:** Epic
-- **Heads chance:** 50%
+- **Heads chance:** 30%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

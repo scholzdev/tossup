@@ -6,7 +6,7 @@
 Kopf: 1 Punkt je 10 Gold, die du hältst.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 55%
+- **Kopf-Chance:** 40%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

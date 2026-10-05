@@ -3,10 +3,10 @@
 
 ![Gezinkt](https://scholzdev.github.io/tossup/img/coins/loaded.png)
 
-Verlässliches Einkommen bei Kopf.
+Kopf: 4 Gold. Zahl: verliere bis zu 8 Gold. Edge: verliere bis zu 4, dann erhalte 2 Gold.
 
 - **Seltenheit:** Gewöhnlich
-- **Kopf-Chance:** 75%
+- **Kopf-Chance:** 59%
 - **Shop-Preis:** 12 Gold
 - **Energie zum Werfen:** 0
 
@@ -14,7 +14,7 @@ Verlässliches Einkommen bei Kopf.
 Erhalte 4 Gold
 
 ## Zahl
-Nichts
+gold_loss
 
 ## Wer sie nutzen kann
 - **Startet im Deck von:** [Der Händler](DE-characters-trader)

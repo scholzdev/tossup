@@ -9,9 +9,9 @@ Risiko und wechselnde Chancen
 [Normal](DE-coins-normal), [Normal](DE-coins-normal), [Dolch](DE-coins-dagger), [Fokus](DE-coins-focus), [Funke](DE-coins-spark)
 
 ## Von Anfang an in Münzsets nutzbar
-[Normal](DE-coins-normal), [Dolch](DE-coins-dagger), [Verflucht](DE-coins-cursed), [Spieler](DE-coins-gambler), [Funke](DE-coins-spark), [Fokus](DE-coins-focus), [Glück](DE-coins-lucky)
+[Normal](DE-coins-normal), [Dolch](DE-coins-dagger), [Verflucht](DE-coins-cursed), [Spieler](DE-coins-gambler), [Funke](DE-coins-spark), [Fokus](DE-coins-focus), [Glück](DE-coins-lucky), [Kompost](DE-coins-compost)
 
 ## Im Shop zu finden (durch Kauf freigeschaltet)
-[Horoskop](DE-coins-horoscope), [Kristallkugel](DE-coins-crystal_ball), [Nachahmer](DE-coins-mimic), [Querkopf](DE-coins-contrarian), [Glückssieben](DE-coins-lucky_seven), [Blut](DE-coins-blood), [Sanduhr](DE-coins-hourglass), [Narr](DE-coins-jester), [Echo](DE-coins-echo), [Phönix](DE-coins-phoenix), [Spiegel](DE-coins-mirror), [Domino](DE-coins-domino), [Zwilling](DE-coins-twin), [Kältewelle](DE-coins-cold_streak), [Anker](DE-coins-anchor), [Wahres Echo](DE-coins-true_echo), [Verstärker](DE-coins-amplifier)
+[Horoskop](DE-coins-horoscope), [Kristallkugel](DE-coins-crystal_ball), [Nachahmer](DE-coins-mimic), [Querkopf](DE-coins-contrarian), [Glückssieben](DE-coins-lucky_seven), [Blut](DE-coins-blood), [Sanduhr](DE-coins-hourglass), [Narr](DE-coins-jester), [Echo](DE-coins-echo), [Phönix](DE-coins-phoenix), [Spiegel](DE-coins-mirror), [Domino](DE-coins-domino), [Zwilling](DE-coins-twin), [Kältewelle](DE-coins-cold_streak), [Anker](DE-coins-anchor), [Wahres Echo](DE-coins-true_echo), [Verstärker](DE-coins-amplifier), [Quadrattanz](DE-coins-square_dance), [Braver Hund](DE-coins-good_dog), [Blutpakt](DE-coins-blood_pact), [Doppelgänger](DE-coins-doppelganger)
 
 [Charaktere](DE-characters)

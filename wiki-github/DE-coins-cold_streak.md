@@ -6,7 +6,7 @@
 Zahl: 2 Punkte je Zahl in Folge (max. 20). Kopf: 1 Punkt.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 20%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

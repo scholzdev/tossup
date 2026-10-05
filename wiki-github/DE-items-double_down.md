@@ -3,7 +3,7 @@
 
 ![Verdoppeln](https://scholzdev.github.io/tossup/img/items/double_down.png)
 
-Effekte der nächsten Münze x2
+Nächste Münze: Punkte, Gold, Energie und Strafen x2
 
 **Preis:** 14 Gold
 

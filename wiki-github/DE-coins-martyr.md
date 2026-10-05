@@ -6,7 +6,7 @@
 Zahl: Ziel +3. Kopf: 4 Punkte, +1 je Zahl in diesem Level.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 40%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 1
 

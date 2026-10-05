@@ -6,7 +6,7 @@
 +5% Heads for every Heads in a row this level.
 
 - **Rarity:** Rare
-- **Heads chance:** 40%
+- **Heads chance:** 35%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

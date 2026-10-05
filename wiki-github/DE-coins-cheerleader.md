@@ -6,7 +6,7 @@
 Kopf: 2 Punkte, nächste 2 Münzen +20 % Kopf. Zahl: nächste Münze +20 %.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 70%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

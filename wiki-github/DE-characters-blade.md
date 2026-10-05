@@ -6,12 +6,12 @@
 Verlässliche Punkte
 
 ## Startdeck
-[Normal](DE-coins-normal), [Normal](DE-coins-normal), [Normal](DE-coins-normal), [Normal](DE-coins-normal), [Schwert](DE-coins-sword)
+[Normal](DE-coins-normal), [Schwert](DE-coins-sword), [Dolch](DE-coins-dagger)
 
 ## Von Anfang an in Münzsets nutzbar
 [Normal](DE-coins-normal), [Schwert](DE-coins-sword), [Dolch](DE-coins-dagger)
 
 ## Im Shop zu finden (durch Kauf freigeschaltet)
-[Hammer](DE-coins-hammer), [Blut](DE-coins-blood), [Vampir](DE-coins-vampire), [Kette](DE-coins-chain), [Verflucht](DE-coins-cursed), [Lunte](DE-coins-fuse), [Fokus](DE-coins-focus), [Märtyrer](DE-coins-martyr), [Schneeball](DE-coins-snowball), [Funke](DE-coins-spark), [Jackpot](DE-coins-jackpot), [Rettungsring](DE-coins-lifeline), [Megafon](DE-coins-megaphone), [Topf](DE-coins-pot), [Heiße Hand](DE-coins-hot_hand), [Auszahlung](DE-coins-cash_out), [Verdoppler](DE-coins-doubler), [Verstärker](DE-coins-amplifier)
+[Hammer](DE-coins-hammer), [Blut](DE-coins-blood), [Vampir](DE-coins-vampire), [Kette](DE-coins-chain), [Verflucht](DE-coins-cursed), [Lunte](DE-coins-fuse), [Fokus](DE-coins-focus), [Märtyrer](DE-coins-martyr), [Schneeball](DE-coins-snowball), [Funke](DE-coins-spark), [Jackpot](DE-coins-jackpot), [Rettungsring](DE-coins-lifeline), [Megafon](DE-coins-megaphone), [Topf](DE-coins-pot), [Heiße Hand](DE-coins-hot_hand), [Auszahlung](DE-coins-cash_out), [Verdoppler](DE-coins-doubler), [Verstärker](DE-coins-amplifier), [Kompost](DE-coins-compost), [Quadrattanz](DE-coins-square_dance), [Braver Hund](DE-coins-good_dog), [Wetzstein](DE-coins-whetstone), [Blutpakt](DE-coins-blood_pact), [Taktgeber](DE-coins-conductor)
 
 [Charaktere](DE-characters)

@@ -6,12 +6,12 @@
 Gold und Energie
 
 ## Startdeck
-[Normal](DE-coins-normal), [Normal](DE-coins-normal), [Normal](DE-coins-normal), [Gezinkt](DE-coins-loaded), [Dolch](DE-coins-dagger)
+[Normal](DE-coins-normal), [Gezinkt](DE-coins-loaded), [Dolch](DE-coins-dagger)
 
 ## Von Anfang an in Münzsets nutzbar
-[Normal](DE-coins-normal), [Kupfer](DE-coins-copper), [Gezinkt](DE-coins-loaded), [Dolch](DE-coins-dagger), [Schwert](DE-coins-sword)
+[Normal](DE-coins-normal), [Kupfer](DE-coins-copper), [Gezinkt](DE-coins-loaded), [Dolch](DE-coins-dagger), [Schwert](DE-coins-sword), [Quadrattanz](DE-coins-square_dance)
 
 ## Im Shop zu finden (durch Kauf freigeschaltet)
-[Funke](DE-coins-spark), [Bank](DE-coins-bank), [Geizhals](DE-coins-miser), [Hammer](DE-coins-hammer), [Kopfgeld](DE-coins-bounty), [Schwarm](DE-coins-flock), [Schwung](DE-coins-momentum), [Flux-Kondensator](DE-coins-capacitor), [Cheerleaderin](DE-coins-cheerleader), [Megafon](DE-coins-megaphone), [Orchester](DE-coins-orchestra), [Rettungsring](DE-coins-lifeline), [Jackpot](DE-coins-jackpot), [Wetter](DE-coins-bettor), [Anker](DE-coins-anchor), [Verdoppler](DE-coins-doubler), [Wahres Echo](DE-coins-true_echo)
+[Funke](DE-coins-spark), [Bank](DE-coins-bank), [Geizhals](DE-coins-miser), [Hammer](DE-coins-hammer), [Kopfgeld](DE-coins-bounty), [Schwarm](DE-coins-flock), [Schwung](DE-coins-momentum), [Flux-Kondensator](DE-coins-capacitor), [Cheerleaderin](DE-coins-cheerleader), [Megafon](DE-coins-megaphone), [Orchester](DE-coins-orchestra), [Rettungsring](DE-coins-lifeline), [Jackpot](DE-coins-jackpot), [Wetter](DE-coins-bettor), [Anker](DE-coins-anchor), [Verdoppler](DE-coins-doubler), [Wahres Echo](DE-coins-true_echo), [Kompost](DE-coins-compost), [Braver Hund](DE-coins-good_dog), [Fälscher](DE-coins-counterfeiter), [Taktgeber](DE-coins-conductor)
 
 [Charaktere](DE-characters)

@@ -3,15 +3,15 @@
 
 ![Blood](https://scholzdev.github.io/tossup/img/coins/blood.png)
 
-Big points, but Tails raises the quota.
+Heads: 10 points. Tails: quota +6. Edge: half of both.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 60%
+- **Heads chance:** 37%
 - **Shop price:** 22 gold
 - **Energy to flip:** 1
 
 ## Heads
-Score 11 points
+Score 10 points
 
 ## Tails
 Quota +6

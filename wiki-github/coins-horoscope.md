@@ -6,7 +6,7 @@
 Heads: 1 point, all coins +7% Heads this level. Tails: all coins +3%.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 70%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

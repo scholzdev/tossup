@@ -3,10 +3,10 @@
 
 ![Jackpot](https://scholzdev.github.io/tossup/img/coins/jackpot.png)
 
-Kopf: 25 Punkte. Nur 20 % Kopf.
+Kopf: 25 Punkte. Nur 15 % Kopf.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 20%
+- **Kopf-Chance:** 15%
 - **Shop-Preis:** 18 Gold
 - **Energie zum Werfen:** 1
 

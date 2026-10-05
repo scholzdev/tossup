@@ -16,8 +16,12 @@ This is the rulebook as implemented in `src/game.lua`. Constants live on the `Ga
 |---|---|---|---|---|
 | 1 | Opening | 0.7 | 4 / 7 | 25 gold |
 | 2 | Second Chance | 1.4 | 7 / 14 | 30 gold |
-| 3 | High Stakes | 2.5 | 13 / 25 | 35 gold |
-| 4 | The House | 4.5 | 23 / 45 | none (ends the run) |
+| 3 | High Stakes | 2.5 | 13 / 25 | 20 gold |
+| 4 | Rising Tide | 3.2 | 16 / 32 | 35 gold |
+| 5 | Double Down | 3.9 | 20 / 39 | 40 gold |
+| 6 | Last Call | 4.5 | 23 / 45 | 45 gold |
+| 7 | Final Table | 5.2 | 26 / 52 | 50 gold |
+| 8 | The House | 6 | 30 / 60 | none (ends the run) |
 <!-- /GEN:levels -->
 
 The quota is `round(per_coin x number of coins in your deck)` when the level starts, so buying coins raises the next
@@ -82,12 +86,12 @@ From level 2 on every level (including the boss and every endless level) has one
 | Modifier | Effect |
 |---|---|
 | Lucky Day | All coins +10% Heads. |
-| Cold Snap | All coins -10% Heads, but the payout is 40% higher. |
-| Power Surge | You start with 5 energy. |
-| Blackout | You start with 1 energy, but the payout is 40% higher. |
+| Cold Snap | All coins -10% Heads, payout +40%. |
+| Power Surge | Start with 5 energy. |
+| Blackout | Start with 1 energy, payout +40%. |
 | Gold Rush | Gold effects pay double. |
 | High Stakes | Quota +25%, payout +50%. |
-| Good Rhythm | The combo grows +0.4 per step. |
+| Good Rhythm | Combo grows +0.4 per step. |
 | Bonus Exchange | One extra exchange this level. |
 <!-- /GEN:modifiers -->
 

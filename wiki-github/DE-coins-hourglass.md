@@ -6,7 +6,7 @@
 +30 % Kopf bei 3 oder weniger übrigen Münzen. Zahl: kommt zurück auf den Stapel.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 40%
+- **Kopf-Chance:** 30%
 - **Shop-Preis:** 10 Gold
 - **Energie zum Werfen:** 0
 

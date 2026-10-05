@@ -1,6 +1,6 @@
 # Münzen
 
-Jede Münze ist eine Datei in `content/coins/<id>.lua`. Eine Münze hat:
+Jede Münze hat eine vollständige C#-Definition in `Assets/Scripts/Content/Coins/<Name>Coin.cs`. Eine Münze hat:
 
 - eine **Kopf-Chance** (`probability`),
 - eine Effektliste für **Kopf** und eine für **Zahl**,
@@ -28,11 +28,14 @@ Abschnitte: [Boni](#boni-wirken-auf-die-nächsten-münzen) | [Serien-Münzen](#s
 | Schwert | Gewöhnlich | 35% | 12 | 0 | Erzielt 3 Punkte | nichts |
 | Glück | Gewöhnlich | 30% | 10 | 0 | Erzielt 2 Punkte, Kommt zurück auf den Stapel | nichts |
 | Verflucht | Selten | 25% | 15 | 0 | Erzielt 15 Punkte | Ziel +2 |
-| Gezinkt | Gewöhnlich | 70% | 12 | 0 | Erhalte 4 Gold | nichts |
-| Dolch | Gewöhnlich | 80% | 12 | 0 | Erzielt 2 Punkte | Erzielt 1 Punkt |
+| Gezinkt | Gewöhnlich | 59% | 12 | 0 | Erhalte 4 Gold | gold_loss |
+| Dolch | Gewöhnlich | 67% | 12 | 0 | Erzielt 2 Punkte | Erzielt 1 Punkt |
+| Kompost | Gewöhnlich | 47% | 10 | 0 | Erzielt 2 Punkte | Ziel +2, fortune_odds |
+| Quadrattanz | Gewöhnlich | 27% | 14 | 0 | (siehe Beschreibung) | (siehe Beschreibung) |
 | Hammer | Ungewöhnlich | 25% | 22 | 2 | Erzielt 16 Punkte | Erzielt 1 Punkt |
+| Wetzstein | Ungewöhnlich | 67% | 22 | 0 | type_buff | nichts |
 | Blut | Ungewöhnlich | 37% | 22 | 1 | Erzielt 10 Punkte | Ziel +6 |
-| Funke | Ungewöhnlich | 70% | 15 | 0 | Erhalte 2 Energie | Erzielt 3 Punkte |
+| Funke | Ungewöhnlich | 70% | 9 | 0 | Erhalte 2 Energie | Erzielt 3 Punkte |
 | Fokus | Ungewöhnlich | 65% | 10 | 0 | Nächste Münze: +35 % Kopf | Erzielt 4 Punkte |
 | Schneeball | Selten | 30% | 24 | 1 | Erzielt 3 Punkte | Erzielt 1 Punkt |
 | Spieler | Selten | 35% | 22 | 1 | Erzielt 7 Punkte | (siehe Beschreibung) |
@@ -40,6 +43,7 @@ Abschnitte: [Boni](#boni-wirken-auf-die-nächsten-münzen) | [Serien-Münzen](#s
 | Echo | Episch | 60% | 15 | 0 | (siehe Beschreibung) | (siehe Beschreibung) |
 | Vampir | Ungewöhnlich | 35% | 15 | 0 | Erzielt 2 Punkte | (siehe Beschreibung) |
 | Geizhals | Ungewöhnlich | 40% | 15 | 0 | (siehe Beschreibung) | Erhalte 2 Gold |
+| Fälscher | Ungewöhnlich | 61% | 25 | 0 | type_buff | nichts |
 | Lunte | Selten | 30% | 10 | 0 | Erzielt 1 Punkt | (siehe Beschreibung) |
 | Phönix | Episch | 25% | 15 | 0 | Erzielt 3 Punkte | Ziel +2 |
 | Querkopf | Selten | 65% | 15 | 0 | Erzielt 4 Punkte | Erzielt 1 Punkt |
@@ -49,8 +53,10 @@ Abschnitte: [Boni](#boni-wirken-auf-die-nächsten-münzen) | [Serien-Münzen](#s
 | Sanduhr | Ungewöhnlich | 30% | 10 | 0 | Erzielt 4 Punkte | Kommt zurück auf den Stapel |
 | Flux-Kondensator | Ungewöhnlich | 35% | 15 | 1 | (siehe Beschreibung) | Erhalte 1 Energie |
 | Märtyrer | Selten | 40% | 15 | 1 | Erzielt 4 Punkte | Ziel +3 |
+| Blutpakt | Selten | 58% | 32 | 0 | type_buff | nichts |
 | Kopfgeld | Selten | 40% | 15 | 1 | Erzielt 4 Punkte | Erzielt 2 Punkte |
 | Narr | Episch | 50% | 15 | 1 | (siehe Beschreibung) | (siehe Beschreibung) |
+| Doppelgänger | Selten | 53% | 34 | 0 | type_buff | nichts |
 | Schwarm | Ungewöhnlich | 25% | 15 | 0 | Erzielt 4 Punkte | (siehe Beschreibung) |
 | Megafon | Ungewöhnlich | 65% | 20 | 1 | Erzielt 2 Punkte, Die nächsten 2 Münzen zahlen x2 | nichts |
 | Cheerleaderin | Ungewöhnlich | 70% | 15 | 0 | Erzielt 2 Punkte, Nächste 2 Münzen: +20 % Kopf | Nächste Münze: +20 % Kopf |
@@ -68,7 +74,9 @@ Abschnitte: [Boni](#boni-wirken-auf-die-nächsten-münzen) | [Serien-Münzen](#s
 | Verdoppler | Selten | 30% | 15 | 0 | (siehe Beschreibung) | (siehe Beschreibung) |
 | Jackpot | Selten | 15% | 18 | 1 | Erzielt 25 Punkte | nichts |
 | Nachahmer | Episch | 30% | 15 | 0 | (siehe Beschreibung) | Erzielt 1 Punkt |
+| Braver Hund | Episch | 43% | 28 | 0 | Erzielt 2 Punkte, fetch_best | nichts |
 | Orchester | Ungewöhnlich | 25% | 15 | 0 | (siehe Beschreibung) | Erhalte 1 Gold |
+| Taktgeber | Ungewöhnlich | 73% | 24 | 0 | type_buff | nichts |
 | Rettungsring | Ungewöhnlich | 70% | 15 | 0 | Erzielt 1 Punkt, Ein Tausch mehr in diesem Level | nichts |
 | Horoskop | Ungewöhnlich | 70% | 15 | 0 | Erzielt 1 Punkt, Alle Münzen +7 % Kopf in diesem Level | Alle Münzen +3 % Kopf in diesem Level |
 | Kristallkugel | Selten | 30% | 15 | 0 | Erzielt 5 Punkte | Wirf eine der nächsten drei Münzen ab |
@@ -184,7 +192,7 @@ Deckgröße), sind aber die schwächste Nutzung eines Wurfs. Entferne sie mit de
 Kopf +5 Punkte. EW 2,5. Reine Verlässlichkeit: kein Haken, keine Kosten. Die Startmünze der Klinge. Vier Schwerter und ein paar Dolche
 schaffen die frühen Ziele allein.
 
-### Dolch (N) - 80% - 12 Gold
+### Dolch (N) - 67% - 12 Gold
 Kopf +4, Zahl +1. EW 3,25. Punktet auf beiden Seiten und hat die besten Chancen aller Startmünzen. Der effizienteste einfache
 Punktebringer im Spiel. Passt zu jeder anderen Münze, weil er nie einen Wurf verschwendet.
 
@@ -196,7 +204,7 @@ ohne Energiequelle. Nutze ihn mit Kupfer, Funke oder Flux-Kondensator. Schlecht 
 Kopf +11, Zahl Ziel +6. EW 4,2 netto (6,6 Punkte minus 2,4 Ziel). Stark, aber riskant: Eine Zahl kostet mehr als einen halben Kopf, du brauchst also Chancenhilfe (Fokus, Cheerleaderin) oder einen Vorsprung. Besser, wenn du vorn liegst und
 fertig werden willst, schlechter als Last-Wurf-Glücksspiel. Steht in der Shop-Liste von Klinge und Seherin.
 
-### Funke (R) - 70%
+### Funke (R) - 70% - 9 Gold
 Kopf +2 Energie, Zahl +3 Punkte. EW 1,5 Punkte und 1,0 Energie. Kostenlos zu werfen und füttert teure Münzen. Startmünze der Seherin
 und Freischaltung für Händler und Klinge. Immer einen Platz neben Hammer, Blut oder Schneeball wert.
 
@@ -207,7 +215,7 @@ und Freischaltung für Händler und Klinge. Immer einen Platz neben Hammer, Blut
 ### Kupfer (N) - 30% - 10 Gold
 Kopf +2 Gold, Zahl +1 Energie. EW 1 Gold, 0,5 Energie. Bezahlt Tausche und den Shop; Zahl ist nie ein toter Wurf. Im Pool des Händlers.
 
-### Gezinkt (N) - 70% - 12 Gold
+### Gezinkt (N) - 59% - 12 Gold
 Kopf +4 Gold. EW 3 Gold. Die verlässliche Einkommensmünze. Gold ist auch der Weg, einen zweiten Versuch zu kaufen (Tausch), Gezinkt ist also ein
 Sicherheitsnetz so sehr wie ein Shop-Beschleuniger. Startmünze des Händlers.
 
@@ -326,3 +334,37 @@ Grobe Reihenfolge nach dem, was der Simulator bei einem gebauten Set zeigt (sieh
 
 Bekannte Probleme: Die Münzpreise sind fast einheitlich, starke Münzen sind also unterbezahlt; einige Wirtschaftsmünzen (Bank, Geizhals) bringen in einem Lauf mit 4 Leveln
 kaum etwas, weil sich selten Gold ansammelt.
+
+## Weitere Münzen
+
+### Kompost (N) - 47% - 10 Gold
+
+Zahl: Ziel +2; einmal pro Level erhalten Glücksmünzen +11 % Kopf für den Lauf (max. +55 %).
+
+### Quadrattanz (N) - 27% - 14 Gold
+
+Kopf: 2 Punkte mal dem Quadrat der Quadrattanz-Kopien in deinem Deck.
+
+### Wetzstein (R) - 67% - 22 Gold
+
+Kopf: Die nächsten 2 Stahlmünzen geben auf Kopf +3 Punkte, auf Zahl aber +2 Ziel.
+
+### Fälscher (R) - 61% - 25 Gold
+
+Kopf: Die nächsten 2 Giermünzen verdoppeln erhaltenes Gold. Jede Zahl verliert zusätzlich bis zu 3 Gold.
+
+### Blutpakt (SR) - 58% - 32 Gold
+
+Kopf: Die nächste Blutmünze gibt auf Kopf +8 Punkte oder auf Zahl +4 Ziel. Edge bekommt die Hälfte von beidem.
+
+### Doppelgänger (SR) - 53% - 34 Gold
+
+Kopf: Die nächste Chaosmünze führt ihre Effekte zweimal aus, auch Strafen.
+
+### Braver Hund (UR) - 43% - 28 Gold
+
+Kopf: 2 Punkte; hole die gespielte Münze mit den meisten Punkten in den Ziehstapel zurück. Einmal pro Level.
+
+### Taktgeber (R) - 73% - 24 Gold
+
+Kopf: Die nächsten 3 Rhythmusmünzen geben +2 Punkte pro Combo-Schritt (max. 8); ein Combo-Bruch erhöht das Ziel um 5.

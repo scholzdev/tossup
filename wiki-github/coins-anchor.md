@@ -6,7 +6,7 @@
 Heads: 2 points, and the next time the combo would break it holds instead.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 70%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

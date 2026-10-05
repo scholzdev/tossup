@@ -3,10 +3,10 @@
 
 ![Snowball](https://scholzdev.github.io/tossup/img/coins/snowball.png)
 
-Grows +1 point every flip for the whole run (max +10).
+Heads gains +1 point every flip for the whole run (max +8).
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 30%
 - **Shop price:** 24 gold
 - **Energy to flip:** 1
 

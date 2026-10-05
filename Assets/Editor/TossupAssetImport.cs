@@ -30,7 +30,7 @@ namespace Tossup.EditorTools
             }
             importer.textureType = TextureImporterType.Default;
             importer.isReadable = false;
-            if (assetPath.StartsWith(Root + "characters/") || assetPath.StartsWith(Root + "fonts/"))
+            if (assetPath.StartsWith(Root + "characters/") || assetPath.StartsWith(Root + "fonts/") || assetPath.StartsWith(Root + "encounters/") || assetPath.StartsWith(Root + "augments/"))
             {
                 importer.mipmapEnabled = false; // portraits and baked glyphs are pixel art, drawn with nearest filtering
                 importer.filterMode = FilterMode.Point;

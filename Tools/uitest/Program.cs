@@ -11,6 +11,10 @@ using Tossup.UI;
 sealed class HeadlessBackend : IGfxBackend
 {
     public long Primitives;
+    public bool Capture;
+    public readonly Dictionary<string, float[]> Images = new Dictionary<string, float[]>();
+    public readonly List<(string Value, float X, float Y, float Width, float Height)> Texts =
+        new List<(string, float, float, float, float)>();
 
     static void Check(float v)
     {
@@ -24,12 +28,14 @@ sealed class HeadlessBackend : IGfxBackend
         Primitives++;
     }
 
-    public void Image(Img image, float x0, float y0, float x1, float y1, Rgba tint)
+    public void Image(Img image, float[] quad, Rgba tint)
     {
-        if (image == null) throw new InvalidOperationException("null image");
-        Check(x0); Check(y0); Check(x1); Check(y1);
+        if (image == null || quad.Length != 8) throw new InvalidOperationException("invalid image quad");
+        foreach (float v in quad) Check(v);
+        if (Capture) Images[image.Key] = (float[])quad.Clone();
         Primitives++;
     }
+    public void Clip(float x, float y, float w, float h) { Check(x); Check(y); Check(w); Check(h); }
 
     public void Text(PixFont font, string text, float x, float y, float sx, float sy, Rgba color)
     {
@@ -37,6 +43,7 @@ sealed class HeadlessBackend : IGfxBackend
         Check(x); Check(y);
         foreach (char c in text)
             if (c != ' ' && font.Advance(c) == 0) throw new InvalidOperationException($"glyph missing from the font: '{c}' (U+{(int)c:X4}) in \"{text}\"");
+        if (Capture) Texts.Add((text, x, y, font.GetWidth(text) * sx, font.Height * sy));
         Primitives++;
     }
 }
@@ -65,8 +72,8 @@ sealed class HeadlessPlatform : IPlatform
 
     public float MouseX => X;
     public float MouseY => Y;
-    public int WindowWidth => 1280;
-    public int WindowHeight => 800;
+    public int WindowWidth { get; set; } = 1620;
+    public int WindowHeight { get; set; } = 800;
     public double Time => Clock;
     public long UnixTime => 1_700_000_000;
     public int Random(int low, int high) => random.Next(low, high + 1);
@@ -76,7 +83,7 @@ sealed class HeadlessPlatform : IPlatform
         string file = Path.Combine(resources, path + ".png");
         using var stream = File.OpenRead(file);
         var header = new byte[24];
-        stream.Read(header, 0, 24);
+        stream.ReadExactly(header);
         int w = header[16] << 24 | header[17] << 16 | header[18] << 8 | header[19];
         int h = header[20] << 24 | header[21] << 16 | header[22] << 8 | header[23];
         return new Img { Key = path, Width = w, Height = h };
@@ -122,6 +129,8 @@ static class Program
         Gfx.Backend = backend;
         AppCore.Load(platform);
         LatestTests.Run();
+        AuditRegressionTests.Run();
+        LayoutProof(platform, backend);
 
         // 1. the screenshot tour
         foreach (var shot in Shots.Script())
@@ -186,7 +195,7 @@ static class Program
                 }
                 else if (r < 85)
                 {
-                    platform.X = rng.Next(-20, 1300);
+                    platform.X = rng.Next(-20, platform.WindowWidth + 20);
                     platform.Y = rng.Next(-20, 820);
                 }
                 // keep runs flowing: leave the title/help screens quickly, sometimes switch language
@@ -208,6 +217,84 @@ static class Program
 
         // 3. a player: clicks the buttons a person would, so runs go deep (shops, the boss, endless levels)
         return Player(platform, frames, seed) ? 0 : 1;
+    }
+
+    static void LayoutProof(HeadlessPlatform platform, HeadlessBackend backend)
+    {
+        void Check(bool condition, string message)
+        {
+            if (!condition) throw new InvalidOperationException("UI layout: " + message);
+        }
+        void Capture()
+        {
+            backend.Images.Clear(); backend.Texts.Clear(); AppCore.Draw();
+        }
+        void ClickCanvas(Button button)
+        {
+            Ui.Layout(out float scale, out float ox, out float oy);
+            platform.X = ox + (button.X + button.W / 2) * scale;
+            platform.Y = oy + (button.Y + button.H / 2) * scale;
+            AppCore.MousePressed(platform.X, platform.Y);
+        }
+        backend.Capture = true;
+        foreach (var size in new[] { (1620,800), (1280,800), (640,400), (1920,1080) })
+        {
+            platform.WindowWidth = size.Item1; platform.WindowHeight = size.Item2;
+            Ui.Game = null; Ui.Confirm = null; Ui.Tutorial = null; Ui.EncounterReveal = null;
+            Lang.Set("en"); A.Go("title"); Capture();
+            Ui.Layout(out float scale, out float ox, out float oy);
+            if (size == (1620,800)) Check(scale == 1 && ox == 0 && oy == 0, "the default view fills the full window");
+            var quad = backend.Images["ui/title_scene"];
+            Check(quad[0] <= 0 && quad[1] <= 0 && quad[4] >= Ui.Width && quad[5] >= Ui.Height,
+                "title artwork covers the canvas without side bars");
+            var scene = Ui.UiImages["title_scene"];
+            Check(Math.Abs((quad[4]-quad[0])/scene.Width-(quad[5]-quad[1])/scene.Height) < .001,
+                "title artwork keeps its aspect ratio");
+            var menu = Ui.Buttons.Find(b => b.Label == "COLLECTION");
+            Check(menu.W >= Ui.Width * .45f, "main menu controls occupy almost half the view");
+            ClickCanvas(menu); Check(Ui.Screen == "collection", "resized pointer activates the visible control");
+            Ui.ToCanvas(platform.X, platform.Y, out float cx, out float cy);
+            Check(menu.Contains(cx,cy), "drawing and pointer transforms agree after resizing");
+        }
+        platform.WindowWidth = 1620; platform.WindowHeight = 800;
+        Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> {"dagger","normal"}, Seed = 6, Energy = 99 });
+        Ui.Game.Encounter.Quota = Ui.Game.Encounter.MaxQuota = 999;
+        Ui.Holding = false; Ui.FlipAnimation = null; Ui.ResolveTimer = 0;
+        A.FlipNextCoin(); Ui.Game.Pending.Result = Side.Tails; Ui.FlipAnimation.Outcome = Side.Tails;
+        string flippedId = Game.GetCoin(Ui.Game, Ui.Game.Pending.Uid).Id;
+        A.Update(Ui.FlipAnimation.Duration); Capture();
+        var applying = backend.Texts.Find(t => t.Value == "APPLYING...");
+        var landed = backend.Texts.FindLast(t => t.Value == "TAILS");
+        var coinQuad = backend.Images["coins/" + flippedId];
+        Check(applying.Value != null && Math.Abs(applying.X+applying.Width/2-(coinQuad[0]+coinQuad[4])/2) <= 1,
+            "applying feedback is centered under the landed coin");
+        Check(landed.Y+landed.Height <= applying.Y, "the outcome and applying feedback do not overlap");
+        A.Update(.91); Capture();
+        Check(Ui.Game.Pending == null && Ui.Holding && !backend.Texts.Exists(t => t.Value == "APPLYING..."),
+            "applying feedback gives way to the resolved result");
+        Ui.Holding = false; Ui.Shake = 0;
+        Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> {"normal","dagger","sword"}, Seed = 6 });
+        Game.Select(Ui.Game, Ui.Game.Coins[0].Uid); Capture();
+        var bankTarget = Ui.Regions.Find(r => r.Coin?.Id == "dagger" && r.X < 400);
+        var bankIcon = backend.Images["coins/dagger"];
+        Check(bankTarget != null && bankTarget.H >= 44 && bankIcon[4]-bankIcon[0] >= 36,
+            "starting decks have larger bank rows and coin icons");
+        var fullDeck = new List<string>(); for (int i=0;i<Game.DeckMax;i++) fullDeck.Add("normal");
+        Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = fullDeck, Seed = 6 }); Capture();
+        var bankRegions = Ui.Regions.FindAll(r => r.Coin != null && r.X < 400);
+        Check(bankRegions.Count == Game.DeckMax && bankRegions.TrueForAll(r => r.Y+r.H <= 586),
+            "all ten bank coins remain visible above the footer");
+        backend.Capture = false;
+        foreach (var shot in Shots.Script())
+        {
+            shot.Setup(); AppCore.Update(0); AppCore.Draw();
+            foreach (var button in Ui.Buttons)
+                Check(button.X >= 0 && button.Y >= 0 && button.X+button.W <= Ui.Width+1 && button.Y+button.H <= Ui.Height+1,
+                    shot.Name + " has a clickable outside the canvas: " + button.Label);
+        }
+        Ui.Game = null; Ui.Confirm = null; Ui.EncounterReveal = null; Ui.FlipAnimation = null;
+        Ui.Holding = false; Ui.ResolveTimer = 0; PadNavigation.MouseUsed(); Lang.Set("en");
+        Console.WriteLine("layout: full-width art, half-screen menu, resized input, result feedback and tour bounds passed");
     }
 
     static Button Find(string label)

@@ -28,12 +28,13 @@ namespace Tossup.UI
         public static void Load(IPlatform platform)
         {
             Ui.Platform = platform;
+            BuildInfo.Load(platform.LoadText("version"));
             Lang.Load("de", platform.LoadText("locales/de"));
             Ui.F16 = platform.LoadFont(16);
             Ui.F20 = platform.LoadFont(20);
             Ui.F32 = platform.LoadFont(32);
             Ui.F48 = platform.LoadFont(48);
-            foreach (var id in Content.CoinOrder) Ui.CoinImages[id] = platform.LoadImage("coins/" + id);
+            foreach (var coin in Content.CoinOrder) Ui.CoinImages[coin.Id] = platform.LoadImage("coins/" + coin.Id);
             Ui.CoinImages["back"] = platform.LoadImage("coins/back");
             foreach (var id in Content.ItemOrder) Ui.ItemImages[id] = platform.LoadImage("items/" + id);
             foreach (var id in Content.RelicOrder) Ui.RelicImages[id] = platform.LoadImage("relics/" + id);
@@ -78,11 +79,13 @@ namespace Tossup.UI
             }
         }
 
-        // Draws one frame onto the 1280x800 canvas. The backend has already cleared the window with the felt
-        // colour (which fills the bars around the 16:10 canvas).
+        // Draws one frame onto the 1620x800 canvas. The backend has already cleared the window with the felt
+        // colour (which fills the bars around the design canvas).
         public static void Draw()
         {
             Ui.Buttons = new List<Button>();
+            Ui.Regions.Clear();
+            Ui.HoverAnchorX = Ui.HoverAnchorY = null;
             Ui.HoveredCoin = null;
             Ui.HoveredText = null;
             Gfx.Reset();
@@ -93,9 +96,10 @@ namespace Tossup.UI
                 Gfx.Translate((float)(p.Random(-6, 6) * Ui.Shake / .3), (float)(p.Random(-6, 6) * Ui.Shake / .3));
             }
             Color(C.Felt);
-            Gfx.Rectangle(true, 0, 0, 1280, 800);
+            Gfx.Rectangle(true, 0, 0, Ui.Width, Ui.Height);
             if (Ui.Game == null || Ui.Game.Paused) Screens[Ui.Screen]();
             else DrawGame();
+            PadNavigation.Inspect();
             CoinTooltip();
             TextTooltip();
             if(Ui.EncounterReveal!=null)EncounterRevealView.Draw();
@@ -217,7 +221,7 @@ namespace Tossup.UI
             {
                 if (int.TryParse(key, out int slot) && slot >= 1 && slot <= 3 && !Ui.Holding && currentGame.Items.Count >= slot)
                 {
-                    A.UseItem(slot);
+                    A.UseItem(slot - 1);
                     return;
                 }
                 if (key == "o" && currentGame.Encounter.Cleared && currentGame.Pending == null)

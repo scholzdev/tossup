@@ -6,12 +6,12 @@
 Steady points on Heads.
 
 - **Rarity:** Common
-- **Heads chance:** 50%
+- **Heads chance:** 35%
 - **Shop price:** 12 gold
 - **Energy to flip:** 0
 
 ## Heads
-Score 5 points
+Score 3 points
 
 ## Tails
 Nothing

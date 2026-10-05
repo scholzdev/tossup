@@ -6,7 +6,7 @@
 Heads: 1 point, and you may exchange one more time this level.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 70%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

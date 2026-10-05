@@ -6,7 +6,7 @@
 Heads: the next coin uses the effects of its other side. Tails: 2 points.
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 65%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

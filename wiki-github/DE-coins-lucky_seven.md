@@ -6,7 +6,7 @@
 1 von 7: landet auf Kopf und zahlt dreifache Punkte.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 40%
+- **Kopf-Chance:** 30%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

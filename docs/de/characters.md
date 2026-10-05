@@ -16,7 +16,7 @@ Porträt: ein Fuchs-Duellant mit einer Münze und einem Degen.
 |---|---|
 | **Standard-Deck** | Normal, Schwert, Dolch |
 | **Pool** | Normal, Schwert, Dolch |
-| **Gesperrt** | Hammer, Blut, Vampir, Kette, Verflucht, Lunte, Fokus, Märtyrer, Schneeball, Funke, Jackpot, Rettungsring, Megafon, Topf, Heiße Hand, Auszahlung, Verdoppler, Verstärker |
+| **Gesperrt** | Hammer, Blut, Vampir, Kette, Verflucht, Lunte, Fokus, Märtyrer, Schneeball, Funke, Jackpot, Rettungsring, Megafon, Topf, Heiße Hand, Auszahlung, Verdoppler, Verstärker, Kompost, Quadrattanz, Braver Hund, Wetzstein, Blutpakt, Taktgeber |
 <!-- /GEN:char-blade -->
 
 **Spielstil.** Geradlinige Punkte. Der Pool der Klinge besteht aus Münzen, deren Wert nicht von Haken abhängt: Schwert (+5 bei
@@ -39,8 +39,8 @@ Porträt: eine Eulenmagierin mit einer leuchtenden Münze.
 | | |
 |---|---|
 | **Standard-Deck** | 2 x Normal, Dolch, Fokus, Funke |
-| **Pool** | Normal, Dolch, Verflucht, Spieler, Funke, Fokus, Glück |
-| **Gesperrt** | Horoskop, Kristallkugel, Nachahmer, Querkopf, Glückssieben, Blut, Sanduhr, Narr, Echo, Phönix, Spiegel, Domino, Zwilling, Kältewelle, Anker, Wahres Echo, Verstärker |
+| **Pool** | Normal, Dolch, Verflucht, Spieler, Funke, Fokus, Glück, Kompost |
+| **Gesperrt** | Horoskop, Kristallkugel, Nachahmer, Querkopf, Glückssieben, Blut, Sanduhr, Narr, Echo, Phönix, Spiegel, Domino, Zwilling, Kältewelle, Anker, Wahres Echo, Verstärker, Quadrattanz, Braver Hund, Blutpakt, Doppelgänger |
 <!-- /GEN:char-seer -->
 
 **Spielstil.** Zocken und manipulieren. Verflucht (30 %, +15) und Spieler (50 % auf x3) sind Ausschläge; Fokus und Glückssieben biegen die
@@ -64,8 +64,8 @@ Porträt: ein Kaufmann mit Kassenbuch und Münze.
 | | |
 |---|---|
 | **Standard-Deck** | Normal, Gezinkt, Dolch |
-| **Pool** | Normal, Kupfer, Gezinkt, Dolch, Schwert |
-| **Gesperrt** | Funke, Bank, Geizhals, Hammer, Kopfgeld, Schwarm, Schwung, Flux-Kondensator, Cheerleaderin, Megafon, Orchester, Rettungsring, Jackpot, Wetter, Anker, Verdoppler, Wahres Echo |
+| **Pool** | Normal, Kupfer, Gezinkt, Dolch, Schwert, Quadrattanz |
+| **Gesperrt** | Funke, Bank, Geizhals, Hammer, Kopfgeld, Schwarm, Schwung, Flux-Kondensator, Cheerleaderin, Megafon, Orchester, Rettungsring, Jackpot, Wetter, Anker, Verdoppler, Wahres Echo, Kompost, Braver Hund, Fälscher, Taktgeber |
 <!-- /GEN:char-trader -->
 
 **Spielstil.** Gold und Energie in Punkte verwandeln. Gezinkt (75 %, +4 Gold), Kupfer (Gold oder Energie) und Bank finanzieren

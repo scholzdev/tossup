@@ -18,6 +18,11 @@ namespace Tossup.EditorTools
         const string IconPath = "Assets/Resources/ui/icon.png";
         const string WindowsOutput = "Builds/Windows/Tossup.exe";
         const string MacOSOutput = "Builds/macOS/Tossup.app";
+        const string LinuxOutput = "Builds/Linux/Tossup.x86_64";
+        const string VersionPath = "Assets/Resources/version.json";
+
+        [Serializable]
+        sealed class VersionData { public string number, build; }
 
         static string OutputPath(string fallback)
         {
@@ -67,11 +72,11 @@ namespace Tossup.EditorTools
 
             PlayerSettings.companyName = "Tossup";
             PlayerSettings.productName = "Tossup";
-            PlayerSettings.defaultScreenWidth = 1280;
-            PlayerSettings.defaultScreenHeight = 800;
+            PlayerSettings.defaultScreenWidth = TossupApp.DefaultWindowWidth;
+            PlayerSettings.defaultScreenHeight = TossupApp.DefaultWindowHeight;
             PlayerSettings.defaultIsNativeResolution = false;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
-            PlayerSettings.resizableWindow = false;
+            PlayerSettings.resizableWindow = true;
             PlayerSettings.runInBackground = true;
             PlayerSettings.colorSpace = ColorSpace.Gamma; // blend like LÖVE does
             var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(IconPath);
@@ -83,39 +88,50 @@ namespace Tossup.EditorTools
         [MenuItem("Tossup/Build Windows Player")]
         public static void BuildWindows()
         {
-            Setup();
-            var output = OutputPath(WindowsOutput);
-            var options = new BuildPlayerOptions
-            {
-                scenes = new[] { ScenePath },
-                locationPathName = output,
-                target = BuildTarget.StandaloneWindows64,
-                options = BuildOptions.None,
-            };
-            var report = BuildPipeline.BuildPlayer(options);
-            Debug.Log("Tossup: build " + report.summary.result + " -> " + Path.GetFullPath(output));
-            if (Application.isBatchMode && report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
-                EditorApplication.Exit(1);
+            Build(BuildTarget.StandaloneWindows64, WindowsOutput);
         }
 
         [MenuItem("Tossup/Build macOS Player")]
         public static void BuildMacOS()
         {
+            Build(BuildTarget.StandaloneOSX, MacOSOutput);
+        }
+
+        [MenuItem("Tossup/Build Linux Player")]
+        public static void BuildLinux()
+        {
+            Build(BuildTarget.StandaloneLinux64, LinuxOutput);
+        }
+
+        static void Build(BuildTarget target, string fallback)
+        {
             Setup();
-            var output = OutputPath(MacOSOutput);
-            var options = new BuildPlayerOptions
+            if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Standalone, target))
+                throw new InvalidOperationException("Install Unity's " + target + " build support module for this Editor version.");
+            string original=File.ReadAllText(VersionPath);
+            var version=JsonUtility.FromJson<VersionData>(original);
+            var args=Environment.GetCommandLineArgs();
+            for(int i=0;i+1<args.Length;i++)if(args[i]=="-buildId")version.build=args[i+1];
+            PlayerSettings.bundleVersion=version.number;
+            var output = OutputPath(fallback);
+            bool success=false;
+            try
             {
-                scenes = new[] { ScenePath },
-                locationPathName = output,
-                target = BuildTarget.StandaloneOSX,
-                options = BuildOptions.None,
-            };
-            var report = BuildPipeline.BuildPlayer(options);
-            if (report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded)
-                AdHocSignMacOSBuild(output);
-            Debug.Log("Tossup: build " + report.summary.result + " -> " + Path.GetFullPath(output));
-            if (Application.isBatchMode && report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
-                EditorApplication.Exit(1);
+                File.WriteAllText(VersionPath,JsonUtility.ToJson(version));
+                AssetDatabase.ImportAsset(VersionPath,ImportAssetOptions.ForceUpdate);
+                var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
+                    scenes = new[] { ScenePath }, locationPathName = output, target = target, options = BuildOptions.None
+                });
+                success=report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded;
+                if(success&&target==BuildTarget.StandaloneOSX)AdHocSignMacOSBuild(output);
+                Debug.Log("Tossup: build " + report.summary.result + " -> " + Path.GetFullPath(output));
+            }
+            finally
+            {
+                File.WriteAllText(VersionPath,original);
+                AssetDatabase.ImportAsset(VersionPath,ImportAssetOptions.ForceUpdate);
+            }
+            if(!success&&Application.isBatchMode)EditorApplication.Exit(1);
         }
     }
 }

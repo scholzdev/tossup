@@ -3,10 +3,10 @@
 
 ![Jackpot](https://scholzdev.github.io/tossup/img/coins/jackpot.png)
 
-Heads: 25 points. Only 20% Heads.
+Heads: 25 points. Only 15% Heads.
 
 - **Rarity:** Rare
-- **Heads chance:** 20%
+- **Heads chance:** 15%
 - **Shop price:** 18 gold
 - **Energy to flip:** 1
 

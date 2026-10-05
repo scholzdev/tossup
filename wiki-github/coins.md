@@ -8,18 +8,22 @@
 - [Sword](coins-sword) — Steady points on Heads.
 - [Lucky](coins-lucky) — Heads: 2 points, and it goes back into the pile to play again.
 - [Cursed](coins-cursed) — A powerful, dangerous wager.
-- [Loaded](coins-loaded) — Reliable income on Heads.
+- [Loaded](coins-loaded) — Heads: 4 gold. Tails: lose up to 8 gold. Edge: lose up to 4, then gain 2 gold.
 - [Dagger](coins-dagger) — Scores either way.
+- [Compost](coins-compost) — Tails: quota +2; once per level, Fortune coins gain +11% Heads for the run (max +55%).
+- [Square Dance](coins-square_dance) — Heads: 2 points times the square of Square Dance copies in your deck.
 - [Hammer](coins-hammer) — A rare but crushing hit.
-- [Blood](coins-blood) — Big points, but Tails raises the quota.
+- [Whetstone](coins-whetstone) — Heads: next 2 Steel coins gain 3 points on Heads, but add 2 quota on Tails.
+- [Blood](coins-blood) — Heads: 10 points. Tails: quota +6. Edge: half of both.
 - [Spark](coins-spark) — Energy or a small strike.
-- [Focus](coins-focus) — Builds its own Heads chance.
-- [Snowball](coins-snowball) — Grows +1 point every flip for the whole run (max +10).
+- [Focus](coins-focus) — Heads: the next coin gets +35% Heads. Tails: 4 points.
+- [Snowball](coins-snowball) — Heads gains +1 point every flip for the whole run (max +8).
 - [Gambler](coins-gambler) — Heads is a bet: 50% triple points, otherwise nothing.
 - [Momentum](coins-momentum) — +5% Heads for every Heads in a row this level.
 - [Echo](coins-echo) — Repeats the effects the previous coin had for this side.
 - [Vampire](coins-vampire) — Heads: 2 points and it drains 2 gold from the house.
 - [Miser](coins-miser) — Heads: 1 point per 10 gold you hold.
+- [Counterfeiter](coins-counterfeiter) — Heads: next 2 Greed coins double all gold gained. Each Tails also loses up to 3 gold.
 - [Fuse](coins-fuse) — Discard it to charge +6. Heads spends all charge as points.
 - [Phoenix](coins-phoenix) — Each Tails stores anger (max 5). Heads: 3 points +2 per anger.
 - [Contrarian](coins-contrarian) — Always lands opposite of the previous flip.
@@ -29,26 +33,30 @@
 - [Hourglass](coins-hourglass) — +30% Heads when 3 or fewer coins are left. Tails: goes back into the pile.
 - [Flux Capacitor](coins-capacitor) — Heads: 2 points per energy you hold. Tails: +1 energy.
 - [Martyr](coins-martyr) — Tails: quota +3. Heads: 4 points, +1 per Tails so far this level.
+- [Blood Pact](coins-blood_pact) — Heads: next Blood coin gains 8 points on Heads or adds 4 quota on Tails. Edge gets half of both.
 - [Bounty](coins-bounty) — Pays 1 gold for every 2 points it scores.
 - [Jester](coins-jester) — Heads or Tails, it does something random.
-- [Flock](coins-flock) — +10% Heads for every other Flock in your bank.
+- [Doppelganger](coins-doppelganger) — Heads: next Chaos coin applies its resolved effects twice, including penalties.
+- [Flock](coins-flock) — +10% Heads for every other Flock in your deck.
 - [Megaphone](coins-megaphone) — Heads: 2 points, and the next 2 coins pay double.
 - [Cheerleader](coins-cheerleader) — Heads: 2 points, next 2 coins +20% Heads. Tails: next coin +20%.
 - [Mirror](coins-mirror) — Heads: the next coin uses the effects of its other side. Tails: 2 points.
 - [Twin](coins-twin) — Always lands the same as the previous flip.
-- [Pot](coins-pot) — Heads: points equal to the flips made so far this level (max 12).
+- [Pot](coins-pot) — Heads: points equal to the flips made so far this level (max 8).
 - [Domino](coins-domino) — Heads: 2 points, and the next coin lands Heads. Tails: quota +1.
 - [Hot Hand](coins-hot_hand) — Heads: 2 points, and the combo grows by 1 extra step.
 - [Anchor](coins-anchor) — Heads: 2 points, and the next time the combo would break it holds instead.
 - [Bettor](coins-bettor) — Heads: 3 points per flip in the current combo (max 30). Tails: quota +2.
-- [Cash Out](coins-cash_out) — Heads: 3 points, the combo multiplier counts twice, then the combo resets.
+- [Cash Out](coins-cash_out) — Heads: 3 points, squares the combo multiplier, banks its pot, then resets the combo.
 - [Cold Streak](coins-cold_streak) — Tails: 2 points per Tails in a row (max 20). Heads: 1 point.
-- [Amplifier](coins-amplifier) — Heads: 1 point, and all active buffs last 1 coin longer and get stronger. Tails: 1 point.
+- [Amplifier](coins-amplifier) — Heads: 1 point. Active buffs last 1 coin longer; odds and multipliers grow stronger. Tails: 1 point.
 - [True Echo](coins-true_echo) — Repeats what the previous coin really did, including its buffs and growth, on either side.
-- [Doubler](coins-doubler) — Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24...).
-- [Jackpot](coins-jackpot) — Heads: 25 points. Only 20% Heads.
+- [Doubler](coins-doubler) — Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24... up to 384).
+- [Jackpot](coins-jackpot) — Heads: 25 points. Only 15% Heads.
 - [Mimic](coins-mimic) — Heads: does what the Heads side of a random other coin in your deck does.
+- [Good Dog](coins-good_dog) — Heads: 2 points; return the highest-scoring coin played this level to the draw pile. Once per level.
 - [Orchestra](coins-orchestra) — Heads: 2 points per different coin type in your deck.
+- [Conductor](coins-conductor) — Heads: next 3 Rhythm coins gain 2 points per combo step (max 8); a broken combo adds 5 quota.
 - [Lifeline](coins-lifeline) — Heads: 1 point, and you may exchange one more time this level.
 - [Horoscope](coins-horoscope) — Heads: 1 point, all coins +7% Heads this level. Tails: all coins +3%.
 - [Crystal Ball](coins-crystal_ball) — Heads: 5 points. Tails: discard one of the next three coins.

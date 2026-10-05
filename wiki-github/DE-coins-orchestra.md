@@ -6,7 +6,7 @@
 Kopf: 2 Punkte je verschiedenem Münztyp in deinem Deck.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 25%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

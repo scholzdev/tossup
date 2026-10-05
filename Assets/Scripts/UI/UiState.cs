@@ -7,6 +7,7 @@ namespace Tossup.UI
     public sealed class Button
     {
         public float X, Y, W, H;
+        public string Hotkey;
         public string Label; // the untranslated caption, for tests
         public Action Action;
         public Action<int> Adjust;
@@ -19,9 +20,19 @@ namespace Tossup.UI
 
     public sealed class HoveredCoin
     {
-        public string Id;
+        public CoinDef Definition;
+        public string Id => Definition.Id;
         public double Probability;
         public bool Locked;
+        public double TieProbability;
+        public Upgrade Upgrade;
+    }
+
+    public sealed class HoverRegion
+    {
+        public float X, Y, W, H;
+        public HoveredCoin Coin;
+        public HoveredText Text;
     }
 
     public sealed class HoveredText
@@ -53,10 +64,10 @@ namespace Tossup.UI
     }
 
     // Shared mutable UI state. Game rules live in Core/Game.cs; this is presentation only.
-    // The game is drawn on a fixed 1280x800 canvas that is scaled and centred to fit the window.
+    // The game is drawn on a fixed 1620x800 canvas that is scaled and centred to fit the window.
     public static class Ui
     {
-        public const float Width = 1280, Height = 800;
+        public const float Width = 1620, Height = 800;
 
         public static IPlatform Platform;
 
@@ -74,6 +85,8 @@ namespace Tossup.UI
         public static GameState Game;
         public static ProfileData Profile; // meta progression (tokens, unlocks), loaded in AppCore.Load
         public static List<Button> Buttons = new List<Button>();
+        public static List<HoverRegion> Regions = new List<HoverRegion>();
+        public static float? HoverAnchorX, HoverAnchorY;
         public static bool DebugVisible;
         public static string Notice = "";
         public static PixFont F16, F20, F32, F48;
@@ -115,6 +128,12 @@ namespace Tossup.UI
             Layout(out float scale, out float ox, out float oy);
             cx = (x - ox) / scale;
             cy = (y - oy) / scale;
+        }
+
+        public static void Pointer(out float x, out float y)
+        {
+            if (HoverAnchorX.HasValue) { x = HoverAnchorX.Value; y = HoverAnchorY.Value; }
+            else Mouse(out x, out y);
         }
 
         public static void Mouse(out float mx, out float my)

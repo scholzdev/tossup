@@ -3,10 +3,10 @@
 
 ![Schneeball](https://scholzdev.github.io/tossup/img/coins/snowball.png)
 
-Wächst mit jedem Wurf um +1 Punkt für den ganzen Lauf (max. +10).
+Kopf erhält mit jedem Wurf +1 Punkt für den ganzen Lauf (max. +8).
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 30%
 - **Shop-Preis:** 24 Gold
 - **Energie zum Werfen:** 1
 

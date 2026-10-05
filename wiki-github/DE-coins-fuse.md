@@ -6,7 +6,7 @@
 Wirf sie ab, um +6 aufzuladen. Kopf verbraucht die ganze Ladung als Punkte.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 30%
 - **Shop-Preis:** 10 Gold
 - **Energie zum Werfen:** 0
 

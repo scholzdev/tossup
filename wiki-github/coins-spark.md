@@ -6,8 +6,8 @@
 Energy or a small strike.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
-- **Shop price:** 15 gold
+- **Heads chance:** 70%
+- **Shop price:** 9 gold
 - **Energy to flip:** 0
 
 ## Heads

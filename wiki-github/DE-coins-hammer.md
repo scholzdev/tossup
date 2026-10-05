@@ -6,7 +6,7 @@
 Selten, aber vernichtend.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 35%
+- **Kopf-Chance:** 25%
 - **Shop-Preis:** 22 Gold
 - **Energie zum Werfen:** 2
 

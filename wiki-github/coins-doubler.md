@@ -3,10 +3,10 @@
 
 ![Doubler](https://scholzdev.github.io/tossup/img/coins/doubler.png)
 
-Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24...).
+Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24... up to 384).
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 30%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

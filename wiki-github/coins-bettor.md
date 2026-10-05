@@ -6,7 +6,7 @@
 Heads: 3 points per flip in the current combo (max 30). Tails: quota +2.
 
 - **Rarity:** Rare
-- **Heads chance:** 45%
+- **Heads chance:** 35%
 - **Shop price:** 15 gold
 - **Energy to flip:** 1
 

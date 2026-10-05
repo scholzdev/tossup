@@ -6,12 +6,12 @@
 Reliable points
 
 ## Starting deck
-[Normal](coins-normal), [Normal](coins-normal), [Normal](coins-normal), [Normal](coins-normal), [Sword](coins-sword)
+[Normal](coins-normal), [Sword](coins-sword), [Dagger](coins-dagger)
 
 ## Usable in coin sets from the start
 [Normal](coins-normal), [Sword](coins-sword), [Dagger](coins-dagger)
 
 ## Found in the shop (unlocked by buying)
-[Hammer](coins-hammer), [Blood](coins-blood), [Vampire](coins-vampire), [Chain](coins-chain), [Cursed](coins-cursed), [Fuse](coins-fuse), [Focus](coins-focus), [Martyr](coins-martyr), [Snowball](coins-snowball), [Spark](coins-spark), [Jackpot](coins-jackpot), [Lifeline](coins-lifeline), [Megaphone](coins-megaphone), [Pot](coins-pot), [Hot Hand](coins-hot_hand), [Cash Out](coins-cash_out), [Doubler](coins-doubler), [Amplifier](coins-amplifier)
+[Hammer](coins-hammer), [Blood](coins-blood), [Vampire](coins-vampire), [Chain](coins-chain), [Cursed](coins-cursed), [Fuse](coins-fuse), [Focus](coins-focus), [Martyr](coins-martyr), [Snowball](coins-snowball), [Spark](coins-spark), [Jackpot](coins-jackpot), [Lifeline](coins-lifeline), [Megaphone](coins-megaphone), [Pot](coins-pot), [Hot Hand](coins-hot_hand), [Cash Out](coins-cash_out), [Doubler](coins-doubler), [Amplifier](coins-amplifier), [Compost](coins-compost), [Square Dance](coins-square_dance), [Good Dog](coins-good_dog), [Whetstone](coins-whetstone), [Blood Pact](coins-blood_pact), [Conductor](coins-conductor)
 
 [Characters](characters)

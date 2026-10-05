@@ -13,6 +13,8 @@ namespace Tossup
     [RequireComponent(typeof(Camera))]
     public sealed class TossupApp : MonoBehaviour, IPlatform
     {
+        public const int DefaultWindowWidth = 1620;
+        public const int DefaultWindowHeight = 800;
         const string FontPath = "fonts/m6x11plus";
         const int SfxVoices = 16;
         // m6x11plus metrics (unitsPerEm 1024, ascender 768, descender -256) at FreeType's rounding, as LÖVE uses them
@@ -25,7 +27,6 @@ namespace Tossup
         readonly List<AudioSource> voices = new List<AudioSource>();
         int nextVoice;
         AudioSource music;
-        Texture2D cursorArrow, cursorClick;
         string saveDir;
         Vector3 lastMouse;
         bool loaded;
@@ -73,6 +74,8 @@ namespace Tossup
             if (shotMode && Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
             Directory.CreateDirectory(saveDir);
 
+            if (!shotMode && !RuntimeMode.Dev && !RuntimeMode.Sandbox) ImportLegacySaves();
+            Application.logMessageReceived += RecordCrash;
             backend = new UnityGfxBackend();
             Gfx.Backend = backend;
             font = Resources.Load<Font>(FontPath);
@@ -91,10 +94,13 @@ namespace Tossup
             music.clip = Resources.Load<AudioClip>("music/theme");
             music.loop = true;
             music.playOnAwake = false;
-            cursorArrow = Resources.Load<Texture2D>("ui/cursor_arrow");
-            cursorClick = Resources.Load<Texture2D>("ui/cursor_click");
 
             AppCore.Load(this);
+            if (sandboxMode && string.IsNullOrEmpty(sandboxScenePath))
+            {
+                Ui.SandboxConfig = SandboxConfig.Decode(Resources.Load<TextAsset>("sandbox/default").text);
+                A.StartSandbox(Ui.SandboxConfig);
+            }
             if(!string.IsNullOrEmpty(sandboxScenePath))
             {
                 try
@@ -110,9 +116,41 @@ namespace Tossup
             if (shotMode) StartCoroutine(CaptureShots());
         }
 
+        void ImportLegacySaves()
+        {
+            string configured = Environment.GetEnvironmentVariable("TOSSUP_LEGACY_SAVE_DIR");
+            var candidates = new List<string>();
+            if (!string.IsNullOrEmpty(configured)) candidates.Add(configured);
+            string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.OSXEditor)
+                candidates.Add(Path.Combine(userDirectory,"Library","Application Support","LOVE","tossup"));
+            else if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+                candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),"LOVE","tossup"));
+            else
+            {
+                string dataDirectory = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
+                candidates.Add(Path.Combine(string.IsNullOrEmpty(dataDirectory) ? Path.Combine(userDirectory,".local","share") : dataDirectory,"love","tossup"));
+            }
+            foreach (string directory in candidates)
+                if (Directory.Exists(directory))
+                    try { if (LegacySave.ImportDirectory(directory,saveDir)) Debug.Log("Imported Lua progress from " + directory); }
+                    catch (Exception error) { Debug.LogWarning("Lua save import failed: " + error.Message); }
+        }
+
+        void RecordCrash(string message, string trace, LogType type)
+        {
+            if (type != LogType.Exception && type != LogType.Error && type != LogType.Assert) return;
+            try { File.AppendAllText(Path.Combine(saveDir,"crash.log"),DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " v" + BuildInfo.Number + "-" + BuildInfo.Build + "\n" + message + "\n" + trace + "\n\n"); }
+            catch (IOException) { } // Logging must never replace the original exception.
+            catch (UnauthorizedAccessException) { }
+        }
+        void OnDestroy() { Application.logMessageReceived -= RecordCrash; }
+
         void Update()
         {
             if (!loaded || shotMode) return;
+            if (!Application.isEditor && Screen.fullScreenMode == FullScreenMode.Windowed && (Screen.width < 640 || Screen.height < 400))
+                Screen.SetResolution(Math.Max(640, Screen.width), Math.Max(400, Screen.height), FullScreenMode.Windowed);
             bool revealWasOpen = Ui.EncounterReveal != null;
             if (Input.GetMouseButtonDown(0)) AppCore.MousePressed(MouseX, MouseY);
             if (Input.mousePosition != lastMouse)
@@ -121,12 +159,19 @@ namespace Tossup
                 AppCore.MouseMoved(MouseX, MouseY);
             }
             if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1) || Input.GetMouseButtonUp(2)) AppCore.MouseReleased();
-            if (Ui.EncounterReveal != null && Input.anyKeyDown) AppCore.KeyPressed("any");
+            // Unity's anyKeyDown includes mouse buttons. The Start click may
+            // create the reveal above; only an already-open reveal can consume it.
+            if (revealWasOpen && Ui.EncounterReveal != null && Input.anyKeyDown) AppCore.KeyPressed("any");
             bool consumedRevealInput = revealWasOpen && Ui.EncounterReveal == null;
             if (!consumedRevealInput && Input.GetKeyDown(KeyCode.F3)) AppCore.KeyPressed("f3");
-            if (!consumedRevealInput && Input.GetKeyDown(KeyCode.F5) && !string.IsNullOrEmpty(sandboxScenePath))
+            if (!consumedRevealInput && Input.GetKeyDown(KeyCode.F5) && RuntimeMode.Sandbox)
             {
-                try { if(Path.GetExtension(sandboxScenePath)!=".json")throw new FormatException("sandbox scene must be a JSON file");A.StartSandbox(SandboxConfig.Decode(File.ReadAllText(sandboxScenePath))); }
+                try
+                {
+                    if(!string.IsNullOrEmpty(sandboxScenePath)&&Path.GetExtension(sandboxScenePath)!=".json")throw new FormatException("sandbox scene must be a JSON file");
+                    string json=string.IsNullOrEmpty(sandboxScenePath)?Resources.Load<TextAsset>("sandbox/default").text:File.ReadAllText(sandboxScenePath);
+                    Ui.SandboxConfig=SandboxConfig.Decode(json);A.StartSandbox(Ui.SandboxConfig);
+                }
                 catch(Exception ex){Debug.LogError("Could not reload Tossup sandbox JSON: "+ex.Message);}
             }
             if (!consumedRevealInput)
@@ -153,6 +198,7 @@ namespace Tossup
                 if (Input.GetKeyDown(KeyCode.JoystickButton5)) PadNavigation.ControllerPressed(5);
                 if (Input.GetKeyDown(KeyCode.JoystickButton7)) PadNavigation.ControllerPressed(7);
 
+                PadNavigation.Connected = Array.Exists(Input.GetJoystickNames(), name => !string.IsNullOrEmpty(name));
                 PadNavigation.Update(UnityEngine.Time.unscaledDeltaTime,
                     Input.GetAxisRaw("Tossup Pad Horizontal"), Input.GetAxisRaw("Tossup Pad Vertical"),
                     Input.GetAxisRaw("Tossup Pad DPad Horizontal"), Input.GetAxisRaw("Tossup Pad DPad Vertical"),
@@ -173,7 +219,7 @@ namespace Tossup
         IEnumerator CaptureShots()
         {
             Directory.CreateDirectory(shotsDir);
-            Screen.SetResolution(1280, 800, FullScreenMode.Windowed);
+            Screen.SetResolution(DefaultWindowWidth, DefaultWindowHeight, FullScreenMode.Windowed);
             for (int k = 0; k < 10; k++) yield return null; // let the window settle
             foreach (var shot in Shots.Script())
             {
@@ -277,8 +323,8 @@ namespace Tossup
 
         public void SetCursor(string name)
         {
-            var texture = name == "click" ? cursorClick : cursorArrow;
-            if (texture != null) Cursor.SetCursor(texture, new Vector2(2, 2), CursorMode.Auto);
+            // The platform pointer stays compact over small chips and run modifiers.
+            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
         }
 
         public void SetFullscreen(bool fullscreen)
@@ -290,7 +336,7 @@ namespace Tossup
                     Screen.SetResolution(Display.main.systemWidth, Display.main.systemHeight, FullScreenMode.FullScreenWindow);
             }
             else if (Screen.fullScreenMode != FullScreenMode.Windowed)
-                Screen.SetResolution(1280, 800, FullScreenMode.Windowed);
+                Screen.SetResolution(DefaultWindowWidth, DefaultWindowHeight, FullScreenMode.Windowed);
         }
 
         public void Quit()

@@ -6,7 +6,7 @@
 Eine mächtige, gefährliche Wette.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 30%
+- **Kopf-Chance:** 25%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

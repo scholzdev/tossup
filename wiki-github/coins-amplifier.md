@@ -3,10 +3,10 @@
 
 ![Amplifier](https://scholzdev.github.io/tossup/img/coins/amplifier.png)
 
-Heads: 1 point, and all active buffs last 1 coin longer and get stronger. Tails: 1 point.
+Heads: 1 point. Active buffs last 1 coin longer; odds and multipliers grow stronger. Tails: 1 point.
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 70%
 - **Shop price:** 15 gold
 - **Energy to flip:** 1
 

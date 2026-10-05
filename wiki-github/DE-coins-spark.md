@@ -6,8 +6,8 @@
 Energie oder ein kleiner Treffer.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
-- **Shop-Preis:** 15 Gold
+- **Kopf-Chance:** 70%
+- **Shop-Preis:** 9 Gold
 - **Energie zum Werfen:** 0
 
 ## Kopf

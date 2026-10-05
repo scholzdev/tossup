@@ -15,35 +15,67 @@ namespace Tossup
     // extra_draw, amplify, combo_bonus, combo_shield, next_mult, next_odds, next_swap, next_heads.
     public sealed class Effect
     {
-        public string Type;
+        public EffectType Type;
         public double Amount;
         public int? Coins; // "next N coins" effects; null means 1
-        public string Kind; // coin type for type_buff
+        public CoinType? Kind; // coin type for type_buff
 
-        public Effect(string type, double amount = 0, int? coins = null)
+        public Effect() { } // StateJson restores public data fields.
+
+        public Effect(EffectType type, double amount = 0, int? coins = null)
         {
             Type = type;
             Amount = amount;
             Coins = coins;
         }
 
+        public static Effect AllOdds(double amount = 0, int? coins = null) => new Effect(EffectType.AllOdds, amount, coins);
+        public static Effect Amplify(double amount = 0, int? coins = null) => new Effect(EffectType.Amplify, amount, coins);
+        public static Effect BankDiscard(double amount = 0, int? coins = null) => new Effect(EffectType.BankDiscard, amount, coins);
+        public static Effect ComboBonus(double amount = 0, int? coins = null) => new Effect(EffectType.ComboBonus, amount, coins);
+        public static Effect ComboShield(double amount = 0, int? coins = null) => new Effect(EffectType.ComboShield, amount, coins);
+        public static Effect Energy(double amount = 0, int? coins = null) => new Effect(EffectType.Energy, amount, coins);
+        public static Effect ExtraDraw(double amount = 0, int? coins = null) => new Effect(EffectType.ExtraDraw, amount, coins);
+        public static Effect ExtraExchange(double amount = 0, int? coins = null) => new Effect(EffectType.ExtraExchange, amount, coins);
+        public static Effect FetchBest(double amount = 0, int? coins = null) => new Effect(EffectType.FetchBest, amount, coins);
+        public static Effect FortuneOdds(double amount = 0, int? coins = null) => new Effect(EffectType.FortuneOdds, amount, coins);
+        public static Effect Gold(double amount = 0, int? coins = null) => new Effect(EffectType.Gold, amount, coins);
+        public static Effect GoldLoss(double amount = 0, int? coins = null) => new Effect(EffectType.GoldLoss, amount, coins);
+        public static Effect NextHeads(double amount = 0, int? coins = null) => new Effect(EffectType.NextHeads, amount, coins);
+        public static Effect NextMult(double amount = 0, int? coins = null) => new Effect(EffectType.NextMult, amount, coins);
+        public static Effect NextOdds(double amount = 0, int? coins = null) => new Effect(EffectType.NextOdds, amount, coins);
+        public static Effect NextSwap(double amount = 0, int? coins = null) => new Effect(EffectType.NextSwap, amount, coins);
+        public static Effect Quota(double amount = 0, int? coins = null) => new Effect(EffectType.Penalty, amount, coins);
+        public static Effect Probability(double amount = 0, int? coins = null) => new Effect(EffectType.Probability, amount, coins);
+        public static Effect Score(double amount = 0, int? coins = null) => new Effect(EffectType.Score, amount, coins);
+        public static Effect TypeBuff(double amount = 0, int? coins = null, CoinType? kind = null) => new Effect(EffectType.TypeBuff, amount, coins) { Kind = kind };
+        public static IReadOnlyList<Effect> HalfOf(params IReadOnlyList<Effect>[] sides)
+        {
+            var result=new List<Effect>();
+            foreach(var side in sides)foreach(var effect in side)
+                if(effect.Type==EffectType.Score||effect.Type==EffectType.Gold||effect.Type==EffectType.GoldLoss||effect.Type==EffectType.Energy||effect.Type==EffectType.Penalty)
+                    result.Add(new Effect(effect.Type,effect.Amount/2));
+            return result;
+        }
+
         public Effect Copy() => new Effect(Type, Amount, Coins) { Kind = Kind };
 
-        public Effect WithKind(string kind) { Kind = kind; return this; }
+        public Effect WithKind(CoinType kind) { Kind = kind; return this; }
     }
 
     // An owned coin. It lives for the whole run, so a coin's own counters are how it scales itself.
     public sealed class CoinInst
     {
         public int Uid;
-        public string Id;
+        public CoinDef Definition;
+        public string Id => Definition?.Id;
         public double Bonus; // odds tuner upgrades
         public double Charge; // Fuse
         public bool Jackpot; // Lucky Seven
         public double Debt; // Martyr
         public double Stack; // Snowball
         public double Anger; // Phoenix
-        public string Upgrade;
+        public Upgrade Upgrade;
         public int CompostLevel;
         public int FetchedLevel;
     }
@@ -176,7 +208,8 @@ namespace Tossup
 
     public sealed class AugmentChoice
     {
-        public string Key, Title, Detail, CoinId, UpgradeId, UpgradeName, CurrentUpgrade;
+        public string Key, Title, Detail, CoinId, UpgradeId, UpgradeName;
+        public Upgrade CurrentUpgrade;
     }
 
     public sealed class GameState
@@ -191,7 +224,7 @@ namespace Tossup
         public List<string> Relics = new List<string>();
         public List<string> Items = new List<string>();
         public List<string> ShopItems = new List<string>(); // null entries are sold
-        public List<string> ShopOffers = new List<string>(); // null entries are sold
+        public List<CoinDef> ShopOffers = new List<CoinDef>(); // null entries are sold
         public string ShopRelic;
         public List<string> Unlocked = new List<string>();
         public HashSet<string> Purchased = new HashSet<string>();
@@ -223,7 +256,7 @@ namespace Tossup
         public AugmentPending AugmentPending;
         public double NextLevelQuotaBonus;
         public ShopState Shop = new ShopState();
-        public List<string> ShopUpgrades = new List<string>();
+        public List<Upgrade> ShopUpgrades = new List<Upgrade>();
         // presentation flags kept on the run, as the original did
         public bool Paused;
         public int? TokensPaid;

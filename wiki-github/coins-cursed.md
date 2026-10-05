@@ -6,7 +6,7 @@
 A powerful, dangerous wager.
 
 - **Rarity:** Rare
-- **Heads chance:** 30%
+- **Heads chance:** 25%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

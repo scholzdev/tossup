@@ -3,10 +3,10 @@
 
 ![Flock](https://scholzdev.github.io/tossup/img/coins/flock.png)
 
-+10% Heads for every other Flock in your bank.
++10% Heads for every other Flock in your deck.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 40%
+- **Heads chance:** 25%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

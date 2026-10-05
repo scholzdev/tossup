@@ -6,7 +6,7 @@
 Heads: 5 points. Tails: discard one of the next three coins.
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 30%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

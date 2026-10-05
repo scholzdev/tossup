@@ -6,7 +6,7 @@
 Landet immer anders als der vorherige Wurf.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 65%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

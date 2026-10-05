@@ -45,6 +45,9 @@ namespace Tossup.UI
         }
 
         public static string CoinName(string id) => Def("coins", id, "name", Content.Coins[id].Name);
+        public static string CoinHeadsDescription(string id) => Def("coins", id, "heads_description", Content.Coins[id].HeadsDescription);
+        public static string ModifierName(string id) => Def("modifiers", id, "name", Game.Modifiers[id].Name);
+        public static string ModifierDescription(string id) => Def("modifiers", id, "description", Game.Modifiers[id].Description);
         public static string CoinDescription(string id) => Def("coins", id, "description", Content.Coins[id].Description);
         public static string ItemName(string id) => Def("items", id, "name", Content.Items[id].Name);
         public static string ItemShort(string id) => Def("items", id, "short", Content.Items[id].Short);

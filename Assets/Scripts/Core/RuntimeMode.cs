@@ -21,7 +21,7 @@ namespace Tossup
                 profile.Wins.Add(characterId);
                 profile.Stakes[characterId] = Game.Stakes.Count;
                 foreach (var entry in Content.Characters[characterId].Locked) Profile.Grant(profile, characterId, entry.Id);
-                foreach (var id in Content.Characters[characterId].Pool) profile.Collected.Add(id);
+                foreach (var coin in Content.Characters[characterId].Pool) profile.Collected.Add(coin.Id);
                 foreach (var entry in Content.Characters[characterId].Locked) profile.Collected.Add(entry.Id);
             }
             profile.Options.SeenHelp = true;

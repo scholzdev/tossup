@@ -3,10 +3,10 @@
 
 ![Loaded](https://scholzdev.github.io/tossup/img/coins/loaded.png)
 
-Reliable income on Heads.
+Heads: 4 gold. Tails: lose up to 8 gold. Edge: lose up to 4, then gain 2 gold.
 
 - **Rarity:** Common
-- **Heads chance:** 75%
+- **Heads chance:** 59%
 - **Shop price:** 12 gold
 - **Energy to flip:** 0
 
@@ -14,7 +14,7 @@ Reliable income on Heads.
 Gain 4 gold
 
 ## Tails
-Nothing
+gold_loss
 
 ## Who can use it
 - **Starts in the deck of:** [The Trader](characters-trader)

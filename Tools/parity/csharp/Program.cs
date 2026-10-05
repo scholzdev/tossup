@@ -13,7 +13,7 @@ static class Program
     const int MaxSteps = 500;
     static readonly string[] Chars = { "blade", "seer", "trader" };
     static readonly string[] RelicIds = { "magnet", "penny", "clock", "metronome", "baton" };
-    static readonly string[] ItemIds = { "force_heads", "force_tails", "weighted", "double_down", "swap", "peek", "extra_draw" };
+    static readonly string[] ItemIds = { "force_heads", "force_tails", "weighted", "double_down", "swap", "peek", "extra_draw", "energy_drink", "lucky_charm", "safety_net", "shortcut" };
 
     static long botState;
     static StreamWriter output;
@@ -35,6 +35,8 @@ static class Program
     static string PhaseName(Phase p) => p switch
     {
         Phase.Encounter => "ENCOUNTER",
+        Phase.Contract => "CONTRACT",
+        Phase.Augment => "AUGMENT",
         Phase.Shop => "SHOP",
         Phase.Victory => "VICTORY",
         _ => "GAME_OVER",
@@ -49,29 +51,42 @@ static class Program
             var buffs = e.Buffs.Select(b => b.Kind + ":" + S(b.Amount) + ":" + b.Left + ":" + S(b.Fresh));
             var bonus = e.Bonus.Keys.OrderBy(k => k).Select(k => k + ":" + S(e.Bonus[k]));
             Print($"E quota={S(e.Quota)} maxq={S(e.MaxQuota)} scored={S(e.Scored)} flips={e.Flips} streak={e.Streak} cside={S(e.ComboSide)} clen={S(e.ComboLen)} shield={S(e.Shield)} magnet={S(e.Magnet)} ret={e.Returned} disc={e.Discards} exch={e.Exchanges} dbl={e.Doubler} sp={S(e.SurplusPaid)} clr={S(e.Cleared)} step={S(e.ComboStep)} cap={S(e.ComboCap)}");
+            Print($"CURRENT modifier={S(e.Modifier)} pot={S(e.ComboPot)} banked={S(e.ComboBanked)} bestcombo={S(e.BestComboLen)} contract={S(e.Contract?.Id)} result={S(e.Contract?.Result)} options={List(e.ContractOptions ?? new List<string>())} bet={S(e.SideBetSide)} outcome={S(e.SideBetOutcome)} stake={e.SideBetCost} payout={S(e.SideBetPayout)} push={S(e.PushAvailable)} pushed={S(e.PushUsed)}");
             Print("  buffs=" + string.Join(",", buffs) + " pile=" + List(e.Pile) + " queue=" + List(e.Queue) +
                 " played=" + List(e.Played) + " discarded=" + List(e.Discarded.OrderBy(x => x)) + " bonus=" + string.Join(",", bonus));
         }
         var p = g.Pending;
-        if (p != null) Print("P " + p.Uid + " " + S(p.Probability) + " " + S(p.Raw) + " " + S(p.Result) + " " + S(p.Altered) + " " + S(p.Forced));
+        if (p != null) Print("P " + p.Uid + " " + S(p.Probability) + " " + S(p.TieProbability) + " " + S(p.Raw) + " " + S(p.Result) + " " + S(p.Altered) + " " + S(p.Forced));
         var d = g.Dealt;
-        if (d != null) Print("D " + d.Uid + " " + S(d.Probability));
+        if (d != null) Print("D " + d.Uid + " " + S(d.Probability) + " " + S(d.TieProbability));
         var l = g.LastResult;
         if (l != null)
             Print("L " + l.Uid + " " + S(l.Final) + " " + S(l.Gained) + " " + S(l.Penalty) + " " + S(l.Combo?.Len) + " " + S(l.Combo?.Mult) + " " + S(l.Combo?.Side));
         var coins = g.Coins.Select(c => c.Uid + ":" + c.Id + ":" + S(c.Bonus) + ":" + S(c.Charge) + ":" + S(c.Debt) + ":" +
-            S(c.Stack) + ":" + S(c.Anger) + ":" + S(c.Jackpot) + ":" + S(Game.Probability(g, c)));
+            S(c.Stack) + ":" + S(c.Anger) + ":" + S(c.Jackpot) + ":" + S(Game.Probability(g, c)) + ":" + S(Game.TieProbability(g,c)) + ":" + S(c.Upgrade) + ":" + List(Content.Coins[c.Id].Types.Select(type=>DefinitionKeys.Key(type))));
         Print("C " + string.Join(" ", coins));
         if (g.Mulligan != null) Print("M " + List(g.Mulligan.Hand));
         if (g.Peek != null) Print("K " + List(g.Peek));
         if (g.Phase == Phase.Shop)
-            Print("SHOP " + string.Join(",", g.ShopOffers.Select(x => x ?? "-")) + " | " + string.Join(",", g.ShopItems.Select(x => x ?? "-")) +
+            Print("SHOP " + string.Join(",", g.ShopOffers.Select(x => x?.Id ?? "-")) + " | " + string.Join(",", g.ShopItems.Select(x => x ?? "-")) +
                 " | " + S(g.ShopRelic) + " | " + g.RerollCost);
         Print("I " + List(g.Items) + " R " + List(g.Relics));
+        Print("RUNSYS encounter="+S(g.RunEncounterId)+" augments="+List(g.Augments)+" data="+string.Join(",",g.AugmentData.OrderBy(p=>p.Key,StringComparer.Ordinal).Select(p=>p.Key+":"+p.Value))+" options="+List(g.AugmentOptions??new List<string>())+" pending="+S(g.AugmentPending?.Id)+":"+S(g.AugmentPending?.RewardId)+" shopupgrades="+List(g.ShopUpgrades));
     }
 
     static (string, object) Step(GameState game)
     {
+        if(game.Phase==Phase.Contract)
+        {
+            if(Brand(4)==1)return ("skipcontract",Game.SkipContract(game));
+            return ("contract",Game.ChooseContract(game,game.Encounter.ContractOptions[Brand(game.Encounter.ContractOptions.Count)-1]));
+        }
+        if(game.Phase==Phase.Augment)
+        {
+            if(game.AugmentPending==null)return ("augment",Game.ChooseAugment(game,game.AugmentOptions[Brand(game.AugmentOptions.Count)-1]));
+            var choices=Game.AugmentChoices(game);
+            return ("augmentchoice",Game.ChooseAugmentOption(game,choices[Brand(choices.Count)-1].Key));
+        }
         if (game.Phase == Phase.Encounter)
         {
             if (game.Mulligan != null)
@@ -91,10 +106,13 @@ static class Program
                 if (r == 2) return ("force", Game.Force(game, Brand(2) == 1 ? Side.Heads : Side.Tails));
                 return ("resolve", Game.Resolve(game));
             }
-            if (game.Dealt != null)
+                if (game.Dealt != null)
             {
                 if (game.Encounter.Cleared && Brand(10) == 1) return ("endlevel", Game.EndLevel(game));
-                int r = Brand(10);
+                int r = Brand(14);
+                if(r==11)return ("bet",Game.PlaceSideBet(game,Brand(2)==1?Side.Heads:Side.Tails));
+                if(r==12)return ("bank",Game.BankCombo(game));
+                if(r==13)return ("push",Game.PushCombo(game));
                 if (r == 1 && game.Items.Count > 0) return ("use", Game.UseItem(game, Brand(game.Items.Count) - 1));
                 if (r == 2)
                 {
@@ -117,7 +135,7 @@ static class Program
             if (r == 3) return ("buyrelic", Game.BuyRelic(game));
             if (r == 4) return ("rerollshop", Game.RerollShop(game));
             if (r == 5) return ("energy", Game.BuyEnergy(game));
-            if (r == 6) return ("upgrade", Game.Upgrade(game, game.Coins[Brand(game.Coins.Count) - 1].Uid));
+            if (r == 6) return ("slot", Game.BuySlot(game));
             if (r == 7 && Brand(3) == 1) return ("remove", Game.Remove(game, game.Coins[Brand(game.Coins.Count) - 1].Uid));
             return ("leave", Game.LeaveShop(game));
         }
@@ -133,32 +151,32 @@ static class Program
     {
         int runs = args.Length > 0 ? int.Parse(args[0]) : 300;
         output = new StreamWriter(args.Length > 1 ? args[1] : "csharp.txt", false, new UTF8Encoding(false));
-        var order = Content.CoinOrder;
+        var order = Content.CoinOrder.Select(c=>c.Id).ToList();
         for (int run = 1; run <= runs; run++)
         {
             botState = run * 7919L + 13;
             long seed = run * 104729L + 7;
             string character = Chars[Brand(3) - 1];
-            int n = Brand(10);
+            int n = Brand(Game.StartMax);
             var loadout = new List<string>();
-            var copies = new Dictionary<string, int>();
+            var copies = new Dictionary<Rarity, int>();
             for (int k = 0; k < n; k++)
             {
                 string id = order[Brand(order.Count) - 1];
-                copies.TryGetValue(id, out int c);
-                copies[id] = ++c;
-                if (id == "normal" || c <= 3) loadout.Add(id);
+                var rarity=Content.Coins[id].Rarity;
+                copies.TryGetValue(rarity, out int c);
+                if(c<Profile.RarityLimit(id)){copies[rarity]=c+1;loadout.Add(id);}
             }
             Print("RUN " + run + " seed=" + seed + " char=" + character + " loadout=" + string.Join(",", loadout));
             GameState game;
-            try { game = Game.New(seed, character, new List<string>(order), loadout, true); }
+            try { game = Game.New(seed, character, new List<string>(order), loadout.Select(id=>Content.Coins[id]).ToList(), true); }
             catch (Exception ex) { Print("ERROR " + ex.Message); Print("END " + run); continue; }
             for (int k = Brand(4) - 1; k > 0; k--)
             {
                 string id = RelicIds[Brand(5) - 1];
                 if (!game.Relics.Contains(id)) Game.AddRelic(game, id);
             }
-            for (int k = Brand(4) - 1; k > 0; k--) game.Items.Add(ItemIds[Brand(7) - 1]);
+            for (int k = Brand(4) - 1; k > 0; k--) game.Items.Add(ItemIds[Brand(ItemIds.Length) - 1]);
             Dump(game);
             for (int stepIndex = 1; stepIndex <= MaxSteps; stepIndex++)
             {

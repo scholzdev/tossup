@@ -16,8 +16,12 @@ Dies ist das Regelwerk, wie es im Spiel umgesetzt ist (`src/game.lua`). Die Kons
 |---|---|---|---|---|
 | 1 | Auftakt | 0,7 | 4 / 7 | 25 Gold |
 | 2 | Zweite Chance | 1,4 | 7 / 14 | 30 Gold |
-| 3 | Hoher Einsatz | 2,5 | 13 / 25 | 35 Gold |
-| 4 | Das Haus | 4,5 | 23 / 45 | keine (beendet den Lauf) |
+| 3 | Hoher Einsatz | 2,5 | 13 / 25 | 20 Gold |
+| 4 | Steigende Flut | 3,2 | 16 / 32 | 35 Gold |
+| 5 | Doppelter Einsatz | 3,9 | 20 / 39 | 40 Gold |
+| 6 | Letzte Runde | 4,5 | 23 / 45 | 45 Gold |
+| 7 | Finaltisch | 5,2 | 26 / 52 | 50 Gold |
+| 8 | Das Haus | 6 | 30 / 60 | keine (beendet den Lauf) |
 <!-- /GEN:levels -->
 
 Das Ziel ist `gerundet(Wert pro Münze x Anzahl der Münzen in deinem Deck)` beim Start des Levels. Wer Münzen kauft, erhöht also das nächste Ziel.

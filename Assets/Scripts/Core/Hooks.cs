@@ -49,28 +49,27 @@ namespace Tossup
         public static void Bind(GameState game, CoinInst inst)
         {
             Unbind();
-            var def = Content.Coins[inst.Id];
+            var def = inst.Definition;
             var handles = new List<Handle>();
             active = handles;
             void On(string evt, Action<GameEvent> handler)
             {
                 handles.Add(Signal.On(evt, e => { if (e.Inst == inst) handler(e); }));
             }
-            if (def.OnDeal != null) On("coin_deal", e => def.OnDeal(e.Game, e.Inst));
-            if (def.OnFlip != null) On("coin_flip", e => def.OnFlip(e.Game, e.Inst, e.Flip));
-            if (def.OnResolve != null) On("coin_resolve", e => def.OnResolve(e.Game, e.Inst, e.Res));
-            if (def.OnDiscard != null) On("coin_discard", e => def.OnDiscard(e.Game, e.Inst));
-            def.Register?.Invoke(new CoinCtx { Game = game, Inst = inst, On = On });
+            if (def.Overrides(nameof(CoinDef.OnDeal))) On("coin_deal", e => def.OnDeal(e.Game, e.Inst));
+            if (def.Overrides(nameof(CoinDef.OnFlip))) On("coin_flip", e => def.OnFlip(e.Game, e.Inst, e.Flip));
+            if (def.Overrides(nameof(CoinDef.OnResolve))) On("coin_resolve", e => def.OnResolve(e.Game, e.Inst, e.Res));
+            if (def.Overrides(nameof(CoinDef.OnDiscard))) On("coin_discard", e => def.OnDiscard(e.Game, e.Inst));
+            def.Register(new CoinCtx { Game = game, Inst = inst, On = On });
         }
 
-        public static void Grow(CoinInst inst, string evt) => Content.Coins[inst.Id].Grow?.Invoke(inst, evt);
+        public static void Grow(CoinInst inst, string evt) => inst.Definition.Grow(inst, evt);
 
         public static double Odds(GameState game, CoinInst inst, double p)
         {
-            var onOdds = Content.Coins[inst.Id].OnOdds;
-            if (onOdds == null) return p;
+            var def = inst.Definition;
             var odds = new Odds { P = p };
-            onOdds(game, inst, odds);
+            def.OnOdds(game, inst, odds);
             return odds.P;
         }
     }

@@ -6,7 +6,7 @@
 1 in 7: lands Heads and pays triple points.
 
 - **Rarity:** Rare
-- **Heads chance:** 40%
+- **Heads chance:** 30%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

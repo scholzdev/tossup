@@ -6,7 +6,7 @@
 Jede Zahl speichert Wut (max. 5). Kopf: 3 Punkte +2 je Wut.
 
 - **Seltenheit:** Episch
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 25%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

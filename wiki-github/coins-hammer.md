@@ -6,7 +6,7 @@
 A rare but crushing hit.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 35%
+- **Heads chance:** 25%
 - **Shop price:** 22 gold
 - **Energy to flip:** 2
 

@@ -6,7 +6,7 @@
 Kopf: +3 Gold, plus 1 je 10 gehaltene Gold (max. +3).
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 40%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

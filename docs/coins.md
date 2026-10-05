@@ -1,6 +1,6 @@
 # Coins
 
-Every coin is a file in `content/coins/<id>.lua`. A coin has:
+Every coin has a complete C# definition in `Assets/Scripts/Content/Coins/<Name>Coin.cs`. A coin has:
 
 - a **Heads chance** (`probability`),
 - an effect list for **Heads** and one for **Tails**,
@@ -28,11 +28,14 @@ Sections: [Buffers](#buffers-affect-the-next-coins) | [The baseline](#the-baseli
 | Sword | Common | 35% | 12 | 0 | Score 3 points | nothing |
 | Lucky | Common | 30% | 10 | 0 | Score 2 points, Goes back into the pile | nothing |
 | Cursed | Rare | 25% | 15 | 0 | Score 15 points | Quota +2 |
-| Loaded | Common | 70% | 12 | 0 | Gain 4 gold | nothing |
-| Dagger | Common | 80% | 12 | 0 | Score 2 points | Score 1 point |
+| Loaded | Common | 59% | 12 | 0 | Gain 4 gold | gold_loss |
+| Dagger | Common | 67% | 12 | 0 | Score 2 points | Score 1 point |
+| Compost | Common | 47% | 10 | 0 | Score 2 points | Quota +2, fortune_odds |
+| Square Dance | Common | 27% | 14 | 0 | (see description) | (see description) |
 | Hammer | Uncommon | 25% | 22 | 2 | Score 16 points | Score 1 point |
+| Whetstone | Uncommon | 67% | 22 | 0 | type_buff | nothing |
 | Blood | Uncommon | 37% | 22 | 1 | Score 10 points | Quota +6 |
-| Spark | Uncommon | 70% | 15 | 0 | Gain 2 energy | Score 3 points |
+| Spark | Uncommon | 70% | 9 | 0 | Gain 2 energy | Score 3 points |
 | Focus | Uncommon | 65% | 10 | 0 | Next coin: +35% Heads | Score 4 points |
 | Snowball | Rare | 30% | 24 | 1 | Score 3 points | Score 1 point |
 | Gambler | Rare | 35% | 22 | 1 | Score 7 points | (see description) |
@@ -40,6 +43,7 @@ Sections: [Buffers](#buffers-affect-the-next-coins) | [The baseline](#the-baseli
 | Echo | Epic | 60% | 15 | 0 | (see description) | (see description) |
 | Vampire | Uncommon | 35% | 15 | 0 | Score 2 points | (see description) |
 | Miser | Uncommon | 40% | 15 | 0 | (see description) | Gain 2 gold |
+| Counterfeiter | Uncommon | 61% | 25 | 0 | type_buff | nothing |
 | Fuse | Rare | 30% | 10 | 0 | Score 1 point | (see description) |
 | Phoenix | Epic | 25% | 15 | 0 | Score 3 points | Quota +2 |
 | Contrarian | Rare | 65% | 15 | 0 | Score 4 points | Score 1 point |
@@ -49,8 +53,10 @@ Sections: [Buffers](#buffers-affect-the-next-coins) | [The baseline](#the-baseli
 | Hourglass | Uncommon | 30% | 10 | 0 | Score 4 points | Goes back into the pile |
 | Flux Capacitor | Uncommon | 35% | 15 | 1 | (see description) | Gain 1 energy |
 | Martyr | Rare | 40% | 15 | 1 | Score 4 points | Quota +3 |
+| Blood Pact | Rare | 58% | 32 | 0 | type_buff | nothing |
 | Bounty | Rare | 40% | 15 | 1 | Score 4 points | Score 2 points |
 | Jester | Epic | 50% | 15 | 1 | (see description) | (see description) |
+| Doppelganger | Rare | 53% | 34 | 0 | type_buff | nothing |
 | Flock | Uncommon | 25% | 15 | 0 | Score 4 points | (see description) |
 | Megaphone | Uncommon | 65% | 20 | 1 | Score 2 points, Next 2 coins pay x2 | nothing |
 | Cheerleader | Uncommon | 70% | 15 | 0 | Score 2 points, Next 2 coins: +20% Heads | Next coin: +20% Heads |
@@ -68,7 +74,9 @@ Sections: [Buffers](#buffers-affect-the-next-coins) | [The baseline](#the-baseli
 | Doubler | Rare | 30% | 15 | 0 | (see description) | (see description) |
 | Jackpot | Rare | 15% | 18 | 1 | Score 25 points | nothing |
 | Mimic | Epic | 30% | 15 | 0 | (see description) | Score 1 point |
+| Good Dog | Epic | 43% | 28 | 0 | Score 2 points, fetch_best | nothing |
 | Orchestra | Uncommon | 25% | 15 | 0 | (see description) | Gain 1 gold |
+| Conductor | Uncommon | 73% | 24 | 0 | type_buff | nothing |
 | Lifeline | Uncommon | 70% | 15 | 0 | Score 1 point, One more exchange this level | nothing |
 | Horoscope | Uncommon | 70% | 15 | 0 | Score 1 point, All coins +7% Heads this level | All coins +3% Heads this level |
 | Crystal Ball | Rare | 30% | 15 | 0 | Score 5 points | Discard one of the next three coins |
@@ -184,7 +192,7 @@ size) but they are the weakest use of a flip. Remove them with Coin Removal once
 Heads +5 points. EV 2.5. Pure reliability: no hook, no cost. The Blade's starter. Four copies of Sword and a few Daggers
 beat the early quotas on their own.
 
-### Dagger (N) - 80% - 12 gold
+### Dagger (N) - 67% - 12 gold
 Heads +4, Tails +1. EV 3.25. Scores on both sides and has the best odds of any starter coin. The most efficient plain
 scorer in the game. Pairs with every other coin because it never wastes a flip.
 
@@ -197,7 +205,7 @@ Heads +11, Tails quota +6. EV 4.2 net (6.6 points minus 2.4 of quota). Strong bu
 odds help (Focus, Cheerleader) or a lead. Better when you are ahead and want to finish, worse as a last-flip gamble. Appears in both Blade's and Seer's
 locked list.
 
-### Spark (R) - 70%
+### Spark (R) - 70% - 9 gold
 Heads +2 energy, Tails +3 points. EV 1.5 points and 1.0 energy. Free to flip and feeds expensive coins. Seer's starter
 and a Trader and Blade unlock. Always worth a slot next to Hammer, Blood or Snowball.
 
@@ -209,7 +217,7 @@ and a Trader and Blade unlock. Always worth a slot next to Hammer, Blood or Snow
 Heads +2 gold, Tails +1 energy. EV 1 gold, 0.5 energy. Funds exchanges and the shop; Tails is never a dead flip. Trader's
 pool.
 
-### Loaded (N) - 70% - 12 gold
+### Loaded (N) - 59% - 12 gold
 Heads +4 gold. EV 3 gold. The reliable income coin. Gold is also the way to buy a second try (exchange), so Loaded is a
 safety net as much as a shop booster. Trader's starter.
 
@@ -329,3 +337,37 @@ Rough order by what the simulator shows on a built 5-coin set (see `lua tools/si
 
 Known issues: coin prices are flat at 15 so tier S coins are under-priced; a few economy coins (Bank, Miser) do very little
 in a 4-level run because gold rarely accumulates.
+
+## Additional coins
+
+### Compost (N) - 47% - 10 gold
+
+Tails: quota +2; once per level, Fortune coins gain +11% Heads for the run (max +55%).
+
+### Square Dance (N) - 27% - 14 gold
+
+Heads: 2 points times the square of Square Dance copies in your deck.
+
+### Whetstone (R) - 67% - 22 gold
+
+Heads: next 2 Steel coins gain 3 points on Heads, but add 2 quota on Tails.
+
+### Counterfeiter (R) - 61% - 25 gold
+
+Heads: next 2 Greed coins double all gold gained. Each Tails also loses up to 3 gold.
+
+### Blood Pact (SR) - 58% - 32 gold
+
+Heads: next Blood coin gains 8 points on Heads or adds 4 quota on Tails. Edge gets half of both.
+
+### Doppelganger (SR) - 53% - 34 gold
+
+Heads: next Chaos coin applies its resolved effects twice, including penalties.
+
+### Good Dog (UR) - 43% - 28 gold
+
+Heads: 2 points; return the highest-scoring coin played this level to the draw pile. Once per level.
+
+### Conductor (R) - 73% - 24 gold
+
+Heads: next 3 Rhythm coins gain 2 points per combo step (max 8); a broken combo adds 5 quota.

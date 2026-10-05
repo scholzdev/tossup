@@ -3,10 +3,10 @@
 
 ![Auszahlung](https://scholzdev.github.io/tossup/img/coins/cash_out.png)
 
-Kopf: 3 Punkte, der Serienbonus zählt doppelt, dann endet die Serie.
+Kopf: 3 Punkte, quadriert den Serienmultiplikator, sichert den Topf und beendet die Serie.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 30%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

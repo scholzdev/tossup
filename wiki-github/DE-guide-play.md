@@ -19,12 +19,16 @@ Das Ziel ist der Wert des Levels pro Münze mal der Zahl der Münzen in deinem D
 
 | # | Level | Ziel pro Münze | Prämie |
 |---|---|---|---|
-| 1 | Auftakt | 0,6 | 25 Gold |
-| 2 | Zweite Chance | 0,9 | 30 Gold |
-| 3 | Hoher Einsatz | 1,6 | 35 Gold |
-| 4 | Das Haus | 3,0 | beendet den Lauf |
+| 1 | Auftakt | 0,7 | 25 Gold |
+| 2 | Zweite Chance | 1,4 | 30 Gold |
+| 3 | Hoher Einsatz | 2,5 | 20 Gold |
+| 4 | Steigende Flut | 3,2 | 35 Gold |
+| 5 | Doppelter Einsatz | 3,9 | 40 Gold |
+| 6 | Letzte Runde | 4,5 | 45 Gold |
+| 7 | Finaltisch | 5,2 | 50 Gold |
+| 8 | Das Haus | 6,0 | beendet den Lauf |
 
-Du startest den Lauf mit 25 Gold und 5 Münzplätzen. Zu Beginn jedes Levels bekommst du 3 Energie.
+Du startest den Lauf mit 5 Gold und 5 Münzplätzen. Zu Beginn jedes Levels bekommst du 3 Energie.
 
 ## Energie
 
@@ -40,7 +44,7 @@ Sobald das Ziel erreicht ist, bekommst du die Prämie des Levels sofort, und das
 
 ## Keine Münzen mehr
 
-Ist dein Stapel leer und das Ziel nicht erreicht, kannst du tauschen: Zahle Gold (10 beim ersten Mal, danach jeweils 5 mehr), um 3 der schon gespielten Münzen zurück in den Stapel zu holen. Das geht höchstens 3-mal pro Level. Kannst du nicht zahlen oder hast alle benutzt, ist das Level verloren und der Lauf vorbei.
+Ist dein Stapel leer und das Ziel nicht erreicht, kannst du tauschen: Zahle Gold (7 beim ersten Mal, danach jeweils 5 mehr), um 3 der schon gespielten Münzen zurück in den Stapel zu holen. Das geht höchstens 3-mal pro Level. Kannst du nicht zahlen oder hast alle benutzt, ist das Level verloren und der Lauf vorbei.
 
 ## Der Shop
 
@@ -49,7 +53,7 @@ Zwischen den Leveln gehst du in den Shop: vier Münzen, zwei Chips und eine Prä
 - Münzen kommen in dein Deck. Kaufst du eine noch nicht freigeschaltete Münze, ist sie dauerhaft freigeschaltet und kann danach in deine Startsets.
 - Chips sind Einwegartikel. Du kannst 3 halten. Benutze sie über die Leiste, solange eine Münze ausgeteilt ist.
 - Prämien wirken passiv und halten den ganzen Lauf.
-- Neu würfeln zeigt neue Münzen (4 Gold, jedes Mal 2 mehr). Ein zusätzlicher Deckplatz kostet 5 Gold, bis zu 10 Plätze. Eine Münze entfernen und ihre Chance verbessern gibt es auch.
+- Neu würfeln zeigt neue Münzen (4 Gold, jedes Mal 2 mehr). Ein zusätzlicher Deckplatz kostet 5 Gold, für jeden gekauften 2 mehr, bis zu 10 Plätze. Eine Münze entfernen und ihre Chance verbessern gibt es auch.
 
 Ein volles Deck kann keine Münzen kaufen, bis du einen Platz kaufst oder eine Münze entfernst.
 

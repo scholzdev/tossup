@@ -6,7 +6,7 @@
 Finanziert deinen nächsten Zug.
 
 - **Seltenheit:** Gewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 30%
 - **Shop-Preis:** 10 Gold
 - **Energie zum Werfen:** 0
 

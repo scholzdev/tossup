@@ -6,7 +6,7 @@
 Kopf: 2 Punkte, und beim nächsten Serienbruch hält die Serie stattdessen.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 70%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

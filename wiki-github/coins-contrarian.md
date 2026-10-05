@@ -6,7 +6,7 @@
 Always lands opposite of the previous flip.
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 65%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

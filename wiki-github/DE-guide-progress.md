@@ -22,11 +22,11 @@ Jeder Charakter hat seine eigene Schwierigkeitsstufe, 1 bis 8. Du wählst sie au
 | 5 | Shop-Preise +20 % |
 | 6 | Nur 2 Tausche pro Level |
 | 7 | Auch Level 1 hat einen Modifikator |
-| 8 | Ziele insgesamt +50 % |
+| 8 | Ziele insgesamt +80 % |
 
 ## Speichern
 
-Das Spiel speichert deinen Lauf von selbst zu Beginn jedes Levels und im Shop, und Weiter im Hauptmenü setzt ihn fort, auch nach dem Beenden. Ein laufendes Level beginnt wieder bei der Starthand. Münzen, Sets, Optionen und Rekorde werden getrennt gespeichert. In den Optionen löscht der Knopf Fortschritt löschen alles.
+Das Spiel speichert deinen Lauf von selbst zu Beginn jedes Levels und im Shop, und Weiter im Hauptmenü setzt ihn fort, auch nach dem Beenden. Ein laufendes Level beginnt wieder bei der Starthand. Münzen, Sets, Optionen und Rekorde werden getrennt gespeichert. Der Knopf Fortschritt löschen in den Optionen setzt Freischaltungen, Sammlung, Sets, Tokens, Stufen, Siege und Endlos-Rekorde zurück und behält deine Optionen.
 
 
 [Anleitungen](DE-guides)

@@ -40,6 +40,13 @@ namespace Tossup.UI
 
         static void NewRun(string character, double seed)
         {
+            Ui.Confirm = null;
+            Ui.Holding = false;
+            Ui.FlipAnimation = null;
+            Ui.ResolveTimer = 0;
+            // Screenshot saves are isolated; unlock the requested fixture character explicitly.
+            int characterIndex = Content.CharacterOrder.IndexOf(character);
+            if (characterIndex > 0) Ui.Profile.Wins.Add(Content.CharacterOrder[characterIndex - 1]);
             Ui.SelectedCharacter = character;
             A.Start(seed);
             Ui.EncounterReveal = null; // ordinary gameplay shots should show the screen behind the reveal
@@ -52,11 +59,11 @@ namespace Tossup.UI
             new Shot { Name = "02_help", Setup = () => { Ui.HelpNext = "select"; A.Go("help"); } },
             new Shot { Name = "03_select", Setup = () => { Ui.SelectedCharacter = "seer"; A.Go("select"); } },
             new Shot { Name = "04_sets", Setup = () => A.OpenSets("trader") },
-            new Shot { Name = "05_sets_tooltip", Setup = () => { }, MouseX = 583, MouseY = 294 },
+            new Shot { Name = "05_sets_tooltip", Setup = () => { }, MouseX = 740, MouseY = 294 },
             new Shot { Name = "06_collection", Setup = () => A.Go("collection") },
             new Shot { Name = "07_options", Setup = () => { Ui.OptionsTab = "game"; A.Go("options"); } },
             new Shot { Name = "08_options_sound", Setup = () => Ui.OptionsTab = "sound" },
-            new Shot { Name = "09_confirm", Setup = A.ClearProgress, MouseX = 520, MouseY = 480 },
+            new Shot { Name = "09_confirm", Setup = A.ClearProgress, MouseX = 658, MouseY = 480 },
             new Shot
             {
                 Name = "10_mulligan",
@@ -89,7 +96,7 @@ namespace Tossup.UI
             },
             new Shot { Name = "14_bank_tooltip", Setup = () => { }, MouseX = 150, MouseY = 270 },
             new Shot { Name = "15_shop", Setup = PlayToShop },
-            new Shot { Name = "16_shop_tooltip", Setup = () => { }, MouseX = 395, MouseY = 270 },
+            new Shot { Name = "16_shop_tooltip", Setup = () => { }, MouseX = 500, MouseY = 270 },
             new Shot
             {
                 Name = "17_game_over",
@@ -116,8 +123,44 @@ namespace Tossup.UI
                 },
             },
             new Shot { Name = "21_german_shop", Setup = () => { Ui.DebugVisible = false; PlayToShop(); } },
-            new Shot { Name = "22_run_encounter_reveal", Setup = () => { NewRun("blade", 6601); Ui.EncounterReveal = new EncounterReveal { Elapsed = .9 }; } },
-            new Shot { Name = "23_contract", Setup = () => { NewRun("blade", 6602); Ui.EncounterReveal = null; A.NextOrFlip(); } },
+            new Shot { Name = "22_run_encounter_reveal", Setup = () => { Ui.SelectedCharacter="blade";A.Start(6601);AppCore.Update(.9); } },
+            new Shot { Name = "23_contract", Setup = () => { NewRun("blade", 6602); Ui.EncounterReveal = null; Ui.Game.ContractsEnabled=true; Game.OfferContract(Ui.Game); } },
+            new Shot { Name="24_edge", Setup=()=> {
+                Lang.Set("en"); NewRun("blade",6); Game.MulliganDone(Ui.Game);
+                Game.Flip(Ui.Game);Ui.Game.Pending.Result=Side.Tie;
+                Ui.FlipAnimation=new FlipAnimation {Id=Game.GetCoin(Ui.Game,Ui.Game.Pending.Uid).Id,Outcome=Side.Tie,Duration=1.0,Elapsed=.995};
+            } },
+            new Shot { Name="25_upgraded_shop", Setup=()=> {
+                NewRun("blade",12345);PlayToShop();
+                Ui.Game.ShopOffers[0]=CoinCatalog.Normal;Ui.Game.ShopUpgrades[0]=UpgradeCatalog.LuckyDay;
+                Ui.Game.Items.AddRange(new[]{"energy_drink","shortcut","safety_net"});Game.AddRelic(Ui.Game,"clock");
+            }, MouseX=500,MouseY=270 },
+            new Shot { Name="26_controller_inspect", Setup=()=> {
+                PadNavigation.Connected=true;PadNavigation.ControllerUsed();PadNavigation.ToggleInspect();
+                PadNavigation.Move(-1,0);PadNavigation.Move(0,-1);
+            } },
+            new Shot { Name="27_german_augment", Setup=()=> {
+                PadNavigation.Connected=false;PadNavigation.MouseUsed();Lang.Set("de");NewRun("seer",6);
+                Ui.Game.Phase=Phase.Augment;Ui.Game.AugmentLevel=3;Ui.Game.AugmentOptions=new List<string>{"upgrade_press","type_specialist","hedge_fund"};
+            } },
+            new Shot { Name="28_german_upgrade_choices", Setup=()=>Game.ChooseAugment(Ui.Game,"upgrade_press") },
+            new Shot { Name="29_square_dance_tooltip", Setup=()=> {
+                Ui.Game=null;Lang.Set("en");A.Go("collection");Ui.CollectionPage=1;Ui.CollectionSort="order";Ui.CollectionFilter="ALL";
+                Ui.Profile.Collected.Add(CoinCatalog.SquareDance.Id);
+            }, MouseX=1034,MouseY=422 },
+            new Shot {Name="30_developer_reveal_start",Setup=()=> {
+                RuntimeMode.Configure(true,false);Ui.SelectedCharacter="blade";A.Start(6601);AppCore.Update(.12);
+            }},
+            new Shot {Name="31_developer_reveal_later",Setup=()=> {
+                AppCore.Update(.8);RuntimeMode.Configure(false,false);
+            }},
+            new Shot {Name="32_half_screen_continue_menu",Setup=()=> {
+                Lang.Set("en");NewRun("blade",6603);A.OpenMenu();
+            }},
+            new Shot {Name="33_applying_result",Setup=()=> {
+                Ui.Game.Paused=false;Ui.EncounterReveal=null;Game.MulliganDone(Ui.Game);
+                A.FlipNextCoin();Ui.FlipAnimation=null;Ui.ResolveTimer=.9;Ui.Shake=0;
+            }},
         };
     }
 }

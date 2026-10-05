@@ -1,0 +1,21 @@
+using System;
+using System.Collections.Generic;
+
+namespace Tossup.Coins
+{
+    public sealed class LifelineCoin : CoinDef
+    {
+        public override string Id => "lifeline";
+        public override string Name => "Lifeline";
+        public override string Description => "Heads: 1 point, and you may exchange one more time this level.";
+        public override Rarity Rarity => Rarity.Uncommon;
+        public override int Cost => 15;
+        public override int EnergyCost => 0;
+        public override double Probability => 0.7;
+        public override double TieProbability => 0;
+        public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Blood };
+        public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(1), Effect.ExtraExchange(1) };
+        public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
+        public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+    }
+}

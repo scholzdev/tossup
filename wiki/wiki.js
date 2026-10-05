@@ -7,7 +7,7 @@
       var t = q.value.trim().toLowerCase();
       if (!t) { box.style.display = 'none'; return; }
       var hits = SEARCH_INDEX.filter(function (e) { return (e.name + ' ' + (e.alt || '')).toLowerCase().indexOf(t) >= 0; }).slice(0, 12);
-      box.innerHTML = hits.map(function (e) { return '<a href="' + base + e.url + '"><img src="' + base + e.icon + '" alt=""><span>' + e.name + '</span><small>' + e.type + '</small></a>'; }).join('') || '<a>No results</a>';
+      box.innerHTML = hits.map(function (e) { return '<a href="' + base + e.url + '"><img src="' + assets + e.icon + '" alt=""><span>' + e.name + '</span><small>' + e.type + '</small></a>'; }).join('') || '<a>' + (document.documentElement.lang === 'de' ? 'Keine Treffer' : 'No results') + '</a>';
       box.style.display = 'block';
     });
     document.addEventListener('click', function (e) { if (!box.contains(e.target) && e.target !== q) box.style.display = 'none'; });

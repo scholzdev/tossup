@@ -1,0 +1,20 @@
+{
+  "screen": "encounter",
+  "seed": 6,
+  "character": "blade",
+  "coins": [
+    "blood",
+    "blood",
+    "blood",
+    "blood",
+    "blood"
+  ],
+  "odds": {
+    "blood": {
+      "heads": 0.1,
+      "tie": 0.8
+    }
+  },
+  "energy": 99,
+  "gold": 50
+}

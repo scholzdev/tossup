@@ -6,7 +6,7 @@
 Kopf: 1 Punkt, und du darfst in diesem Level einmal mehr tauschen.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 70%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

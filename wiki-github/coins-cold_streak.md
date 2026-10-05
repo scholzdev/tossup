@@ -6,7 +6,7 @@
 Tails: 2 points per Tails in a row (max 20). Heads: 1 point.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 20%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

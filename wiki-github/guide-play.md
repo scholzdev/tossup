@@ -19,12 +19,16 @@ The quota is the level's value per coin times the number of coins in your deck w
 
 | # | Level | Quota per coin | Payout |
 |---|---|---|---|
-| 1 | Opening | 0.6 | 25 gold |
-| 2 | Second Chance | 0.9 | 30 gold |
-| 3 | High Stakes | 1.6 | 35 gold |
-| 4 | The House | 3.0 | ends the run |
+| 1 | Opening | 0.7 | 25 gold |
+| 2 | Second Chance | 1.4 | 30 gold |
+| 3 | High Stakes | 2.5 | 20 gold |
+| 4 | Rising Tide | 3.2 | 35 gold |
+| 5 | Double Down | 3.9 | 40 gold |
+| 6 | Last Call | 4.5 | 45 gold |
+| 7 | Final Table | 5.2 | 50 gold |
+| 8 | The House | 6.0 | ends the run |
 
-You start the run with 25 gold and with 5 coin slots. You get 3 energy at the start of every level.
+You start the run with 5 gold and with 5 coin slots. You get 3 energy at the start of every level.
 
 ## Energy
 
@@ -40,7 +44,7 @@ Once the quota is met you get the level payout at once and the level stays open.
 
 ## Out of coins
 
-If your stack is empty and the quota is not met, you can Exchange: pay gold (10 the first time, 5 more each time after that) to get 3 of the coins you already played back into the stack. You can do this at most 3 times per level. If you cannot pay, or have used them all, the level is lost and the run is over.
+If your stack is empty and the quota is not met, you can Exchange: pay gold (7 the first time, 5 more each time after that) to get 3 of the coins you already played back into the stack. You can do this at most 3 times per level. If you cannot pay, or have used them all, the level is lost and the run is over.
 
 ## The shop
 
@@ -49,7 +53,7 @@ Between levels you visit the shop: four coins, two chips and one prize, plus a f
 - Coins go into your deck. Buying a coin you have not unlocked yet unlocks it for good, so it can be in your starting sets from then on.
 - Chips are one-use items. You can hold 3. Use them from the bar during a level while a coin is dealt.
 - Prizes are passive and last the whole run.
-- Reroll shows new coins (4 gold, 2 more every time). An extra deck slot costs 5 gold, up to 10 slots. Removing a coin and tuning its odds are there too.
+- Reroll shows new coins (4 gold, 2 more every time). An extra deck slot costs 5 gold, 2 more for each one you buy, up to 10 slots. Removing a coin and tuning its odds are there too.
 
 A full deck cannot buy coins until you buy a slot or remove one.
 

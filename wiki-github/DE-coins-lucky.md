@@ -6,7 +6,7 @@
 Kopf: 2 Punkte, und sie kommt zurück auf den Stapel und wird erneut gespielt.
 
 - **Seltenheit:** Gewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 30%
 - **Shop-Preis:** 10 Gold
 - **Energie zum Werfen:** 0
 

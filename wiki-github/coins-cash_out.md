@@ -3,10 +3,10 @@
 
 ![Cash Out](https://scholzdev.github.io/tossup/img/coins/cash_out.png)
 
-Heads: 3 points, the combo multiplier counts twice, then the combo resets.
+Heads: 3 points, squares the combo multiplier, banks its pot, then resets the combo.
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 30%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

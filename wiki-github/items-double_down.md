@@ -3,7 +3,7 @@
 
 ![Double Down](https://scholzdev.github.io/tossup/img/items/double_down.png)
 
-Next coin effects x2
+Next coin: points, gold, energy and penalties x2
 
 **Price:** 14 gold
 

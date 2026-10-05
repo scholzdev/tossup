@@ -6,7 +6,7 @@
 Wiederholt die Effekte der vorherigen Münze für diese Seite.
 
 - **Seltenheit:** Episch
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 60%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

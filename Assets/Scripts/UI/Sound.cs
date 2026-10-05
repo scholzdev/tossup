@@ -11,6 +11,7 @@ namespace Tossup.UI
 
         public static float Master = .8f, Sfx = .8f, Music = .4f;
 
+        static GameState lastGame;
         static FlipAnimation lastAnimation;
         static FlipState lastResult;
         static bool? lastCleared;
@@ -36,9 +37,16 @@ namespace Tossup.UI
         public static void Watch()
         {
             var game = Ui.Game;
+            if (game != lastGame)
+            {
+                lastGame = game; lastAnimation = Ui.FlipAnimation; lastResult = game?.LastResult;
+                lastPhase = game?.Phase; lastGold = game?.Player.Gold;
+                lastCleared = game?.Encounter?.Cleared; lastDiscards = game?.Encounter?.Discards;
+                return;
+            }
             var animation = Ui.FlipAnimation;
             if (animation != null && lastAnimation == null) Play("flip");
-            if (lastAnimation != null && animation == null) Play(lastAnimation.Outcome == Side.Heads ? "land_heads" : "land_tails");
+            if (lastAnimation != null && animation == null) Play(lastAnimation.Outcome == Side.Heads ? "land_heads" : "land_tails", lastAnimation.Outcome == Side.Tie ? 1.35 : 1);
             lastAnimation = animation;
             if (game == null)
             {

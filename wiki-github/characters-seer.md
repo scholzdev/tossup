@@ -9,9 +9,9 @@ Risk and changing odds
 [Normal](coins-normal), [Normal](coins-normal), [Dagger](coins-dagger), [Focus](coins-focus), [Spark](coins-spark)
 
 ## Usable in coin sets from the start
-[Normal](coins-normal), [Dagger](coins-dagger), [Cursed](coins-cursed), [Gambler](coins-gambler), [Spark](coins-spark), [Focus](coins-focus), [Lucky](coins-lucky)
+[Normal](coins-normal), [Dagger](coins-dagger), [Cursed](coins-cursed), [Gambler](coins-gambler), [Spark](coins-spark), [Focus](coins-focus), [Lucky](coins-lucky), [Compost](coins-compost)
 
 ## Found in the shop (unlocked by buying)
-[Horoscope](coins-horoscope), [Crystal Ball](coins-crystal_ball), [Mimic](coins-mimic), [Contrarian](coins-contrarian), [Lucky Seven](coins-lucky_seven), [Blood](coins-blood), [Hourglass](coins-hourglass), [Jester](coins-jester), [Echo](coins-echo), [Phoenix](coins-phoenix), [Mirror](coins-mirror), [Domino](coins-domino), [Twin](coins-twin), [Cold Streak](coins-cold_streak), [Anchor](coins-anchor), [True Echo](coins-true_echo), [Amplifier](coins-amplifier)
+[Horoscope](coins-horoscope), [Crystal Ball](coins-crystal_ball), [Mimic](coins-mimic), [Contrarian](coins-contrarian), [Lucky Seven](coins-lucky_seven), [Blood](coins-blood), [Hourglass](coins-hourglass), [Jester](coins-jester), [Echo](coins-echo), [Phoenix](coins-phoenix), [Mirror](coins-mirror), [Domino](coins-domino), [Twin](coins-twin), [Cold Streak](coins-cold_streak), [Anchor](coins-anchor), [True Echo](coins-true_echo), [Amplifier](coins-amplifier), [Square Dance](coins-square_dance), [Good Dog](coins-good_dog), [Blood Pact](coins-blood_pact), [Doppelganger](coins-doppelganger)
 
 [Characters](characters)

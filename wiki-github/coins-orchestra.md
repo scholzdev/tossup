@@ -6,7 +6,7 @@
 Heads: 2 points per different coin type in your deck.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 25%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

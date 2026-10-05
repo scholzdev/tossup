@@ -6,7 +6,7 @@
 Repeats the effects the previous coin had for this side.
 
 - **Rarity:** Epic
-- **Heads chance:** 50%
+- **Heads chance:** 60%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

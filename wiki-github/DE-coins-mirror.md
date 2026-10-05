@@ -6,7 +6,7 @@
 Kopf: Die nächste Münze nutzt die Effekte ihrer anderen Seite. Zahl: 2 Punkte.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 65%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

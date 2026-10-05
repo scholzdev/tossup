@@ -8,7 +8,7 @@ namespace Tossup.UI
     {
         const float DeadZone = .6f;
         const float FocusRadiusSquared = 120 * 120;
-        static float focusX = 640, focusY = 400;
+        static float focusX = Ui.Width / 2, focusY = 400;
         static double repeatTimer;
         static bool hasFocus, active, needsDefaultFocus = true;
         static bool leftTriggerWasDown, rightTriggerWasDown, inspecting;
@@ -16,6 +16,7 @@ namespace Tossup.UI
 
         public static string Device { get; private set; } = "keyboard";
         public static bool Inspecting => inspecting;
+        public static bool Connected;
 
         public static void Update(double dt, float stickX, float stickY, float dpadX, float dpadY,
             float leftTrigger, float rightTrigger)
@@ -203,8 +204,36 @@ namespace Tossup.UI
             return inspecting && hasFocus;
         }
 
+        public static void Inspect()
+        {
+            if (!inspecting || Ui.Confirm != null || Ui.Tutorial != null) return;
+            var button = FocusedButton();
+            if (button == null) return;
+            Center(button, out float fx, out float fy);
+            HoverRegion best = null; float bestGap = 160;
+            foreach (var region in Ui.Regions)
+            {
+                if (fx < region.X || fx > region.X + region.W) continue;
+                float gap = fy >= region.Y && fy <= region.Y + region.H ? 0 : fy - region.Y - region.H;
+                if (gap >= 0 && gap < bestGap) { best = region; bestGap = gap; }
+            }
+            if (best == null) return;
+            Ui.HoveredCoin = best.Coin; Ui.HoveredText = best.Text;
+            Ui.HoverAnchorX = best.X + best.W / 2; Ui.HoverAnchorY = best.Y + best.H;
+        }
+
         public static void DrawFocus()
         {
+            if (Connected)
+                foreach (var b in Ui.Buttons)
+                {
+                    if (b.Hotkey == null) continue;
+                    float w = Math.Max(26, Ui.F16.GetWidth(b.Hotkey) + 14), x = b.X + (b.W - w) / 2, y = b.Y - (b.H < 40 ? 18 : 11);
+                    var tint = b.Hotkey == "A" ? C.Green : b.Hotkey == "B" ? C.Red : b.Hotkey == "X" ? C.Blue : b.Hotkey == "Y" ? C.Gold : C.PanelLight;
+                    D.Color(C.Black, .4f); Gfx.Rectangle(true, x, y + 2, w, 20, 5);
+                    D.Color(tint, b.Disabled ? .55f : 1); Gfx.Rectangle(true, x, y, w, 20, 5);
+                    D.Outline(x, y, w, 20, C.Face, 5); D.Centered(b.Hotkey, x, y + 2, w, Ui.F16, C.Ink);
+                }
             if (!active) return;
             var button = FocusedButton();
             if (button == null) return;
@@ -240,16 +269,16 @@ namespace Tossup.UI
         static void DefaultFocus(out float x, out float y)
         {
             var game = Ui.Game;
-            if (Ui.Confirm != null) { x = Ui.Confirm.Single ? 640 : 760; y = 480; return; }
-            if (Ui.Tutorial != null) { x = 640; y = 400; return; }
+            if (Ui.Confirm != null) { x = Ui.Confirm.Single ? 810 : 962; y = 480; return; }
+            if (Ui.Tutorial != null) { x = 810; y = 400; return; }
             if (game != null && !game.Paused)
             {
-                if (game.Phase == Phase.Encounter) { x = 680; y = 708; return; }
-                if (game.Phase == Phase.Shop) { x = 1110; y = 658; return; }
-                x = 640; y = 614;
+                if (game.Phase == Phase.Encounter) { x = 861; y = 708; return; }
+                if (game.Phase == Phase.Shop) { x = 1405; y = 658; return; }
+                x = 810; y = 614;
                 return;
             }
-            if (Ui.Screen == "select") { x = 640; y = 694; return; }
+            if (Ui.Screen == "select") { x = 810; y = 694; return; }
             Center(Ui.Buttons[0], out x, out y);
         }
 

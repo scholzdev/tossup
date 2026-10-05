@@ -30,7 +30,7 @@ static class LatestTests
 
         var upgraded=Game.New(104,"blade",null,null,false);
         var normal=upgraded.Coins.Find(c=>c.Id=="normal");
-        normal.Upgrade="mathematician";
+        normal.Upgrade=UpgradeCatalog.Mathematician;
         Check(Near(Game.Probability(upgraded,normal),.75),"coin upgrade changes Heads odds");
 
         var contract=Game.New(105,"blade",null,null,true);

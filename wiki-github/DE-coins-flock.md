@@ -3,10 +3,10 @@
 
 ![Schwarm](https://scholzdev.github.io/tossup/img/coins/flock.png)
 
-+10 % Kopf für jeden anderen Schwarm in deiner Bank.
++10 % Kopf für jeden anderen Schwarm in deinem Deck.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 40%
+- **Kopf-Chance:** 25%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

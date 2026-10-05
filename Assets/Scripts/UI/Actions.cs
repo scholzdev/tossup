@@ -53,6 +53,9 @@ namespace Tossup.UI
             var game = RunSave.Decode(text);
             if (game == null) { DeleteRun(); return false; }
             game.Paused = false;
+            game.ContractsEnabled = false;
+            if (game.Phase == Phase.Contract) { game.Phase = Phase.Encounter; game.Encounter.ContractOptions = null; }
+            if (game.Mulligan != null) Game.MulliganDone(game);
             Ui.Game = game;
             Ui.BankDiscardMode = false;
             Ui.SelectedCharacter = game.CharacterId;
@@ -120,8 +123,8 @@ namespace Tossup.UI
             var coins = new List<string>();
             foreach (var owned in game.Coins) coins.Add(owned.Id);
             string result = game.Endless ? "ENDLESS" : game.Phase == Phase.Victory ? "WIN" : "LOSS";
-            Ui.Platform.AppendSave("runs.log", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " seed=" + game.Seed +
-                " char=" + game.CharacterId + " result=" + result + " cleared=" + game.Cleared + " gold=" + (long)game.Player.Gold +
+            Ui.Platform.AppendSave("runs.log", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " v" + BuildInfo.Number + "-" + BuildInfo.Build + " seed=" + game.Seed +
+                " char=" + game.CharacterId + " stake=" + game.Stake + " result=" + result + " cleared=" + game.Cleared + " gold=" + (long)game.Player.Gold +
                 " why=" + (game.LostWhy ?? "-") + " coins=" + string.Join(",", coins) + "\n");
         }
 
@@ -203,8 +206,8 @@ namespace Tossup.UI
         public static void ChangeCollectionPage(int delta) => Ui.CollectionPage = Math.Max(1, Ui.CollectionPage + delta);
 
         // The coins the selected character starts a run with (its active coin set).
-        public static List<string> Loadout() =>
-            Tossup.Profile.Loadout(Ui.Profile, Ui.SelectedCharacter, Game.StartMax, Game.MaxCopies);
+        public static List<CoinDef> Loadout() =>
+            Tossup.Profile.Loadout(Ui.Profile, Ui.SelectedCharacter, Game.StartMax, Game.MaxCopies).ConvertAll(id=>Content.Coins[id]);
         public static int Stake()
         {
             int top=Tossup.Profile.MaxStake(Ui.Profile,Ui.SelectedCharacter);return Math.Max(1,Math.Min(top,Ui.StakePick.TryGetValue(Ui.SelectedCharacter,out var n)?n:top));
@@ -341,8 +344,9 @@ namespace Tossup.UI
             Ui.Holding = false;
             Ui.Marked = new HashSet<int>();
             Ui.Notice = "";
-            Ui.EncounterReveal = RuntimeMode.Dev || RuntimeMode.Sandbox ? null : new EncounterReveal { Elapsed = 0 };
+            Ui.EncounterReveal = Ui.Game.RunEncounterId == null ? null : new EncounterReveal { Elapsed = 0 };
             Ui.Game.Tutorial = false;
+            Ui.Game.ContractsEnabled = false;
             savedKey = null;
         }
 
@@ -496,8 +500,7 @@ namespace Tossup.UI
             }
             if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox == null)
             {
-                bool safe = game.Phase == Phase.Shop || game.Phase == Phase.Augment ||
-                    game.Phase == Phase.Contract || (game.Phase == Phase.Encounter && game.Mulligan == null);
+                bool safe = RunSave.IsSafePoint(game);
                 if (safe)
                 {
                     string key = game.Phase + ":" + game.EncounterIndex + ":" + game.Player.Gold + ":" + game.Coins.Count + ":" +
@@ -507,6 +510,8 @@ namespace Tossup.UI
                 }
                 else if ((game.Phase == Phase.GameOver || game.Phase == Phase.Victory) && savedKey != "over") DeleteRun();
             }
+            if (game != null && game.Phase == Phase.Encounter && game.Mulligan != null && !game.Tutorial && !game.Paused)
+                Game.MulliganDone(game);
             if (Ui.ResolveTimer > 0 && game != null && !game.Paused)
             {
                 Ui.ResolveTimer -= dt;

@@ -3,10 +3,10 @@
 
 ![Verstärker](https://scholzdev.github.io/tossup/img/coins/amplifier.png)
 
-Kopf: 1 Punkt, und alle aktiven Boni halten 1 Münze länger und werden stärker. Zahl: 1 Punkt.
+Kopf: 1 Punkt. Aktive Boni halten 1 Münze länger; Chancen und Multiplikatoren werden stärker. Zahl: 1 Punkt.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 70%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 1
 

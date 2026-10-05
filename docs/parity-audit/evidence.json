@@ -1,0 +1,1490 @@
+{
+  "date": "2026-10-05",
+  "lua_reference": "main@63a7c55",
+  "unity_reference": "unity-6@89df462 plus existing working-tree changes",
+  "asset_count": 152,
+  "asset_categories": {
+    "augments": 24,
+    "characters": 3,
+    "coins": 58,
+    "encounters": 5,
+    "fonts": 1,
+    "items": 11,
+    "music": 1,
+    "relics": 5,
+    "sfx": 13,
+    "ui": 31
+  },
+  "assets": [
+    {
+      "path": "augments/gold/all_in.png",
+      "lua_sha256": "f1d9c19bf1015608f6ed99c2a44e566add6b62ca66c867f81f4f9b7aac76c02f",
+      "unity_sha256": "f1d9c19bf1015608f6ed99c2a44e566add6b62ca66c867f81f4f9b7aac76c02f",
+      "identical": true
+    },
+    {
+      "path": "augments/gold/bankers_cut.png",
+      "lua_sha256": "3cacad0c2406fef78bb6ac8e6a8ea90267a4593378b6b12140fdea5894209e42",
+      "unity_sha256": "3cacad0c2406fef78bb6ac8e6a8ea90267a4593378b6b12140fdea5894209e42",
+      "identical": true
+    },
+    {
+      "path": "augments/gold/epic_windfall.png",
+      "lua_sha256": "da38b7b4418dcdeecaa393dd280fffd683742181c3c56c9f499fc45d05825932",
+      "unity_sha256": "da38b7b4418dcdeecaa393dd280fffd683742181c3c56c9f499fc45d05825932",
+      "identical": true
+    },
+    {
+      "path": "augments/gold/hedge_fund.png",
+      "lua_sha256": "3a1a037b54733ffed21eaa88f0ee83a72d009cb2e2c684d7b177cca6a852d55a",
+      "unity_sha256": "3a1a037b54733ffed21eaa88f0ee83a72d009cb2e2c684d7b177cca6a852d55a",
+      "identical": true
+    },
+    {
+      "path": "augments/gold/reforger.png",
+      "lua_sha256": "8c6ea62eecbccadcfaf6959c0878f7f15c4baa6a90623f80cb5faeb49580c39a",
+      "unity_sha256": "8c6ea62eecbccadcfaf6959c0878f7f15c4baa6a90623f80cb5faeb49580c39a",
+      "identical": true
+    },
+    {
+      "path": "augments/gold/scrap_dealer.png",
+      "lua_sha256": "88e6f50c00c0580d49104fce0527facfff91ded98f2c1d03f956ae8a35e7c5ed",
+      "unity_sha256": "88e6f50c00c0580d49104fce0527facfff91ded98f2c1d03f956ae8a35e7c5ed",
+      "identical": true
+    },
+    {
+      "path": "augments/gold/type_specialist.png",
+      "lua_sha256": "662a18b85d97bddb3b3e14c93b59a2b34246e926d2ead3c4901b9d08a9a1af64",
+      "unity_sha256": "662a18b85d97bddb3b3e14c93b59a2b34246e926d2ead3c4901b9d08a9a1af64",
+      "identical": true
+    },
+    {
+      "path": "augments/gold/upgrade_press.png",
+      "lua_sha256": "b6ad43f6368d3d5b1b877e595f7a34732f06b2ff7b0ba0d4d950b99febddff07",
+      "unity_sha256": "b6ad43f6368d3d5b1b877e595f7a34732f06b2ff7b0ba0d4d950b99febddff07",
+      "identical": true
+    },
+    {
+      "path": "augments/prismatic/all_in.png",
+      "lua_sha256": "95234aa8a0c57ed1b1b6e78b9129fd95c494af70198ccf90c13ed6d94b2948f1",
+      "unity_sha256": "95234aa8a0c57ed1b1b6e78b9129fd95c494af70198ccf90c13ed6d94b2948f1",
+      "identical": true
+    },
+    {
+      "path": "augments/prismatic/bankers_cut.png",
+      "lua_sha256": "5438b317103c1840acd795331233c0875ebd4052dd0b2fd5a1cdaaa8d5cddf0e",
+      "unity_sha256": "5438b317103c1840acd795331233c0875ebd4052dd0b2fd5a1cdaaa8d5cddf0e",
+      "identical": true
+    },
+    {
+      "path": "augments/prismatic/epic_windfall.png",
+      "lua_sha256": "e84c4199dd97c580f55a1d1d992590787af330e4aa24d38aaec81128ae8a94f3",
+      "unity_sha256": "e84c4199dd97c580f55a1d1d992590787af330e4aa24d38aaec81128ae8a94f3",
+      "identical": true
+    },
+    {
+      "path": "augments/prismatic/hedge_fund.png",
+      "lua_sha256": "33f42d8790a49ac91569f84238b28dc3a35ff234c59942e76664454b78f089b3",
+      "unity_sha256": "33f42d8790a49ac91569f84238b28dc3a35ff234c59942e76664454b78f089b3",
+      "identical": true
+    },
+    {
+      "path": "augments/prismatic/reforger.png",
+      "lua_sha256": "400b61fc3379ebe027bd79de0b75f304868ba4fca148543390c6dbfe44bfd8f9",
+      "unity_sha256": "400b61fc3379ebe027bd79de0b75f304868ba4fca148543390c6dbfe44bfd8f9",
+      "identical": true
+    },
+    {
+      "path": "augments/prismatic/scrap_dealer.png",
+      "lua_sha256": "6a45ea299d95ca5a3f579c72b8d0538f1d29b60277109f6490f0955c673990aa",
+      "unity_sha256": "6a45ea299d95ca5a3f579c72b8d0538f1d29b60277109f6490f0955c673990aa",
+      "identical": true
+    },
+    {
+      "path": "augments/prismatic/type_specialist.png",
+      "lua_sha256": "2c094b748cda9824c0d46c10cc0bfac7e692cb1871596f475ecdd06b61acad7f",
+      "unity_sha256": "2c094b748cda9824c0d46c10cc0bfac7e692cb1871596f475ecdd06b61acad7f",
+      "identical": true
+    },
+    {
+      "path": "augments/prismatic/upgrade_press.png",
+      "lua_sha256": "5596e147f7a237998f25e6897d123dcb6d5d6580b211458171b90bf9f6b5d9ee",
+      "unity_sha256": "5596e147f7a237998f25e6897d123dcb6d5d6580b211458171b90bf9f6b5d9ee",
+      "identical": true
+    },
+    {
+      "path": "augments/silver/all_in.png",
+      "lua_sha256": "7a530adb30a187f0201f7f9b5edc3d35865917002f69b05da05c5d6c8738686d",
+      "unity_sha256": "7a530adb30a187f0201f7f9b5edc3d35865917002f69b05da05c5d6c8738686d",
+      "identical": true
+    },
+    {
+      "path": "augments/silver/bankers_cut.png",
+      "lua_sha256": "47c315ba86da49b238b3d4d04f224c5246f8d5e5231bf4d5cc04faffaef367c2",
+      "unity_sha256": "47c315ba86da49b238b3d4d04f224c5246f8d5e5231bf4d5cc04faffaef367c2",
+      "identical": true
+    },
+    {
+      "path": "augments/silver/epic_windfall.png",
+      "lua_sha256": "e573af86753acef751209f01e41109c603cbdab918317cf5f6880a6f74dcf2c3",
+      "unity_sha256": "e573af86753acef751209f01e41109c603cbdab918317cf5f6880a6f74dcf2c3",
+      "identical": true
+    },
+    {
+      "path": "augments/silver/hedge_fund.png",
+      "lua_sha256": "1c0d79e1c8f14897a10b63cb3e14b163af33f6881fa6aa037a81029ecb48517d",
+      "unity_sha256": "1c0d79e1c8f14897a10b63cb3e14b163af33f6881fa6aa037a81029ecb48517d",
+      "identical": true
+    },
+    {
+      "path": "augments/silver/reforger.png",
+      "lua_sha256": "42ed7ae3d6ce2d3bd823f1c2ff5e00487da80fee1e8873ab514207379fa82fd5",
+      "unity_sha256": "42ed7ae3d6ce2d3bd823f1c2ff5e00487da80fee1e8873ab514207379fa82fd5",
+      "identical": true
+    },
+    {
+      "path": "augments/silver/scrap_dealer.png",
+      "lua_sha256": "33465360ad9eb5ba00560fb509a6f512317f1701d87be064f30a1e9c037318eb",
+      "unity_sha256": "33465360ad9eb5ba00560fb509a6f512317f1701d87be064f30a1e9c037318eb",
+      "identical": true
+    },
+    {
+      "path": "augments/silver/type_specialist.png",
+      "lua_sha256": "f181633094046dc65614d86bc8708cd89316689b66b855430f414fc4c2dfb91c",
+      "unity_sha256": "f181633094046dc65614d86bc8708cd89316689b66b855430f414fc4c2dfb91c",
+      "identical": true
+    },
+    {
+      "path": "augments/silver/upgrade_press.png",
+      "lua_sha256": "ecc3e26642a3c23ab1489eb4f1b6bcf56554c497e570882c5950b687dfc2a6a5",
+      "unity_sha256": "ecc3e26642a3c23ab1489eb4f1b6bcf56554c497e570882c5950b687dfc2a6a5",
+      "identical": true
+    },
+    {
+      "path": "characters/blade.png",
+      "lua_sha256": "2f719814f9769fb20503fbd45bdff3d56fb07ccbab78e3ae54494156137eb242",
+      "unity_sha256": "2f719814f9769fb20503fbd45bdff3d56fb07ccbab78e3ae54494156137eb242",
+      "identical": true
+    },
+    {
+      "path": "characters/seer.png",
+      "lua_sha256": "4f66561e935c84aca4fa1261eed4d9e36dde802f133522f84b9b77ca3aba7b2d",
+      "unity_sha256": "4f66561e935c84aca4fa1261eed4d9e36dde802f133522f84b9b77ca3aba7b2d",
+      "identical": true
+    },
+    {
+      "path": "characters/trader.png",
+      "lua_sha256": "65ed1fde385f4c9e8c9114a6879bfccecc585a81e3dfb6ca9ba579435afd0e80",
+      "unity_sha256": "65ed1fde385f4c9e8c9114a6879bfccecc585a81e3dfb6ca9ba579435afd0e80",
+      "identical": true
+    },
+    {
+      "path": "coins/amplifier.png",
+      "lua_sha256": "82b4358cc7cb5409ac945e79a43d8c24e4f8812e03ca9af3b13461daebd16c93",
+      "unity_sha256": "82b4358cc7cb5409ac945e79a43d8c24e4f8812e03ca9af3b13461daebd16c93",
+      "identical": true
+    },
+    {
+      "path": "coins/anchor.png",
+      "lua_sha256": "6be83347c13e6e66a58692738b5ffced6ed70ef60d04bc3cae914d456b9c6d21",
+      "unity_sha256": "6be83347c13e6e66a58692738b5ffced6ed70ef60d04bc3cae914d456b9c6d21",
+      "identical": true
+    },
+    {
+      "path": "coins/back.png",
+      "lua_sha256": "24874a78d72bb82d742d4082a69e63fcdb7a462eb94265646bce763074ed5605",
+      "unity_sha256": "24874a78d72bb82d742d4082a69e63fcdb7a462eb94265646bce763074ed5605",
+      "identical": true
+    },
+    {
+      "path": "coins/bank.png",
+      "lua_sha256": "c29b1fc832c9f7ce2d46d935dfa1b79ed115317d85b5fc7c2a97ddeac3ed980e",
+      "unity_sha256": "c29b1fc832c9f7ce2d46d935dfa1b79ed115317d85b5fc7c2a97ddeac3ed980e",
+      "identical": true
+    },
+    {
+      "path": "coins/bettor.png",
+      "lua_sha256": "36cddbc913c720cf3f9cc699930acab0dfb70681c1ac0d64c473b87e97f40267",
+      "unity_sha256": "36cddbc913c720cf3f9cc699930acab0dfb70681c1ac0d64c473b87e97f40267",
+      "identical": true
+    },
+    {
+      "path": "coins/blood.png",
+      "lua_sha256": "c3d9d69e8cd8d3f9950761753f7f675b73573c63d5271a4561098906c03fde5c",
+      "unity_sha256": "c3d9d69e8cd8d3f9950761753f7f675b73573c63d5271a4561098906c03fde5c",
+      "identical": true
+    },
+    {
+      "path": "coins/blood_pact.png",
+      "lua_sha256": "6333c9c8787db461ea7b1e63725c916fce078404ea3f2e1e2d4178b9cc3ff5b1",
+      "unity_sha256": "6333c9c8787db461ea7b1e63725c916fce078404ea3f2e1e2d4178b9cc3ff5b1",
+      "identical": true
+    },
+    {
+      "path": "coins/bounty.png",
+      "lua_sha256": "527e95350eaf0e58d095fe7456829811691538e6a359d7e2f07fe6dbc3abad06",
+      "unity_sha256": "527e95350eaf0e58d095fe7456829811691538e6a359d7e2f07fe6dbc3abad06",
+      "identical": true
+    },
+    {
+      "path": "coins/capacitor.png",
+      "lua_sha256": "302ee1d2c91db062316d35b0fa9154454f942b0f187753d5f88719dfaa819736",
+      "unity_sha256": "302ee1d2c91db062316d35b0fa9154454f942b0f187753d5f88719dfaa819736",
+      "identical": true
+    },
+    {
+      "path": "coins/cash_out.png",
+      "lua_sha256": "1a392b6b56404a84888a2b32b54d15c57cd84ec873045aa811c20aed5d79790f",
+      "unity_sha256": "1a392b6b56404a84888a2b32b54d15c57cd84ec873045aa811c20aed5d79790f",
+      "identical": true
+    },
+    {
+      "path": "coins/chain.png",
+      "lua_sha256": "dd10275845553c4c8a8c6628b8592019c08da0e6a1ce619c9ffd7dc34ff70900",
+      "unity_sha256": "dd10275845553c4c8a8c6628b8592019c08da0e6a1ce619c9ffd7dc34ff70900",
+      "identical": true
+    },
+    {
+      "path": "coins/cheerleader.png",
+      "lua_sha256": "9dcff7aa75900b5ddb835fb67d9caa8e1a5491d4a53d8951c99e1de6abf05bab",
+      "unity_sha256": "9dcff7aa75900b5ddb835fb67d9caa8e1a5491d4a53d8951c99e1de6abf05bab",
+      "identical": true
+    },
+    {
+      "path": "coins/cold_streak.png",
+      "lua_sha256": "0ff82ac08d88e4a1d20bd455094cba3543f2782befabceb969adaaa2dc6e2055",
+      "unity_sha256": "0ff82ac08d88e4a1d20bd455094cba3543f2782befabceb969adaaa2dc6e2055",
+      "identical": true
+    },
+    {
+      "path": "coins/compost.png",
+      "lua_sha256": "590df63e0c7fe6a932b6c7053d96a13b381eb5588205d920f37a9c1f3f79cd0e",
+      "unity_sha256": "590df63e0c7fe6a932b6c7053d96a13b381eb5588205d920f37a9c1f3f79cd0e",
+      "identical": true
+    },
+    {
+      "path": "coins/conductor.png",
+      "lua_sha256": "760ed780b703c9be2044bacca45a4103a9506be1a49b87943a234450c104a527",
+      "unity_sha256": "760ed780b703c9be2044bacca45a4103a9506be1a49b87943a234450c104a527",
+      "identical": true
+    },
+    {
+      "path": "coins/contrarian.png",
+      "lua_sha256": "0a090444fd43e95bb1bd45edd141841e39796aa751d03f27d6d172440d1b7337",
+      "unity_sha256": "0a090444fd43e95bb1bd45edd141841e39796aa751d03f27d6d172440d1b7337",
+      "identical": true
+    },
+    {
+      "path": "coins/copper.png",
+      "lua_sha256": "028f8645d4fb6588ccad856cd033dc572651c785f4d7887c0cfdf8790aabba97",
+      "unity_sha256": "028f8645d4fb6588ccad856cd033dc572651c785f4d7887c0cfdf8790aabba97",
+      "identical": true
+    },
+    {
+      "path": "coins/counterfeiter.png",
+      "lua_sha256": "4cbb8526e4dc3fa82d29214279aa7ec96cd2bf37ff3ae9dfd214ff4189c5f2e8",
+      "unity_sha256": "4cbb8526e4dc3fa82d29214279aa7ec96cd2bf37ff3ae9dfd214ff4189c5f2e8",
+      "identical": true
+    },
+    {
+      "path": "coins/crystal_ball.png",
+      "lua_sha256": "46a6fc80d2fdcac83cd29329f1654588e999185db11b751e142f90326b26b1e3",
+      "unity_sha256": "46a6fc80d2fdcac83cd29329f1654588e999185db11b751e142f90326b26b1e3",
+      "identical": true
+    },
+    {
+      "path": "coins/cursed.png",
+      "lua_sha256": "4a64ef88a10c31d977938c8aa5c0f8825f3f1e9d451af0a067e74121882d748f",
+      "unity_sha256": "4a64ef88a10c31d977938c8aa5c0f8825f3f1e9d451af0a067e74121882d748f",
+      "identical": true
+    },
+    {
+      "path": "coins/dagger.png",
+      "lua_sha256": "1ef53c038146a484ea101c9d6b4863ead827e62b4df280a485d22e0129425ce4",
+      "unity_sha256": "1ef53c038146a484ea101c9d6b4863ead827e62b4df280a485d22e0129425ce4",
+      "identical": true
+    },
+    {
+      "path": "coins/domino.png",
+      "lua_sha256": "d32a96e979697302d1af66151737f76fe64ab0fec711e0f4b1ac50cc43a2b8f3",
+      "unity_sha256": "d32a96e979697302d1af66151737f76fe64ab0fec711e0f4b1ac50cc43a2b8f3",
+      "identical": true
+    },
+    {
+      "path": "coins/doppelganger.png",
+      "lua_sha256": "a962ae825112d395d477b8e3dc052b146ae39097a98415873cf7bd6f60d50714",
+      "unity_sha256": "a962ae825112d395d477b8e3dc052b146ae39097a98415873cf7bd6f60d50714",
+      "identical": true
+    },
+    {
+      "path": "coins/doubler.png",
+      "lua_sha256": "f3baea962ed2470fc078005a7bf93d2b587af9eae3a43856c8db876a682f5ca2",
+      "unity_sha256": "f3baea962ed2470fc078005a7bf93d2b587af9eae3a43856c8db876a682f5ca2",
+      "identical": true
+    },
+    {
+      "path": "coins/echo.png",
+      "lua_sha256": "eaf34fb4cfd548aad145bee2088415ac808d2787b224c6e233a466189fa6929f",
+      "unity_sha256": "eaf34fb4cfd548aad145bee2088415ac808d2787b224c6e233a466189fa6929f",
+      "identical": true
+    },
+    {
+      "path": "coins/flock.png",
+      "lua_sha256": "ad04c8a5581abf8c4c54d88c32ed9772cafb9e1d1bf9fecf889616c89d5d03a0",
+      "unity_sha256": "ad04c8a5581abf8c4c54d88c32ed9772cafb9e1d1bf9fecf889616c89d5d03a0",
+      "identical": true
+    },
+    {
+      "path": "coins/focus.png",
+      "lua_sha256": "8f69690ec687f72dfd17931a69a015b9367ccdda7c00f5ab2930c81474bb149c",
+      "unity_sha256": "8f69690ec687f72dfd17931a69a015b9367ccdda7c00f5ab2930c81474bb149c",
+      "identical": true
+    },
+    {
+      "path": "coins/fuse.png",
+      "lua_sha256": "20fe6a1a32f662d5f55808e6a5662cfad9f9f551d384207bbdae8869352d980c",
+      "unity_sha256": "20fe6a1a32f662d5f55808e6a5662cfad9f9f551d384207bbdae8869352d980c",
+      "identical": true
+    },
+    {
+      "path": "coins/gambler.png",
+      "lua_sha256": "df07b263deed3127f4dc755f6e99f4ada39317fdd065eb04814903060d3e1dd7",
+      "unity_sha256": "df07b263deed3127f4dc755f6e99f4ada39317fdd065eb04814903060d3e1dd7",
+      "identical": true
+    },
+    {
+      "path": "coins/good_dog.png",
+      "lua_sha256": "b6be948bd8632b943a40b02149358576cd6079c091b84540e0be1678c4d6670a",
+      "unity_sha256": "b6be948bd8632b943a40b02149358576cd6079c091b84540e0be1678c4d6670a",
+      "identical": true
+    },
+    {
+      "path": "coins/hammer.png",
+      "lua_sha256": "009b216c9407da609290da4eff961c4f2ca43371fe6856ade79b5ef4f7cb56a6",
+      "unity_sha256": "009b216c9407da609290da4eff961c4f2ca43371fe6856ade79b5ef4f7cb56a6",
+      "identical": true
+    },
+    {
+      "path": "coins/horoscope.png",
+      "lua_sha256": "a1251e398589fa70f1a7eede8f1eaf36fb270d1f795ff6dc49c88b28085f4e72",
+      "unity_sha256": "a1251e398589fa70f1a7eede8f1eaf36fb270d1f795ff6dc49c88b28085f4e72",
+      "identical": true
+    },
+    {
+      "path": "coins/hot_hand.png",
+      "lua_sha256": "d734c57328eefd1d1b6e868160dfb11c08fe2cb3ec29ed9b4e502e8f876ec3ec",
+      "unity_sha256": "d734c57328eefd1d1b6e868160dfb11c08fe2cb3ec29ed9b4e502e8f876ec3ec",
+      "identical": true
+    },
+    {
+      "path": "coins/hourglass.png",
+      "lua_sha256": "1e41871a45c74dd384d1c5b8d9bbcf166c7562b8b239d05db65a7711c93255e3",
+      "unity_sha256": "1e41871a45c74dd384d1c5b8d9bbcf166c7562b8b239d05db65a7711c93255e3",
+      "identical": true
+    },
+    {
+      "path": "coins/jackpot.png",
+      "lua_sha256": "f2483a384019d004fb0c2dc3c4711cbe3817212fbbdb0665f1bd3577407a52db",
+      "unity_sha256": "f2483a384019d004fb0c2dc3c4711cbe3817212fbbdb0665f1bd3577407a52db",
+      "identical": true
+    },
+    {
+      "path": "coins/jester.png",
+      "lua_sha256": "b4f73ae53f7d4b9daec82428076a9c9b8ad9276f1f57673c247aa2c4f0d3c79b",
+      "unity_sha256": "b4f73ae53f7d4b9daec82428076a9c9b8ad9276f1f57673c247aa2c4f0d3c79b",
+      "identical": true
+    },
+    {
+      "path": "coins/lifeline.png",
+      "lua_sha256": "97a0f226e210252afad375b032fa945e1dd4f7bd1b9a0762d30da422a7541e0b",
+      "unity_sha256": "97a0f226e210252afad375b032fa945e1dd4f7bd1b9a0762d30da422a7541e0b",
+      "identical": true
+    },
+    {
+      "path": "coins/loaded.png",
+      "lua_sha256": "fcd4a79e27ca2581000e16a8e1ddf21270be90ab5339e28bae87ca1e25445244",
+      "unity_sha256": "fcd4a79e27ca2581000e16a8e1ddf21270be90ab5339e28bae87ca1e25445244",
+      "identical": true
+    },
+    {
+      "path": "coins/lucky.png",
+      "lua_sha256": "b23efbf168f5bec6a5759f3c70185218767aa4f9c44029407bd212d0c5318158",
+      "unity_sha256": "b23efbf168f5bec6a5759f3c70185218767aa4f9c44029407bd212d0c5318158",
+      "identical": true
+    },
+    {
+      "path": "coins/lucky_seven.png",
+      "lua_sha256": "67e98afa6785c40bdb8c87d46eaadf2b7516490f0897bf8983fb83335a5c3490",
+      "unity_sha256": "67e98afa6785c40bdb8c87d46eaadf2b7516490f0897bf8983fb83335a5c3490",
+      "identical": true
+    },
+    {
+      "path": "coins/martyr.png",
+      "lua_sha256": "1c4a2c2618da0a605d62eebc1c9605a8ea37ec0c43f83cd5f671bbad6471a735",
+      "unity_sha256": "1c4a2c2618da0a605d62eebc1c9605a8ea37ec0c43f83cd5f671bbad6471a735",
+      "identical": true
+    },
+    {
+      "path": "coins/megaphone.png",
+      "lua_sha256": "eba03c30dcca043907dcdbaec481a311f373227a7a0e59eb2544b5749f9a041e",
+      "unity_sha256": "eba03c30dcca043907dcdbaec481a311f373227a7a0e59eb2544b5749f9a041e",
+      "identical": true
+    },
+    {
+      "path": "coins/mimic.png",
+      "lua_sha256": "d5206fa2cfa106e2571aa26182ed5db368d7f25db2ec9514fa1310e48ff78f64",
+      "unity_sha256": "d5206fa2cfa106e2571aa26182ed5db368d7f25db2ec9514fa1310e48ff78f64",
+      "identical": true
+    },
+    {
+      "path": "coins/mirror.png",
+      "lua_sha256": "3969f5b7b411e935accebb4d3feadfa96bc4a06dd4dcad003f97919062842823",
+      "unity_sha256": "3969f5b7b411e935accebb4d3feadfa96bc4a06dd4dcad003f97919062842823",
+      "identical": true
+    },
+    {
+      "path": "coins/miser.png",
+      "lua_sha256": "d46f05f432b29eeefb328fcb1c9b46937ec4ea733b8ecb3c4e1ce095f2c8615b",
+      "unity_sha256": "d46f05f432b29eeefb328fcb1c9b46937ec4ea733b8ecb3c4e1ce095f2c8615b",
+      "identical": true
+    },
+    {
+      "path": "coins/momentum.png",
+      "lua_sha256": "b27d9bd9d7da8b1db5b051944268e15acca46b9014b3ee01f8c230148cee2ce1",
+      "unity_sha256": "b27d9bd9d7da8b1db5b051944268e15acca46b9014b3ee01f8c230148cee2ce1",
+      "identical": true
+    },
+    {
+      "path": "coins/normal.png",
+      "lua_sha256": "d679ae3ce0202a7bcd2bf9b25f8b31ff4bb9d8212f92c1d112973987d504a325",
+      "unity_sha256": "d679ae3ce0202a7bcd2bf9b25f8b31ff4bb9d8212f92c1d112973987d504a325",
+      "identical": true
+    },
+    {
+      "path": "coins/orchestra.png",
+      "lua_sha256": "31ab1bfce283acfe53407be7020a3320380fd9503878dc76854354a0f9acefb2",
+      "unity_sha256": "31ab1bfce283acfe53407be7020a3320380fd9503878dc76854354a0f9acefb2",
+      "identical": true
+    },
+    {
+      "path": "coins/phoenix.png",
+      "lua_sha256": "0da8b2f8891b888eb9415fa1587c41ce0c1f1bbcc41d2a84517193d80c9bfa7e",
+      "unity_sha256": "0da8b2f8891b888eb9415fa1587c41ce0c1f1bbcc41d2a84517193d80c9bfa7e",
+      "identical": true
+    },
+    {
+      "path": "coins/pot.png",
+      "lua_sha256": "e9ccc6ebe8d1e22a144518d42243ba8b6090e20bf16cf3c99ef3a346451fa033",
+      "unity_sha256": "e9ccc6ebe8d1e22a144518d42243ba8b6090e20bf16cf3c99ef3a346451fa033",
+      "identical": true
+    },
+    {
+      "path": "coins/snowball.png",
+      "lua_sha256": "91248399cc849a3deafcc17055795d74a72ceaea62f98e3764832d609125bb2b",
+      "unity_sha256": "91248399cc849a3deafcc17055795d74a72ceaea62f98e3764832d609125bb2b",
+      "identical": true
+    },
+    {
+      "path": "coins/spark.png",
+      "lua_sha256": "358704bc829c2f14a265d566f98926d9304b87c80aca7ce6819ade6add55aaa6",
+      "unity_sha256": "358704bc829c2f14a265d566f98926d9304b87c80aca7ce6819ade6add55aaa6",
+      "identical": true
+    },
+    {
+      "path": "coins/square_dance.png",
+      "lua_sha256": "475bd8b49c8856fb9f592f98605c38598ec1ac7ad18cb3e17e7de64645fe10c9",
+      "unity_sha256": "475bd8b49c8856fb9f592f98605c38598ec1ac7ad18cb3e17e7de64645fe10c9",
+      "identical": true
+    },
+    {
+      "path": "coins/sword.png",
+      "lua_sha256": "cdb09c45a561593b0893bed05cce67af366d96cde1743ed8e3581ccacded4fcc",
+      "unity_sha256": "cdb09c45a561593b0893bed05cce67af366d96cde1743ed8e3581ccacded4fcc",
+      "identical": true
+    },
+    {
+      "path": "coins/true_echo.png",
+      "lua_sha256": "8a6673349791c58c090df3381db0fffd3edd692bb68d69445beab5bd766ecbc6",
+      "unity_sha256": "8a6673349791c58c090df3381db0fffd3edd692bb68d69445beab5bd766ecbc6",
+      "identical": true
+    },
+    {
+      "path": "coins/twin.png",
+      "lua_sha256": "4585a315c71292ade1842976c05cd770c189bcf865d6ec5c5fa7300bb66a4044",
+      "unity_sha256": "4585a315c71292ade1842976c05cd770c189bcf865d6ec5c5fa7300bb66a4044",
+      "identical": true
+    },
+    {
+      "path": "coins/vampire.png",
+      "lua_sha256": "1e30409f43bf730b395f1f25b8cd3227560144f7a26e05f3aa42bc01656ac139",
+      "unity_sha256": "1e30409f43bf730b395f1f25b8cd3227560144f7a26e05f3aa42bc01656ac139",
+      "identical": true
+    },
+    {
+      "path": "coins/whetstone.png",
+      "lua_sha256": "5d49ca1d5ea4563c47395c9a054e5da313c71c1535b198ea09e46dfc33b2903b",
+      "unity_sha256": "5d49ca1d5ea4563c47395c9a054e5da313c71c1535b198ea09e46dfc33b2903b",
+      "identical": true
+    },
+    {
+      "path": "encounters/dead_heat.png",
+      "lua_sha256": "9159f1d44ea21f6f14aa8bd258d5f1bdf99f80e2dbf5a5dad390ee9e94d5ffa1",
+      "unity_sha256": "9159f1d44ea21f6f14aa8bd258d5f1bdf99f80e2dbf5a5dad390ee9e94d5ffa1",
+      "identical": true
+    },
+    {
+      "path": "encounters/high_roller_table.png",
+      "lua_sha256": "894f719b7cb6cafc424a2a8cd0c6df8b9fe380f70b12cd5b261f97a57bdc9961",
+      "unity_sha256": "894f719b7cb6cafc424a2a8cd0c6df8b9fe380f70b12cd5b261f97a57bdc9961",
+      "identical": true
+    },
+    {
+      "path": "encounters/house_clock.png",
+      "lua_sha256": "ef9d12aaa5eadfd6e04ebbcc54045e84915e256da58d0de5b6b8b94a4f80eef2",
+      "unity_sha256": "ef9d12aaa5eadfd6e04ebbcc54045e84915e256da58d0de5b6b8b94a4f80eef2",
+      "identical": true
+    },
+    {
+      "path": "encounters/thin_market.png",
+      "lua_sha256": "c96709d81c1b6de1941829b59bd2e1a69fc8562fb527bb336c6b534cd719ec3d",
+      "unity_sha256": "c96709d81c1b6de1941829b59bd2e1a69fc8562fb527bb336c6b534cd719ec3d",
+      "identical": true
+    },
+    {
+      "path": "encounters/upgrade.png",
+      "lua_sha256": "46edf0386b5b3bb7ea456628cfc27f968984cddbcaca1413a9bf30e2137db38c",
+      "unity_sha256": "46edf0386b5b3bb7ea456628cfc27f968984cddbcaca1413a9bf30e2137db38c",
+      "identical": true
+    },
+    {
+      "path": "fonts/m6x11plus.ttf",
+      "lua_sha256": "2e4bdf8191d37ce626ef18287b541e982292b2377fff56e40f3a729992127728",
+      "unity_sha256": "2e4bdf8191d37ce626ef18287b541e982292b2377fff56e40f3a729992127728",
+      "identical": true
+    },
+    {
+      "path": "items/double_down.png",
+      "lua_sha256": "32043a18300c4aa3a1e96ef954c2dedd2aee7c4434ffb35163b1d3bc0692dda3",
+      "unity_sha256": "32043a18300c4aa3a1e96ef954c2dedd2aee7c4434ffb35163b1d3bc0692dda3",
+      "identical": true
+    },
+    {
+      "path": "items/energy_drink.png",
+      "lua_sha256": "b6a96bcdc7393756246b37c228b3598958993bbe46503d0f0a799368ace76761",
+      "unity_sha256": "b6a96bcdc7393756246b37c228b3598958993bbe46503d0f0a799368ace76761",
+      "identical": true
+    },
+    {
+      "path": "items/extra_draw.png",
+      "lua_sha256": "3cc1c9d46fffa004f124d865dddb7e0a9a3c3601c066283f7173c4cee4036e42",
+      "unity_sha256": "3cc1c9d46fffa004f124d865dddb7e0a9a3c3601c066283f7173c4cee4036e42",
+      "identical": true
+    },
+    {
+      "path": "items/force_heads.png",
+      "lua_sha256": "423b38d3029ce05dd3305d57c2992471b2738d564cf23874ba57cbf9038b9a18",
+      "unity_sha256": "423b38d3029ce05dd3305d57c2992471b2738d564cf23874ba57cbf9038b9a18",
+      "identical": true
+    },
+    {
+      "path": "items/force_tails.png",
+      "lua_sha256": "74fc635c0239c524dd2aeb77a6ff1ea42a67cbba1856d4ec51ede8abd6aba60d",
+      "unity_sha256": "74fc635c0239c524dd2aeb77a6ff1ea42a67cbba1856d4ec51ede8abd6aba60d",
+      "identical": true
+    },
+    {
+      "path": "items/lucky_charm.png",
+      "lua_sha256": "a1674d2b7bee2133c7d25a33d6ff8c248ec150dc6a91db107873c9119f9728db",
+      "unity_sha256": "a1674d2b7bee2133c7d25a33d6ff8c248ec150dc6a91db107873c9119f9728db",
+      "identical": true
+    },
+    {
+      "path": "items/peek.png",
+      "lua_sha256": "27475a14d9db95b0d4474b89c2512624aad192a49534763d68846c964749b8f6",
+      "unity_sha256": "27475a14d9db95b0d4474b89c2512624aad192a49534763d68846c964749b8f6",
+      "identical": true
+    },
+    {
+      "path": "items/safety_net.png",
+      "lua_sha256": "890b15fada11ba80d0ca8a0e19ac7c76003714cfb1b3e93fe527b5218343f576",
+      "unity_sha256": "890b15fada11ba80d0ca8a0e19ac7c76003714cfb1b3e93fe527b5218343f576",
+      "identical": true
+    },
+    {
+      "path": "items/shortcut.png",
+      "lua_sha256": "c2c02169917812ee07f5fc628e2a66f9d783eabe068381bee8a91ad96467de5e",
+      "unity_sha256": "c2c02169917812ee07f5fc628e2a66f9d783eabe068381bee8a91ad96467de5e",
+      "identical": true
+    },
+    {
+      "path": "items/swap.png",
+      "lua_sha256": "5fef685d6a98eaa19c9f781e94720e1db590701c826ebbfec589b93999bbc237",
+      "unity_sha256": "5fef685d6a98eaa19c9f781e94720e1db590701c826ebbfec589b93999bbc237",
+      "identical": true
+    },
+    {
+      "path": "items/weighted.png",
+      "lua_sha256": "a813e8e564d7cc90b14ba8fc2d4742f9f1c4e06e266b7a31cf7591db95e0f175",
+      "unity_sha256": "a813e8e564d7cc90b14ba8fc2d4742f9f1c4e06e266b7a31cf7591db95e0f175",
+      "identical": true
+    },
+    {
+      "path": "music/theme.wav",
+      "lua_sha256": "0499e1c2610a3cec04a90a105560637b18f70decefb8239a183f407ea1755c1d",
+      "unity_sha256": "0499e1c2610a3cec04a90a105560637b18f70decefb8239a183f407ea1755c1d",
+      "identical": true
+    },
+    {
+      "path": "relics/baton.png",
+      "lua_sha256": "e3ae7cf08c211989992d0aef20f0ca3b0b872fd0629a0dbffdbd2a6ce6eba0e6",
+      "unity_sha256": "e3ae7cf08c211989992d0aef20f0ca3b0b872fd0629a0dbffdbd2a6ce6eba0e6",
+      "identical": true
+    },
+    {
+      "path": "relics/clock.png",
+      "lua_sha256": "fdb42f3ed84efa16342a65b7263d9c34b30e8a9880edb9c74320cc52ba3a5578",
+      "unity_sha256": "fdb42f3ed84efa16342a65b7263d9c34b30e8a9880edb9c74320cc52ba3a5578",
+      "identical": true
+    },
+    {
+      "path": "relics/magnet.png",
+      "lua_sha256": "5b1875528621404c7c1859f1a2d7c39c54f17879ddedf43b41946f16032c4fe9",
+      "unity_sha256": "5b1875528621404c7c1859f1a2d7c39c54f17879ddedf43b41946f16032c4fe9",
+      "identical": true
+    },
+    {
+      "path": "relics/metronome.png",
+      "lua_sha256": "2c61baa2c74c41b54d402c3619d464763f6d23e1b8c3831610089d71ce311bde",
+      "unity_sha256": "2c61baa2c74c41b54d402c3619d464763f6d23e1b8c3831610089d71ce311bde",
+      "identical": true
+    },
+    {
+      "path": "relics/penny.png",
+      "lua_sha256": "2d2e421caad6a2ae3648096131f498eeb1aeb83a740ce649e84d4e8db266527f",
+      "unity_sha256": "2d2e421caad6a2ae3648096131f498eeb1aeb83a740ce649e84d4e8db266527f",
+      "identical": true
+    },
+    {
+      "path": "sfx/buy.wav",
+      "lua_sha256": "0e6a2e71121f1080753cd235f477d23a6d610594b13023f10ce2a63645e0fa75",
+      "unity_sha256": "0e6a2e71121f1080753cd235f477d23a6d610594b13023f10ce2a63645e0fa75",
+      "identical": true
+    },
+    {
+      "path": "sfx/click.wav",
+      "lua_sha256": "3756f60f5cc56006248a54f087bb7f8454a5043e505174cd47b5ecab1f480fa0",
+      "unity_sha256": "3756f60f5cc56006248a54f087bb7f8454a5043e505174cd47b5ecab1f480fa0",
+      "identical": true
+    },
+    {
+      "path": "sfx/combo.wav",
+      "lua_sha256": "489660b8213daca35e6366e513a03dcd93e83f805719feeba2f64f5325847eb4",
+      "unity_sha256": "489660b8213daca35e6366e513a03dcd93e83f805719feeba2f64f5325847eb4",
+      "identical": true
+    },
+    {
+      "path": "sfx/discard.wav",
+      "lua_sha256": "a0b326bda2424cf9f7e2f511204e529c7986f00f79c89da0ed5663cdb3e45864",
+      "unity_sha256": "a0b326bda2424cf9f7e2f511204e529c7986f00f79c89da0ed5663cdb3e45864",
+      "identical": true
+    },
+    {
+      "path": "sfx/flip.wav",
+      "lua_sha256": "f6a2a6b2329ace83ef56b9ff44cad11244887b4f0af223850f803284020bb551",
+      "unity_sha256": "f6a2a6b2329ace83ef56b9ff44cad11244887b4f0af223850f803284020bb551",
+      "identical": true
+    },
+    {
+      "path": "sfx/land_heads.wav",
+      "lua_sha256": "8fe53041f6c79dbf12866df4ba343e2953fb543188a3741ba62288fed2b5e368",
+      "unity_sha256": "8fe53041f6c79dbf12866df4ba343e2953fb543188a3741ba62288fed2b5e368",
+      "identical": true
+    },
+    {
+      "path": "sfx/land_tails.wav",
+      "lua_sha256": "651282b17a0f5f131bc6b06e453bda7a26c74a70a8f8877c1e0704b72265fc5f",
+      "unity_sha256": "651282b17a0f5f131bc6b06e453bda7a26c74a70a8f8877c1e0704b72265fc5f",
+      "identical": true
+    },
+    {
+      "path": "sfx/levelup.wav",
+      "lua_sha256": "6d291ed82e6ed009f6c61fcf04223a9cc255e2a16d02a47f8a5dab3a7ac02092",
+      "unity_sha256": "6d291ed82e6ed009f6c61fcf04223a9cc255e2a16d02a47f8a5dab3a7ac02092",
+      "identical": true
+    },
+    {
+      "path": "sfx/lose.wav",
+      "lua_sha256": "eaf58853a643e8980c449483e51df01afc1674520b9be38fab4eb6a888ce45d7",
+      "unity_sha256": "eaf58853a643e8980c449483e51df01afc1674520b9be38fab4eb6a888ce45d7",
+      "identical": true
+    },
+    {
+      "path": "sfx/penalty.wav",
+      "lua_sha256": "734927e34c1b5ffd8d7f930c966d02d113cd0f0c73aaea1dbe2e1794de59c28a",
+      "unity_sha256": "734927e34c1b5ffd8d7f930c966d02d113cd0f0c73aaea1dbe2e1794de59c28a",
+      "identical": true
+    },
+    {
+      "path": "sfx/score.wav",
+      "lua_sha256": "5db97389ef5b9264d281361e33a6dab3b8cf9863117d93684cb46746218b0482",
+      "unity_sha256": "5db97389ef5b9264d281361e33a6dab3b8cf9863117d93684cb46746218b0482",
+      "identical": true
+    },
+    {
+      "path": "sfx/shop.wav",
+      "lua_sha256": "23ce61f73bb96910984b165a57aaa77e3fe5c32061daa5a4a56014e5986a6204",
+      "unity_sha256": "23ce61f73bb96910984b165a57aaa77e3fe5c32061daa5a4a56014e5986a6204",
+      "identical": true
+    },
+    {
+      "path": "sfx/win.wav",
+      "lua_sha256": "fce5402d73e97f254df8df75a41a8f0d945ed421e45ee087faca1ab95a563d5e",
+      "unity_sha256": "fce5402d73e97f254df8df75a41a8f0d945ed421e45ee087faca1ab95a563d5e",
+      "identical": true
+    },
+    {
+      "path": "ui/coins_left.png",
+      "lua_sha256": "7029ca822cfc8171ecd5dd85c2803df5423505c93e46d8f551adfb857e06ad11",
+      "unity_sha256": "7029ca822cfc8171ecd5dd85c2803df5423505c93e46d8f551adfb857e06ad11",
+      "identical": true
+    },
+    {
+      "path": "ui/cursor_arrow.png",
+      "lua_sha256": "e386569030711792536ffee42f30385dd1c73ac7dbd2a72432ac6183a0a1b9e2",
+      "unity_sha256": "e386569030711792536ffee42f30385dd1c73ac7dbd2a72432ac6183a0a1b9e2",
+      "identical": true
+    },
+    {
+      "path": "ui/cursor_click.png",
+      "lua_sha256": "485a7d7fde766d285c16cdd56677d394f5847be31a7933c3039968bd1edc89f6",
+      "unity_sha256": "485a7d7fde766d285c16cdd56677d394f5847be31a7933c3039968bd1edc89f6",
+      "identical": true
+    },
+    {
+      "path": "ui/discard.png",
+      "lua_sha256": "ca032e5ddc6a37ea99cbf7f334a4a3e4edf7b5518b733bbd9f355fde4c1a7dfb",
+      "unity_sha256": "ca032e5ddc6a37ea99cbf7f334a4a3e4edf7b5518b733bbd9f355fde4c1a7dfb",
+      "identical": true
+    },
+    {
+      "path": "ui/energy.png",
+      "lua_sha256": "604e8cdbecdf376f2194432748a9ca2164d9a76815e1177c63698b8b110f854b",
+      "unity_sha256": "604e8cdbecdf376f2194432748a9ca2164d9a76815e1177c63698b8b110f854b",
+      "identical": true
+    },
+    {
+      "path": "ui/exchange.png",
+      "lua_sha256": "24afee041de1fbdaf0d58cbc9fbe512d1ed69b9196df9f7dc01902a703492907",
+      "unity_sha256": "24afee041de1fbdaf0d58cbc9fbe512d1ed69b9196df9f7dc01902a703492907",
+      "identical": true
+    },
+    {
+      "path": "ui/flip.png",
+      "lua_sha256": "637f47ff1563787fcf39d3394f5adcca5a0f02c05a317461da7d4073ae631b85",
+      "unity_sha256": "637f47ff1563787fcf39d3394f5adcca5a0f02c05a317461da7d4073ae631b85",
+      "identical": true
+    },
+    {
+      "path": "ui/give_up.png",
+      "lua_sha256": "a5fa1f0dd4e7b46eba6fd06893002cc399e524c97439beca591628f78e356c64",
+      "unity_sha256": "a5fa1f0dd4e7b46eba6fd06893002cc399e524c97439beca591628f78e356c64",
+      "identical": true
+    },
+    {
+      "path": "ui/gold.png",
+      "lua_sha256": "e4f3f9152e6424eb2affe9f47858f1290af1d296c78e945f3c2276614faa485b",
+      "unity_sha256": "e4f3f9152e6424eb2affe9f47858f1290af1d296c78e945f3c2276614faa485b",
+      "identical": true
+    },
+    {
+      "path": "ui/icon.icns",
+      "lua_sha256": "34e4d74c43c6c868595300fb1de16d94c821728f1519b0a309b26825e510d090",
+      "unity_sha256": "34e4d74c43c6c868595300fb1de16d94c821728f1519b0a309b26825e510d090",
+      "identical": true
+    },
+    {
+      "path": "ui/icon.ico",
+      "lua_sha256": "b836ed77a3c579993e21fb80653a32172a6c66d723d82371c565e38427caca21",
+      "unity_sha256": "b836ed77a3c579993e21fb80653a32172a6c66d723d82371c565e38427caca21",
+      "identical": true
+    },
+    {
+      "path": "ui/icon.png",
+      "lua_sha256": "2b4a0a8fe67c688d5cba931dcae8b7606a8d82d725e661e0ab1fc03f5230d2e8",
+      "unity_sha256": "2b4a0a8fe67c688d5cba931dcae8b7606a8d82d725e661e0ab1fc03f5230d2e8",
+      "identical": true
+    },
+    {
+      "path": "ui/logo.png",
+      "lua_sha256": "ff0b0597798f3d25be3a1c5825f6d58a71efb062329c694d07d7b6b72340d3ad",
+      "unity_sha256": "ff0b0597798f3d25be3a1c5825f6d58a71efb062329c694d07d7b6b72340d3ad",
+      "identical": true
+    },
+    {
+      "path": "ui/next_coin.png",
+      "lua_sha256": "85f9b5a4593d1e53cd7b66805911820551dcc888aae05dd4bead288f6f0f27f8",
+      "unity_sha256": "85f9b5a4593d1e53cd7b66805911820551dcc888aae05dd4bead288f6f0f27f8",
+      "identical": true
+    },
+    {
+      "path": "ui/next_round.png",
+      "lua_sha256": "0ef71e1ae11383f0dbf02e40612dfdeab491293ff2670db225f431b31a676789",
+      "unity_sha256": "0ef71e1ae11383f0dbf02e40612dfdeab491293ff2670db225f431b31a676789",
+      "identical": true
+    },
+    {
+      "path": "ui/open_shop.png",
+      "lua_sha256": "890dba98e63accff55ce515f009ce793b5f38f257051133b29b85204be534835",
+      "unity_sha256": "890dba98e63accff55ce515f009ce793b5f38f257051133b29b85204be534835",
+      "identical": true
+    },
+    {
+      "path": "ui/reroll.png",
+      "lua_sha256": "eaf1bcee616df398c6bb05253b5edcbd3cd7d149f3adead228c65a06f4674c0b",
+      "unity_sha256": "eaf1bcee616df398c6bb05253b5edcbd3cd7d149f3adead228c65a06f4674c0b",
+      "identical": true
+    },
+    {
+      "path": "ui/shop_title.png",
+      "lua_sha256": "7672450206c40d54f071d1f6056bf66d1284e9a94da6ea75c930d80bcfe24d21",
+      "unity_sha256": "7672450206c40d54f071d1f6056bf66d1284e9a94da6ea75c930d80bcfe24d21",
+      "identical": true
+    },
+    {
+      "path": "ui/start_level.png",
+      "lua_sha256": "2072d8f3533d3f4c7b203d8e06ad86cd827db2cc8125662547d913cff20a3650",
+      "unity_sha256": "2072d8f3533d3f4c7b203d8e06ad86cd827db2cc8125662547d913cff20a3650",
+      "identical": true
+    },
+    {
+      "path": "ui/title_background.png",
+      "lua_sha256": "e3740a57ed4f55989eb905ce9f424dfda0bc78ecea05c3efcbdfa9e9e1448761",
+      "unity_sha256": "e3740a57ed4f55989eb905ce9f424dfda0bc78ecea05c3efcbdfa9e9e1448761",
+      "identical": true
+    },
+    {
+      "path": "ui/title_collection.png",
+      "lua_sha256": "2e07602ba9efc78a9c7a6b01745e8be74f4b2f7e5325ef0de4e8a2812bad8963",
+      "unity_sha256": "2e07602ba9efc78a9c7a6b01745e8be74f4b2f7e5325ef0de4e8a2812bad8963",
+      "identical": true
+    },
+    {
+      "path": "ui/title_collection_de.png",
+      "lua_sha256": "91549654df27d11060445fd9bc31cb442161426ae47f8001997eb109bf16244c",
+      "unity_sha256": "91549654df27d11060445fd9bc31cb442161426ae47f8001997eb109bf16244c",
+      "identical": true
+    },
+    {
+      "path": "ui/title_help.png",
+      "lua_sha256": "a0178a85fa5f8cda836f6faba6d4827b88a251d0419e06839e0a32cee79040cf",
+      "unity_sha256": "a0178a85fa5f8cda836f6faba6d4827b88a251d0419e06839e0a32cee79040cf",
+      "identical": true
+    },
+    {
+      "path": "ui/title_help_de.png",
+      "lua_sha256": "3ac30926d759a15b9a8751aff253ed29dfddd4f8d3a02cd48c826060a87d6ed7",
+      "unity_sha256": "3ac30926d759a15b9a8751aff253ed29dfddd4f8d3a02cd48c826060a87d6ed7",
+      "identical": true
+    },
+    {
+      "path": "ui/title_options.png",
+      "lua_sha256": "2dd76f2dcc0538f1a1e37c4f307fd30794063f6303b0e2a324a0bc81a157f609",
+      "unity_sha256": "2dd76f2dcc0538f1a1e37c4f307fd30794063f6303b0e2a324a0bc81a157f609",
+      "identical": true
+    },
+    {
+      "path": "ui/title_options_de.png",
+      "lua_sha256": "6918d9c2f62d79488ec23662f90e8d29e7d5dbe6a862f54ee01f8734f36e27d0",
+      "unity_sha256": "6918d9c2f62d79488ec23662f90e8d29e7d5dbe6a862f54ee01f8734f36e27d0",
+      "identical": true
+    },
+    {
+      "path": "ui/title_play.png",
+      "lua_sha256": "f9a2d028d12e9f9d2173cd9a16e7f549e8f216a57c9b61e548f3d030503b7423",
+      "unity_sha256": "f9a2d028d12e9f9d2173cd9a16e7f549e8f216a57c9b61e548f3d030503b7423",
+      "identical": true
+    },
+    {
+      "path": "ui/title_play_de.png",
+      "lua_sha256": "b64daf994280709d43ae5eabf9ef9a93af0700094fe2f386648b23f8ab93c79b",
+      "unity_sha256": "b64daf994280709d43ae5eabf9ef9a93af0700094fe2f386648b23f8ab93c79b",
+      "identical": true
+    },
+    {
+      "path": "ui/title_scene.png",
+      "lua_sha256": "00c4c9580ae080cb99213bb2acd8804a72dc3015ae153aff7282a05ba567be44",
+      "unity_sha256": "00c4c9580ae080cb99213bb2acd8804a72dc3015ae153aff7282a05ba567be44",
+      "identical": true
+    },
+    {
+      "path": "ui/title_sets.png",
+      "lua_sha256": "6ecc96142540817cd70e972196375d92974341a743ca0ea7c4be312f72ff44d9",
+      "unity_sha256": "6ecc96142540817cd70e972196375d92974341a743ca0ea7c4be312f72ff44d9",
+      "identical": true
+    },
+    {
+      "path": "ui/title_sets_de.png",
+      "lua_sha256": "eff86967ee272ad654b5ef6d2e39700ee5b1bfd0ea53f0c74a17fcc7fe4ff421",
+      "unity_sha256": "eff86967ee272ad654b5ef6d2e39700ee5b1bfd0ea53f0c74a17fcc7fe4ff421",
+      "identical": true
+    }
+  ],
+  "german_localization": {
+    "lua_flat_count": 463,
+    "unity_flat_count": 224,
+    "missing_flat": [
+      "+%d EXCHANGE",
+      "+%d GOLD",
+      "+%d MORE BUFFS",
+      "+%d PTS / QUOTA +%d",
+      "+6% Heads chance.",
+      "+7% Heads chance.",
+      "+8% Heads chance.",
+      "-%d GOLD",
+      "A NEW MODIFIER",
+      "A Tie breaks your combo and burns its pot. Banking a combo grants 2 extra gold.",
+      "A Tie breaks your combo and loses its unbanked pot.",
+      "A winning side bet pays 25% extra. Losing one adds 2 quota to the next level.",
+      "ALL +%d%%",
+      "All coins +%d%% Heads this level",
+      "All-In",
+      "BANK %d   OUT %d   DECK %d/%d",
+      "BANK %dG",
+      "BANKED",
+      "BEST COMBO %d / 4",
+      "BEST ENDLESS: %d",
+      "BET %s  %dG",
+      "BET %s %dG  >  %dG",
+      "BET HEADS 5G  >  %dG",
+      "BET LOST  -%dG",
+      "BET PUSHED",
+      "BET TAILS 5G  >  %dG",
+      "BET WON  +%dG",
+      "BLOOD",
+      "BONUS +%dG",
+      "BREAK LOSES POT",
+      "BUFF %s  (%d LEFT)",
+      "Back, close, menu",
+      "Balanced Grip",
+      "Bank a combo before clearing the quota.",
+      "Banked combo pots grant 2 extra gold. Each bank adds 2 quota to the next level.",
+      "Banker's Cut",
+      "Beat eight levels ending with The House. An Encounter shapes the run; choose Augments before levels 3 and 6 to improve your bank or playstyle. Win to unlock the next character.",
+      "Beat the quota before your coins run out. Bad flips can raise it. A run has eight levels: one Encounter changes the run, and Augments appear before levels 3 and 6. The House is the final level.",
+      "Between levels you buy COINS (larger and stronger decks raise the next quota), CHIPS (one-use helpers) and a PRIZE (lasts the run). REROLL refreshes the coins.",
+      "Bloodletting",
+      "Bright Side",
+      "Buy COINS (larger and stronger decks raise the next quota), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Odds Tuner adds Heads chance; Coin Removal drops a weak coin.",
+      "Buy one more deck slot. A bigger deck means a bigger quota.",
+      "CHAOS",
+      "CHIPS",
+      "CHIPS appear here. They are one-use helpers from the shop. Click one while a coin is ready to flip; an Energy Drink gives 2 energy. You can carry up to three.",
+      "CHOOSE",
+      "CHOOSE A COIN TO REFORGE",
+      "CHOOSE A COIN TO REPLACE",
+      "CHOOSE A COIN TYPE",
+      "CHOOSE A COIN UPGRADE",
+      "CHOOSE AUGMENT",
+      "CLEAN RUN",
+      "CLICK A COIN TO DISCARD IT",
+      "CLICK A COIN TO PLAY IT",
+      "CLICK ANYWHERE TO CONTINUE",
+      "CLICK OR PRESS ANY KEY TO CONTINUE",
+      "COINS LEFT %d / 3",
+      "COM",
+      "COMBO POT",
+      "CONTRACT COMPLETE",
+      "CONTRACT MISSED",
+      "CONTRACT: %s",
+      "CONTROLLER",
+      "COSTS %d ENERGY",
+      "Choose a challenge for a bonus, or skip it.",
+      "Choose a character (play screen)",
+      "Choose a coin type you own. Each coin of that type scores +1 on its first Heads each level.",
+      "Choose a run upgrade or change a coin before this level.",
+      "Choose an owned coin and give it one of its available upgrades.",
+      "Choose an upgrade that stays active for the rest of this run.",
+      "Clear Mind",
+      "Clear the quota within 6 flips.",
+      "Clear the quota without discarding a coin.",
+      "Clear with at least 3 unplayed coins remaining.",
+      "Coins left in your stack, your gold, and your energy. Strong coins cost energy to flip.",
+      "Copper Lining",
+      "DECK FULL  -  BUY A SLOT OR REMOVE A COIN",
+      "DECK TOOL",
+      "DETAILS",
+      "DISCARD 1 OF NEXT 3",
+      "DISCARD MODE: OFF",
+      "DISCARD MODE: ON",
+      "DISCARDS %d",
+      "DRAWBACK",
+      "Dead Heat",
+      "Debug info",
+      "Deep Cut",
+      "Discard one of the next three coins",
+      "Discarding a coin grants 1 gold, but each discard adds 2 quota to the current level.",
+      "Double Down",
+      "EDGE",
+      "EDGE %d%%",
+      "EMERGENCY FLIP: -0 GOLD FOR UNPAID ENERGY.",
+      "EMERGENCY FLIP: -1 GOLD FOR UNPAID ENERGY.",
+      "EMERGENCY FLIP: -2 GOLD FOR UNPAID ENERGY.",
+      "EMPTY",
+      "ENCOUNTER",
+      "EPI",
+      "EXCHANGE %dG",
+      "EXCHANGES LEFT: %d",
+      "EXTRA SLOT",
+      "Each Tails increases the quota by 2.",
+      "Each level has a QUOTA: points you must score before your coins run out. The bar fills as you score.",
+      "Epic Windfall",
+      "Every third flip is inverted. Clearing a level pays 25% more.",
+      "FETCH BEST",
+      "FLIP AGAIN",
+      "FLIP OR SELECT ANOTHER COIN",
+      "FLIPS %d / 6",
+      "FORTUNE",
+      "FORTUNE +%d%%",
+      "Final Table",
+      "First Heads per coin each level: +1 point",
+      "Flip / next coin",
+      "Flip this one too. Two Heads in a row start a COMBO.",
+      "Follow Through",
+      "Fortune coins gain +%d%% Heads for the run",
+      "From level 2 on, every level has a MODIFIER: a bonus or a twist for this level only. Read it here before you flip.",
+      "GAME OVER",
+      "GOLD TIER",
+      "GREED",
+      "Gain a random Epic coin. If your bank is full, choose a coin to replace.",
+      "Gilded Face",
+      "HALF PRICE REROLLS",
+      "HEADS %d%%  /  EDGE %d%%  /  TAILS %d%%",
+      "HELP",
+      "HOT STREAK",
+      "Heads odds are reduced by 5 percentage points.",
+      "Heads scores +1 point.",
+      "Heads scores +2 points.",
+      "Heavy Head",
+      "Hedge Fund",
+      "High-Roller Table",
+      "Hot Spark",
+      "IN A LEVEL",
+      "INVERTED  -  EVERY %dTH FLIP",
+      "If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back (only a limited number of times per level). If you cannot, the run is over.",
+      "Inspect: show the details of the focused item",
+      "KEYBOARD",
+      "Keen Edge",
+      "Keep flipping for extra gold, or press OPEN SHOP to move on.",
+      "LAST COIN EMERGENCY FEE: %dG",
+      "LEVEL %d / 8",
+      "LEVEL %d AUGMENT",
+      "LEVEL %d CONTRACT",
+      "LEVEL 1 HAS A MODIFIER TOO",
+      "LEVELS CLEARED OF 8",
+      "LOCK IT IN",
+      "LOCKED",
+      "Last Call",
+      "Level 1 has a modifier too",
+      "Look at the next two coins",
+      "Lose up to %d gold",
+      "MENUS",
+      "MODIFIER",
+      "Menu",
+      "Miss it and lose up to 2 coins from your stack.",
+      "Move the focus",
+      "NEW CHARACTER UNLOCKED: %s",
+      "NEW COIN: %s",
+      "NEW RECORD!",
+      "NEXT %d %s",
+      "NO CHANGES",
+      "NO COINS LEFT AND NO EXCHANGE POSSIBLE. THE RUN IS OVER.",
+      "NOT BANKED",
+      "No changes",
+      "ONE RULE FOR THE WHOLE RUN",
+      "ONLY 2 EXCHANGES PER LEVEL",
+      "OPEN THE SHOP",
+      "One more exchange this level",
+      "Only 2 exchanges per level",
+      "Open the shop (quota met)",
+      "PEEK",
+      "PER SET: COMMON 3  -  UNCOMMON 2",
+      "POT %dG",
+      "PREPARE TO FLIP",
+      "PRESS FLIP",
+      "PRESS NEXT COIN",
+      "PRESS NEXT ROUND",
+      "PRESS OPEN SHOP",
+      "PRIZES",
+      "PUSH",
+      "PUSH flips the next coin to build your combo. If the streak breaks, you lose the unbanked pot.",
+      "Prepare the next %d %s coins",
+      "Press FLIP (or Space) to toss the coin.",
+      "Press the focused button",
+      "Press the red button when you are ready for the next level.",
+      "Previous / next page, tab, character",
+      "QUICK CLEAR",
+      "QUOTAS +15%",
+      "QUOTAS +80% IN TOTAL",
+      "Quotas +15%",
+      "Quotas +80% in total",
+      "RAR",
+      "RARE 1  -  EPIC 1",
+      "RELIC + THE HOUSE",
+      "RESTORE DEFAULTS",
+      "RHYTHM",
+      "RUN ENCOUNTER",
+      "RUNNING OUT OF COINS",
+      "Random coin of the same rarity.",
+      "Reach a combo of 4 before clearing the quota.",
+      "Reforge one coin now into a random different coin of the same rarity. Its upgrade is lost.",
+      "Reforger",
+      "Reliable Spark",
+      "Repeated results raise the combo multiplier and build an unbanked pot. BANK locks the pot and ends the combo.",
+      "Replace this coin.",
+      "Return the highest-scoring played coin",
+      "Rising Tide",
+      "SELECT A COIN",
+      "SHOP PRICES +20%",
+      "SILVER TIER",
+      "SKIP",
+      "SKIP CONTRACT",
+      "STAGE %d / %d",
+      "STAGE %d UNLOCKED",
+      "START WITH 15 GOLD",
+      "STEEL",
+      "Safer Bet",
+      "Score 1 point",
+      "Scrap Dealer",
+      "Select a coin below to remove it from the deck for 8 gold.",
+      "Shop prices +20%",
+      "Shops show one fewer coin, but every coin costs 2 fewer gold.",
+      "Side bets use double the stake and payout. A Tie loses the stake.",
+      "Space = Flip / Next Coin.  Click = select a coin.  Esc = menu (your run waits).  Hover a coin for details. The run is saved at each level start and in the shop; Continue resumes it, a level in progress restarts.",
+      "Start with 15 gold",
+      "Start with a random Common coin.",
+      "Steady Hand",
+      "Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Flux Capacitor give more. If you cannot pay, choose a different coin. Your last coin can still flip for up to 2 gold.",
+      "Sure Strike",
+      "TAKE CONTRACT",
+      "THAT'S IT",
+      "THE COIN BANK",
+      "THE COIN IN PLAY",
+      "THE HOUSE  -  EVERY %dTH FLIP IS INVERTED",
+      "THE HOUSE INVERTS EVERY 4TH FLIP",
+      "THE RESULT",
+      "THIS LEVEL STARTS OVER WHEN YOU CONTINUE.",
+      "TOO LITTLE ENERGY: SELECT ANOTHER COIN",
+      "TUTORIAL",
+      "TYPE: %s",
+      "The House inverts every 4th flip",
+      "The House's Clock",
+      "The banner shows the side it landed on and the points you got. Press NEXT COIN to continue.",
+      "The coin with its Heads effect (blue, left) and Tails effect (red, right), and its odds below. Read them before you flip.",
+      "The entire remaining coin bank stays visible. Click any coin to choose what to play next; choosing is free. Coins with an energy cost spend it when flipped.",
+      "The first successful push each level doubles its combo payout. A failed push costs 2 gold.",
+      "Thin Market",
+      "Tie",
+      "True Aim",
+      "Type Specialist",
+      "UNC",
+      "Upgrade",
+      "Upgrade Press",
+      "Use a chip or open the shop",
+      "Use chip 1 / 2 / 3",
+      "WIN A RUN WITH: %s",
+      "Watch the coin count at the top. If the stack empties before the quota is met, the Out of Coins prompt lets you BANK any combo pot or BUY MORE COINS to return 3 played coins for gold. Exchanges are limited each level; without one, the level ends.",
+      "YOUR DECK",
+      "YOUR RESOURCES",
+      "YOUR SAVED RUN WILL BE REPLACED.",
+      "Your coins. Click one to select it for removal. The dark slots on the right are extra deck slots: 5 gold, 2 more for each one you buy, up to ten.",
+      "Your combo multiplier is capped at x2.",
+      "Your remaining coins stay visible in the bank. Click any coin to choose what to play next. Playing is free unless a coin shows an energy cost.",
+      "out of coins, and all exchanges are used."
+    ],
+    "changed_flat": {
+      "Resets unlocks, collection, sets and tokens. Options stay.": {
+        "lua": "Setzt Freischaltungen, Sammlung, Sets und Tokens zurück. Optionen bleiben.",
+        "unity": "Setzt Freischaltungen, Sammlung, Sets und Tokens zurück."
+      },
+      "SELECTED COIN": {
+        "lua": "AUSGEWÄHLTE MÜNZE",
+        "unity": "GEWÄHLTE MÜNZE"
+      }
+    },
+    "missing_groups": {
+      "characters": [],
+      "coins": [
+        "blood_pact",
+        "compost",
+        "conductor",
+        "counterfeiter",
+        "crystal_ball",
+        "doppelganger",
+        "good_dog",
+        "horoscope",
+        "jackpot",
+        "lifeline",
+        "mimic",
+        "orchestra",
+        "square_dance",
+        "whetstone"
+      ],
+      "items": [
+        "energy_drink",
+        "lucky_charm",
+        "safety_net",
+        "shortcut"
+      ],
+      "modifiers": [
+        "blackout",
+        "bonus_exchange",
+        "cold_snap",
+        "gold_rush",
+        "good_rhythm",
+        "high_stakes",
+        "lucky_day",
+        "power_surge"
+      ],
+      "relics": []
+    }
+  },
+  "coin_description_differences": {
+    "loaded": {
+      "lua": "Heads: 4 gold. Tails: lose up to 8 gold. Edge: lose up to 4, then gain 2 gold.",
+      "unity": "Reliable income on Heads."
+    },
+    "blood": {
+      "lua": "Heads: 10 points. Tails: quota +6. Edge: half of both.",
+      "unity": "Big points, but Tails raises the quota."
+    },
+    "focus": {
+      "lua": "Heads: the next coin gets +35% Heads. Tails: 4 points.",
+      "unity": "Builds its own Heads chance."
+    },
+    "snowball": {
+      "lua": "Heads gains +1 point every flip for the whole run (max +8).",
+      "unity": "Grows +1 point every flip for the whole run (max +10)."
+    },
+    "blood_pact": {
+      "lua": "Heads: next Blood coin gains 8 points on Heads or adds 4 quota on Tails. Edge gets half of both.",
+      "unity": "Heads: next Blood coin gains 8 points on Heads or adds 4 quota on Tails."
+    },
+    "doppelganger": {
+      "lua": "Heads: next Chaos coin applies its resolved effects twice, including penalties.",
+      "unity": "Heads: next Chaos coin applies its resolved effects twice."
+    },
+    "flock": {
+      "lua": "+10% Heads for every other Flock in your deck.",
+      "unity": "+10% Heads for every other Flock in your bank."
+    },
+    "pot": {
+      "lua": "Heads: points equal to the flips made so far this level (max 8).",
+      "unity": "Heads: points equal to the flips made so far this level (max 12)."
+    },
+    "cash_out": {
+      "lua": "Heads: 3 points, squares the combo multiplier, banks its pot, then resets the combo.",
+      "unity": "Heads: 3 points, the combo multiplier counts twice, then the combo resets."
+    },
+    "amplifier": {
+      "lua": "Heads: 1 point. Active buffs last 1 coin longer; odds and multipliers grow stronger. Tails: 1 point.",
+      "unity": "Heads: 1 point, and all active buffs last 1 coin longer and get stronger. Tails: 1 point."
+    },
+    "doubler": {
+      "lua": "Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24... up to 384).",
+      "unity": "Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24...)."
+    },
+    "mimic": {
+      "lua": "Heads: does what the Heads side of a random other coin in your deck does.",
+      "unity": "Heads: copies the Heads effects of a random other coin in your deck."
+    },
+    "good_dog": {
+      "lua": "Heads: 2 points; return the highest-scoring coin played this level to the draw pile. Once per level.",
+      "unity": "Heads: 2 points; return the highest-scoring coin played this level once."
+    },
+    "orchestra": {
+      "lua": "Heads: 2 points per different coin type in your deck.",
+      "unity": "Heads: 2 points per different coin in your deck."
+    },
+    "conductor": {
+      "lua": "Heads: next 3 Rhythm coins gain 2 points per combo step (max 8); a broken combo adds 5 quota.",
+      "unity": "Heads: next 3 Rhythm coins gain points from the combo."
+    },
+    "lifeline": {
+      "lua": "Heads: 1 point, and you may exchange one more time this level.",
+      "unity": "Heads: 1 point, and one extra exchange this level."
+    },
+    "horoscope": {
+      "lua": "Heads: 1 point, all coins +7% Heads this level. Tails: all coins +3%.",
+      "unity": "Heads: 1 point, all coins +7% Heads this level. Tails: +3%."
+    }
+  },
+  "paired_probes": {
+    "lua": {
+      "bet-repeat": {
+        "first": 53,
+        "second": 53
+      },
+      "last-coin": {
+        "canFlip": true,
+        "left": 1
+      },
+      "emergency-fee": 48,
+      "swap-upgrade": 2,
+      "echo-type": [
+        {
+          "coins": 2,
+          "kind": "steel"
+        }
+      ],
+      "echo-duration": [
+        {
+          "type": "score"
+        },
+        {
+          "coins": 2,
+          "type": "next_mult"
+        }
+      ],
+      "chaos-specialist": [
+        4,
+        1,
+        4,
+        1
+      ],
+      "sandbox-buff": 0.17,
+      "sandbox-stock": [
+        "blood"
+      ],
+      "profile-sanitize": {
+        "language": "en",
+        "stake": 8,
+        "tokens": 0,
+        "volume": 100
+      },
+      "loadout-trim": [
+        "normal",
+        "normal",
+        "compost"
+      ],
+      "clock-inversion": "Heads",
+      "cashout-reset": {
+        "length": 0,
+        "pot": 0
+      },
+      "shop-odds": 0.65,
+      "amazon-clear": {
+        "deck": 3,
+        "phase": "ENCOUNTER",
+        "result": "MISSED"
+      },
+      "return-duplicate": {
+        "duplicates": 0,
+        "live": [
+          2,
+          1
+        ],
+        "returned": 1
+      },
+      "shop-remove-resume": {
+        "decoded": true,
+        "removed": true
+      }
+    },
+    "unity": {
+      "bet-repeat": {
+        "first": 53,
+        "second": 61
+      },
+      "last-coin": {
+        "left": 1,
+        "canFlip": false
+      },
+      "emergency-fee": 50,
+      "swap-upgrade": 1,
+      "echo-type": [
+        {
+          "kind": null,
+          "coins": null
+        }
+      ],
+      "echo-duration": [
+        {
+          "type": "score",
+          "coins": null
+        },
+        {
+          "type": "next_mult",
+          "coins": null
+        }
+      ],
+      "chaos-specialist": [
+        4,
+        4,
+        1
+      ],
+      "sandbox-buff": 0.1,
+      "sandbox-stock": [
+        "jackpot",
+        "normal",
+        "fuse",
+        "square_dance"
+      ],
+      "midflip-save-safe": true,
+      "profile-sanitize": {
+        "tokens": -3,
+        "stake": 99,
+        "volume": 200,
+        "language": "xx"
+      },
+      "loadout-trim": [
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "clock-inversion": "Tails",
+      "cashout-reset": {
+        "length": 1,
+        "side": "Heads",
+        "pot": 0
+      },
+      "shop-odds": 0.6,
+      "amazon-clear": {
+        "deck": 1,
+        "result": "MISSED",
+        "phase": "Encounter"
+      },
+      "return-duplicate": {
+        "returned": 2,
+        "live": [
+          2,
+          1,
+          1
+        ],
+        "duplicates": 1
+      },
+      "shop-remove-resume": {
+        "removed": true,
+        "decoded": false
+      },
+      "chip-1": {
+        "items": [
+          "energy_drink",
+          "safety_net"
+        ],
+        "energy": 99,
+        "scored": 3
+      },
+      "click-stage": false,
+      "opening-hand": true,
+      "start-contract": "Contract",
+      "resume-pending": {
+        "pendingSaved": true,
+        "loaded": true,
+        "pending": true,
+        "animation": false,
+        "timer": 0,
+        "canFlip": false
+      }
+    }
+  }
+}

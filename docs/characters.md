@@ -17,7 +17,7 @@ Portrait: a fox duelist with a coin and a rapier.
 |---|---|
 | **Default deck** | Normal, Sword, Dagger |
 | **Pool** | Normal, Sword, Dagger |
-| **Locked** | Hammer, Blood, Vampire, Chain, Cursed, Fuse, Focus, Martyr, Snowball, Spark, Jackpot, Lifeline, Megaphone, Pot, Hot Hand, Cash Out, Doubler, Amplifier |
+| **Locked** | Hammer, Blood, Vampire, Chain, Cursed, Fuse, Focus, Martyr, Snowball, Spark, Jackpot, Lifeline, Megaphone, Pot, Hot Hand, Cash Out, Doubler, Amplifier, Compost, Square Dance, Good Dog, Whetstone, Blood Pact, Conductor |
 <!-- /GEN:char-blade -->
 
 **Play style.** Straight points. Blade's pool is made of coins whose value does not depend on hooks: Sword (+5 on
@@ -41,8 +41,8 @@ Portrait: an owl mage with a glowing coin.
 | | |
 |---|---|
 | **Default deck** | 2 x Normal, Dagger, Focus, Spark |
-| **Pool** | Normal, Dagger, Cursed, Gambler, Spark, Focus, Lucky |
-| **Locked** | Horoscope, Crystal Ball, Mimic, Contrarian, Lucky Seven, Blood, Hourglass, Jester, Echo, Phoenix, Mirror, Domino, Twin, Cold Streak, Anchor, True Echo, Amplifier |
+| **Pool** | Normal, Dagger, Cursed, Gambler, Spark, Focus, Lucky, Compost |
+| **Locked** | Horoscope, Crystal Ball, Mimic, Contrarian, Lucky Seven, Blood, Hourglass, Jester, Echo, Phoenix, Mirror, Domino, Twin, Cold Streak, Anchor, True Echo, Amplifier, Square Dance, Good Dog, Blood Pact, Doppelganger |
 <!-- /GEN:char-seer -->
 
 **Play style.** Gamble and manipulate. Cursed (30%, +15) and Gambler (50% of x3) are swings; Focus and Lucky Seven bend the
@@ -66,8 +66,8 @@ Portrait: a merchant with a ledger and a coin.
 | | |
 |---|---|
 | **Default deck** | Normal, Loaded, Dagger |
-| **Pool** | Normal, Copper, Loaded, Dagger, Sword |
-| **Locked** | Spark, Bank, Miser, Hammer, Bounty, Flock, Momentum, Flux Capacitor, Cheerleader, Megaphone, Orchestra, Lifeline, Jackpot, Bettor, Anchor, Doubler, True Echo |
+| **Pool** | Normal, Copper, Loaded, Dagger, Sword, Square Dance |
+| **Locked** | Spark, Bank, Miser, Hammer, Bounty, Flock, Momentum, Flux Capacitor, Cheerleader, Megaphone, Orchestra, Lifeline, Jackpot, Bettor, Anchor, Doubler, True Echo, Compost, Good Dog, Counterfeiter, Conductor |
 <!-- /GEN:char-trader -->
 
 **Play style.** Convert gold and energy into points. Loaded (75%, +4 gold), Copper (gold or energy) and Bank fund

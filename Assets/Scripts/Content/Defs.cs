@@ -3,33 +3,6 @@ using System.Collections.Generic;
 
 namespace Tossup
 {
-    // A coin: data (name, description, rarity N/R/SR/UR, Heads probability, Heads and Tails effect lists,
-    // shop cost, energy cost to flip) plus optional hooks (see Core/Hooks.cs).
-    public sealed class CoinDef
-    {
-        public string Id, Name, Description, Rarity;
-        public double Probability;
-        public int? Cost; // shop price; null means 15
-        public int EnergyCost;
-        public double TieProbability;
-        public List<string> CoinTypes = new List<string>();
-        public Dictionary<string, CoinUpgradeDef> Upgrades = new Dictionary<string, CoinUpgradeDef>();
-        public List<Effect> Heads = new List<Effect>(), Tails = new List<Effect>();
-        public Action<GameState, CoinInst> OnDeal, OnDiscard;
-        public Action<GameState, CoinInst, FlipState> OnFlip;
-        public Action<GameState, CoinInst, Res> OnResolve;
-        public Action<GameState, CoinInst, Odds> OnOdds;
-        public Action<CoinInst, string> Grow;
-        public Action<CoinCtx> Register;
-    }
-
-    public sealed class CoinUpgradeDef
-    {
-        public string Id, Name, Description;
-        public int Cost;
-        public double HeadsScore, HeadsProbability;
-    }
-
     // A chip (consumable item). Use returns false to refuse; the item is then kept.
     public sealed class ItemDef
     {
@@ -47,12 +20,13 @@ namespace Tossup
 
     public sealed class LockedCoin
     {
-        public string Id;
+        public CoinDef Coin;
+        public string Id => Coin.Id;
         public int Cost; // unused (kept from the original data)
 
-        public LockedCoin(string id, int cost)
+        public LockedCoin(CoinDef coin, int cost)
         {
-            Id = id;
+            Coin = coin;
             Cost = cost;
         }
     }
@@ -62,8 +36,9 @@ namespace Tossup
     // character, pool and locked alike.
     public sealed class CharacterDef
     {
-        public string Id, Name, Description, Starter;
-        public List<string> Deck, Pool;
+        public string Id, Name, Description;
+        public CoinDef Starter;
+        public List<CoinDef> Deck, Pool;
         public List<LockedCoin> Locked = new List<LockedCoin>();
     }
 

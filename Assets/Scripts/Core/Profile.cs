@@ -86,7 +86,7 @@ namespace Tossup
         public const int SetCount = 3; // coin sets per character
         public static int RarityLimit(string coinId)
         {
-            switch(Content.Coins[coinId].Rarity){case "N":return 3;case "R":return 2;case "SR":case "UR":return 1;default:return 0;}
+            switch(Content.Coins[coinId].Rarity){case Rarity.Common:return 3;case Rarity.Uncommon:return 2;case Rarity.Rare:case Rarity.Epic:return 1;default:return 0;}
         }
 
         public static ProfileData New() => new ProfileData();
@@ -96,7 +96,7 @@ namespace Tossup
             int i=Content.CharacterOrder.IndexOf(id);return i==0||(i>0&&profile.Wins.Contains(Content.CharacterOrder[i-1]));
         }
         public static string RecordWin(ProfileData profile,string id){if(!profile.Wins.Add(id))return null;int i=Content.CharacterOrder.IndexOf(id);return i>=0&&i+1<Content.CharacterOrder.Count?Content.CharacterOrder[i+1]:null;}
-        public static int MaxStake(ProfileData profile,string id)=>profile.Stakes.TryGetValue(id,out var n)?n:profile.Wins.Contains(id)?2:1;
+        public static int MaxStake(ProfileData profile,string id) => Math.Max(1, Math.Min(Game.Stakes.Count, profile.Stakes.TryGetValue(id,out var n) ? n : profile.Wins.Contains(id) ? 2 : 1));
         public static int? RecordStakeWin(ProfileData profile,string id,int stake){int max=MaxStake(profile,id);if(stake>=max&&stake<Game.Stakes.Count){profile.Stakes[id]=stake+1;return stake+1;}return null;}
         public static bool RecordEndless(ProfileData profile,string id,int levels){if(levels<=0)return false;profile.BestEndless.TryGetValue(id,out var old);if(levels<=old)return false;profile.BestEndless[id]=levels;return true;}
 
@@ -131,7 +131,7 @@ namespace Tossup
         // Coins this character may bring: its base pool plus unlocked coins.
         static HashSet<string> Available(ProfileData profile, string characterId)
         {
-            var set = new HashSet<string>(Content.Characters[characterId].Pool);
+            var set = new HashSet<string>(Content.Characters[characterId].Pool.ConvertAll(c=>c.Id));
             if (profile.Unlocked.TryGetValue(characterId, out var unlocked)) set.UnionWith(unlocked);
             return set;
         }
@@ -142,7 +142,7 @@ namespace Tossup
             if (!profile.Sets.TryGetValue(characterId, out var sets))
             {
                 var def = Content.Characters[characterId];
-                sets = new List<CoinSet> { new CoinSet { Name = "SET 1", Coins = new List<string>(def.Deck ?? new List<string> { def.Starter }) } };
+                sets = new List<CoinSet> { new CoinSet { Name = "SET 1", Coins = (def.Deck ?? new List<CoinDef> { def.Starter }).ConvertAll(c=>c.Id) } };
                 profile.Sets[characterId] = sets;
             }
             while (sets.Count < SetCount) sets.Add(new CoinSet { Name = "SET " + (sets.Count + 1) });
@@ -165,7 +165,7 @@ namespace Tossup
         public static bool CanAdd(ProfileData profile, string characterId, List<string> coins, string coinId, int max, int maxCopies)
         {
             if (coins.Count >= max || !Available(profile, characterId).Contains(coinId)) return false;
-            int copies = 0; string rarity=Content.Coins[coinId].Rarity;
+            int copies = 0; var rarity=Content.Coins[coinId].Rarity;
             foreach (var id in coins) if (Content.Coins[id].Rarity==rarity) copies++;
             return copies < RarityLimit(coinId);
         }
@@ -195,18 +195,11 @@ namespace Tossup
             var ok = Available(profile, characterId);
             List<string> Pick(List<string> source)
             {
-                var list = new List<string>();
-                var copies = new Dictionary<string, int>();
-                foreach (var id in source)
-                {
-                    if(!Content.Coins.ContainsKey(id))continue;string rarity=Content.Coins[id].Rarity;copies.TryGetValue(rarity,out int n);copies[rarity]=++n;
-                    if (ok.Contains(id) && list.Count < max && n <= RarityLimit(id)) list.Add(id);
-                }
-                return list;
+                return LimitedSet(source, max, ok);
             }
             var sets = Sets(profile, characterId);
             var picked = Pick(sets[Active(profile, characterId) - 1].Coins);
-            if (picked.Count == 0) picked = Pick(def.Deck ?? new List<string> { def.Starter });
+            if (picked.Count == 0) picked = Pick((def.Deck ?? new List<CoinDef> { def.Starter }).ConvertAll(c=>c.Id));
             return picked;
         }
 
@@ -334,8 +327,62 @@ namespace Tossup
                 o.VolumeMusic = NumberValue(options["volumeMusic"], o.VolumeMusic);
                 o.VolumeSfx = NumberValue(options["volumeSfx"], o.VolumeSfx);
             }
+            Sanitize(profile);
             return profile;
         }
+
+        internal static List<string> LimitedSet(List<string> source, int max, HashSet<string> allowed = null)
+        {
+            var entries = new List<string>();
+            foreach (var id in source)
+                if (id != null && Content.Coins.ContainsKey(id) && (allowed == null || allowed.Contains(id)) && entries.Count < max) entries.Add(id);
+            var result = new List<string>();
+            var counts = new Dictionary<Rarity, int>();
+            for (int i = entries.Count - 1; i >= 0; i--)
+            {
+                string id = entries[i];var rarity = Content.Coins[id].Rarity;
+                counts.TryGetValue(rarity, out int n);
+                if (n >= RarityLimit(id)) continue;
+                counts[rarity] = n + 1;
+                result.Insert(0, id);
+            }
+            return result;
+        }
+
+        internal static void Sanitize(ProfileData p)
+        {
+            p.Tokens = double.IsNaN(p.Tokens) || double.IsInfinity(p.Tokens) || p.Tokens < 0 ? 0 : Math.Floor(p.Tokens);
+            foreach (var id in new List<string>(p.Unlocked.Keys))
+                if (!Content.Characters.ContainsKey(id)) p.Unlocked.Remove(id);
+                else p.Unlocked[id].RemoveWhere(x => !Content.Coins.ContainsKey(x));
+            p.Collected.RemoveWhere(x => !Content.Coins.ContainsKey(x));
+            p.Wins.RemoveWhere(x => !Content.Characters.ContainsKey(x));
+            foreach (var id in new List<string>(p.Stakes.Keys))
+                if (!Content.Characters.ContainsKey(id)) p.Stakes.Remove(id);
+                else p.Stakes[id] = Math.Max(1, Math.Min(Game.Stakes.Count, p.Stakes[id]));
+            foreach (var id in new List<string>(p.BestEndless.Keys))
+                if (!Content.Characters.ContainsKey(id) || p.BestEndless[id] <= 0) p.BestEndless.Remove(id);
+            foreach (var id in new List<string>(p.ActiveSet.Keys))
+                if (!Content.Characters.ContainsKey(id) || p.ActiveSet[id] < 1 || p.ActiveSet[id] > SetCount) p.ActiveSet.Remove(id);
+            foreach (var id in new List<string>(p.Sets.Keys))
+            {
+                var sets = p.Sets[id];
+                if (!Content.Characters.ContainsKey(id) || sets.Count < SetCount) { p.Sets.Remove(id); continue; }
+                if (sets.Count > SetCount) sets.RemoveRange(SetCount, sets.Count - SetCount);
+                for (int i = 0; i < sets.Count; i++)
+                {
+                    sets[i].Name = sets[i].Name ?? "SET " + (i + 1);
+                    sets[i].Coins = LimitedSet(sets[i].Coins, Game.StartMax);
+                }
+            }
+            var o = p.Options;
+            o.VolumeMaster = ClampVolume(o.VolumeMaster, 80);
+            o.VolumeMusic = ClampVolume(o.VolumeMusic, 40);
+            o.VolumeSfx = ClampVolume(o.VolumeSfx, 80);
+            if (o.Language != "en" && o.Language != "de") o.Language = "en";
+        }
+
+        static double ClampVolume(double value, double fallback) => double.IsNaN(value) || double.IsInfinity(value) ? fallback : Math.Max(0, Math.Min(100, value));
 
         static List<string> Strings(JsonData list)
         {

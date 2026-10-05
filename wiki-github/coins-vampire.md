@@ -6,7 +6,7 @@
 Heads: 2 points and it drains 2 gold from the house.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 50%
+- **Heads chance:** 35%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

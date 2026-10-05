@@ -6,7 +6,7 @@
 Heads: 1 point per 10 gold you hold.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 55%
+- **Heads chance:** 40%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

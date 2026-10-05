@@ -6,7 +6,7 @@
 Heads: 2 points, and the next coin lands Heads. Tails: quota +1.
 
 - **Rarity:** Epic
-- **Heads chance:** 50%
+- **Heads chance:** 60%
 - **Shop price:** 15 gold
 - **Energy to flip:** 0
 

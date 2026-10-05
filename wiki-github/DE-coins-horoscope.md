@@ -6,7 +6,7 @@
 Kopf: 1 Punkt, alle Münzen +7 % Kopf in diesem Level. Zahl: alle Münzen +3 %.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 70%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 

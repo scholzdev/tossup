@@ -27,17 +27,17 @@ static class FeatureParityTests
     static void DiscardParity()
     {
         RuntimeMode.Configure(false, false);
-        var opening = Game.New(77101, "trader", null, new List<string> { "loaded", "normal", "normal" }, true);
+        var opening = Game.New(77101, "trader", null, new List<CoinDef> { CoinCatalog.Loaded, CoinCatalog.Normal, CoinCatalog.Normal }, true);
         int fuseUid = opening.Mulligan.Hand[0];
         var fuse = Game.GetCoin(opening, fuseUid);
-        fuse.Id = "fuse";
+        fuse.Definition = CoinCatalog.Fuse;
         Check(Game.MulliganDiscard(opening, new List<int> { fuseUid }) == 1, "opening-hand discard removes a marked coin");
         Check(fuse.Charge == 6, "opening-hand discard fires the coin discard hook and growth");
 
         for (int i = 0; i < 2; i++)
         {
             int uid = opening.NextUid++;
-            opening.Coins.Add(new CoinInst { Uid = uid, Id = "normal" });
+            opening.Coins.Add(new CoinInst { Uid = uid, Definition = CoinCatalog.Normal });
             opening.Encounter.Pile.Add(uid);
         }
         Game.MulliganDone(opening);
@@ -53,7 +53,9 @@ static class FeatureParityTests
         AppCore.Draw();
         Check(Ui.Buttons.Exists(b => b.Label == "DISCARD MODE: ON"), "discard mode can be enabled");
         Check(Ui.Buttons.Exists(b => b.Label == "BANK DISCARD"), "discard mode exposes a bank coin action");
-        var discard = Ui.Buttons.Find(b => b.Label == "BANK DISCARD" && Math.Abs(b.Y - 270) < .01f);
+        var discardTargets = Ui.Buttons.FindAll(b => b.Label == "BANK DISCARD");
+        Check(discardTargets.Count > 1, "discard mode includes a non-front bank coin");
+        var discard = discardTargets[1];
         int discardUid = opening.Encounter.Queue[1];
         discard.Action();
         Check(opening.Encounter.BankDiscards == 0 && opening.Encounter.Discards == 2,
@@ -67,11 +69,11 @@ static class FeatureParityTests
 
     static void SavedRunRoundTrip()
     {
-        var game = Game.New(4401, "trader", new List<string> { "loaded" }, new List<string> { "loaded", "normal" }, true, 3);
-        Game.MulliganDone(game);
+        var game = Game.New(4401, "trader", new List<string> { "loaded" }, new List<CoinDef> { CoinCatalog.Loaded, CoinCatalog.Normal }, true, 3);
         game.Player.Gold = 37;
-        game.Coins[0].Upgrade = "safer_bet";
+        game.Coins[0].Upgrade = UpgradeCatalog.SaferBet;
         game.Augments.Add("bankers_cut");
+        game.Augments.Add("type_specialist");
         game.AugmentData["type_specialist"] = "fortune";
         game.Encounter.ComboPot = 6;
         string json = RunSave.Encode(game);
@@ -79,11 +81,12 @@ static class FeatureParityTests
         Check(restored != null, "valid saved run restores");
         Check(restored.Seed == game.Seed && restored.RngState == game.RngState, "RNG state survives restoration");
         Check(restored.CharacterId == "trader" && restored.Stake == 3 && restored.Player.Gold == 37, "run identity survives restoration");
-        Check(restored.Coins.Count == 2 && restored.Coins[0].Upgrade == "safer_bet", "owned coin state survives restoration");
+        Check(restored.Coins.Count == 2 && restored.Coins[0].Upgrade == UpgradeCatalog.SaferBet, "owned coin state survives restoration");
         Check(restored.Augments.Contains("bankers_cut") && restored.AugmentData["type_specialist"] == "fortune", "augment state survives restoration");
-        Check(restored.Encounter.ComboPot == 6 && restored.Mulligan == null && restored.Dealt != null, "safe-point encounter state survives restoration");
+        Check(restored.Encounter.ComboPot == 6 && restored.Mulligan != null && restored.Dealt == null, "safe-point encounter state survives restoration");
         Check(RunSave.Decode("{\"version\":999}") == null && RunSave.Decode("broken") == null, "damaged or incompatible saves are rejected");
-        var unsafeGame=Game.New(4402,"blade",null,null,true);
+        var unsafeGame=Game.New(4402,"blade",null,null,false);
+        Game.Flip(unsafeGame);
         bool rejected=false;try{RunSave.Encode(unsafeGame);}catch(InvalidOperationException){rejected=true;}
         Check(rejected,"mid-level progress is never written as a resume point");
 
@@ -131,15 +134,22 @@ static class FeatureParityTests
 
     static void EncounterRevealFlow()
     {
-        var game = Game.New(6601, "blade", null, null, false);
-        Ui.Game = game;
-        Ui.EncounterReveal = new EncounterReveal { Elapsed = 0 };
-        AppCore.Draw();
-        Check(Ui.Buttons.Count == 0, "encounter reveal blocks game controls while animating");
-        AppCore.Update(.7);
-        AppCore.Draw();
-        Check(Ui.Buttons.Count == 1 && Ui.Buttons[0].Label == "DISMISS ENCOUNTER REVEAL", "reveal adds dismissal after its opening animation");
-        Check(AppCore.DismissEncounterReveal() && Ui.EncounterReveal == null, "reveal closes after its minimum display time");
+        foreach(bool dev in new[] {false,true})
+        {
+            RuntimeMode.Configure(dev,false);
+            Ui.SelectedCharacter="blade";Ui.Tutorial=null;Ui.Confirm=null;
+            A.Start(6601);
+            Check(Ui.Game.RunEncounterId!=null && Ui.EncounterReveal!=null, "normal and developer Start show the assigned encounter");
+            AppCore.Draw();
+            Check(Ui.Buttons.Count == 0, "encounter reveal blocks game controls while animating");
+            AppCore.Update(.2);
+            Check(Math.Abs(Ui.EncounterReveal.Elapsed-.2)<1e-9 && Ui.Game.Encounter.Flips==0, "encounter reveal animates before gameplay");
+            AppCore.Update(.5);
+            AppCore.Draw();
+            Check(Ui.Buttons.Count == 1 && Ui.Buttons[0].Label == "DISMISS ENCOUNTER REVEAL", "reveal adds dismissal after its opening animation");
+            Check(AppCore.DismissEncounterReveal() && Ui.EncounterReveal == null, "reveal closes after its minimum display time");
+        }
+        RuntimeMode.Configure(false,false);
         Ui.Game = null;
     }
 
@@ -152,8 +162,8 @@ static class FeatureParityTests
         Ui.Screen = "title";
         Check(Ui.UiImages.ContainsKey("title_scene"), "the original title scene with its three coins is loaded");
         AppCore.Draw();
-        Check(Ui.Buttons.Exists(b => b.Label == "PLAY" && Math.Abs(b.X - 100) < .01f && Math.Abs(b.Y - 240) < .01f),
-            "title actions use the original left-side menu layout");
+        Check(Ui.Buttons.Exists(b => b.Label == "PLAY" && b.X < Ui.Width / 2 && b.W >= Ui.Width * .45f && b.H >= 70),
+            "title actions fill the requested half-screen menu with larger controls");
 
         Ui.SelectedCharacter = "blade";
         A.Start(6602);
@@ -168,20 +178,16 @@ static class FeatureParityTests
         Ui.Confirm = null;
         Ui.Game.Paused = false;
         A.Update(.1);
-        Check(Ui.Game.Mulligan != null, "the opening-hand encounter screen remains interactive");
-        Check(!A.HasSavedRun(), "the opening hand is not mistaken for a resumable level start");
+        Check(Ui.Game.Mulligan == null && Ui.Game.Phase == Phase.Encounter, "normal play automatically opens the bank without a contract");
+        Check(A.HasSavedRun(), "the untouched opening bank is saved before setup finishes");
         AppCore.Draw();
-        Check(Ui.Buttons.Exists(b => b.Label.StartsWith("START LEVEL")), "the opening-hand screen exposes Start Level");
+        Check(Ui.Buttons.Exists(b => b.Label == "CENTRAL COIN"), "the central coin exposes flip/advance");
         A.NextOrFlip();
-        Check(Ui.Game.Phase == Phase.Contract, "starting a normal level offers its contract screen");
         A.Update(.1);
-        Check(A.HasSavedRun() && A.LoadRun() && Ui.Game.Phase == Phase.Contract && Ui.Game.Mulligan != null,
-            "continuing a saved contract restores its encounter screen and opening hand");
-        AppCore.Draw();
-        Check(Ui.Buttons.Exists(b => b.Label.StartsWith("TAKE CONTRACT")) && Ui.Buttons.Exists(b => b.Label == "SKIP CONTRACT"),
-            "the contract screen exposes its original choices");
-        A.SkipContract();
-        Check(Ui.Game.Phase == Phase.Encounter && Ui.Game.Mulligan == null, "skipping a contract starts the encounter");
+        Check(Ui.Game.Pending != null && A.LoadRun() && Ui.Game.Pending == null && Ui.Game.Mulligan == null,
+            "continuing during a flip restores the untouched level and a playable bank");
+        Check(!Ui.Game.ContractsEnabled, "continued normal runs disable contract offers");
+        A.DeleteRun();
         Ui.Game = null;
         Ui.EncounterReveal = null;
     }

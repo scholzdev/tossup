@@ -79,12 +79,20 @@ namespace Tossup.UI
             Vertex(x0, y1, uvBottomLeft.x, uvBottomLeft.y);
         }
 
-        public void Image(Img image, float x0, float y0, float x1, float y1, Rgba tint)
+        public void Image(Img image, float[] quad, Rgba tint)
         {
             if (!(image?.Native is Texture texture)) return;
             Use(texture, false);
             GL.Color(ToColor(tint));
-            Quad(x0, y0, x1, y1, new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(0, 0));
+            Vertex(quad[0], quad[1], 0, 1); Vertex(quad[2], quad[3], 1, 1); Vertex(quad[4], quad[5], 1, 0);
+            Vertex(quad[0], quad[1], 0, 1); Vertex(quad[4], quad[5], 1, 0); Vertex(quad[6], quad[7], 0, 0);
+        }
+
+        public void Clip(float x, float y, float w, float h)
+        {
+            if (begun) { GL.End(); begun = false; }
+            material.SetVector("_ClipRect", w < 0 || h < 0 ? new Vector4(-1e6f, -1e6f, 1e6f, 1e6f) :
+                new Vector4(ox + x * scale, oy + y * scale, ox + (x + w) * scale, oy + (y + h) * scale));
         }
 
         public void Text(PixFont font, string text, float x, float y, float sx, float sy, Rgba color)

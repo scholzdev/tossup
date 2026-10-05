@@ -3,156 +3,180 @@
 <title>Coins - Tossup Wiki</title><link rel="icon" href="../img/icon.png"><link rel="stylesheet" href="../style.css"></head>
 <body><header><a class="brand" href="../index.html"><img src="../img/logo.png" alt="Tossup"><span>WIKI</span></a>
 <div class="search"><input id="q" type="search" placeholder="Search coins, chips, prizes..." autocomplete="off"><div id="results"></div></div><div class="lang"><a class="on" href="../coins/index.html">EN</a><a class="" href="../de/coins/index.html">DE</a></div></header>
-<div class="layout"><nav><a class="" href="../index.html">Home</a><a class="on" href="../coins/index.html">Coins (49)</a><a class="" href="../chips/index.html">Chips (11)</a><a class="" href="../prizes/index.html">Prizes (5)</a><a class="" href="../modifiers/index.html">Level modifiers</a><a class="" href="../characters/index.html">Characters</a><a class="" href="../guide/index.html">Guides</a></nav><main><h1>Coins</h1><p>Every coin in the game. Click a coin for details. Prices are in gold; energy is paid when you flip.</p>
+<div class="layout"><nav><a class="" href="../index.html">Home</a><a class="on" href="../coins/index.html">Coins (57)</a><a class="" href="../chips/index.html">Chips (11)</a><a class="" href="../prizes/index.html">Prizes (5)</a><a class="" href="../modifiers/index.html">Level modifiers</a><a class="" href="../characters/index.html">Characters</a><a class="" href="../guide/index.html">Guides</a></nav><main><h1>Coins</h1><p>Every coin in the game. Click a coin for details. Prices are in gold; energy is paid when you flip.</p>
 <div class="filters"><input id="coinq" type="search" placeholder="Filter by name..."><span><button data-rarity="N" style="--c:#9aa5ab">Common</button><button data-rarity="R" style="--c:#4bc292">Uncommon</button><button data-rarity="SR" style="--c:#f3b958">Rare</button><button data-rarity="UR" style="--c:#c27ae0">Epic</button></span><span><button data-char="blade">The Blade</button><button data-char="seer">The Seer</button><button data-char="trader">The Trader</button></span><button id="clear">Clear</button></div>
 <table class="list" id="coin-table"><thead><tr><th></th><th>Name</th><th>Rarity</th><th>Heads</th><th>Price</th><th>Energy</th><th>On Heads</th><th>On Tails</th></tr></thead>
 <tbody><tr data-name="normal normal" data-rarity="N" data-chars="blade seer trader">
 <td><a href="normal.html"><img class="ico" src="../img/coins/normal.png" width="48" height="48" alt=""></a></td><td><a href="normal.html">Normal</a></td><td><span class="badge" style="--c:#9aa5ab">Common</span></td>
-<td>50%</td><td>5</td><td>0</td>
+<td>65%</td><td>5</td><td>0</td>
 <td>Score 1 point</td><td><span class="muted">Nothing</span></td></tr><tr data-name="copper copper" data-rarity="N" data-chars="trader">
 <td><a href="copper.html"><img class="ico" src="../img/coins/copper.png" width="48" height="48" alt=""></a></td><td><a href="copper.html">Copper</a></td><td><span class="badge" style="--c:#9aa5ab">Common</span></td>
-<td>50%</td><td>10</td><td>0</td>
+<td>30%</td><td>10</td><td>0</td>
 <td>Gain 2 gold</td><td>Gain 1 energy</td></tr><tr data-name="sword sword" data-rarity="N" data-chars="blade trader">
 <td><a href="sword.html"><img class="ico" src="../img/coins/sword.png" width="48" height="48" alt=""></a></td><td><a href="sword.html">Sword</a></td><td><span class="badge" style="--c:#9aa5ab">Common</span></td>
-<td>50%</td><td>12</td><td>0</td>
-<td>Score 5 points</td><td><span class="muted">Nothing</span></td></tr><tr data-name="lucky lucky" data-rarity="N" data-chars="seer">
+<td>35%</td><td>12</td><td>0</td>
+<td>Score 3 points</td><td><span class="muted">Nothing</span></td></tr><tr data-name="lucky lucky" data-rarity="N" data-chars="seer">
 <td><a href="lucky.html"><img class="ico" src="../img/coins/lucky.png" width="48" height="48" alt=""></a></td><td><a href="lucky.html">Lucky</a></td><td><span class="badge" style="--c:#9aa5ab">Common</span></td>
-<td>50%</td><td>10</td><td>0</td>
+<td>30%</td><td>10</td><td>0</td>
 <td>Score 2 points<br>Goes back into the pile</td><td><span class="muted">Nothing</span></td></tr><tr data-name="cursed cursed" data-rarity="SR" data-chars="blade seer">
 <td><a href="cursed.html"><img class="ico" src="../img/coins/cursed.png" width="48" height="48" alt=""></a></td><td><a href="cursed.html">Cursed</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>30%</td><td>15</td><td>0</td>
+<td>25%</td><td>15</td><td>0</td>
 <td>Score 15 points</td><td>Quota +2</td></tr><tr data-name="loaded loaded" data-rarity="N" data-chars="trader">
 <td><a href="loaded.html"><img class="ico" src="../img/coins/loaded.png" width="48" height="48" alt=""></a></td><td><a href="loaded.html">Loaded</a></td><td><span class="badge" style="--c:#9aa5ab">Common</span></td>
-<td>75%</td><td>12</td><td>0</td>
-<td>Gain 4 gold</td><td><span class="muted">Nothing</span></td></tr><tr data-name="dagger dagger" data-rarity="N" data-chars="blade seer trader">
+<td>59%</td><td>12</td><td>0</td>
+<td>Gain 4 gold</td><td>gold_loss</td></tr><tr data-name="dagger dagger" data-rarity="N" data-chars="blade seer trader">
 <td><a href="dagger.html"><img class="ico" src="../img/coins/dagger.png" width="48" height="48" alt=""></a></td><td><a href="dagger.html">Dagger</a></td><td><span class="badge" style="--c:#9aa5ab">Common</span></td>
-<td>75%</td><td>12</td><td>0</td>
-<td>Score 4 points</td><td>Score 1 point</td></tr><tr data-name="hammer hammer" data-rarity="R" data-chars="blade trader">
+<td>67%</td><td>12</td><td>0</td>
+<td>Score 2 points</td><td>Score 1 point</td></tr><tr data-name="compost compost" data-rarity="N" data-chars="blade seer trader">
+<td><a href="compost.html"><img class="ico" src="../img/coins/compost.png" width="48" height="48" alt=""></a></td><td><a href="compost.html">Compost</a></td><td><span class="badge" style="--c:#9aa5ab">Common</span></td>
+<td>47%</td><td>10</td><td>0</td>
+<td>Score 2 points</td><td>Quota +2<br>fortune_odds</td></tr><tr data-name="square dance square dance" data-rarity="N" data-chars="blade seer trader">
+<td><a href="square_dance.html"><img class="ico" src="../img/coins/square_dance.png" width="48" height="48" alt=""></a></td><td><a href="square_dance.html">Square Dance</a></td><td><span class="badge" style="--c:#9aa5ab">Common</span></td>
+<td>27%</td><td>14</td><td>0</td>
+<td><span class="muted">See the description</span></td><td><span class="muted">See the description</span></td></tr><tr data-name="hammer hammer" data-rarity="R" data-chars="blade trader">
 <td><a href="hammer.html"><img class="ico" src="../img/coins/hammer.png" width="48" height="48" alt=""></a></td><td><a href="hammer.html">Hammer</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>35%</td><td>22</td><td>2</td>
-<td>Score 16 points</td><td>Score 1 point</td></tr><tr data-name="blood blood" data-rarity="R" data-chars="blade seer">
+<td>25%</td><td>22</td><td>2</td>
+<td>Score 16 points</td><td>Score 1 point</td></tr><tr data-name="whetstone whetstone" data-rarity="R" data-chars="blade">
+<td><a href="whetstone.html"><img class="ico" src="../img/coins/whetstone.png" width="48" height="48" alt=""></a></td><td><a href="whetstone.html">Whetstone</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
+<td>67%</td><td>22</td><td>0</td>
+<td>type_buff</td><td><span class="muted">Nothing</span></td></tr><tr data-name="blood blood" data-rarity="R" data-chars="blade seer">
 <td><a href="blood.html"><img class="ico" src="../img/coins/blood.png" width="48" height="48" alt=""></a></td><td><a href="blood.html">Blood</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>60%</td><td>22</td><td>1</td>
-<td>Score 11 points</td><td>Quota +6</td></tr><tr data-name="spark spark" data-rarity="R" data-chars="blade seer trader">
+<td>37%</td><td>22</td><td>1</td>
+<td>Score 10 points</td><td>Quota +6</td></tr><tr data-name="spark spark" data-rarity="R" data-chars="blade seer trader">
 <td><a href="spark.html"><img class="ico" src="../img/coins/spark.png" width="48" height="48" alt=""></a></td><td><a href="spark.html">Spark</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>70%</td><td>9</td><td>0</td>
 <td>Gain 2 energy</td><td>Score 3 points</td></tr><tr data-name="focus focus" data-rarity="R" data-chars="blade seer">
 <td><a href="focus.html"><img class="ico" src="../img/coins/focus.png" width="48" height="48" alt=""></a></td><td><a href="focus.html">Focus</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>10</td><td>0</td>
-<td>Gain 15% Heads this level</td><td>Score 4 points</td></tr><tr data-name="snowball snowball" data-rarity="SR" data-chars="blade">
+<td>65%</td><td>10</td><td>0</td>
+<td>Next coin: +35% Heads</td><td>Score 4 points</td></tr><tr data-name="snowball snowball" data-rarity="SR" data-chars="blade">
 <td><a href="snowball.html"><img class="ico" src="../img/coins/snowball.png" width="48" height="48" alt=""></a></td><td><a href="snowball.html">Snowball</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>24</td><td>1</td>
+<td>30%</td><td>24</td><td>1</td>
 <td>Score 3 points</td><td>Score 1 point</td></tr><tr data-name="gambler gambler" data-rarity="SR" data-chars="seer">
 <td><a href="gambler.html"><img class="ico" src="../img/coins/gambler.png" width="48" height="48" alt=""></a></td><td><a href="gambler.html">Gambler</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>22</td><td>1</td>
+<td>35%</td><td>22</td><td>1</td>
 <td>Score 7 points</td><td><span class="muted">See the description</span></td></tr><tr data-name="momentum momentum" data-rarity="SR" data-chars="trader">
 <td><a href="momentum.html"><img class="ico" src="../img/coins/momentum.png" width="48" height="48" alt=""></a></td><td><a href="momentum.html">Momentum</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>40%</td><td>15</td><td>0</td>
+<td>35%</td><td>15</td><td>0</td>
 <td>Score 6 points</td><td><span class="muted">See the description</span></td></tr><tr data-name="echo echo" data-rarity="UR" data-chars="seer">
 <td><a href="echo.html"><img class="ico" src="../img/coins/echo.png" width="48" height="48" alt=""></a></td><td><a href="echo.html">Echo</a></td><td><span class="badge" style="--c:#c27ae0">Epic</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>60%</td><td>15</td><td>0</td>
 <td><span class="muted">See the description</span></td><td><span class="muted">See the description</span></td></tr><tr data-name="vampire vampire" data-rarity="R" data-chars="blade">
 <td><a href="vampire.html"><img class="ico" src="../img/coins/vampire.png" width="48" height="48" alt=""></a></td><td><a href="vampire.html">Vampire</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>35%</td><td>15</td><td>0</td>
 <td>Score 2 points</td><td><span class="muted">See the description</span></td></tr><tr data-name="miser miser" data-rarity="R" data-chars="trader">
 <td><a href="miser.html"><img class="ico" src="../img/coins/miser.png" width="48" height="48" alt=""></a></td><td><a href="miser.html">Miser</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>55%</td><td>15</td><td>0</td>
-<td><span class="muted">See the description</span></td><td>Gain 2 gold</td></tr><tr data-name="fuse fuse" data-rarity="SR" data-chars="blade">
+<td>40%</td><td>15</td><td>0</td>
+<td><span class="muted">See the description</span></td><td>Gain 2 gold</td></tr><tr data-name="counterfeiter counterfeiter" data-rarity="R" data-chars="trader">
+<td><a href="counterfeiter.html"><img class="ico" src="../img/coins/counterfeiter.png" width="48" height="48" alt=""></a></td><td><a href="counterfeiter.html">Counterfeiter</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
+<td>61%</td><td>25</td><td>0</td>
+<td>type_buff</td><td><span class="muted">Nothing</span></td></tr><tr data-name="fuse fuse" data-rarity="SR" data-chars="blade">
 <td><a href="fuse.html"><img class="ico" src="../img/coins/fuse.png" width="48" height="48" alt=""></a></td><td><a href="fuse.html">Fuse</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>10</td><td>0</td>
+<td>30%</td><td>10</td><td>0</td>
 <td>Score 1 point</td><td><span class="muted">See the description</span></td></tr><tr data-name="phoenix phoenix" data-rarity="UR" data-chars="seer">
 <td><a href="phoenix.html"><img class="ico" src="../img/coins/phoenix.png" width="48" height="48" alt=""></a></td><td><a href="phoenix.html">Phoenix</a></td><td><span class="badge" style="--c:#c27ae0">Epic</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>25%</td><td>15</td><td>0</td>
 <td>Score 3 points</td><td>Quota +2</td></tr><tr data-name="contrarian contrarian" data-rarity="SR" data-chars="seer">
 <td><a href="contrarian.html"><img class="ico" src="../img/coins/contrarian.png" width="48" height="48" alt=""></a></td><td><a href="contrarian.html">Contrarian</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>65%</td><td>15</td><td>0</td>
 <td>Score 4 points</td><td>Score 1 point</td></tr><tr data-name="chain chain" data-rarity="R" data-chars="blade">
 <td><a href="chain.html"><img class="ico" src="../img/coins/chain.png" width="48" height="48" alt=""></a></td><td><a href="chain.html">Chain</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>60%</td><td>15</td><td>0</td>
 <td><span class="muted">See the description</span></td><td><span class="muted">See the description</span></td></tr><tr data-name="bank bank" data-rarity="R" data-chars="trader">
 <td><a href="bank.html"><img class="ico" src="../img/coins/bank.png" width="48" height="48" alt=""></a></td><td><a href="bank.html">Bank</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>40%</td><td>15</td><td>0</td>
 <td>Gain 3 gold</td><td><span class="muted">See the description</span></td></tr><tr data-name="lucky seven lucky seven" data-rarity="SR" data-chars="seer">
 <td><a href="lucky_seven.html"><img class="ico" src="../img/coins/lucky_seven.png" width="48" height="48" alt=""></a></td><td><a href="lucky_seven.html">Lucky Seven</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>40%</td><td>15</td><td>0</td>
+<td>30%</td><td>15</td><td>0</td>
 <td>Score 3 points</td><td><span class="muted">See the description</span></td></tr><tr data-name="hourglass hourglass" data-rarity="R" data-chars="seer">
 <td><a href="hourglass.html"><img class="ico" src="../img/coins/hourglass.png" width="48" height="48" alt=""></a></td><td><a href="hourglass.html">Hourglass</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>40%</td><td>10</td><td>0</td>
+<td>30%</td><td>10</td><td>0</td>
 <td>Score 4 points</td><td>Goes back into the pile</td></tr><tr data-name="flux capacitor flux capacitor" data-rarity="R" data-chars="trader">
 <td><a href="capacitor.html"><img class="ico" src="../img/coins/capacitor.png" width="48" height="48" alt=""></a></td><td><a href="capacitor.html">Flux Capacitor</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>1</td>
+<td>35%</td><td>15</td><td>1</td>
 <td><span class="muted">See the description</span></td><td>Gain 1 energy</td></tr><tr data-name="martyr martyr" data-rarity="SR" data-chars="blade">
 <td><a href="martyr.html"><img class="ico" src="../img/coins/martyr.png" width="48" height="48" alt=""></a></td><td><a href="martyr.html">Martyr</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>15</td><td>1</td>
-<td>Score 4 points</td><td>Quota +3</td></tr><tr data-name="bounty bounty" data-rarity="SR" data-chars="trader">
+<td>40%</td><td>15</td><td>1</td>
+<td>Score 4 points</td><td>Quota +3</td></tr><tr data-name="blood pact blood pact" data-rarity="SR" data-chars="blade seer">
+<td><a href="blood_pact.html"><img class="ico" src="../img/coins/blood_pact.png" width="48" height="48" alt=""></a></td><td><a href="blood_pact.html">Blood Pact</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
+<td>58%</td><td>32</td><td>0</td>
+<td>type_buff</td><td><span class="muted">Nothing</span></td></tr><tr data-name="bounty bounty" data-rarity="SR" data-chars="trader">
 <td><a href="bounty.html"><img class="ico" src="../img/coins/bounty.png" width="48" height="48" alt=""></a></td><td><a href="bounty.html">Bounty</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>15</td><td>1</td>
+<td>40%</td><td>15</td><td>1</td>
 <td>Score 4 points</td><td>Score 2 points</td></tr><tr data-name="jester jester" data-rarity="UR" data-chars="seer">
 <td><a href="jester.html"><img class="ico" src="../img/coins/jester.png" width="48" height="48" alt=""></a></td><td><a href="jester.html">Jester</a></td><td><span class="badge" style="--c:#c27ae0">Epic</span></td>
 <td>50%</td><td>15</td><td>1</td>
-<td><span class="muted">See the description</span></td><td><span class="muted">See the description</span></td></tr><tr data-name="flock flock" data-rarity="R" data-chars="trader">
+<td><span class="muted">See the description</span></td><td><span class="muted">See the description</span></td></tr><tr data-name="doppelganger doppelganger" data-rarity="SR" data-chars="seer">
+<td><a href="doppelganger.html"><img class="ico" src="../img/coins/doppelganger.png" width="48" height="48" alt=""></a></td><td><a href="doppelganger.html">Doppelganger</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
+<td>53%</td><td>34</td><td>0</td>
+<td>type_buff</td><td><span class="muted">Nothing</span></td></tr><tr data-name="flock flock" data-rarity="R" data-chars="trader">
 <td><a href="flock.html"><img class="ico" src="../img/coins/flock.png" width="48" height="48" alt=""></a></td><td><a href="flock.html">Flock</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>40%</td><td>15</td><td>0</td>
+<td>25%</td><td>15</td><td>0</td>
 <td>Score 4 points</td><td><span class="muted">See the description</span></td></tr><tr data-name="megaphone megaphone" data-rarity="R" data-chars="blade trader">
 <td><a href="megaphone.html"><img class="ico" src="../img/coins/megaphone.png" width="48" height="48" alt=""></a></td><td><a href="megaphone.html">Megaphone</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>45%</td><td>20</td><td>1</td>
+<td>65%</td><td>20</td><td>1</td>
 <td>Score 2 points<br>Next 2 coins pay x2</td><td><span class="muted">Nothing</span></td></tr><tr data-name="cheerleader cheerleader" data-rarity="R" data-chars="trader">
 <td><a href="cheerleader.html"><img class="ico" src="../img/coins/cheerleader.png" width="48" height="48" alt=""></a></td><td><a href="cheerleader.html">Cheerleader</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>70%</td><td>15</td><td>0</td>
 <td>Score 2 points<br>Next 2 coins: +20% Heads</td><td>Next coin: +20% Heads</td></tr><tr data-name="mirror mirror" data-rarity="SR" data-chars="seer">
 <td><a href="mirror.html"><img class="ico" src="../img/coins/mirror.png" width="48" height="48" alt=""></a></td><td><a href="mirror.html">Mirror</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>65%</td><td>15</td><td>0</td>
 <td>Score 1 point<br>Next coin uses its other side</td><td>Score 2 points</td></tr><tr data-name="twin twin" data-rarity="SR" data-chars="seer">
 <td><a href="twin.html"><img class="ico" src="../img/coins/twin.png" width="48" height="48" alt=""></a></td><td><a href="twin.html">Twin</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>65%</td><td>15</td><td>0</td>
 <td>Score 4 points</td><td>Score 1 point</td></tr><tr data-name="pot pot" data-rarity="R" data-chars="blade">
 <td><a href="pot.html"><img class="ico" src="../img/coins/pot.png" width="48" height="48" alt=""></a></td><td><a href="pot.html">Pot</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>25%</td><td>15</td><td>0</td>
 <td><span class="muted">See the description</span></td><td>Score 1 point</td></tr><tr data-name="domino domino" data-rarity="UR" data-chars="seer">
 <td><a href="domino.html"><img class="ico" src="../img/coins/domino.png" width="48" height="48" alt=""></a></td><td><a href="domino.html">Domino</a></td><td><span class="badge" style="--c:#c27ae0">Epic</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>60%</td><td>15</td><td>0</td>
 <td>Score 2 points<br>Next coin lands Heads</td><td>Quota +1</td></tr><tr data-name="hot hand hot hand" data-rarity="R" data-chars="blade">
 <td><a href="hot_hand.html"><img class="ico" src="../img/coins/hot_hand.png" width="48" height="48" alt=""></a></td><td><a href="hot_hand.html">Hot Hand</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>70%</td><td>15</td><td>0</td>
 <td>Score 2 points<br>Combo grows 1 extra step</td><td><span class="muted">Nothing</span></td></tr><tr data-name="anchor anchor" data-rarity="R" data-chars="seer trader">
 <td><a href="anchor.html"><img class="ico" src="../img/coins/anchor.png" width="48" height="48" alt=""></a></td><td><a href="anchor.html">Anchor</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>70%</td><td>15</td><td>0</td>
 <td>Score 2 points<br>The next combo break is prevented</td><td>Score 1 point</td></tr><tr data-name="bettor bettor" data-rarity="SR" data-chars="trader">
 <td><a href="bettor.html"><img class="ico" src="../img/coins/bettor.png" width="48" height="48" alt=""></a></td><td><a href="bettor.html">Bettor</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>45%</td><td>15</td><td>1</td>
+<td>35%</td><td>15</td><td>1</td>
 <td><span class="muted">See the description</span></td><td>Quota +2</td></tr><tr data-name="cash out cash out" data-rarity="SR" data-chars="blade">
 <td><a href="cash_out.html"><img class="ico" src="../img/coins/cash_out.png" width="48" height="48" alt=""></a></td><td><a href="cash_out.html">Cash Out</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>30%</td><td>15</td><td>0</td>
 <td>Score 3 points</td><td><span class="muted">See the description</span></td></tr><tr data-name="cold streak cold streak" data-rarity="R" data-chars="seer">
 <td><a href="cold_streak.html"><img class="ico" src="../img/coins/cold_streak.png" width="48" height="48" alt=""></a></td><td><a href="cold_streak.html">Cold Streak</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>20%</td><td>15</td><td>0</td>
 <td>Score 1 point</td><td><span class="muted">See the description</span></td></tr><tr data-name="amplifier amplifier" data-rarity="SR" data-chars="blade seer">
 <td><a href="amplifier.html"><img class="ico" src="../img/coins/amplifier.png" width="48" height="48" alt=""></a></td><td><a href="amplifier.html">Amplifier</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>15</td><td>1</td>
+<td>70%</td><td>15</td><td>1</td>
 <td>Score 1 point<br>Buffs last 1 coin longer and get stronger</td><td>Score 1 point</td></tr><tr data-name="true echo true echo" data-rarity="UR" data-chars="seer trader">
 <td><a href="true_echo.html"><img class="ico" src="../img/coins/true_echo.png" width="48" height="48" alt=""></a></td><td><a href="true_echo.html">True Echo</a></td><td><span class="badge" style="--c:#c27ae0">Epic</span></td>
 <td>50%</td><td>15</td><td>0</td>
 <td><span class="muted">See the description</span></td><td><span class="muted">See the description</span></td></tr><tr data-name="doubler doubler" data-rarity="SR" data-chars="blade trader">
 <td><a href="doubler.html"><img class="ico" src="../img/coins/doubler.png" width="48" height="48" alt=""></a></td><td><a href="doubler.html">Doubler</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>30%</td><td>15</td><td>0</td>
 <td><span class="muted">See the description</span></td><td><span class="muted">See the description</span></td></tr><tr data-name="jackpot jackpot" data-rarity="SR" data-chars="blade trader">
 <td><a href="jackpot.html"><img class="ico" src="../img/coins/jackpot.png" width="48" height="48" alt=""></a></td><td><a href="jackpot.html">Jackpot</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>20%</td><td>18</td><td>1</td>
+<td>15%</td><td>18</td><td>1</td>
 <td>Score 25 points</td><td><span class="muted">Nothing</span></td></tr><tr data-name="mimic mimic" data-rarity="UR" data-chars="seer">
 <td><a href="mimic.html"><img class="ico" src="../img/coins/mimic.png" width="48" height="48" alt=""></a></td><td><a href="mimic.html">Mimic</a></td><td><span class="badge" style="--c:#c27ae0">Epic</span></td>
-<td>50%</td><td>15</td><td>0</td>
-<td><span class="muted">See the description</span></td><td>Score 1 point</td></tr><tr data-name="orchestra orchestra" data-rarity="R" data-chars="trader">
+<td>30%</td><td>15</td><td>0</td>
+<td><span class="muted">See the description</span></td><td>Score 1 point</td></tr><tr data-name="good dog good dog" data-rarity="UR" data-chars="blade seer trader">
+<td><a href="good_dog.html"><img class="ico" src="../img/coins/good_dog.png" width="48" height="48" alt=""></a></td><td><a href="good_dog.html">Good Dog</a></td><td><span class="badge" style="--c:#c27ae0">Epic</span></td>
+<td>43%</td><td>28</td><td>0</td>
+<td>Score 2 points<br>fetch_best</td><td><span class="muted">Nothing</span></td></tr><tr data-name="orchestra orchestra" data-rarity="R" data-chars="trader">
 <td><a href="orchestra.html"><img class="ico" src="../img/coins/orchestra.png" width="48" height="48" alt=""></a></td><td><a href="orchestra.html">Orchestra</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
-<td><span class="muted">See the description</span></td><td>Gain 1 gold</td></tr><tr data-name="lifeline lifeline" data-rarity="R" data-chars="blade trader">
+<td>25%</td><td>15</td><td>0</td>
+<td><span class="muted">See the description</span></td><td>Gain 1 gold</td></tr><tr data-name="conductor conductor" data-rarity="R" data-chars="blade trader">
+<td><a href="conductor.html"><img class="ico" src="../img/coins/conductor.png" width="48" height="48" alt=""></a></td><td><a href="conductor.html">Conductor</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
+<td>73%</td><td>24</td><td>0</td>
+<td>type_buff</td><td><span class="muted">Nothing</span></td></tr><tr data-name="lifeline lifeline" data-rarity="R" data-chars="blade trader">
 <td><a href="lifeline.html"><img class="ico" src="../img/coins/lifeline.png" width="48" height="48" alt=""></a></td><td><a href="lifeline.html">Lifeline</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>70%</td><td>15</td><td>0</td>
 <td>Score 1 point<br>One more exchange this level</td><td><span class="muted">Nothing</span></td></tr><tr data-name="horoscope horoscope" data-rarity="R" data-chars="seer">
 <td><a href="horoscope.html"><img class="ico" src="../img/coins/horoscope.png" width="48" height="48" alt=""></a></td><td><a href="horoscope.html">Horoscope</a></td><td><span class="badge" style="--c:#4bc292">Uncommon</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>70%</td><td>15</td><td>0</td>
 <td>Score 1 point<br>All coins +7% Heads this level</td><td>All coins +3% Heads this level</td></tr><tr data-name="crystal ball crystal ball" data-rarity="SR" data-chars="seer">
 <td><a href="crystal_ball.html"><img class="ico" src="../img/coins/crystal_ball.png" width="48" height="48" alt=""></a></td><td><a href="crystal_ball.html">Crystal Ball</a></td><td><span class="badge" style="--c:#f3b958">Rare</span></td>
-<td>50%</td><td>15</td><td>0</td>
+<td>30%</td><td>15</td><td>0</td>
 <td>Score 5 points</td><td>Discard one of the next three coins</td></tr></tbody></table></main></div>
 <footer>Tossup (v0.1.0)</footer>
 <script src="../search-index-en.js"></script><script src="../wiki.js"></script></body></html>

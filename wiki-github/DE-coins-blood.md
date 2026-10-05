@@ -3,15 +3,15 @@
 
 ![Blut](https://scholzdev.github.io/tossup/img/coins/blood.png)
 
-Viele Punkte, aber Zahl erhöht das Ziel.
+Kopf: 10 Punkte. Zahl: Ziel +6. Kante: die Hälfte von beidem.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 60%
+- **Kopf-Chance:** 37%
 - **Shop-Preis:** 22 Gold
 - **Energie zum Werfen:** 1
 
 ## Kopf
-Erzielt 11 Punkt
+Erzielt 10 Punkte
 
 ## Zahl
 Ziel +6

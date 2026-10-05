@@ -17,6 +17,7 @@ namespace Tossup
         public string Text;
         public Encounter Encounter;
         public bool Won;
+        public bool Final;
         public int Flips;
         public string Result;
     }

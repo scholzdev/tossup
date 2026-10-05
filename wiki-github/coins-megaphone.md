@@ -6,7 +6,7 @@
 Heads: 2 points, and the next 2 coins pay double.
 
 - **Rarity:** Uncommon
-- **Heads chance:** 45%
+- **Heads chance:** 65%
 - **Shop price:** 20 gold
 - **Energy to flip:** 1
 

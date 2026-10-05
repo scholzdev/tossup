@@ -6,7 +6,7 @@
 Funds your next move.
 
 - **Rarity:** Common
-- **Heads chance:** 50%
+- **Heads chance:** 30%
 - **Shop price:** 10 gold
 - **Energy to flip:** 0
 

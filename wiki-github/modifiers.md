@@ -2,10 +2,10 @@
 # Level modifiers
 
 - **Lucky Day:** All coins +10% Heads.
-- **Cold Snap:** All coins -10% Heads, but the payout is 40% higher.
-- **Power Surge:** You start with 5 energy.
-- **Blackout:** You start with 1 energy, but the payout is 40% higher.
+- **Cold Snap:** All coins -10% Heads, payout +40%.
+- **Power Surge:** Start with 5 energy.
+- **Blackout:** Start with 1 energy, payout +40%.
 - **Gold Rush:** Gold effects pay double.
 - **High Stakes:** Quota +25%, payout +50%.
-- **Good Rhythm:** The combo grows +0.4 per step.
+- **Good Rhythm:** Combo grows +0.4 per step.
 - **Bonus Exchange:** One extra exchange this level.

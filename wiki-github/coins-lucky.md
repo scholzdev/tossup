@@ -6,7 +6,7 @@
 Heads: 2 points, and it goes back into the pile to play again.
 
 - **Rarity:** Common
-- **Heads chance:** 50%
+- **Heads chance:** 30%
 - **Shop price:** 10 gold
 - **Energy to flip:** 0
 

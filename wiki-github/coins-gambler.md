@@ -6,7 +6,7 @@
 Heads is a bet: 50% triple points, otherwise nothing.
 
 - **Rarity:** Rare
-- **Heads chance:** 50%
+- **Heads chance:** 35%
 - **Shop price:** 22 gold
 - **Energy to flip:** 1
 

@@ -24,6 +24,7 @@ Shader "Hidden/Tossup2D"
 
             sampler2D _MainTex;
             float _AlphaOnly;
+            float4 _ClipRect;
 
             struct appdata
             {
@@ -34,6 +35,7 @@ Shader "Hidden/Tossup2D"
 
             struct v2f
             {
+                float2 canvas : TEXCOORD1;
                 float4 pos : SV_POSITION;
                 fixed4 color : COLOR;
                 float2 uv : TEXCOORD0;
@@ -45,11 +47,14 @@ Shader "Hidden/Tossup2D"
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.color = v.color;
                 o.uv = v.uv;
+                o.canvas = v.vertex.xy;
                 return o;
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
+                clip(i.canvas - _ClipRect.xy);
+                clip(_ClipRect.zw - i.canvas);
                 fixed4 t = tex2D(_MainTex, i.uv);
                 fixed4 font = fixed4(i.color.rgb, i.color.a * t.a);
                 return lerp(t * i.color, font, step(0.5, _AlphaOnly));

@@ -17,8 +17,13 @@ case "$TARGET" in
     METHOD=Tossup.EditorTools.TossupBuild.BuildWindows
     OUTPUT="$ROOT/Builds/Windows/Tossup.exe"
     ;;
+  linux)
+    CLI_TARGET=StandaloneLinux64
+    METHOD=Tossup.EditorTools.TossupBuild.BuildLinux
+    OUTPUT="$ROOT/Builds/Linux/Tossup.x86_64"
+    ;;
   *)
-    echo "usage: $0 [macos|windows]" >&2
+    echo "usage: $0 [macos|windows|linux]" >&2
     exit 2
     ;;
 esac
@@ -30,6 +35,7 @@ fi
 
 mkdir -p "$ROOT/Builds"
 LOG="$ROOT/Builds/unity-build-$TARGET.log"
+BUILD_ID=${TOSSUP_BUILD_ID:-$(git -C "$ROOT" rev-parse --short HEAD)}
 LOCK="$ROOT/Temp/UnityLockfile"
 if [ -e "$LOCK" ]; then
   if ! RUNNING_EDITORS=$(ps -axo pid=,command=); then
@@ -47,7 +53,7 @@ fi
 echo "Building $CLI_TARGET with Unity $VERSION... (logs: $LOG)"
 if ! "$UNITY_EDITOR" -batchmode -nographics -quit \
   -projectPath "$ROOT" -buildTarget "$CLI_TARGET" \
-  -executeMethod "$METHOD" -buildOutput "$OUTPUT" -logFile "$LOG"; then
+  -executeMethod "$METHOD" -buildOutput "$OUTPUT" -buildId "$BUILD_ID" -logFile "$LOG"; then
   echo "Unity build failed; log: $LOG" >&2
   tail -n 60 "$LOG" >&2 || true
   exit 1
@@ -58,7 +64,7 @@ if [ "$TARGET" = macos ] && [ ! -d "$OUTPUT" ]; then
   tail -n 60 "$LOG" >&2 || true
   exit 1
 fi
-if [ "$TARGET" = windows ] && [ ! -f "$OUTPUT" ]; then
+if [ "$TARGET" != macos ] && [ ! -f "$OUTPUT" ]; then
   echo "Unity exited without creating $OUTPUT; log: $LOG" >&2
   tail -n 60 "$LOG" >&2 || true
   exit 1

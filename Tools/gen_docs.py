@@ -6,8 +6,8 @@ This script rewrites the data parts from the game's content: blocks between `<!-
 (it adds the markers the first time), and the "(R) - 45% - 1 energy" part of the coin headings in docs/coins.md and docs/de/coins.md.
 Prose and the notes columns of the chip and prize tables are kept.
 
-    python3 tools/gen_docs.py           rewrite the docs
-    python3 tools/gen_docs.py --check   change nothing; exit 1 (and say what) if a doc is out of date or a coin is missing
+    python3 Tools/gen_docs.py           rewrite the docs
+    python3 Tools/gen_docs.py --check   change nothing; exit 1 (and say what) if a doc is out of date or a coin is missing
 Run through tools/build_docs.sh, which dumps the content first.
 """
 
@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECK = "--check" in sys.argv
 JSON_PATH = [a for a in sys.argv[1:] if not a.startswith("--")][0]
 sys.argv = [sys.argv[0], JSON_PATH]
-sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "Tools"))
 import gen_wiki as W  # noqa: E402  (its helpers: effect_text, dname, price, pct; importing it builds nothing)
 
 DATA = W.DATA

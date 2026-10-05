@@ -6,18 +6,18 @@
 Scores either way.
 
 - **Rarity:** Common
-- **Heads chance:** 75%
+- **Heads chance:** 67%
 - **Shop price:** 12 gold
 - **Energy to flip:** 0
 
 ## Heads
-Score 4 points
+Score 2 points
 
 ## Tails
 Score 1 point
 
 ## Who can use it
-- **Starts in the deck of:** [The Seer](characters-seer), [The Trader](characters-trader)
+- **Starts in the deck of:** [The Blade](characters-blade), [The Seer](characters-seer), [The Trader](characters-trader)
 - **Usable in coin sets from the start:** [The Blade](characters-blade), [The Seer](characters-seer), [The Trader](characters-trader)
 - **Found in the shop and unlocked by buying it once:** none
 

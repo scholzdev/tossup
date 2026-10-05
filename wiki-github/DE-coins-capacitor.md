@@ -6,7 +6,7 @@
 Kopf: 2 Punkte je gehaltener Energie. Zahl: +1 Energie.
 
 - **Seltenheit:** Ungewöhnlich
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 35%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 1
 

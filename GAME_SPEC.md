@@ -24,8 +24,12 @@ Longer, topic-by-topic documentation (design, gameplay, coins, characters, items
 |---|---|---|---|---|
 | 1 | Opening | 0.7 | 4 / 7 | 25 |
 | 2 | Second Chance | 1.4 | 7 / 14 | 30 |
-| 3 | High Stakes | 2.5 | 13 / 25 | 35 |
-| 4 | The House (boss) | 4.5 | 23 / 45 | none |
+| 3 | High Stakes | 2.5 | 13 / 25 | 20 |
+| 4 | Rising Tide | 3.2 | 16 / 32 | 35 |
+| 5 | Double Down | 3.9 | 20 / 39 | 40 |
+| 6 | Last Call | 4.5 | 23 / 45 | 45 |
+| 7 | Final Table | 5.2 | 26 / 52 | 50 |
+| 8 | The House (boss) | 6 | 30 / 60 | none |
 <!-- /GEN:spec-route -->
 
 - You **win the run** when the boss quota is met (then Endless Mode may continue it: `Game.continue_endless`, `Game.stage(level)` generates levels 5+ with 0.5 more quota per coin each, inverting every 5th flip). You **lose the run** if the stack runs out (and no exchange is
@@ -154,11 +158,14 @@ effect, Tails effect, hooks used. "quota +N" = a penalty effect.
 | `sword` | Sword | N | 35% | 12 | 0 | Score 3 points | nothing | Steady points on Heads. | - |
 | `lucky` | Lucky | N | 30% | 10 | 0 | Score 2 points, Goes back into the pile | nothing | Heads: 2 points, and it goes back into the pile to play again. | - |
 | `cursed` | Cursed | SR | 25% | 15 | 0 | Score 15 points | Quota +2 | A powerful, dangerous wager. | - |
-| `loaded` | Loaded | N | 70% | 12 | 0 | Gain 4 gold | nothing | Reliable income on Heads. | - |
-| `dagger` | Dagger | N | 80% | 12 | 0 | Score 2 points | Score 1 point | Scores either way. | - |
+| `loaded` | Loaded | N | 59% | 12 | 0 | Gain 4 gold | gold_loss | Heads: 4 gold. Tails: lose up to 8 gold. Edge: lose up to 4, then gain 2 gold. | - |
+| `dagger` | Dagger | N | 67% | 12 | 0 | Score 2 points | Score 1 point | Scores either way. | - |
+| `compost` | Compost | N | 47% | 10 | 0 | Score 2 points | Quota +2, fortune_odds | Tails: quota +2; once per level, Fortune coins gain +11% Heads for the run (max +55%). | - |
+| `square_dance` | Square Dance | N | 27% | 14 | 0 | nothing | nothing | Heads: 2 points times the square of Square Dance copies in your deck. | on_resolve |
 | `hammer` | Hammer | R | 25% | 22 | 2 | Score 16 points | Score 1 point | A rare but crushing hit. | - |
+| `whetstone` | Whetstone | R | 67% | 22 | 0 | type_buff | nothing | Heads: next 2 Steel coins gain 3 points on Heads, but add 2 quota on Tails. | - |
 | `blood` | Blood | R | 37% | 22 | 1 | Score 10 points | Quota +6 | Heads: 10 points. Tails: quota +6. Edge: half of both. | - |
-| `spark` | Spark | R | 70% | 15 | 0 | Gain 2 energy | Score 3 points | Energy or a small strike. | - |
+| `spark` | Spark | R | 70% | 9 | 0 | Gain 2 energy | Score 3 points | Energy or a small strike. | - |
 | `focus` | Focus | R | 65% | 10 | 0 | Next coin: +35% Heads | Score 4 points | Heads: the next coin gets +35% Heads. Tails: 4 points. | - |
 | `snowball` | Snowball | SR | 30% | 24 | 1 | Score 3 points | Score 1 point | Heads gains +1 point every flip for the whole run (max +8). | on_resolve, grow |
 | `gambler` | Gambler | SR | 35% | 22 | 1 | Score 7 points | nothing | Heads is a bet: 50% triple points, otherwise nothing. | on_resolve |
@@ -166,7 +173,8 @@ effect, Tails effect, hooks used. "quota +N" = a penalty effect.
 | `echo` | Echo | UR | 60% | 15 | 0 | nothing | nothing | Repeats the effects the previous coin had for this side. | on_resolve |
 | `vampire` | Vampire | R | 35% | 15 | 0 | Score 2 points | nothing | Heads: 2 points and it drains 2 gold from the house. | on_resolve |
 | `miser` | Miser | R | 40% | 15 | 0 | nothing | Gain 2 gold | Heads: 1 point per 10 gold you hold. | on_resolve |
-| `fuse` | Fuse | SR | 30% | 10 | 0 | Score 1 point | nothing | Discard it to charge +6. Heads spends all charge as points. | on_resolve, on_discard |
+| `counterfeiter` | Counterfeiter | R | 61% | 25 | 0 | type_buff | nothing | Heads: next 2 Greed coins double all gold gained. Each Tails also loses up to 3 gold. | - |
+| `fuse` | Fuse | SR | 30% | 10 | 0 | Score 1 point | nothing | Discard it to charge +6. Heads spends all charge as points. | on_discard, on_resolve |
 | `phoenix` | Phoenix | UR | 25% | 15 | 0 | Score 3 points | Quota +2 | Each Tails stores anger (max 5). Heads: 3 points +2 per anger. | on_resolve |
 | `contrarian` | Contrarian | SR | 65% | 15 | 0 | Score 4 points | Score 1 point | Always lands opposite of the previous flip. | on_flip |
 | `chain` | Chain | R | 60% | 15 | 0 | nothing | nothing | Heads: 2 points per Heads in a row, including this one. | on_resolve |
@@ -174,9 +182,11 @@ effect, Tails effect, hooks used. "quota +N" = a penalty effect.
 | `lucky_seven` | Lucky Seven | SR | 30% | 15 | 0 | Score 3 points | nothing | 1 in 7: lands Heads and pays triple points. | on_flip, on_resolve |
 | `hourglass` | Hourglass | R | 30% | 10 | 0 | Score 4 points | Goes back into the pile | +30% Heads when 3 or fewer coins are left. Tails: goes back into the pile. | on_odds |
 | `capacitor` | Flux Capacitor | R | 35% | 15 | 1 | nothing | Gain 1 energy | Heads: 2 points per energy you hold. Tails: +1 energy. | on_resolve |
-| `martyr` | Martyr | SR | 40% | 15 | 1 | Score 4 points | Quota +3 | Tails: quota +3. Heads: 4 points, +1 per Tails so far this level. | on_resolve |
+| `martyr` | Martyr | SR | 40% | 15 | 1 | Score 4 points | Quota +3 | Tails: quota +3. Heads: 4 points, +1 per Tails so far this level. | on_resolve, grow |
+| `blood_pact` | Blood Pact | SR | 58% | 32 | 0 | type_buff | nothing | Heads: next Blood coin gains 8 points on Heads or adds 4 quota on Tails. Edge gets half of both. | - |
 | `bounty` | Bounty | SR | 40% | 15 | 1 | Score 4 points | Score 2 points | Pays 1 gold for every 2 points it scores. | register |
 | `jester` | Jester | UR | 50% | 15 | 1 | nothing | nothing | Heads or Tails, it does something random. | on_resolve |
+| `doppelganger` | Doppelganger | SR | 53% | 34 | 0 | type_buff | nothing | Heads: next Chaos coin applies its resolved effects twice, including penalties. | - |
 | `flock` | Flock | R | 25% | 15 | 0 | Score 4 points | nothing | +10% Heads for every other Flock in your deck. | on_odds |
 | `megaphone` | Megaphone | R | 65% | 20 | 1 | Score 2 points, Next 2 coins pay x2 | nothing | Heads: 2 points, and the next 2 coins pay double. | - |
 | `cheerleader` | Cheerleader | R | 70% | 15 | 0 | Score 2 points, Next 2 coins: +20% Heads | Next coin: +20% Heads | Heads: 2 points, next 2 coins +20% Heads. Tails: next coin +20%. | - |
@@ -187,14 +197,16 @@ effect, Tails effect, hooks used. "quota +N" = a penalty effect.
 | `hot_hand` | Hot Hand | R | 70% | 15 | 0 | Score 2 points, Combo grows 1 extra step | nothing | Heads: 2 points, and the combo grows by 1 extra step. | - |
 | `anchor` | Anchor | R | 70% | 15 | 0 | Score 2 points, The next combo break is prevented | Score 1 point | Heads: 2 points, and the next time the combo would break it holds instead. | - |
 | `bettor` | Bettor | SR | 35% | 15 | 1 | nothing | Quota +2 | Heads: 3 points per flip in the current combo (max 30). Tails: quota +2. | on_resolve |
-| `cash_out` | Cash Out | SR | 30% | 15 | 0 | Score 3 points | nothing | Heads: 3 points, the combo multiplier counts twice, then the combo resets. | on_resolve |
+| `cash_out` | Cash Out | SR | 30% | 15 | 0 | Score 3 points | nothing | Heads: 3 points, squares the combo multiplier, banks its pot, then resets the combo. | on_resolve |
 | `cold_streak` | Cold Streak | R | 20% | 15 | 0 | Score 1 point | nothing | Tails: 2 points per Tails in a row (max 20). Heads: 1 point. | on_resolve |
-| `amplifier` | Amplifier | SR | 70% | 15 | 1 | Score 1 point, Buffs last 1 coin longer and get stronger | Score 1 point | Heads: 1 point, and all active buffs last 1 coin longer and get stronger. Tails: 1 point. | - |
+| `amplifier` | Amplifier | SR | 70% | 15 | 1 | Score 1 point, Buffs last 1 coin longer and get stronger | Score 1 point | Heads: 1 point. Active buffs last 1 coin longer; odds and multipliers grow stronger. Tails: 1 point. | - |
 | `true_echo` | True Echo | UR | 50% | 15 | 0 | nothing | nothing | Repeats what the previous coin really did, including its buffs and growth, on either side. | on_resolve |
 | `doubler` | Doubler | SR | 30% | 15 | 0 | nothing | nothing | Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24... up to 384). | on_resolve |
 | `jackpot` | Jackpot | SR | 15% | 18 | 1 | Score 25 points | nothing | Heads: 25 points. Only 15% Heads. | - |
 | `mimic` | Mimic | UR | 30% | 15 | 0 | nothing | Score 1 point | Heads: does what the Heads side of a random other coin in your deck does. | on_resolve |
+| `good_dog` | Good Dog | UR | 43% | 28 | 0 | Score 2 points, fetch_best | nothing | Heads: 2 points; return the highest-scoring coin played this level to the draw pile. Once per level. | - |
 | `orchestra` | Orchestra | R | 25% | 15 | 0 | nothing | Gain 1 gold | Heads: 2 points per different coin type in your deck. | on_resolve |
+| `conductor` | Conductor | R | 73% | 24 | 0 | type_buff | nothing | Heads: next 3 Rhythm coins gain 2 points per combo step (max 8); a broken combo adds 5 quota. | - |
 | `lifeline` | Lifeline | R | 70% | 15 | 0 | Score 1 point, One more exchange this level | nothing | Heads: 1 point, and you may exchange one more time this level. | - |
 | `horoscope` | Horoscope | R | 70% | 15 | 0 | Score 1 point, All coins +7% Heads this level | All coins +3% Heads this level | Heads: 1 point, all coins +7% Heads this level. Tails: all coins +3%. | - |
 | `crystal_ball` | Crystal Ball | SR | 30% | 15 | 0 | Score 5 points | Discard one of the next three coins | Heads: 5 points. Tails: discard one of the next three coins. | - |
@@ -240,9 +252,9 @@ unlocked by buying in the shop. The shop sells pool and locked coins alike.
 <!-- GEN:spec-characters -->
 | id | Name | Pool (usable from the start) | Locked (unlock by buying) |
 |---|---|---|---|
-| `blade` | The Blade - "Reliable points" | normal, sword, dagger | hammer, blood, vampire, chain, cursed, fuse, focus, martyr, snowball, spark, jackpot, lifeline, megaphone, pot, hot_hand, cash_out, doubler, amplifier |
-| `seer` | The Seer - "Risk and changing odds" | normal, dagger, cursed, gambler, spark, focus, lucky | horoscope, crystal_ball, mimic, contrarian, lucky_seven, blood, hourglass, jester, echo, phoenix, mirror, domino, twin, cold_streak, anchor, true_echo, amplifier |
-| `trader` | The Trader - "Gold and energy" | normal, copper, loaded, dagger, sword | spark, bank, miser, hammer, bounty, flock, momentum, capacitor, cheerleader, megaphone, orchestra, lifeline, jackpot, bettor, anchor, doubler, true_echo |
+| `blade` | The Blade - "Reliable points" | normal, sword, dagger | hammer, blood, vampire, chain, cursed, fuse, focus, martyr, snowball, spark, jackpot, lifeline, megaphone, pot, hot_hand, cash_out, doubler, amplifier, compost, square_dance, good_dog, whetstone, blood_pact, conductor |
+| `seer` | The Seer - "Risk and changing odds" | normal, dagger, cursed, gambler, spark, focus, lucky, compost | horoscope, crystal_ball, mimic, contrarian, lucky_seven, blood, hourglass, jester, echo, phoenix, mirror, domino, twin, cold_streak, anchor, true_echo, amplifier, square_dance, good_dog, blood_pact, doppelganger |
+| `trader` | The Trader - "Gold and energy" | normal, copper, loaded, dagger, sword, square_dance | spark, bank, miser, hammer, bounty, flock, momentum, capacitor, cheerleader, megaphone, orchestra, lifeline, jackpot, bettor, anchor, doubler, true_echo, compost, good_dog, counterfeiter, conductor |
 <!-- /GEN:spec-characters -->
 
 (The second number in each `locked` entry is unused leftover from the old token system.)

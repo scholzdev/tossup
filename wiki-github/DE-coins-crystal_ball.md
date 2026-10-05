@@ -6,7 +6,7 @@
 Kopf: 5 Punkte. Zahl: wirf eine der nächsten drei Münzen ab.
 
 - **Seltenheit:** Selten
-- **Kopf-Chance:** 50%
+- **Kopf-Chance:** 30%
 - **Shop-Preis:** 15 Gold
 - **Energie zum Werfen:** 0
 
