@@ -14,7 +14,7 @@ namespace Tossup
     [RequireComponent(typeof(Camera))]
     public sealed class TossupApp : MonoBehaviour, IPlatform
     {
-        public const int DefaultWindowWidth = 1620;
+        public const int DefaultWindowWidth = 1280;
         public const int DefaultWindowHeight = 800;
         const string FontPath = "fonts/m6x11plus";
         const int SfxVoices = 16;

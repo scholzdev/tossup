@@ -64,10 +64,10 @@ namespace Tossup.UI
     }
 
     // Shared mutable UI state. Game rules live in Core/Game.cs; this is presentation only.
-    // The game is drawn on a fixed 1620x800 canvas that is scaled and centred to fit the window.
+    // The game is drawn on the original 1280x800 canvas and scaled uniformly to fit the window.
     public static class Ui
     {
-        public const float Width = 1620, Height = 800;
+        public const float Width = 1280, Height = 800;
 
         public static IPlatform Platform;
 
