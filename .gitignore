@@ -25,3 +25,6 @@
 /Tools/**/obj/
 /Tools/parity/lua.txt
 /Tools/parity/csharp.txt
+
+# Legacy local content index
+/dist-content.json
