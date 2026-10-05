@@ -35,6 +35,7 @@ ENCOUNTERS = {
     "dead_heat": "dead_heat",
     "high_roller_table": "dice",
     "thin_market": "market",
+    "upgrade": "upgrade",
 }
 
 AUGMENTS = {
