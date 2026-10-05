@@ -113,6 +113,7 @@ namespace Tossup
         void Update()
         {
             if (!loaded || shotMode) return;
+            bool revealWasOpen = Ui.EncounterReveal != null;
             if (Input.GetMouseButtonDown(0)) AppCore.MousePressed(MouseX, MouseY);
             if (Input.mousePosition != lastMouse)
             {
@@ -120,20 +121,44 @@ namespace Tossup
                 AppCore.MouseMoved(MouseX, MouseY);
             }
             if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1) || Input.GetMouseButtonUp(2)) AppCore.MouseReleased();
-            if (Input.GetKeyDown(KeyCode.F3)) AppCore.KeyPressed("f3");
             if (Ui.EncounterReveal != null && Input.anyKeyDown) AppCore.KeyPressed("any");
-            if (Input.GetKeyDown(KeyCode.F5) && !string.IsNullOrEmpty(sandboxScenePath))
+            bool consumedRevealInput = revealWasOpen && Ui.EncounterReveal == null;
+            if (!consumedRevealInput && Input.GetKeyDown(KeyCode.F3)) AppCore.KeyPressed("f3");
+            if (!consumedRevealInput && Input.GetKeyDown(KeyCode.F5) && !string.IsNullOrEmpty(sandboxScenePath))
             {
                 try { if(Path.GetExtension(sandboxScenePath)!=".json")throw new FormatException("sandbox scene must be a JSON file");A.StartSandbox(SandboxConfig.Decode(File.ReadAllText(sandboxScenePath))); }
                 catch(Exception ex){Debug.LogError("Could not reload Tossup sandbox JSON: "+ex.Message);}
             }
-            if (Input.GetKeyDown(KeyCode.Escape)) AppCore.KeyPressed("escape");
-            if (Input.GetKeyDown(KeyCode.Space)) AppCore.KeyPressed("space");
-            if (Input.GetKeyDown(KeyCode.Return)) AppCore.KeyPressed("return");
-            if (Input.GetKeyDown(KeyCode.LeftArrow)) AppCore.KeyPressed("left");
-            if (Input.GetKeyDown(KeyCode.RightArrow)) AppCore.KeyPressed("right");
-            for (int n = 1; n <= 9; n++)
-                if (Input.GetKeyDown(KeyCode.Alpha0 + n)) AppCore.KeyPressed(n.ToString());
+            if (!consumedRevealInput)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape)) AppCore.KeyPressed("escape");
+                if (Input.GetKeyDown(KeyCode.Space)) AppCore.KeyPressed("space");
+                if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) AppCore.KeyPressed("return");
+                if (Input.GetKeyDown(KeyCode.UpArrow)) AppCore.KeyPressed("up");
+                if (Input.GetKeyDown(KeyCode.DownArrow)) AppCore.KeyPressed("down");
+                if (Input.GetKeyDown(KeyCode.LeftArrow)) AppCore.KeyPressed("left");
+                if (Input.GetKeyDown(KeyCode.RightArrow)) AppCore.KeyPressed("right");
+                if (Input.GetKeyDown(KeyCode.Q)) AppCore.KeyPressed("q");
+                if (Input.GetKeyDown(KeyCode.E)) AppCore.KeyPressed("e");
+                if (Input.GetKeyDown(KeyCode.I)) AppCore.KeyPressed("i");
+                if (Input.GetKeyDown(KeyCode.O)) AppCore.KeyPressed("o");
+                for (int n = 1; n <= 9; n++)
+                    if (Input.GetKeyDown(KeyCode.Alpha0 + n)) AppCore.KeyPressed(n.ToString());
+
+                if (Input.GetKeyDown(KeyCode.JoystickButton0)) PadNavigation.ControllerPressed(0);
+                if (Input.GetKeyDown(KeyCode.JoystickButton1)) PadNavigation.ControllerPressed(1);
+                if (Input.GetKeyDown(KeyCode.JoystickButton2)) PadNavigation.ControllerPressed(2);
+                if (Input.GetKeyDown(KeyCode.JoystickButton3)) PadNavigation.ControllerPressed(3);
+                if (Input.GetKeyDown(KeyCode.JoystickButton4)) PadNavigation.ControllerPressed(4);
+                if (Input.GetKeyDown(KeyCode.JoystickButton5)) PadNavigation.ControllerPressed(5);
+                if (Input.GetKeyDown(KeyCode.JoystickButton7)) PadNavigation.ControllerPressed(7);
+
+                PadNavigation.Update(UnityEngine.Time.unscaledDeltaTime,
+                    Input.GetAxisRaw("Tossup Pad Horizontal"), Input.GetAxisRaw("Tossup Pad Vertical"),
+                    Input.GetAxisRaw("Tossup Pad DPad Horizontal"), Input.GetAxisRaw("Tossup Pad DPad Vertical"),
+                    Input.GetAxisRaw("Tossup Pad Left Trigger"), Input.GetAxisRaw("Tossup Pad Right Trigger"));
+            }
+            else PadNavigation.Update(UnityEngine.Time.unscaledDeltaTime, 0, 0, 0, 0, 0, 0);
             AppCore.Update(UnityEngine.Time.unscaledDeltaTime);
         }
 

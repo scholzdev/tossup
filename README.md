@@ -4,19 +4,13 @@ A native C# conversion of **Tossup** for **Unity 6.6 (6000.6.4f1)**. Gameplay, U
 
 ## Run it
 
-- **Play the macOS build:** `open Builds/macOS/Tossup.app`
-- **Play the Windows build:** `Builds/Windows/Tossup.exe`
+- **Run in the Unity Editor:** `./tools/run_unity.sh`, then press Play.
+- **Build macOS without launching:** `./tools/build_unity.sh macos`
+- **Build Windows:** `./tools/build_unity.sh windows` (requires the Unity Windows build module)
+- **Play an existing Windows build:** `Builds/Windows/Tossup.exe`
 - **Open in Unity:** Unity Hub → *Add project from disk* → this folder → open `Assets/Scenes/Main.unity` → Play.
-- **Build again:** use **Tossup → Build macOS Player** in the editor, or run:
 
-  ```sh
-  unity build --target StandaloneOSX \
-    --execute-method Tossup.EditorTools.TossupBuild.BuildMacOS \
-    --editor-version 6000.6.4f1 --architecture arm64 \
-    --no-provenance .
-  ```
-
-  The build method ad-hoc signs local macOS builds. Distribution builds still need a Developer ID signature and notarization.
+The scripts use the Unity version in `ProjectSettings/ProjectVersion.txt`. Set `UNITY_CLI=/path/to/unity` to use a nonstandard CLI install. To build from the command line, close the project in Unity first; if it is already open, use **Tossup → Build macOS Player** in the Editor. The macOS build is ad-hoc signed for local use; distribution builds still need a Developer ID signature and notarization.
 
 Profiles and safe-point run saves use `profile.json` and `run.json` under `~/Library/Application Support/Tossup/Tossup` on macOS and `%USERPROFILE%\AppData\LocalLow\Tossup\Tossup` on Windows. Runs resume from the start of a level, the shop, or an augment choice. Developer runs use a separate `run-dev.json` and never change normal profile progress.
 

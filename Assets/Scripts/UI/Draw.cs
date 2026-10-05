@@ -49,8 +49,8 @@ namespace Tossup.UI
             return mx >= x && mx <= x + w && my >= y && my <= y + h;
         }
 
-        public static void AddButton(float x, float y, float w, float h, Action action, string label = null) =>
-            Ui.Buttons.Add(new Button { X = x, Y = y, W = w, H = h, Action = action, Label = label });
+        public static void AddButton(float x, float y, float w, float h, Action action, string label = null, bool disabled = false) =>
+            Ui.Buttons.Add(new Button { X = x, Y = y, W = w, H = h, Action = action, Label = label, Disabled = disabled });
 
         public static void Button(string str, float x, float y, float w, float h, Rgba tint, Action action, bool enabled = true)
         {
@@ -60,7 +60,7 @@ namespace Tossup.UI
             Box(x, y + lift, w, h, fill);
             Outline(x, y + lift, w, h, enabled ? C.Face : C.Slot);
             Centered(str, x, y + (h - Ui.F20.Height) / 2f + lift, w, Ui.F20, enabled ? C.Ink : C.Muted);
-            if (enabled) AddButton(x, y + lift, w, h, action, str);
+            AddButton(x, y + lift, w, h, action, str, !enabled);
         }
 
         // Short effect list for cards: "+5 PTS, NEXT 2 x2".
@@ -176,7 +176,7 @@ namespace Tossup.UI
             else Gfx.SetColor(1, 1, 1, .45f);
             Gfx.Draw(icon, x + 8, top + 6, size / icon.Width, size / icon.Height);
             Centered(label, x + size + 8, top + (h - Ui.F20.Height) / 2f, w - size - 8, Ui.F20, enabled ? C.Ink : C.Muted);
-            if (enabled) AddButton(x, y, w, h, action, label);
+            AddButton(x, y, w, h, action, label, !enabled);
         }
 
         // The shared full-screen look (the shop's): felt backdrop, a teal screen with a gold border, a pixel

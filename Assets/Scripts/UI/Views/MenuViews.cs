@@ -352,7 +352,7 @@ namespace Tossup.UI
         }
     }
 
-    // Options: a Game tab (switches, language, clear progress) and a Sound tab (master / music / effects sliders).
+    // Options: game settings, sound levels, and the keyboard/controller reference.
     public static class OptionsView
     {
         static readonly (string key, string label, string hint)[] Rows =
@@ -366,6 +366,34 @@ namespace Tossup.UI
             ("volume_master", "MASTER VOLUME", "Everything at once."),
             ("volume_music", "MUSIC", "The background loop."),
             ("volume_sfx", "SOUND EFFECTS", "Flips, scores, buttons."),
+        };
+        static readonly (string label, string[] keys)[] KeyboardControls =
+        {
+            ("MENUS", Array.Empty<string>()),
+            ("Move the focus", new[] { "ARROWS" }),
+            ("Press the focused button", new[] { "ENTER" }),
+            ("Back, close, menu", new[] { "ESC" }),
+            ("Previous / next page, tab, character", new[] { "Q", "E" }),
+            ("Choose a character (play screen)", new[] { "1", "2", "3" }),
+            ("IN A LEVEL", Array.Empty<string>()),
+            ("Flip / next coin", new[] { "SPACE" }),
+            ("Inspect: show the details of the focused item", new[] { "I", "Q", "E" }),
+            ("Use chip 1 / 2 / 3", new[] { "1", "2", "3" }),
+            ("Open the shop (quota met)", new[] { "O" }),
+            ("Debug info", new[] { "F3" }),
+        };
+        static readonly (string label, string[] keys)[] ControllerControls =
+        {
+            ("MENUS", Array.Empty<string>()),
+            ("Move the focus", new[] { "D-PAD", "STICK" }),
+            ("Press the focused button", new[] { "A" }),
+            ("Back, close, menu", new[] { "B", "START" }),
+            ("Previous / next page, tab, character", new[] { "LB", "RB", "LT", "RT" }),
+            ("IN A LEVEL", Array.Empty<string>()),
+            ("Flip / next coin", new[] { "X" }),
+            ("Inspect: show the details of the focused item", new[] { "LB", "RB", "LT", "RT" }),
+            ("Use a chip or open the shop", new[] { "D-PAD", "A" }),
+            ("Menu", new[] { "START" }),
         };
 
         static void Panel(float y)
@@ -395,13 +423,48 @@ namespace Tossup.UI
             });
         }
 
+        static void DrawControls()
+        {
+            string view = Ui.ControlsView ?? PadNavigation.Device;
+            bool controller = view == "controller";
+            Button("KEYBOARD", 280, 198, 350, 40, !controller ? C.Gold : C.PanelLight, () => Ui.ControlsView = "keyboard");
+            Button("CONTROLLER", 650, 198, 350, 40, controller ? C.Gold : C.PanelLight, () => Ui.ControlsView = "controller");
+            var rows = controller ? ControllerControls : KeyboardControls;
+            float y = 252;
+            foreach (var row in rows)
+            {
+                if (row.keys.Length == 0)
+                {
+                    y += 6;
+                    Text(row.label, 290, y, Ui.F20, C.Gold);
+                    y += 30;
+                    continue;
+                }
+
+                Text(row.label, 308, y + 6, Ui.F16, C.Face);
+                float x = 700;
+                foreach (var key in row.keys)
+                {
+                    Rgba tint = key == "A" ? C.Green : key == "B" ? C.Red : key == "X" ? C.Blue : C.PanelLight;
+                    float width = Ui.F16.GetWidth(key) + 22;
+                    Box(x, y, width, 28, tint, 5);
+                    Outline(x, y, width, 28, C.Face, 5);
+                    Text(key, x + 11, y + 6, Ui.F16, C.Ink);
+                    x += width + 8;
+                }
+                y += 36;
+            }
+        }
+
         public static void Draw()
         {
             Frame(Title("options"), "BACK", () => A.Go("title"));
-            Button("GAME", 280, 146, 350, 44, Ui.OptionsTab == "game" ? C.Gold : C.PanelLight, () => Ui.OptionsTab = "game");
-            Button("SOUND", 650, 146, 350, 44, Ui.OptionsTab == "sound" ? C.Gold : C.PanelLight, () => Ui.OptionsTab = "sound");
+            Button("GAME", 280, 146, 230, 44, Ui.OptionsTab == "game" ? C.Gold : C.PanelLight, () => Ui.OptionsTab = "game");
+            Button("SOUND", 525, 146, 230, 44, Ui.OptionsTab == "sound" ? C.Gold : C.PanelLight, () => Ui.OptionsTab = "sound");
+            Button("CONTROLS", 770, 146, 230, 44, Ui.OptionsTab == "controls" ? C.Gold : C.PanelLight, () => Ui.OptionsTab = "controls");
 
-            if (Ui.OptionsTab == "sound")
+            if (Ui.OptionsTab == "controls") DrawControls();
+            else if (Ui.OptionsTab == "sound")
             {
                 for (int i = 0; i < Sliders.Length; i++) Slider(Sliders[i].key, Sliders[i].label, Sliders[i].hint, 214 + i * 96);
             }
@@ -430,7 +493,7 @@ namespace Tossup.UI
                 Text("Resets unlocks, collection, sets and tokens. Options stay.", 308, ly + 46, Ui.F16, C.Muted);
                 Button("CLEAR", 820, ly + 16, 152, 46, C.Red, A.ClearProgress);
             }
-            Centered("F3 SHOWS DEBUG INFO IN A RUN", 0, 715, 1280, Ui.F16, C.Muted);
+            if (Ui.OptionsTab != "controls") Centered("F3 SHOWS DEBUG INFO IN A RUN", 0, 715, 1280, Ui.F16, C.Muted);
         }
     }
 
@@ -439,13 +502,13 @@ namespace Tossup.UI
     {
         static readonly (string title, string body)[] Sections =
         {
-            ("THE GOAL", "Score points to beat the level's QUOTA before your coins run out. There is no HP: coins score points, and bad flips raise the quota. Four levels; the last one is The House."),
+            ("THE GOAL", "Beat the quota before your coins run out. Bad flips can raise it. A run has eight levels: one Encounter changes the run, and Augments appear before levels 3 and 6. The House is the final level."),
             ("YOUR COINS", "You play with a small stack of coins. Each coin has a Heads chance and a Heads and a Tails effect. Every coin is played once per level; nothing is reshuffled."),
-            ("EACH LEVEL", "First you see an OPENING HAND: click coins to mark them and press Discard to throw them away for free. Then the bank shows your next 3 coins. Flip the first one, or Discard it."),
-            ("ENERGY", "Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Capacitor give more. A coin you cannot pay for can only be discarded."),
+            ("EACH LEVEL", "The entire remaining coin bank stays visible. Click any coin to choose what to play next; choosing is free. Coins with an energy cost spend it when flipped."),
+            ("ENERGY", "Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Flux Capacitor give more. If you cannot pay, choose a different coin. Your last coin can still flip for up to 2 gold."),
             ("QUOTA MET", "You are paid gold at once and the level stays open: every 2 extra points pay 1 more gold. Press OPEN SHOP (top right) when you want to move on."),
-            ("OUT OF COINS", "If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back. If you cannot, the run is over."),
-            ("THE SHOP", "Buy COINS (a bigger deck means a bigger quota, so buy better coins), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Odds Tuner adds Heads chance; Coin Removal drops a weak coin."),
+            ("OUT OF COINS", "If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back (only a limited number of times per level). If you cannot, the run is over."),
+            ("THE SHOP", "Buy COINS (larger and stronger decks raise the next quota), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Odds Tuner adds Heads chance; Coin Removal drops a weak coin."),
         };
 
         public static void Draw()
@@ -468,7 +531,7 @@ namespace Tossup.UI
             Text("CONTROLS", 666, 554, Ui.F20, C.Gold);
             Gfx.SetFont(Ui.F16);
             Color(C.Face);
-            Gfx.Printf(L("Space = Flip / Next Coin.  Click = mark a coin.  Esc = menu (your run waits).  Hover any coin for details. Quitting the app loses the run."),
+            Gfx.Printf(L("Space = Flip / Next Coin.  Click = select a coin.  Esc = menu (your run waits).  Hover a coin for details. The run is saved at each level start and in the shop; Continue resumes it, a level in progress restarts."),
                 666, 582, 528);
             if (Ui.HelpNext != null)
             {

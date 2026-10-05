@@ -9,6 +9,7 @@ namespace Tossup.UI
         public float X, Y, W, H;
         public string Label; // the untranslated caption, for tests
         public Action Action;
+        public bool Disabled;
         public Action<float> Drag; // sliders follow the mouse until it is released
         public Action Release;
 
@@ -83,7 +84,8 @@ namespace Tossup.UI
         public static HoveredCoin HoveredCoin;
         public static HoveredText HoveredText;
         public static Button Dragging; // the slider being dragged
-        public static string OptionsTab = "game"; // game | sound
+        public static string OptionsTab = "game"; // game | sound | controls
+        public static string ControlsView; // keyboard | controller; null follows the last input device
         public static Confirm Confirm; // a modal popup: Clear Progress, Quit during a run
         public static string HelpNext; // where the How To Play "continue" button goes on a first run
         public static string CursorCurrent;
@@ -112,6 +114,10 @@ namespace Tossup.UI
             cy = (y - oy) / scale;
         }
 
-        public static void Mouse(out float mx, out float my) => ToCanvas(Platform.MouseX, Platform.MouseY, out mx, out my);
+        public static void Mouse(out float mx, out float my)
+        {
+            if (PadNavigation.TryInspectPoint(out mx, out my)) return;
+            ToCanvas(Platform.MouseX, Platform.MouseY, out mx, out my);
+        }
     }
 }

@@ -10,10 +10,11 @@ The Unity runtime is fully native C#. `Assets`, `Packages`, `ProjectSettings`, a
 - Character, stake, and endless progression stored in the JSON profile
 - Safe-point run saving and resume, the guided 18-step tutorial, developer mode, JSON sandbox scenes, and the animated run-encounter reveal
 - Native rendering, input, audio, localization, and persistence
+- Keyboard focus navigation and gameplay hotkeys; controller focus navigation with stick/D-pad, face buttons, shoulders, and triggers
 - All current images, fonts, music, and sound effects moved into Unity Resources with Unity metadata
 - Full original Git history preserved on the `unity-6` branch
 - Focused current-gameplay checks, deterministic route validation, and long headless UI stress runs
 - 100,000 seeded full-run simulations across all characters and stakes
 - No embedded interpreter or compatibility parser in the player
 
-Keyboard and mouse are supported. Controller navigation is not included.
+Keyboard, mouse, and controller input are supported. The controller and keyboard focus ring uses the same registered UI actions as mouse clicks.

@@ -89,6 +89,7 @@ namespace Tossup.UI
             if(Ui.EncounterReveal!=null)EncounterRevealView.Draw();
             if(Ui.Tutorial!=null)Tutorial.Draw();
             ConfirmDialog();
+            if (Ui.EncounterReveal == null) PadNavigation.DrawFocus();
             Gfx.Pop();
         }
 
@@ -100,7 +101,7 @@ namespace Tossup.UI
             Ui.Mouse(out float mx, out float my);
             bool over = false;
             foreach (var b in Ui.Buttons)
-                if (b.Contains(mx, my)) { over = true; break; }
+                if (!b.Disabled && b.Contains(mx, my)) { over = true; break; }
             string want = over ? "click" : "arrow";
             if (want != Ui.CursorCurrent)
             {
@@ -112,15 +113,14 @@ namespace Tossup.UI
         // Left button only; x, y in window pixels.
         public static void MousePressed(float x, float y)
         {
+            PadNavigation.MouseUsed();
             if(Ui.EncounterReveal!=null){DismissEncounterReveal();return;}
             Ui.ToCanvas(x, y, out float cx, out float cy);
             for (int i = Ui.Buttons.Count - 1; i >= 0; i--)
             {
                 var b = Ui.Buttons[i];
-                if (!b.Contains(cx, cy)) continue;
-                Ui.Notice = "";
-                Sound.Play("click");
-                b.Action();
+                if (b.Disabled || !b.Contains(cx, cy)) continue;
+                ActivateButton(b);
                 if (b.Drag != null)
                 {
                     Ui.Dragging = b;
@@ -132,6 +132,7 @@ namespace Tossup.UI
 
         public static void MouseMoved(float x, float y)
         {
+            PadNavigation.MouseUsed();
             if (Ui.Dragging == null) return;
             Ui.ToCanvas(x, y, out float cx, out _);
             Ui.Dragging.Drag(cx);
@@ -144,54 +145,73 @@ namespace Tossup.UI
             slider?.Release?.Invoke();
         }
 
-        // key: LÖVE key names ("f3", "escape", "space", "return", "left", "right", "1".."9").
-        public static void KeyPressed(string key)
+        public static void ActivateButton(Button button)
         {
+            if (button == null || button.Disabled || button.Action == null) return;
+            Ui.Notice = "";
+            Sound.Play("click");
+            button.Action();
+        }
+
+        // key: LÖVE key names used by the rules UI (arrows, Q/E, I, Enter, Space, Escape, digits, F3/F5).
+        public static void KeyPressed(string key, bool fromController = false)
+        {
+            if (fromController) PadNavigation.ControllerUsed();
+            else PadNavigation.KeyboardUsed();
             if(Ui.EncounterReveal!=null){DismissEncounterReveal();return;}
-            if(Ui.Tutorial!=null)
-            {
-                if(key=="escape"){Tutorial.Finish();return;}
-                if((key=="space"||key=="return")&&!Tutorial.Interactive){Tutorial.Next();return;}
-            }
-            var game = Ui.Game;
             if (key == "f3")
             {
                 Ui.DebugVisible = !Ui.DebugVisible;
                 return;
             }
-            if (Ui.Confirm != null) // a popup is open
+            if (Ui.Tutorial != null)
+            {
+                if (key == "escape") { Tutorial.Finish(); return; }
+                if ((key == "space" || key == "return") && !Tutorial.Interactive) { Tutorial.Next(); return; }
+            }
+            if (Ui.Confirm != null)
             {
                 if (key == "escape") Ui.Confirm = null;
+                else PadNavigation.HandleKeyboardKey(key);
                 return;
             }
+
             if (key == "escape")
             {
+                var game = Ui.Game;
                 if (game != null && !game.Paused) A.OpenMenu();
                 else if (Ui.Screen != "title") A.Go("title");
                 else if (game != null) game.Paused = false;
                 return;
             }
-            if (game == null || game.Paused)
+
+            if (PadNavigation.HandleKeyboardKey(key)) return;
+
+            var currentGame = Ui.Game;
+            if (currentGame != null && !currentGame.Paused && currentGame.Phase == Phase.Encounter &&
+                Ui.Tutorial == null && currentGame.Mulligan == null && Ui.FlipAnimation == null)
             {
-                if (Ui.Screen == "select")
+                if (int.TryParse(key, out int slot) && slot >= 1 && slot <= 3 && !Ui.Holding && currentGame.Items.Count >= slot)
                 {
-                    if (int.TryParse(key, out int choice) && choice >= 1 && choice <= Content.CharacterOrder.Count)
-                        A.SelectCharacter(Content.CharacterOrder[choice - 1]);
-                    if (key == "left") A.CycleCharacter(-1);
-                    if (key == "right") A.CycleCharacter(1);
-                    if (key == "return") A.Start();
+                    A.UseItem(slot);
+                    return;
                 }
-                else if (Ui.Screen == "collection")
+                if (key == "o" && currentGame.Encounter.Cleared && currentGame.Pending == null)
                 {
-                    if (key == "left") A.ChangeCollectionPage(-1);
-                    if (key == "right") A.ChangeCollectionPage(1);
+                    A.OpenShop();
+                    return;
                 }
+            }
+
+            if ((currentGame == null || currentGame.Paused) && Ui.Screen == "select" &&
+                int.TryParse(key, out int choice) && choice >= 1 && choice <= Content.CharacterOrder.Count)
+            {
+                A.SelectCharacter(Content.CharacterOrder[choice - 1]);
                 return;
             }
-            if (game.Phase == Phase.Encounter && Ui.FlipAnimation != null) return;
-            if (key == "space" && game.Phase == Phase.Encounter) A.NextOrFlip();
-            else if (key == "return" && game.Phase == Phase.Shop) Game.LeaveShop(game);
-            else if (key == "escape" && game.Phase == Phase.Contract) A.SkipContract();
+            if (key == "space" && currentGame != null && !currentGame.Paused &&
+                currentGame.Phase == Phase.Encounter && Ui.FlipAnimation == null)
+                A.NextOrFlip();
         }
 
         public static bool DismissEncounterReveal()
