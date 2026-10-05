@@ -42,6 +42,7 @@ namespace Tossup.UI
         {
             Ui.SelectedCharacter = character;
             A.Start(seed);
+            Ui.EncounterReveal = null; // ordinary gameplay shots should show the screen behind the reveal
             Ui.Shake = 0;
         }
 
@@ -115,6 +116,8 @@ namespace Tossup.UI
                 },
             },
             new Shot { Name = "21_german_shop", Setup = () => { Ui.DebugVisible = false; PlayToShop(); } },
+            new Shot { Name = "22_run_encounter_reveal", Setup = () => { NewRun("blade", 6601); Ui.EncounterReveal = new EncounterReveal { Elapsed = .9 }; } },
+            new Shot { Name = "23_contract", Setup = () => { NewRun("blade", 6602); Ui.EncounterReveal = null; A.NextOrFlip(); } },
         };
     }
 }

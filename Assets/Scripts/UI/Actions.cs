@@ -53,9 +53,6 @@ namespace Tossup.UI
             var game = RunSave.Decode(text);
             if (game == null) { DeleteRun(); return false; }
             game.Paused = false;
-            game.ContractsEnabled = false;
-            if (game.Phase == Phase.Contract) Game.SkipContract(game);
-            if (game.Mulligan != null) Game.MulliganDone(game);
             Ui.Game = game;
             Ui.SelectedCharacter = game.CharacterId;
             Ui.EncounterReveal = null;
@@ -321,7 +318,6 @@ namespace Tossup.UI
             if(!Tossup.Profile.CharacterUnlocked(Ui.Profile,Ui.SelectedCharacter))return;
             Ui.Game = Game.New(seed ?? p.UnixTime + Math.Floor(p.Time * 1000000), Ui.SelectedCharacter,
                 Tossup.Profile.UnlockedList(Ui.Profile, Ui.SelectedCharacter), Loadout(), true, Stake());
-            Ui.Game.ContractsEnabled = false;
             Ui.FlipAnimation = null;
             Ui.ResolveTimer = 0;
             Ui.Holding = false;
@@ -467,7 +463,7 @@ namespace Tossup.UI
             if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox == null)
             {
                 bool safe = game.Phase == Phase.Shop || game.Phase == Phase.Augment ||
-                    ((game.Phase == Phase.Contract || game.Phase == Phase.Encounter) && game.Mulligan != null);
+                    game.Phase == Phase.Contract || (game.Phase == Phase.Encounter && game.Mulligan == null);
                 if (safe)
                 {
                     string key = game.Phase + ":" + game.EncounterIndex + ":" + game.Player.Gold + ":" + game.Coins.Count + ":" +
@@ -476,7 +472,6 @@ namespace Tossup.UI
                     if (key != savedKey) { savedKey = key; SaveRun(); }
                 }
                 else if ((game.Phase == Phase.GameOver || game.Phase == Phase.Victory) && savedKey != "over") DeleteRun();
-                if (game.Phase == Phase.Encounter && game.Mulligan != null) Game.MulliganDone(game);
             }
             if (Ui.ResolveTimer > 0 && game != null && !game.Paused)
             {

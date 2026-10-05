@@ -11,7 +11,7 @@ namespace Tossup.UI
         static readonly string[] UiImageNames =
         {
             "next_round", "reroll", "gold", "energy", "coins_left", "open_shop", "exchange", "give_up", "flip", "discard",
-            "next_coin", "start_level", "shop_title", "logo", "title_play", "title_sets", "title_collection", "title_options",
+            "next_coin", "start_level", "shop_title", "logo", "title_scene", "title_play", "title_sets", "title_collection", "title_options",
             "title_help", "title_play_de", "title_sets_de", "title_collection_de", "title_options_de", "title_help_de",
         };
 

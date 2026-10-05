@@ -26,6 +26,7 @@ static class FeatureParityTests
     static void SavedRunRoundTrip()
     {
         var game = Game.New(4401, "trader", new List<string> { "loaded" }, new List<string> { "loaded", "normal" }, true, 3);
+        Game.MulliganDone(game);
         game.Player.Gold = 37;
         game.Coins[0].Upgrade = "safer_bet";
         game.Augments.Add("bankers_cut");
@@ -38,9 +39,9 @@ static class FeatureParityTests
         Check(restored.CharacterId == "trader" && restored.Stake == 3 && restored.Player.Gold == 37, "run identity survives restoration");
         Check(restored.Coins.Count == 2 && restored.Coins[0].Upgrade == "safer_bet", "owned coin state survives restoration");
         Check(restored.Augments.Contains("bankers_cut") && restored.AugmentData["type_specialist"] == "fortune", "augment state survives restoration");
-        Check(restored.Encounter.ComboPot == 6 && restored.Mulligan != null && restored.Dealt == null, "safe-point encounter state survives restoration");
+        Check(restored.Encounter.ComboPot == 6 && restored.Mulligan == null && restored.Dealt != null, "safe-point encounter state survives restoration");
         Check(RunSave.Decode("{\"version\":999}") == null && RunSave.Decode("broken") == null, "damaged or incompatible saves are rejected");
-        var unsafeGame=Game.New(4402,"blade",null,null,false);
+        var unsafeGame=Game.New(4402,"blade",null,null,true);
         bool rejected=false;try{RunSave.Encode(unsafeGame);}catch(InvalidOperationException){rejected=true;}
         Check(rejected,"mid-level progress is never written as a resume point");
 
@@ -112,14 +113,28 @@ static class FeatureParityTests
         Check(Ui.Buttons.Exists(b => b.Label == "PLAY" && Math.Abs(b.X - 100) < .01f && Math.Abs(b.Y - 240) < .01f),
             "title actions use the original left-side menu layout");
 
+        Ui.SelectedCharacter = "blade";
         A.Start(6602);
-        Ui.EncounterReveal = null; // inspect the opening hand after its separate run-encounter reveal
+        Ui.EncounterReveal = null; // inspect the title after its separate run-encounter reveal
+        A.OpenMenu();
+        AppCore.Draw();
+        var newRunButton = Ui.Buttons.Find(b => b.Label == "NEW RUN");
+        Check(newRunButton != null, "an active run exposes New Run from the title (screen=" + Ui.Screen + ", paused=" + Ui.Game?.Paused +
+            ", buttons=" + string.Join(",", Ui.Buttons.ConvertAll(b => b.Label)) + ")");
+        newRunButton.Action();
+        Check(Ui.Confirm != null && Ui.Confirm.Title == "NEW RUN", "replacing an active run requires the original confirmation");
+        Ui.Confirm = null;
+        Ui.Game.Paused = false;
         A.Update(.1);
         Check(Ui.Game.Mulligan != null, "the opening-hand encounter screen remains interactive");
+        Check(!A.HasSavedRun(), "the opening hand is not mistaken for a resumable level start");
         AppCore.Draw();
         Check(Ui.Buttons.Exists(b => b.Label.StartsWith("START LEVEL")), "the opening-hand screen exposes Start Level");
         A.NextOrFlip();
         Check(Ui.Game.Phase == Phase.Contract, "starting a normal level offers its contract screen");
+        A.Update(.1);
+        Check(A.HasSavedRun() && A.LoadRun() && Ui.Game.Phase == Phase.Contract && Ui.Game.Mulligan != null,
+            "continuing a saved contract restores its encounter screen and opening hand");
         AppCore.Draw();
         Check(Ui.Buttons.Exists(b => b.Label.StartsWith("TAKE CONTRACT")) && Ui.Buttons.Exists(b => b.Label == "SKIP CONTRACT"),
             "the contract screen exposes its original choices");

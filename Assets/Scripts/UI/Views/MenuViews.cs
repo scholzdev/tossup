@@ -4,37 +4,65 @@ using static Tossup.UI.D;
 
 namespace Tossup.UI
 {
-    // Main menu, in the shop's full-screen style.
+    // The Lua title screen: show the original three-coin scene behind the menu panel on the left.
     public static class TitleView
     {
         public static void Draw()
         {
-            Frame(null);
+            var scene = Ui.UiImages["title_scene"];
+            Color(C.White);
+            Gfx.Draw(scene, 0, 0, 1280f / scene.Width, 800f / scene.Height);
+            Color(C.Ink, .88f);
+            Gfx.Rectangle(true, 70, 70, 400, 590, 10);
+            Outline(70, 70, 400, 590, C.Gold, 10);
             var logo = Ui.UiImages["logo"];
             Color(C.White);
-            Gfx.Draw(logo, 640 - 230, 70, 460f / logo.Width, 460f / logo.Width);
-            Centered("BEAT THE QUOTA", 0, 204, 1280, Ui.F20, C.Muted);
+            Gfx.Draw(logo, 120, 96, 300f / logo.Width, 300f / logo.Width);
+            Centered("BEAT THE QUOTA", 70, 190, 400, Ui.F20, C.Muted);
 
             var entries = new List<(string, Rgba, Action)>();
+            Action newRun = () =>
+            {
+                if (Ui.Game != null || A.HasSavedRun())
+                {
+                    Ui.Confirm = new Confirm
+                    {
+                        Title = "NEW RUN", Text = "YOUR SAVED RUN WILL BE REPLACED.",
+                        Ok = () => { if (A.HasSavedRun()) A.DeleteRun(); A.Play(); },
+                    };
+                }
+                else A.Play();
+            };
             if (Ui.Game != null)
             {
                 entries.Add(("CONTINUE", C.Blue, () => Ui.Game.Paused = false));
-                entries.Add(("NEW RUN", C.Gold, A.Play));
+                entries.Add(("NEW RUN", C.Gold, newRun));
             }
             else if(A.HasSavedRun())
             {
                 entries.Add(("CONTINUE",C.Blue,()=>A.LoadRun()));
-                entries.Add(("NEW RUN",C.Gold,A.Play));
+                entries.Add(("NEW RUN",C.Gold,newRun));
             }
             else entries.Add((RuntimeMode.Sandbox&&Ui.SandboxConfig!=null?"RELOAD SANDBOX":"PLAY", C.Blue, A.Play));
             entries.Add(("COIN SETS", C.Gold, () => A.OpenSets(Ui.SelectedCharacter)));
             entries.Add(("COLLECTION", C.Green, () => A.Go("collection")));
-            entries.Add(("TUTORIAL", C.Green, A.StartTutorial));
-            entries.Add(("HOW TO PLAY", C.Green, () => { Ui.HelpNext = null; A.Go("help"); }));
-            entries.Add(("OPTIONS", C.PanelLight, () => A.Go("options")));
-            entries.Add(("QUIT", C.Red, A.Quit));
+            var small = new List<(string, Rgba, Action)>
+            {
+                ("TUTORIAL", C.Green, A.StartTutorial),
+                ("HELP", C.Green, () => { Ui.HelpNext = null; A.Go("help"); }),
+                ("OPTIONS", C.PanelLight, () => A.Go("options")),
+            };
+            Text("v0.1.0" + (RuntimeMode.Dev ? ".dev" : "") + " (dev)", 96, 626, Ui.F16, C.Muted);
+            float y = 240;
             for (int i = 0; i < entries.Count; i++)
-                Button(entries[i].Item1, 470, 250 + i * 58, 340, 48, entries[i].Item2, entries[i].Item3);
+            {
+                Button(entries[i].Item1, 100, y, 340, 52, entries[i].Item2, entries[i].Item3);
+                y += 62;
+            }
+            y += 10;
+            for (int i = 0; i < small.Count; i++)
+                Button(small[i].Item1, 100 + i * 114, y, 112, 44, small[i].Item2, small[i].Item3);
+            Button("QUIT", 100, y + 62, 340, 44, C.Red, A.Quit);
         }
     }
 

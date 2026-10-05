@@ -21,7 +21,7 @@ namespace Tossup
         }
 
         public static bool IsSafePoint(GameState game) => game != null && (game.Phase == Phase.Shop || game.Phase == Phase.Augment ||
-            ((game.Phase == Phase.Contract || game.Phase == Phase.Encounter) && game.Mulligan != null));
+            game.Phase == Phase.Contract || (game.Phase == Phase.Encounter && game.Mulligan == null));
 
         public static GameState Decode(string text)
         {
