@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Builds the game's rules (Assets/Scripts/Core + Content, no UnityEngine) into a console bot. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="../../../Assets/Scripts/Core/**/*.cs" />
+    <Compile Include="../../../Assets/Scripts/Content/**/*.cs" />
+  </ItemGroup>
+</Project>

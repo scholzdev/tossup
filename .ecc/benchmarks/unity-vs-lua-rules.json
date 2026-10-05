@@ -1,0 +1,81 @@
+{
+  "workload": "Deterministic parity bot; full state serialized after every action",
+  "runs_per_sample": 500,
+  "sample_count": 5,
+  "machine": "Apple M1 Max, macOS 27.0 arm64",
+  "unity": "6000.6.4f1",
+  "results": {
+    "LuaJIT": {
+      "median_seconds": 1.399437374995614,
+      "min_seconds": 1.1388279169987072,
+      "samples": [
+        {
+          "wall_clock": 1.5162742910033558,
+          "real": 1.51,
+          "user": 1.23,
+          "sys": 0.27
+        },
+        {
+          "wall_clock": 1.3254933329953928,
+          "real": 1.32,
+          "user": 1.05,
+          "sys": 0.26
+        },
+        {
+          "wall_clock": 1.1388279169987072,
+          "real": 1.13,
+          "user": 0.91,
+          "sys": 0.21
+        },
+        {
+          "wall_clock": 1.399437374995614,
+          "real": 1.39,
+          "user": 1.13,
+          "sys": 0.26
+        },
+        {
+          "wall_clock": 1.51140195899643,
+          "real": 1.5,
+          "user": 1.23,
+          "sys": 0.27
+        }
+      ]
+    },
+    "C#/.NET 8": {
+      "median_seconds": 0.6129272090038285,
+      "min_seconds": 0.57054729200172,
+      "samples": [
+        {
+          "real": 0.62,
+          "user": 0.58,
+          "sys": 0.04,
+          "wall_clock": 0.6233459159993799
+        },
+        {
+          "real": 0.6,
+          "user": 0.57,
+          "sys": 0.04,
+          "wall_clock": 0.6129272090038285
+        },
+        {
+          "real": 0.61,
+          "user": 0.58,
+          "sys": 0.04,
+          "wall_clock": 0.6218191250009113
+        },
+        {
+          "real": 0.56,
+          "user": 0.53,
+          "sys": 0.04,
+          "wall_clock": 0.57054729200172
+        },
+        {
+          "real": 0.6,
+          "user": 0.56,
+          "sys": 0.04,
+          "wall_clock": 0.6052429580013268
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,473 @@
+{
+  "  -  COSTS %d ENERGY": "  -  KOSTET %d ENERGIE",
+  "% HEADS": "% KOPF",
+  "%d / %d COINS": "%d / %d MÜNZEN",
+  "%d POINTS SHORT OF THE QUOTA": "%d PUNKTE FEHLEN ZUM ZIEL",
+  "%d%% H": "%d%% K",
+  "%d%% HEADS": "%d%% KOPF",
+  "%s  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP": "%s  -  MÜNZE ANKLICKEN ZUM HINZUFÜGEN  -  GESPERRTE KOMMEN AUS DEM SHOP",
+  "%s  /  %d COINS": "%s  /  %d MÜNZEN",
+  "+%d POINTS": "+%d PUNKTE",
+  "+%d POINTS  (x%.2f)": "+%d PUNKTE  (x%.2f)",
+  "+10% HEADS ON THE": "+10 % KOPF FÜR DIE",
+  "ALL": "ALLE",
+  "AMPLIFY": "VERSTÄRKEN",
+  "APPLYING...": "WIRD ANGEWENDET...",
+  "All": "Alle",
+  "BACK": "ZURÜCK",
+  "BACK TO MENU": "ZUM MENÜ",
+  "BEAT THE QUOTA": "ERFÜLLE DAS ZIEL",
+  "BLADE": "KLINGE",
+  "BUFF": "BONUS",
+  "BUFF +%d%% HEADS  (%d LEFT)": "BONUS +%d %% KOPF  (%d ÜBRIG)",
+  "BUFF x%d  (%d LEFT)": "BONUS x%d  (%d ÜBRIG)",
+  "BUFF: NEXT COIN LANDS HEADS": "BONUS: NÄCHSTE LANDET AUF KOPF",
+  "BUFF: NEXT COIN SWAPS SIDES": "BONUS: NÄCHSTE TAUSCHT SEITE",
+  "BUY": "KAUFEN",
+  "BUY MORE COINS  %d GOLD > %d": "MEHR MÜNZEN  %d GOLD > %d",
+  "Buffs last 1 coin longer and get stronger": "Boni halten 1 Münze länger und werden stärker",
+  "Buy COINS (a bigger deck means a bigger quota, so buy better coins), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Odds Tuner adds Heads chance; Coin Removal drops a weak coin.": "Kaufe MÜNZEN (ein größeres Deck bedeutet ein größeres Ziel, also kaufe bessere Münzen), CHIPS (Einweg-Helfer, im Level benutzbar) und eine PRÄMIE (hält den ganzen Lauf). Der Chancen-Tuner erhöht die Kopf-Chance; die Münz-Entfernung wirft eine schwache Münze raus.",
+  "CANCEL": "ABBRECHEN",
+  "CLEAR": "LÖSCHEN",
+  "CLEAR PROGRESS": "FORTSCHRITT LÖSCHEN",
+  "CLEAR SET": "SET LEEREN",
+  "CLICK A COIN HERE TO REMOVE IT": "KLICKE HIER EINE MÜNZE AN, UM SIE ZU ENTFERNEN",
+  "CLICK A COIN TO SELECT IT": "KLICKE EINE MÜNZE ZUM AUSWÄHLEN",
+  "CLICK COINS TO MARK THEM, THEN PRESS DISCARD": "MÜNZEN ZUM MARKIEREN ANKLICKEN, DANN ABWERFEN",
+  "COIN BANK": "MÜNZBANK",
+  "COIN REMOVAL": "MÜNZ-ENTFERNUNG",
+  "COIN SET": "MÜNZSET",
+  "COIN SETS": "MÜNZSETS",
+  "COLLECTED %d / %d": "GESAMMELT %d / %d",
+  "COLLECTION": "SAMMLUNG",
+  "COMBO": "SERIE",
+  "COMBO  %s x%d": "SERIE  %s x%d",
+  "COMBO +%d": "SERIE +%d",
+  "COMBO SHIELD": "SERIENSCHUTZ",
+  "CONTINUE": "WEITER",
+  "CONTROLS": "STEUERUNG",
+  "CURRENT": "AKTUELL",
+  "CURRENT FLIP": "AKTUELLER WURF",
+  "Chip": "Chip",
+  "Coin": "Münze",
+  "Combo grows %d extra step": "Serie wächst um %d Schritt extra",
+  "Common": "Gewöhnlich",
+  "DEALT COIN": "AUSGETEILTE MÜNZE",
+  "DECK FULL  -  REMOVE A COIN TO BUY ANOTHER": "DECK VOLL  -  ENTFERNE EINE MÜNZE, UM EINE NEUE ZU KAUFEN",
+  "DISCARD": "ABWERFEN",
+  "DISCARD %d": "ABWERFEN %d",
+  "DISCARD COINS YOU DO NOT WANT  -  FREE  -  THEY STAY OUT FOR THE LEVEL": "WIRF MÜNZEN AB, DIE DU NICHT WILLST  -  KOSTENLOS  -  SIE BLEIBEN FÜR DAS LEVEL DRAUSSEN",
+  "DRAWING...": "ZIEHT...",
+  "DROP THE SELECTED COIN": "GEWÄHLTE MÜNZE ENTFERNEN",
+  "Default": "Standard",
+  "EACH LEVEL": "JEDES LEVEL",
+  "EDIT COIN SETS": "MÜNZSETS BEARBEITEN",
+  "EMPTY SLOT": "LEERER PLATZ",
+  "ENDLESS": "ENDLOS",
+  "ENDLESS %d": "ENDLOS %d",
+  "ENDLESS LEVELS CLEARED": "ENDLOS-LEVEL GESCHAFFT",
+  "ENDLESS MODE": "ENDLOSMODUS",
+  "ENDLESS RUN OVER": "ENDLOSLAUF VORBEI",
+  "ENERGY": "ENERGIE",
+  "ENERGY COST %d": "ENERGIEKOSTEN %d",
+  "Epic": "Episch",
+  "Everything at once.": "Alles auf einmal.",
+  "F3 SHOWS DEBUG INFO IN A RUN": "F3 ZEIGT DEBUG-INFOS IM LAUF",
+  "FAST FLIP": "SCHNELLER WURF",
+  "FLIP": "WERFEN",
+  "FLIP IT OR DISCARD": "WERFEN ODER ABWERFEN",
+  "FLIPPING": "WURF",
+  "FLIPPING...": "WIRFT...",
+  "FULL": "VOLL",
+  "FULLSCREEN": "VOLLBILD",
+  "First you see an OPENING HAND: click coins to mark them and press Discard to throw them away for free. Then the bank shows your next 3 coins. Flip the first one, or Discard it.": "Zuerst siehst du eine STARTHAND: Klicke Münzen zum Markieren und drücke Abwerfen, um sie kostenlos wegzuwerfen. Dann zeigt die Bank deine nächsten 3 Münzen. Wirf die erste oder wirf sie ab.",
+  "Flips, scores, buttons.": "Würfe, Punkte, Knöpfe.",
+  "GAME": "SPIEL",
+  "GOLD": "GOLD",
+  "GOLD LEFT": "GOLD ÜBRIG",
+  "GOT IT": "VERSTANDEN",
+  "Gain %d energy": "Erhalte %d Energie",
+  "Gain %d gold": "Erhalte %d Gold",
+  "Gain %d%% Heads this level": "+%d %% Kopf in diesem Level",
+  "Goes back into the pile": "Kommt zurück auf den Stapel",
+  "H": "K",
+  "HEADS": "KOPF",
+  "HEADS %d%%": "KOPF %d%%",
+  "HEADS %d%%  /  TAILS %d%%": "KOPF %d%%  /  ZAHL %d%%",
+  "HELD  %s": "IM BESITZ  %s",
+  "HOW TO PLAY": "ANLEITUNG",
+  "Half-length coin flip animation.": "Münzwurf-Animation in halber Länge.",
+  "Heads": "Kopf",
+  "High Stakes": "Hoher Einsatz",
+  "INVERTED  -  EVERY 5TH FLIP": "UMGEDREHT  -  JEDER 5. WURF",
+  "ITEM": "CHIP",
+  "If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back. If you cannot, the run is over.": "Wenn das Ziel nicht erreicht ist, zahle Gold zum TAUSCHEN: 3 deiner gespielten Münzen kommen zurück. Wenn du das nicht kannst, ist der Lauf vorbei.",
+  "Keep going for gold, or open the shop.": "Mach weiter für Gold oder öffne den Shop.",
+  "LANGUAGE": "SPRACHE",
+  "LAST FLIP": "LETZTER WURF",
+  "LEVEL %d": "LEVEL %d",
+  "LEVEL %d / 4": "LEVEL %d / 4",
+  "LEVELS CLEARED OF 4": "VON 4 LEVELN GESCHAFFT",
+  "LOCKED  -  BUY IT IN THE SHOP TO UNLOCK": "GESPERRT  -  KAUFE SIE IM SHOP, UM SIE FREIZUSCHALTEN",
+  "Language of all texts.": "Sprache aller Texte.",
+  "MASTER VOLUME": "GESAMTLAUTSTÄRKE",
+  "MAX %d OF THE SAME COIN  -  NORMAL: UP TO %d": "MAX. %d GLEICHE MÜNZEN  -  NORMAL: BIS ZU %d",
+  "MENU": "MENÜ",
+  "MUSIC": "MUSIK",
+  "MYSTERY COIN": "RÄTSELMÜNZE",
+  "Mark the coins you do not want.": "Markiere die Münzen, die du nicht willst.",
+  "NEED %d ENERGY": "BRAUCHE %d ENERGIE",
+  "NEW RUN": "NEUER LAUF",
+  "NEXT %d +%d%%": "NÄCHSTE %d +%d%%",
+  "NEXT %d x%d": "NÄCHSTE %d x%d",
+  "NEXT COIN": "NÄCHSTE MÜNZE",
+  "NEXT ROUND": "NÄCHSTE RUNDE",
+  "NEXT: %s": "ALS NÄCHSTES: %s",
+  "NEXT: HEADS": "NÄCHSTE: KOPF",
+  "NEXT: SWAP": "NÄCHSTE: TAUSCH",
+  "NO COIN": "KEINE MÜNZE",
+  "NO COINS LEFT": "KEINE MÜNZEN MEHR",
+  "NO LIMIT  -  EVERY 5TH FLIP IS INVERTED": "KEINE GRENZE  -  JEDER 5. WURF WIRD UMGEDREHT",
+  "NO POINTS": "KEINE PUNKTE",
+  "NRG": "ENG",
+  "Name": "Name",
+  "Next %d coins pay x%d": "Die nächsten %d Münzen zahlen x%d",
+  "Next %d coins: +%d%% Heads": "Nächste %d Münzen: +%d %% Kopf",
+  "Next coin lands Heads": "Nächste Münze landet auf Kopf",
+  "Next coin uses its other side": "Nächste Münze nutzt ihre andere Seite",
+  "Next coin: +%d%% Heads": "Nächste Münze: +%d %% Kopf",
+  "No coins left.": "Keine Münzen mehr.",
+  "No effect": "Kein Effekt",
+  "Nothing": "Nichts",
+  "ODDS TUNER": "CHANCEN-TUNER",
+  "OFF": "AUS",
+  "OK": "OK",
+  "ON": "AN",
+  "ONE COIN AT A TIME": "EINE MÜNZE NACH DER ANDEREN",
+  "OPEN SHOP": "SHOP ÖFFNEN",
+  "OPENING HAND": "STARTHAND",
+  "OPTIONS": "OPTIONEN",
+  "OUT OF COINS": "KEINE MÜNZEN MEHR",
+  "Opening": "Auftakt",
+  "PAY %d > %d COINS": "ZAHLE %d > %d MÜNZEN",
+  "PILE %d   OUT %d   DECK %d/%d": "STAPEL %d   RAUS %d   DECK %d/%d",
+  "PLAY": "SPIELEN",
+  "PLAYS FIRST": "ZUERST",
+  "POINTS": "PUNKTE",
+  "PTS": "PKT",
+  "Prize": "Prämie",
+  "QUIT": "BEENDEN",
+  "QUOTA": "ZIEL",
+  "QUOTA +%d": "ZIEL +%d",
+  "QUOTA MET": "ZIEL ERREICHT",
+  "QUOTA MET  -  EXTRA POINTS PAY GOLD": "ZIEL ERREICHT  -  EXTRAPUNKTE ZAHLEN GOLD",
+  "Quota +%d": "Ziel +%d",
+  "RELIC": "PRÄMIE",
+  "REMOVE": "ENTFERNEN",
+  "REPLAY": "NOCHMAL",
+  "REROLL": "NEU WÜRFELN",
+  "ROLLED %s  >  %s  (%s)": "GEWORFEN %s  >  %s  (%s)",
+  "RUN OVER": "LAUF VORBEI",
+  "Rare": "Selten",
+  "Rarity": "Seltenheit",
+  "Resets unlocks, collection, sets and tokens. Options stay.": "Setzt Freischaltungen, Sammlung, Sets und Tokens zurück.",
+  "SAVE SET": "SET SPEICHERN",
+  "SAVED": "GESPEICHERT",
+  "SCREEN SHAKE": "BILDSCHIRMWACKELN",
+  "SEED %s": "SEED %s",
+  "SEER": "SEHERIN",
+  "SELECTED COIN": "GEWÄHLTE MÜNZE",
+  "SHIELD %d": "SCHUTZ %d",
+  "SHOP": "SHOP",
+  "SOLD": "WEG",
+  "SORT": "SORT.",
+  "SOUND": "TON",
+  "SOUND EFFECTS": "SOUNDEFFEKTE",
+  "START AGAIN": "NEU STARTEN",
+  "START LEVEL": "LEVEL STARTEN",
+  "START RUN": "LAUF STARTEN",
+  "Score %d points": "Erzielt %d Punkte",
+  "Score points to beat the level's QUOTA before your coins run out. There is no HP: coins score points, and bad flips raise the quota. Four levels; the last one is The House.": "Erziele Punkte, um das ZIEL des Levels zu schlagen, bevor deine Münzen ausgehen. Es gibt keine Lebenspunkte: Münzen bringen Punkte, schlechte Würfe erhöhen das Ziel. Vier Level; das letzte ist Das Haus.",
+  "Second Chance": "Zweite Chance",
+  "Shake the screen when a coin lands.": "Wackelt mit dem Bildschirm, wenn eine Münze landet.",
+  "Space = Flip / Next Coin.  Click = mark a coin.  Esc = menu (your run waits).  Hover any coin for details. Quitting the app loses the run.": "Leertaste = Werfen / Nächste Münze.  Klick = Münze markieren.  Esc = Menü (dein Lauf wartet).  Fahre über eine Münze für Details. Beenden der App verliert den Lauf.",
+  "Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Capacitor give more. A coin you cannot pay for can only be discarded.": "Starke Münzen kosten ENERGIE zum Werfen (angezeigt als E1, E2). Du bekommst 3 pro Level; Funke, Kupfer und Kondensator geben mehr. Eine Münze, die du nicht bezahlen kannst, kann nur abgeworfen werden.",
+  "Switch between windowed and fullscreen.": "Wechselt zwischen Fenster und Vollbild.",
+  "T": "Z",
+  "TAILS": "ZAHL",
+  "TAILS %d%%": "ZAHL %d%%",
+  "THE CURRENT RUN WILL BE LOST.": "DER AKTUELLE LAUF GEHT VERLOREN.",
+  "THE GOAL": "DAS ZIEL",
+  "THE HOUSE": "DAS HAUS",
+  "THE HOUSE  -  EVERY 5TH FLIP IS INVERTED": "DAS HAUS  -  JEDER 5. WURF WIRD UMGEDREHT",
+  "THE HOUSE FALLS": "DAS HAUS FÄLLT",
+  "THE SHOP": "DER SHOP",
+  "THIS SET IS EMPTY  -  THE DEFAULT DECK IS USED": "DIESES SET IST LEER  -  DAS STANDARD-DECK WIRD BENUTZT",
+  "TRADER": "HÄNDLER",
+  "TRY A NEW SET": "PROBIERE EIN NEUES SET",
+  "TUNE-UPS": "UPGRADES",
+  "Tails": "Zahl",
+  "The House": "Das Haus",
+  "The background loop.": "Die Hintergrundmusik.",
+  "The next combo break is prevented": "Der nächste Serienbruch wird verhindert",
+  "Too little energy: discard it.": "Zu wenig Energie: wirf sie ab.",
+  "UNSAVED CHANGES": "UNGESPEICHERTE ÄNDERUNGEN",
+  "UPGRADE": "UPGRADE",
+  "Uncollected": "Nicht gesammelt",
+  "Uncommon": "Ungewöhnlich",
+  "YOU WON THE RUN": "DU HAST DEN LAUF GEWONNEN",
+  "YOUR COINS": "DEINE MÜNZEN",
+  "YOUR DATA WILL BE PERMANENTLY DELETED.": "DEINE DATEN WERDEN DAUERHAFT GELÖSCHT.",
+  "YOUR DECK  %d / %d": "DEIN DECK  %d / %d",
+  "You are paid gold at once and the level stays open: every 2 extra points pay 1 more gold. Press OPEN SHOP (top right) when you want to move on.": "Du wirst sofort mit Gold bezahlt und das Level bleibt offen: Je 2 Extrapunkte zahlen 1 weiteres Gold. Drücke SHOP ÖFFNEN (oben rechts), wenn du weiter willst.",
+  "You play with a small stack of coins. Each coin has a Heads chance and a Heads and a Tails effect. Every coin is played once per level; nothing is reshuffled.": "Du spielst mit einem kleinen Stapel Münzen. Jede Münze hat eine Kopf-Chance sowie einen Kopf- und einen Zahl-Effekt. Jede Münze wird pro Level einmal gespielt; nichts wird neu gemischt.",
+  "characters": {
+    "blade": {
+      "description": "Verlässliche Punkte",
+      "name": "Die Klinge"
+    },
+    "seer": {
+      "description": "Risiko und wechselnde Chancen",
+      "name": "Die Seherin"
+    },
+    "trader": {
+      "description": "Gold und Energie",
+      "name": "Der Händler"
+    }
+  },
+  "coins": {
+    "amplifier": {
+      "description": "Kopf: 1 Punkt, und alle aktiven Boni halten 1 Münze länger und werden stärker. Zahl: 1 Punkt.",
+      "name": "Verstärker"
+    },
+    "anchor": {
+      "description": "Kopf: 2 Punkte, und beim nächsten Serienbruch hält die Serie stattdessen.",
+      "name": "Anker"
+    },
+    "bank": {
+      "description": "Kopf: +3 Gold, plus 1 je 10 gehaltene Gold (max. +3).",
+      "name": "Bank"
+    },
+    "bettor": {
+      "description": "Kopf: 3 Punkte je Wurf der aktuellen Serie (max. 30). Zahl: Ziel +2.",
+      "name": "Wetter"
+    },
+    "blood": {
+      "description": "Viele Punkte, aber Zahl erhöht das Ziel.",
+      "name": "Blut"
+    },
+    "bounty": {
+      "description": "Zahlt 1 Gold für je 2 Punkte, die sie erzielt.",
+      "name": "Kopfgeld"
+    },
+    "capacitor": {
+      "description": "Kopf: 2 Punkte je gehaltener Energie. Zahl: +1 Energie.",
+      "name": "Kondensator"
+    },
+    "cash_out": {
+      "description": "Kopf: 3 Punkte, der Serienbonus zählt doppelt, dann endet die Serie.",
+      "name": "Auszahlung"
+    },
+    "chain": {
+      "description": "Kopf: 2 Punkte je Kopf in Folge, diesen eingerechnet.",
+      "name": "Kette"
+    },
+    "cheerleader": {
+      "description": "Kopf: 2 Punkte, nächste 2 Münzen +20 % Kopf. Zahl: nächste Münze +20 %.",
+      "name": "Cheerleaderin"
+    },
+    "cold_streak": {
+      "description": "Zahl: 2 Punkte je Zahl in Folge (max. 20). Kopf: 1 Punkt.",
+      "name": "Kältewelle"
+    },
+    "contrarian": {
+      "description": "Landet immer anders als der vorherige Wurf.",
+      "name": "Querkopf"
+    },
+    "copper": {
+      "description": "Finanziert deinen nächsten Zug.",
+      "name": "Kupfer"
+    },
+    "cursed": {
+      "description": "Eine mächtige, gefährliche Wette.",
+      "name": "Verflucht"
+    },
+    "dagger": {
+      "description": "Punktet auf beiden Seiten.",
+      "name": "Dolch"
+    },
+    "domino": {
+      "description": "Kopf: 2 Punkte, und die nächste Münze landet auf Kopf. Zahl: Ziel +1.",
+      "name": "Domino"
+    },
+    "doubler": {
+      "description": "Kopf: 3 Punkte, verdoppelt mit jedem bisherigen Verdoppler-Wurf in diesem Level (3, 6, 12, 24 ...).",
+      "name": "Verdoppler"
+    },
+    "echo": {
+      "description": "Wiederholt die Effekte der vorherigen Münze für diese Seite.",
+      "name": "Echo"
+    },
+    "flock": {
+      "description": "+10 % Kopf für jeden anderen Schwarm in deiner Bank.",
+      "name": "Schwarm"
+    },
+    "focus": {
+      "description": "Baut ihre eigene Kopf-Chance auf.",
+      "name": "Fokus"
+    },
+    "fuse": {
+      "description": "Wirf sie ab, um +6 aufzuladen. Kopf verbraucht die ganze Ladung als Punkte.",
+      "name": "Lunte"
+    },
+    "gambler": {
+      "description": "Kopf ist eine Wette: 50 % dreifache Punkte, sonst nichts.",
+      "name": "Spieler"
+    },
+    "hammer": {
+      "description": "Selten, aber vernichtend.",
+      "name": "Hammer"
+    },
+    "hot_hand": {
+      "description": "Kopf: 2 Punkte, und die Serie wächst um 1 Schritt extra.",
+      "name": "Heiße Hand"
+    },
+    "hourglass": {
+      "description": "+30 % Kopf bei 3 oder weniger übrigen Münzen. Zahl: kommt zurück auf den Stapel.",
+      "name": "Sanduhr"
+    },
+    "jester": {
+      "description": "Kopf oder Zahl, sie tut etwas Zufälliges.",
+      "name": "Narr"
+    },
+    "loaded": {
+      "description": "Verlässliches Einkommen bei Kopf.",
+      "name": "Gezinkt"
+    },
+    "lucky": {
+      "description": "Kopf: 2 Punkte, und sie kommt zurück auf den Stapel und wird erneut gespielt.",
+      "name": "Glück"
+    },
+    "lucky_seven": {
+      "description": "1 von 7: landet auf Kopf und zahlt dreifache Punkte.",
+      "name": "Glückssieben"
+    },
+    "martyr": {
+      "description": "Zahl: Ziel +3. Kopf: 4 Punkte, +1 je Zahl in diesem Level.",
+      "name": "Märtyrer"
+    },
+    "megaphone": {
+      "description": "Kopf: 2 Punkte, und die nächsten 2 Münzen zahlen doppelt.",
+      "name": "Megafon"
+    },
+    "mirror": {
+      "description": "Kopf: Die nächste Münze nutzt die Effekte ihrer anderen Seite. Zahl: 2 Punkte.",
+      "name": "Spiegel"
+    },
+    "miser": {
+      "description": "Kopf: 1 Punkt je 10 Gold, die du hältst.",
+      "name": "Geizhals"
+    },
+    "momentum": {
+      "description": "+5 % Kopf für jeden Kopf in Folge in diesem Level.",
+      "name": "Schwung"
+    },
+    "normal": {
+      "description": "Eine schlichte Münze. Kaum ein Kratzer.",
+      "name": "Normal"
+    },
+    "phoenix": {
+      "description": "Jede Zahl speichert Wut (max. 5). Kopf: 3 Punkte +2 je Wut.",
+      "name": "Phönix"
+    },
+    "pot": {
+      "description": "Kopf: Punkte gleich den bisherigen Würfen in diesem Level (max. 12).",
+      "name": "Topf"
+    },
+    "snowball": {
+      "description": "Wächst mit jedem Wurf um +1 Punkt für den ganzen Lauf (max. +10).",
+      "name": "Schneeball"
+    },
+    "spark": {
+      "description": "Energie oder ein kleiner Treffer.",
+      "name": "Funke"
+    },
+    "sword": {
+      "description": "Sichere Punkte bei Kopf.",
+      "name": "Schwert"
+    },
+    "true_echo": {
+      "description": "Wiederholt, was die vorherige Münze wirklich getan hat, samt Boni und Wachstum, auf jeder Seite.",
+      "name": "Wahres Echo"
+    },
+    "twin": {
+      "description": "Landet immer wie der vorherige Wurf.",
+      "name": "Zwilling"
+    },
+    "vampire": {
+      "description": "Kopf: 2 Punkte, und sie saugt 2 Gold vom Haus ab.",
+      "name": "Vampir"
+    }
+  },
+  "gave up.": "Aufgegeben.",
+  "items": {
+    "double_down": {
+      "description": "Effekte der nächsten Münze x2",
+      "name": "Verdoppeln",
+      "short": "x2"
+    },
+    "extra_draw": {
+      "description": "Eine gespielte Münze kommt zurück auf den Stapel",
+      "name": "Nachziehen",
+      "short": "+ZIEHEN"
+    },
+    "force_heads": {
+      "description": "Die Münze landet auf Kopf",
+      "name": "Kopf erzwingen",
+      "short": "KOPF!"
+    },
+    "force_tails": {
+      "description": "Die Münze landet auf Zahl",
+      "name": "Zahl erzwingen",
+      "short": "ZAHL!"
+    },
+    "peek": {
+      "description": "Sieh die nächsten zwei Münzen",
+      "name": "Spähen",
+      "short": "SPÄHEN"
+    },
+    "swap": {
+      "description": "Gratis abwerfen, neue Münze",
+      "name": "Tausch",
+      "short": "TAUSCH"
+    },
+    "weighted": {
+      "description": "+25 % Kopf, ein Wurf",
+      "name": "Beschwert",
+      "short": "BESCHW."
+    }
+  },
+  "out of coins, and not enough gold to exchange.": "Keine Münzen mehr und zu wenig Gold zum Tauschen.",
+  "relics": {
+    "baton": {
+      "description": "Serie: +0,4 je Schritt statt 0,25, bis x4",
+      "name": "Taktstock"
+    },
+    "clock": {
+      "description": "Jeder 10. Wurf ist Kopf",
+      "name": "Kaputte Uhr"
+    },
+    "magnet": {
+      "description": "Je 3 Kopf in Folge: +5 % Kopf in diesem Level",
+      "name": "Magnet"
+    },
+    "metronome": {
+      "description": "Jeder 4. Wurf zahlt doppelt",
+      "name": "Metronom"
+    },
+    "penny": {
+      "description": "Die erste Zahl jedes Levels wird zu Kopf",
+      "name": "Glückspfennig"
+    }
+  }
+}

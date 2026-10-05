@@ -1,0 +1,283 @@
+using System;
+using System.Collections.Generic;
+
+namespace Tossup.UI
+{
+    // Drawing primitives shared by every view.
+    public static class D
+    {
+        public static string L(string text, params object[] args) => Lang.T(text, args);
+
+        static string N(double v) => GameText.Num(v);
+
+        public static void Color(Rgba c, float alpha = 1) => Gfx.SetColor(c.R, c.G, c.B, alpha);
+
+        public static void Box(float x, float y, float w, float h, Rgba fill, float radius = 6)
+        {
+            Color(C.Black, .34f);
+            Gfx.Rectangle(true, x, y + 5, w, h, radius);
+            Color(fill);
+            Gfx.Rectangle(true, x, y, w, h, radius);
+        }
+
+        public static void Outline(float x, float y, float w, float h, Rgba tint, float radius = 6)
+        {
+            Color(tint);
+            Gfx.SetLineWidth(2);
+            Gfx.Rectangle(false, x + 1, y + 1, w - 2, h - 2, radius);
+            Gfx.SetLineWidth(1);
+        }
+
+        public static void Text(string str, float x, float y, PixFont face = null, Rgba? tint = null)
+        {
+            str = L(str);
+            Gfx.SetFont(face ?? Ui.F16);
+            Color(tint ?? C.Face);
+            Gfx.Print(str, (float)Math.Floor(x), (float)Math.Floor(y));
+        }
+
+        public static void Centered(string str, float x, float y, float w, PixFont face = null, Rgba? tint = null)
+        {
+            face = face ?? Ui.F20;
+            str = L(str);
+            Text(str, x + (float)Math.Floor((w - face.GetWidth(str)) / 2f), y, face, tint);
+        }
+
+        static bool Over(float x, float y, float w, float h)
+        {
+            Ui.Mouse(out float mx, out float my);
+            return mx >= x && mx <= x + w && my >= y && my <= y + h;
+        }
+
+        public static void AddButton(float x, float y, float w, float h, Action action, string label = null) =>
+            Ui.Buttons.Add(new Button { X = x, Y = y, W = w, H = h, Action = action, Label = label });
+
+        public static void Button(string str, float x, float y, float w, float h, Rgba tint, Action action, bool enabled = true)
+        {
+            bool hover = enabled && Over(x, y, w, h);
+            var fill = enabled ? tint : C.PanelLight;
+            float lift = hover ? -3 : 0;
+            Box(x, y + lift, w, h, fill);
+            Outline(x, y + lift, w, h, enabled ? C.Face : C.Slot);
+            Centered(str, x, y + (h - Ui.F20.Height) / 2f + lift, w, Ui.F20, enabled ? C.Ink : C.Muted);
+            if (enabled) AddButton(x, y + lift, w, h, action, str);
+        }
+
+        // Short effect list for cards: "+5 PTS, NEXT 2 x2".
+        public static string Effects(List<Effect> list)
+        {
+            if (list.Count == 0) return L("Nothing");
+            var parts = new List<string>();
+            foreach (var e in list)
+            {
+                switch (e.Type)
+                {
+                    case "next_mult": parts.Add(L("NEXT %d x%d", e.Coins ?? 1, e.Amount)); continue;
+                    case "next_odds": parts.Add(L("NEXT %d +%d%%", e.Coins ?? 1, Math.Floor(e.Amount * 100 + .5))); continue;
+                    case "amplify": parts.Add(L("AMPLIFY")); continue;
+                    case "combo_bonus": parts.Add(L("COMBO +%d", e.Amount)); continue;
+                    case "combo_shield": parts.Add(L("COMBO SHIELD")); continue;
+                    case "next_swap": parts.Add(L("NEXT: SWAP")); continue;
+                    case "next_heads": parts.Add(L("NEXT: HEADS")); continue;
+                }
+                double amount = e.Type == "probability" ? Math.Floor(e.Amount * 100 + .5) : e.Amount;
+                string label;
+                switch (e.Type)
+                {
+                    case "score": label = L("PTS"); break;
+                    case "gold": label = L("GOLD"); break;
+                    case "energy": label = L("NRG"); break;
+                    case "penalty": label = L("QUOTA"); break;
+                    case "extra_draw": label = L("REPLAY"); break;
+                    case "probability": label = L("% HEADS"); break;
+                    default: label = e.Type; break;
+                }
+                parts.Add("+" + N(amount) + " " + label);
+            }
+            return string.Join(", ", parts);
+        }
+
+        // Full sentence per effect, for tooltips and the stage.
+        public static string EffectDescription(List<Effect> list)
+        {
+            if (list.Count == 0) return L("No effect");
+            var parts = new List<string>();
+            foreach (var effect in list)
+            {
+                double amount = effect.Amount;
+                switch (effect.Type)
+                {
+                    case "score": parts.Add(L("Score %d points", amount)); break;
+                    case "gold": parts.Add(L("Gain %d gold", amount)); break;
+                    case "energy": parts.Add(L("Gain %d energy", amount)); break;
+                    case "penalty": parts.Add(L("Quota +%d", amount)); break;
+                    case "extra_draw": parts.Add(L("Goes back into the pile")); break;
+                    case "probability": parts.Add(L("Gain %d%% Heads this level", Math.Floor(amount * 100 + .5))); break;
+                    case "next_mult": parts.Add(L("Next %d coins pay x%d", effect.Coins ?? 1, amount)); break;
+                    case "next_odds":
+                        {
+                            double pct = Math.Floor(amount * 100 + .5);
+                            parts.Add(effect.Coins == 1 ? L("Next coin: +%d%% Heads", pct) : L("Next %d coins: +%d%% Heads", effect.Coins ?? 1, pct));
+                            break;
+                        }
+                    case "amplify": parts.Add(L("Buffs last 1 coin longer and get stronger")); break;
+                    case "combo_bonus": parts.Add(L("Combo grows %d extra step", amount)); break;
+                    case "combo_shield": parts.Add(L("The next combo break is prevented")); break;
+                    case "next_swap": parts.Add(L("Next coin uses its other side")); break;
+                    case "next_heads": parts.Add(L("Next coin lands Heads")); break;
+                }
+            }
+            return string.Join("; ", parts);
+        }
+
+        public static void CoinHover(string id, float x, float y, float w, float h, double? probability = null, bool locked = false)
+        {
+            if (Over(x, y, w, h))
+                Ui.HoveredCoin = new HoveredCoin { Id = id, Probability = probability ?? Content.Coins[id].Probability, Locked = locked };
+        }
+
+        public static void CoinImage(string id, float x, float y, float size)
+        {
+            Color(C.White);
+            var image = Ui.CoinImages[id];
+            Gfx.Draw(image, x, y, size / image.Width, size / image.Height);
+        }
+
+        // Draw any loaded image scaled to a square size.
+        public static void ImageAt(Img image, float x, float y, float size)
+        {
+            Color(C.White);
+            Gfx.Draw(image, x, y, size / image.Width, size / image.Height);
+        }
+
+        // A button with an icon on the left and its label centred in the rest.
+        public static void IconButton(string label, Img icon, float x, float y, float w, float h, Rgba tint, Action action, bool enabled = true)
+        {
+            bool hover = enabled && Over(x, y, w, h);
+            float top = y + (hover ? -3 : 0);
+            Box(x, top, w, h, enabled ? tint : C.PanelLight);
+            Outline(x, top, w, h, enabled ? C.Face : C.Slot);
+            float size = h - 12;
+            if (enabled) Color(C.White);
+            else Gfx.SetColor(1, 1, 1, .45f);
+            Gfx.Draw(icon, x + 8, top + 6, size / icon.Width, size / icon.Height);
+            Centered(label, x + size + 8, top + (h - Ui.F20.Height) / 2f, w - size - 8, Ui.F20, enabled ? C.Ink : C.Muted);
+            if (enabled) AddButton(x, y, w, h, action, label);
+        }
+
+        // The shared full-screen look (the shop's): felt backdrop, a teal screen with a gold border, a pixel
+        // title image at the top left and, when given, a button at the top right.
+        public static void Frame(Img titleImage, string backLabel = null, Action backAction = null)
+        {
+            Box(0, 0, 1280, 800, C.FeltDark);
+            Box(36, 36, 1208, 728, C.Screen);
+            Outline(36, 36, 1208, 728, C.Gold);
+            if (titleImage != null)
+            {
+                float scale = 90f / titleImage.Height;
+                Color(C.White);
+                Gfx.Draw(titleImage, 70, 46, scale, scale);
+            }
+            if (backAction != null) Button(backLabel, 1120, 56, 100, 34, C.PanelLight, backAction);
+        }
+
+        // The pixel title image for a screen, in the current language when there is one.
+        public static Img Title(string name)
+        {
+            if (Lang.Current != "en" && Ui.UiImages.TryGetValue("title_" + name + "_" + Lang.Current, out var localized)) return localized;
+            return Ui.UiImages["title_" + name];
+        }
+
+        // A modal popup (Ui.Confirm): dims the screen, shows the text with OK and Cancel, and replaces every
+        // other clickable while it is open. Draw it last.
+        public static void ConfirmDialog()
+        {
+            var c = Ui.Confirm;
+            if (c == null) return;
+            Ui.Buttons.Clear(); // nothing behind the popup can be clicked
+            Color(C.Ink, .72f);
+            Gfx.Rectangle(true, 0, 0, 1280, 800);
+            Box(380, 270, 520, 260, C.PanelDk);
+            Outline(380, 270, 520, 260, C.Red);
+            Centered(c.Title, 380, 292, 520, Ui.F32, C.Red);
+            Gfx.SetFont(Ui.F20);
+            Color(C.Face);
+            Gfx.Printf(L(c.Text), 410, 352, 460, Align.Center);
+            Button("OK", 420, 454, 200, 52, C.Red, () => { Ui.Confirm = null; c.Ok(); });
+            Button("CANCEL", 660, 454, 200, 52, C.PanelLight, () => Ui.Confirm = null);
+        }
+
+        // Plain title + text tooltip (items, relics). Register while drawing; drawn once per frame on top.
+        public static void TextHover(string title, string body, float x, float y, float w, float h)
+        {
+            if (Over(x, y, w, h)) Ui.HoveredText = new HoveredText { Title = title, Body = body };
+        }
+
+        public static void TextTooltip()
+        {
+            var tip = Ui.HoveredText;
+            if (tip == null) return;
+            Ui.Mouse(out float mx, out float my);
+            float w = 330, h = 92;
+            float x = Math.Min(mx + 18, 1280 - w - 12);
+            float y = Math.Max(12, Math.Min(my + 18, 788 - h));
+            Box(x, y, w, h, C.Ink);
+            Outline(x, y, w, h, C.Gold);
+            Text(Lang.Upper(tip.Title), x + 14, y + 12, Ui.F20, C.Face);
+            Gfx.SetFont(Ui.F16);
+            Color(C.Muted);
+            Gfx.Printf(L(tip.Body), x + 14, y + 44, w - 28);
+        }
+
+        public static void CoinTooltip()
+        {
+            var hovered = Ui.HoveredCoin;
+            if (hovered == null) return;
+            var coin = Content.Coins[hovered.Id];
+            string name = Lang.CoinName(hovered.Id), description = Lang.CoinDescription(hovered.Id);
+            Ui.Mouse(out float mx, out float my);
+            float w = 390, h = hovered.Locked ? 204 : 172;
+            var lines = Ui.F16.GetWrap(description, w - 92); // long descriptions wrap and push the rest down
+            float extra = Math.Max(0, lines.Count - 1) * 18;
+            h += extra;
+            float x = Math.Min(mx + 18, 1280 - w - 12);
+            float y = my + 18;
+            if (y + h > 788) y = my - h - 18;
+            y = Math.Max(12, y);
+            Box(x, y, w, h, C.Ink);
+            Outline(x, y, w, h, C.Gold);
+            CoinImage(hovered.Id, x + 9, y + 9, 62);
+            Text(Lang.Upper(name), x + 78, y + 12, Ui.F20, C.Face);
+            Gfx.SetFont(Ui.F16);
+            Color(C.Muted);
+            Gfx.Printf(description, x + 78, y + 40, w - 92);
+            double heads = Math.Floor(hovered.Probability * 100 + .5);
+            Text(L("HEADS %d%%  /  TAILS %d%%", heads, 100 - heads) +
+                (coin.EnergyCost > 0 ? L("  -  COSTS %d ENERGY", coin.EnergyCost) : ""), x + 14, y + 78 + extra, Ui.F16, C.Gold);
+            Text(L("HEADS") + "  " + EffectDescription(coin.Heads), x + 14, y + 108 + extra, Ui.F16, C.Blue);
+            Text(L("TAILS") + "  " + EffectDescription(coin.Tails), x + 14, y + 137 + extra, Ui.F16, C.Red);
+            if (hovered.Locked) Text("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK", x + 14, y + 172 + extra, Ui.F16, C.Orange);
+        }
+
+        public static void CoinFace(float cx, float cy, float radius, string outcome, bool selected, string id)
+        {
+            float size = radius * 2.6f;
+            if (selected)
+            {
+                Color(C.Orange, .35f);
+                Gfx.Circle(true, cx, cy, radius + 4);
+            }
+            CoinImage(id ?? "copper", cx - size / 2, cy - size / 2, size);
+            if (outcome != null)
+            {
+                var tint = outcome == Side.Heads ? C.Blue : C.Red;
+                float bx = cx + radius * .78f, by = cy + radius * .65f;
+                Color(C.Ink);
+                Gfx.Circle(true, bx, by, 15);
+                Color(tint);
+                Gfx.Circle(true, bx, by, 12);
+                Centered(outcome.Substring(0, 1), bx - 13, by - Ui.F20.Height / 2f, 26, Ui.F20, C.Ink);
+            }
+        }
+    }
+}

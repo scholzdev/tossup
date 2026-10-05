@@ -1,86 +1,50 @@
-# Tossup
+# Tossup (Unity port)
 
-A small roguelike about flipping coins, written in Lua for [LÖVE](https://love2d.org) 11.5.
+A native C# conversion of **Tossup** for **Unity 6.6 (6000.6.4f1)**. Gameplay, UI, rendering, audio, localization, and persistence run without a Lua runtime or Lua data files.
 
-You carry a deck of coins and flip them one at a time. Each level has a point quota that depends on the size of your
-deck, and the level lasts exactly as long as your stack: every coin is played once and nothing is reshuffled. Meet the
-quota, visit the shop, buy better coins, repeat. Four levels, the last one is The House, which turns every fifth flip
-around. If you beat it you can keep going in endless mode until a level beats you.
+## Run it
 
-There is no player health. Bad flips push the quota up instead of hurting you, so a run ends when you are out of coins
-and out of gold for an exchange, not when a number hits zero. Coins have odds, a Heads effect, a Tails effect and
-sometimes a rule of their own. There are about fifty of them, plus chips (one-shot items), prizes (passive relics for the
-run), level modifiers and three characters that you unlock by winning. Each character also has eight difficulty stages.
+- **Play the macOS build:** `open Builds/macOS/Tossup.app`
+- **Play the Windows build:** `Builds/Windows/Tossup.exe`
+- **Open in Unity:** Unity Hub → *Add project from disk* → this folder → open `Assets/Scenes/Main.unity` → Play.
+- **Build again:** use **Tossup → Build macOS Player** in the editor, or run:
 
-The game is in English and German.
+  ```sh
+  unity build --target StandaloneOSX \
+    --execute-method Tossup.EditorTools.TossupBuild.BuildMacOS \
+    --editor-version 6000.6.4f1 --architecture arm64 \
+    --no-provenance .
+  ```
 
-## Playing
+  The build method ad-hoc signs local macOS builds. Distribution builds still need a Developer ID signature and notarization.
 
-Builds for Windows, macOS and Linux are on the
-[releases page](https://github.com/scholzdev/tossup/releases), for studying the game (see License below). The Windows and
-Linux builds have not been tried on a real machine yet, and the macOS app is not notarized, so you have to open it with a
-right click the first time.
+Saves use `profile.json` under `~/Library/Application Support/Tossup/Tossup` on macOS and `%USERPROFILE%\AppData\LocalLow\Tossup\Tossup` on Windows. On first start, Unity can read the original edition's legacy save and immediately writes a JSON copy, so existing progress carries over. The original save is only read, never changed.
 
-From source you need LÖVE 11.5:
+## How the code maps to the original
 
-```
-love .
-```
+| Original (Lua) | Port (C#) |
+|---|---|
+| `src/game.lua`, `rng.lua`, `signal.lua`, `hooks.lua`, `relics.lua`, `items.lua` | `Assets/Scripts/Core/` (`Game.cs`, `Rng.cs`, `Signal.cs`, `Hooks.cs`, `Model.cs`) |
+| `content/**` (coins, items, relics, characters) | `Assets/Scripts/Content/Content.cs` |
+| `src/profile.lua` | `Core/Profile.cs` + JSON saves; `LegacyProfileData.cs` only imports an existing save once |
+| `src/lang.lua`, `locales/de.lua` | `UI/Lang.cs` + `Resources/locales/de.json` |
+| `src/ui/app.lua`, `state.lua`, `actions.lua`, `draw.lua`, `sound.lua`, `theme.lua` | `UI/AppCore.cs`, `UiState.cs`, `Actions.cs`, `Draw.cs`, `Sound.cs`, `Theme.cs` |
+| `src/ui/views/*.lua` | `UI/Views/EncounterView.cs`, `ShopView.cs`, `MenuViews.cs` |
+| `love.graphics` | `Render/Gfx.cs` (same immediate-mode API) drawn by `Render/UnityGfxBackend.cs` (GL) |
+| `main.lua` / LÖVE runtime | `Scripts/TossupApp.cs` (input, audio, saves, cursor, window) |
 
-or `./tools/run.sh`. The first run starts a short interactive tutorial. Progress and the current run are saved
-automatically.
+`Core`, `Content` and `UI` don't depend on UnityEngine. Only `TossupApp.cs` and `UnityGfxBackend.cs` do, so the headless tools can run the same C# game outside Unity. The views draw on a fixed 1280×800 canvas, scaled and letterboxed to the window. Baked font atlases and JSON metrics keep text placement deterministic.
 
-For a sandbox scene, run `./tools/run.sh scenes/shop.lua` with a project-relative Lua file. Its `screen` field
-chooses `encounter`, `shop`, `title`, `select`, `collection`, `sets`, `options`, or `help`. Press F5 to reload the same
-file. `SANDBOX=1 ./tools/run.sh` uses `sandbox.lua` by default; sandbox runs do not touch normal progress.
+## Verification tools (`Tools/`)
 
-Keyboard: arrows move the focus, Enter presses, Space flips, D discards, 1 to 3 use chips, O opens the shop,
-Q and E change page or tab, Esc opens the menu. With a controller: stick or D-pad to move, A to press, B or Start for
-Esc, X flips, Y discards, the shoulder buttons and triggers change pages. The full list is under Options > Controls.
+- `parity/csharp/`: runs deterministic seeded simulations directly against the C# rules.
+- `uitest/`: runs the real UI code headless: the screenshot tour, a random "monkey" session, and a player that clicks through deep runs (`dotnet run -c Release -- 300000 11`).
+- `.ecc/benchmarks/unity-vs-lua-rules.json`: the recorded five-sample rules benchmark used during conversion.
 
-## Building
+## Deliberate differences from the original
 
-```
-./tools/build_all.sh            # dist/<platform>/ for love, macos, windows, linux
-./tools/build_all.sh release    # tag the version and publish the builds on GitHub (needs gh)
-./tools/run.sh app              # build the binary for this OS and start it
-```
-
-Each platform script is also there on its own (`tools/build_macos.sh` and so on). The Windows build needs node for
-setting the exe icon, and all of them need `zip` and `curl`.
-
-## Tests and tools
-
-```
-for t in tests/test_*.lua; do lua $t; done
-lua tools/sim.lua --runs 200 --bot smart --char blade --stake 1
-```
-
-The rules (`src/game.lua`, `rng.lua`, `hooks.lua`, `items.lua`, `relics.lua`, `profile.lua`) do not touch LÖVE, so
-the tests and the balance simulator run on plain Lua. Everything is driven by one seeded RNG, which means the same seed
-and the same actions always replay the same run. The simulator plays whole runs with a few simple bots and prints clear
-rates per level; it is crude, but good enough to catch a coin that is broken or an economy that has drifted.
-
-`./tools/build_wiki.sh` generates a browsable wiki of all coins, chips, prizes, modifiers and characters from the game
-data, in English and German. It is published at https://scholzdev.github.io/tossup/ and rebuilt when the data changes.
-The art is generated by scripts too (`tools/gen_*.py`, Pillow), including the app icon and the menu backdrop.
-
-## Layout
-
-```
-src/         rules (no LÖVE) and src/ui/ (screens, input, sound)
-content/     coins, chips, relics, modifiers, characters, stages: one small file each
-locales/     German texts
-assets/      art, fonts, sounds
-tools/       simulator, generators, build and release scripts
-tests/       plain Lua tests
-```
-
-Adding a coin means adding a file to `content/coins/` and a line to `content/coin_order.lua`. A coin is a table with its
-odds, two effect lists and, if it needs one, a few hooks; `src/hooks.lua` explains them at the top.
-
-## License
-
-Tossup is not open source. You may read the code and run an unmodified copy for educational purposes. Modifying it,
-publishing it, any commercial use and any private use (playing it for fun, for example) need my written permission. The
-full text is in [LICENSE](LICENSE).
+- **Crash fixes.** The original game crashes when Double Down is used on a coin whose effects include "next coin lands Heads" or "next coin swaps sides" (Domino, Mirror). It also crashes when Echo repeats a "next coins" buff (after Megaphone or Cheerleader). The port plays those situations out instead.
+- **No mouse soft-lock.** After the last coin of a stack, the original greys out NEXT COIN and only Space continues. In the port the button works like Space.
+- **Language is remembered.** The original wrote the language option unquoted, so German reset to English on every start. Unity stores it in JSON and still imports old saves.
+- The game no longer moves your mouse cursor to the window corner on start.
+- Unity Personal shows the "Made with Unity" splash screen at startup.

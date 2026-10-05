@@ -1,13 +1,27 @@
-dist/
+# Unity
 .DS_Store
-*.png~
-src/build_id.lua
-wiki/
-wiki-github/
-dist-content.json
-# documentation is kept locally, not in the repository
-*.md
-!/README.md
-!/ideas.md
-__pycache__/
-*.pyc
+/Library/
+/Temp/
+/Obj/
+/Build/
+/Builds/
+/Logs/
+/UserSettings/
+/MemoryCaptures/
+*.csproj
+*.sln
+*.pidb
+*.suo
+*.user
+*.userprefs
+.vs/
+.idea/
+
+# keep the tool projects
+!/Tools/**/*.csproj
+
+# tool outputs
+/Tools/**/bin/
+/Tools/**/obj/
+/Tools/parity/lua.txt
+/Tools/parity/csharp.txt
