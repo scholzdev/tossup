@@ -5,7 +5,8 @@ A native C# conversion of **Tossup** for **Unity 6.6 (6000.6.4f1)** with **URP 1
 ## Run it
 
 - **Run in the Unity Editor:** `./Tools/run_unity.sh`, then press Play.
-- **Build and launch a native player:** `./Tools/run mac|windows|linux` (use the matching OS; Linux requires its Unity module).
+- **Run a native player:** `./Tools/run mac|windows|linux` (builds only when the player is missing; use the matching OS).
+- **Build without launching:** `./Tools/build mac|windows|linux` (Linux requires its Unity module).
 - **Build macOS without launching:** `./tools/build mac` → `Builds/macOS/Tossup.app`.
 - **Build Windows from macOS:** `./tools/build windows` → `Builds/Windows/Tossup.exe`. Install Windows Build Support (Mono) for Unity 6000.6.4f1; copy the complete `Builds/Windows` folder to Windows, or package it with `python3 Tools/package_unity.py windows`.
 - **Build/package on Windows:** `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/build_windows.ps1` (or the **Tossup → Build Windows Player** Editor menu). Both paths require Windows Build Support installed for Unity 6000.6.4f1.

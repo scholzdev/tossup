@@ -475,7 +475,7 @@ namespace Tossup.UI
                     if (over) hint = Lang.ItemDescription(id);
                 }
             }
-            int prizeCount = g.Augments.Count + (g.RunEncounterId != null ? 1 : 0);
+            int prizeCount = g.Augments.Count + (g.RunEncounter != null ? 1 : 0);
             const float prizeX = 930, prizeWidth = 280, prizeSize = 44, prizeGap = 6;
             Centered(L("PRIZES"), prizeX, 654, prizeWidth, Ui.F16, C.Gold);
             if (prizeCount > 0)

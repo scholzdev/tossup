@@ -205,7 +205,7 @@ static class FeatureParityTests
             RuntimeMode.Configure(dev,false);
             Ui.SelectedCharacter="blade";Ui.Tutorial=null;Ui.Confirm=null;
             A.Start(6601);
-            Check(Ui.Game.RunEncounterId!=null && Ui.EncounterReveal!=null, "normal and developer Start show the assigned encounter");
+            Check(Ui.Game.RunEncounter!=null && Ui.EncounterReveal!=null, "normal and developer Start show the assigned encounter");
             AppCore.Draw();
             Check(Ui.Buttons.Count == 0, "encounter reveal blocks game controls while animating");
             AppCore.Update(.2);

@@ -98,7 +98,7 @@ static class Program
             stakes=Game.Stakes.Select(c=>new{info=c.Info,rules=c.Rules}).ToArray(),
             modifiers=Game.ModifierOrder.Select(id=>{var c=Game.Modifiers[id];return new{id,name=c.Name,description=c.Description};}).ToArray(),
             contracts=Game.ContractOrder.Select(id=>{var c=Game.Contracts[id];return new{id,name=c.Name,description=c.Description,drawback=c.Drawback,reward=c.Reward,reward_text=c.RewardText,heads_penalty=c.HeadsPenalty};}).ToArray(),
-            encounters=Game.EncounterOrder.Select(id=>{var c=Game.Encounters[id];return new{id,name=c.Name,description=c.Description};}).ToArray(),
+            encounters=Game.Encounters.Select(c=>new{id=c.Id,name=c.Name,description=c.Description}).ToArray(),
             augments=Game.AugmentOrder.Select(id=>{var c=Game.AugmentDefs[id];return new{id,name=c.Name,description=c.Description,tier=c.Tier};}).ToArray(),
             constants=new Dictionary<string,object>{{"START_GOLD",Game.StartGold},{"START_MAX",Game.StartMax},{"DECK_MAX",Game.DeckMax},{"SLOT_COST",Game.SlotCost},{"SLOT_STEP",Game.SlotStep},{"EXCHANGE_BASE",Game.ExchangeBase},{"EXCHANGE_STEP",Game.ExchangeStep},{"EXCHANGE_GAIN",Game.ExchangeGain},{"EXCHANGE_MAX",Game.ExchangeMax},{"SURPLUS_RATE",Game.SurplusRate},{"COMBO_STEP",Game.ComboStep},{"COMBO_CAP",Game.ComboCap},{"RETURN_CAP",Game.ReturnCap},{"MAX_COPIES",3},{"VISIBLE",Game.Visible},{"MULLIGAN",Game.MulliganSize}},
             de, de_strings=flat

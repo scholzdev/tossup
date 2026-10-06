@@ -303,6 +303,7 @@ namespace Tossup
         public int RerollStep = 2;
         public bool ContractsEnabled = true;
         public string RunEncounterId;
+        [NonSerialized] public RunEncounterDef RunEncounter;
         public List<string> Augments = new List<string>();
         public Dictionary<string, string> AugmentData = new Dictionary<string, string>();
         public int? AugmentLevel;
@@ -313,6 +314,12 @@ namespace Tossup
         public List<Upgrade> ShopUpgrades = new List<Upgrade>();
         // presentation flags kept on the run, as the original did
         public bool Paused;
+
+        public void SetRunEncounter(RunEncounterDef encounter)
+        {
+            RunEncounter = encounter;
+            RunEncounterId = encounter?.Id;
+        }
         public int? TokensPaid;
         public bool EndlessLogged, EndlessRecord, OverSeen;
         public bool WinRecorded, EndlessRecorded;

@@ -67,7 +67,7 @@ static class Simulator
         double mean=g.Coins.Average(c=>values[c.Id]);
         var coin=Game.GetCoin(g,g.Dealt.Uid);double v=values[coin.Id];
         bool behind=g.Encounter.Quota>Game.CoinsLeft(g)*mean*.9;
-        if(v<mean*.6&&g.Coins.Count-g.Encounter.Discards>1&&Game.Discard(g)>0)return;
+        if(v<0&&g.Coins.Count-g.Encounter.Discards>1&&Game.Discard(g)>0)return;
         bool Use(string id){int slot=g.Items.IndexOf(id);return slot>=0&&Game.UseItem(g,slot);}
         if(v<mean*.5&&Use("swap"))return;
         double pts=Content.Coins[coin.Id].Heads.Where(e=>e.Type==EffectType.Score).Sum(e=>e.Amount);
@@ -105,11 +105,11 @@ static class Simulator
         if(g.ShopRelic!=null&&g.Player.Gold>=25)Game.BuyRelic(g);
         for(int i=0;i<g.ShopItems.Count;i++)if(new[]{"force_heads","double_down","weighted","extra_draw"}.Contains(g.ShopItems[i]))Game.BuyItem(g,i);
     }
-    static GameState Play(int seed,string character,string bot,bool all,bool defaults,int stake)
+    static GameState Play(int seed,string character,string bot,bool all,bool defaults,int stake,List<string> fixedLoadout=null)
     {
         // Measure before constructing the run: Game.New rebinds global rule hooks.
         var values=bot=="smart"||!defaults ? Content.CoinOrder.ToDictionary(c=>c.Id,c=>Value(c.Id)) : null;
-        var loadout=defaults?null:BestSet(character,all);
+        var loadout=fixedLoadout??(defaults?null:BestSet(character,all));
         var g=Game.New(seed,character,Unlocks(character,all),loadout?.Select(id=>Content.Coins[id]).ToList(),true,stake);
         for(int guard=0;guard<2000;guard++)
         {
@@ -119,8 +119,8 @@ static class Simulator
             {
                 if(bot=="smart")
                 {
-                    var hand=g.Mulligan.Hand;double mean=hand.Average(uid=>values[Game.GetCoin(g,uid).Id]);var marked=new List<int>();
-                    foreach(int uid in hand)if(hand.Count-marked.Count>3&&values[Game.GetCoin(g,uid).Id]<mean*.6)marked.Add(uid);
+                    var hand=g.Mulligan.Hand;var marked=new List<int>();
+                    foreach(int uid in hand)if(hand.Count-marked.Count>3&&values[Game.GetCoin(g,uid).Id]<0)marked.Add(uid);
                     Game.MulliganDiscard(g,marked);
                 }
                 Game.MulliganDone(g);continue;
@@ -140,10 +140,84 @@ static class Simulator
         }
         throw new InvalidOperationException($"simulator stalled: seed {seed}, {character}/{bot}, {g.Phase}");
     }
+    static double DeckScore(string character,List<string> deck,int runs,int stake)
+    {
+        double score=0;
+        for(int seed=1;seed<=runs;seed++)
+        {
+            var g=Play(seed,character,"smart",true,false,stake,deck);
+            score+=g.Cleared+(g.Phase==Phase.Victory?8:0);
+        }
+        return score/runs;
+    }
+    static bool CanAdd(List<string> deck,string id)
+        => deck.Count<Game.StartMax&&deck.Count(x=>Content.Coins[x].Rarity==Content.Coins[id].Rarity)<Profile.RarityLimit(id);
+    static List<string> RandomDeck(List<string> candidates,Random rng)
+    {
+        var deck=new List<string>();
+        while(deck.Count<Game.StartMax)
+        {
+            var available=candidates.Where(id=>CanAdd(deck,id)).ToList();
+            if(available.Count==0)break;
+            deck.Add(available[rng.Next(available.Count)]);
+        }
+        return deck;
+    }
+    static List<string> OptimizeDeck(string character,int searchRuns,int stake)
+    {
+        var candidates=Content.Characters[character].Pool.Select(c=>c.Id).Concat(Unlocks(character,true)).Distinct().OrderBy(id=>id,StringComparer.Ordinal).ToList();
+        var starts=new List<List<string>>{BestSet(character,true)};
+        var rng=new Random(20261006+Content.CharacterOrder.IndexOf(character));
+        for(int i=0;i<6;i++)starts.Add(RandomDeck(candidates,rng));
+        List<string> best=null;double bestScore=double.NegativeInfinity;
+        foreach(var start in starts)
+        {
+            var current=start.ToList();double currentScore=DeckScore(character,current,searchRuns,stake);
+            for(int pass=0;pass<2;pass++)
+            {
+                var next=current;double nextScore=currentScore;
+                for(int slot=0;slot<current.Count;slot++)
+                foreach(string id in candidates)
+                {
+                    var trial=current.ToList();trial[slot]=id;
+                    if(trial.Count(x=>Content.Coins[x].Rarity==Content.Coins[id].Rarity)>Profile.RarityLimit(id))continue;
+                    double score=DeckScore(character,trial,searchRuns,stake);
+                    if(score>nextScore){next=trial;nextScore=score;}
+                }
+                if(nextScore<=currentScore)break;
+                current=next;currentScore=nextScore;
+            }
+            if(currentScore>bestScore){best=current;bestScore=currentScore;}
+        }
+        return best;
+    }
+    static void RunDeckOptimization(int runs,int searchRuns,int stake)
+    {
+        Console.WriteLine($"Optimizing legal {Game.StartMax}-coin starting decks over {searchRuns} search seeds; validating on {runs} separate seeds.");
+        foreach(string character in Content.CharacterOrder)
+        {
+            var deck=OptimizeDeck(character,searchRuns,stake);
+            var reached=new int[Game.Route.Count+1];int wins=0;double cleared=0;
+            var baselineReached=new int[Game.Route.Count+1];int baselineWins=0;double baselineCleared=0;
+            for(int seed=10001;seed<10001+runs;seed++)
+            {
+                var g=Play(seed,character,"smart",true,false,stake,deck);
+                for(int level=0;level<=g.Cleared&&level<reached.Length;level++)reached[level]++;
+                if(g.Phase==Phase.Victory)wins++;cleared+=g.Cleared;
+                var baseline=Play(seed,character,"smart",true,true,stake);
+                for(int level=0;level<=baseline.Cleared&&level<baselineReached.Length;level++)baselineReached[level]++;
+                if(baseline.Phase==Phase.Victory)baselineWins++;baselineCleared+=baseline.Cleared;
+            }
+            string Pct(int n)=>(100.0*n/runs).ToString("F1")+"%";
+            Console.WriteLine($"{character,-10} deck [{string.Join(",",deck)}]");
+            Console.WriteLine($"  optimized: L1 {Pct(reached[1]),6} L3 {Pct(reached[3]),6} L5 {Pct(reached[5]),6} L7 {Pct(reached[7]),6} boss {Pct(wins),6} avg cleared {cleared/runs:F2}");
+            Console.WriteLine($"  starter:   L1 {Pct(baselineReached[1]),6} L3 {Pct(baselineReached[3]),6} L5 {Pct(baselineReached[5]),6} L7 {Pct(baselineReached[7]),6} boss {Pct(baselineWins),6} avg cleared {baselineCleared/runs:F2}");
+        }
+    }
     public static void Run(string[] args)
     {
         CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;
-        int runs=300,stake=1;int? trace=null;string bot="all",character="all",set="best",unlock="none";bool coins=false;
+        int runs=300,searchRuns=40,stake=1;int? trace=null;string bot="all",character="all",set="best",unlock="none";bool coins=false,optimize=false;
         for(int i=0;i<args.Length;i++)
         {
             string Next(){if(++i>=args.Length)throw new ArgumentException("missing value for "+args[i-1]);return args[i];}
@@ -151,6 +225,7 @@ static class Simulator
             {
                 case "--runs":runs=int.Parse(Next());break;case "--stake":stake=int.Parse(Next());break;case "--trace":trace=int.Parse(Next());break;
                 case "--bot":bot=Next();break;case "--char":character=Next();break;case "--set":set=Next();break;case "--unlock":unlock=Next();break;case "--coins":coins=true;break;
+                case "--optimize":optimize=true;break;case "--search-runs":searchRuns=int.Parse(Next());break;
                 case "--quota":case "--payout":
                     bool quota=args[i]=="--quota";var numbers=Next().Split(',').Select(double.Parse).ToArray();
                     if(numbers.Length>Game.Route.Count||numbers.Any(n=>!double.IsFinite(n)||n<0))throw new ArgumentException("invalid route overrides");
@@ -159,7 +234,8 @@ static class Simulator
             }
         }
         var bots=new[]{"random","greedy","smart"};
-        if(runs<1||stake<1||stake>Game.Stakes.Count||!bots.Append("all").Contains(bot)||!Content.CharacterOrder.Append("all").Contains(character)||!new[]{"best","default"}.Contains(set)||!new[]{"none","all"}.Contains(unlock))throw new ArgumentException("invalid simulator options");
+        if(runs<1||searchRuns<1||stake<1||stake>Game.Stakes.Count||!bots.Append("all").Contains(bot)||!Content.CharacterOrder.Append("all").Contains(character)||!new[]{"best","default"}.Contains(set)||!new[]{"none","all"}.Contains(unlock))throw new ArgumentException("invalid simulator options");
+        if(optimize){RunDeckOptimization(runs,searchRuns,stake);return;}
         if(coins)
         {
             var rows=Content.CoinOrder.Select(c=>(id:c.Id,m:Measure(c.Id,100,100))).ToList();

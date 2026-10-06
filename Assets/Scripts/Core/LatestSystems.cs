@@ -20,8 +20,8 @@ namespace Tossup
         public static readonly List<StakeDef> Stakes = BuildStakes();
         public static readonly Dictionary<string, ContractDef> Contracts = BuildContracts();
         public static readonly List<string> ContractOrder = new List<string> { "quick_clear", "clean_run", "hot_streak", "bank_once", "amazon_prime" };
-        public static readonly Dictionary<string, RunEncounterDef> Encounters = BuildEncounters();
-        public static readonly List<string> EncounterOrder = new List<string> { "house_clock", "dead_heat", "high_roller_table", "thin_market", "upgrade" };
+        public static readonly List<RunEncounterDef> Encounters = BuildEncounters();
+        public static readonly Dictionary<string, RunEncounterDef> EncounterById = BuildEncounterIndex();
         public static readonly Dictionary<string, AugmentDef> AugmentDefs = BuildAugments();
         public static readonly List<string> AugmentOrder = new List<string> { "bankers_cut", "all_in", "hedge_fund", "scrap_dealer", "epic_windfall", "reforger", "type_specialist", "upgrade_press" };
 
@@ -76,15 +76,38 @@ namespace Tossup
             };
         }
 
-        static Dictionary<string, RunEncounterDef> BuildEncounters()
+        static List<RunEncounterDef> BuildEncounters()
         {
-            return new Dictionary<string, RunEncounterDef>{
-                ["house_clock"]=new RunEncounterDef{Id="house_clock",Name="The House's Clock",Description="Every third flip is inverted. Clearing a level pays 25% more."},
-                ["dead_heat"]=new RunEncounterDef{Id="dead_heat",Name="Dead Heat",Description="A Tie breaks your combo and burns its pot. Banking a combo grants 2 extra gold."},
-                ["high_roller_table"]=new RunEncounterDef{Id="high_roller_table",Name="High-Roller Table",Description="Side bets use double the stake and payout. A Tie loses the stake."},
-                ["thin_market"]=new RunEncounterDef{Id="thin_market",Name="Thin Market",Description="Shops show one fewer coin, but every coin costs 2 fewer gold."},
-                ["upgrade"]=new RunEncounterDef{Id="upgrade",Name="Upgrade",Description="Start with a random Common coin."}
+            return new List<RunEncounterDef>{
+                new RunEncounterDef{Id="house_clock",Name="The House's Clock",Description="Every third flip is inverted. Clearing a level pays 25% more.",InvertsFlip=flip=>flip%3==0,EncounterStart=(g,e)=>{if(e.Payout.HasValue)e.Payout=Math.Floor(e.Payout.Value*1.25+.5);}},
+                new RunEncounterDef{Id="dead_heat",Name="Dead Heat",Description="A Tie breaks your combo and burns its pot. Banking a combo grants 2 extra gold.",BreaksComboOnTie=true,ComboBankBonus=2},
+                new RunEncounterDef{Id="high_roller_table",Name="High-Roller Table",Description="Side bets use double the stake and payout. A Tie loses the stake.",SideBetMultiplier=2,SideBetTieLoses=true},
+                new RunEncounterDef{Id="thin_market",Name="Thin Market",Description="Shops show one fewer coin, but every coin costs 2 fewer gold.",RunStart=g=>{g.Shop.CoinOfferCount=3;g.Shop.CoinPriceDiscount=2;}},
+                new RunEncounterDef{Id="upgrade",Name="Upgrade",Description="Start with a random Common coin.",RunStart=g=>{
+                    var pool=new List<CoinDef>();foreach(var coin in UsablePool(g))if(coin.Rarity==Rarity.Common)pool.Add(coin);
+                    if(pool.Count>0){if(g.Coins.Count>=g.Slots&&g.Slots<DeckMax)g.Slots++;AddToDeck(g,pool[Rng.Int(g,1,pool.Count)-1]);}
+                }},
+                new RunEncounterDef{Id="guild_hall",Name="The Guild Hall",Description="At run start, gain 2 gold for each coin type shared by at least two coins in your deck.",RunStart=g=>{
+                    var counts=new Dictionary<CoinType,int>();
+                    foreach(var coin in g.Coins)foreach(var type in coin.Definition.Types){counts.TryGetValue(type,out int count);counts[type]=count+1;}
+                    int bonus=0;foreach(var count in counts.Values)if(count>1)bonus+=2;
+                    if(bonus>0){g.Player.Gold+=bonus;Log(g,"Guild Hall: +"+bonus+" gold from shared coin types.");}
+                }},
+                new RunEncounterDef{Id="type_market",Name="The Type Market",Description="Coins sharing a type with your deck cost 3 less gold in shops.",CoinDiscount=(g,offer)=>SharesTypeWithDeck(g,offer)?3:0}
             };
+        }
+
+        static Dictionary<string, RunEncounterDef> BuildEncounterIndex()
+        {
+            var result=new Dictionary<string,RunEncounterDef>();
+            foreach(var encounter in Encounters)result.Add(encounter.Id,encounter);
+            return result;
+        }
+
+        static bool SharesTypeWithDeck(GameState game,CoinDef offer)
+        {
+            foreach(var owned in game.Coins)foreach(var type in offer.Types)if(HasType(owned,type))return true;
+            return false;
         }
 
         static Dictionary<string, AugmentDef> BuildAugments()
@@ -164,12 +187,8 @@ namespace Tossup
         static void TriggerRunHook(GameState g, RunHookEvent evt)
         {
             var e=g.Encounter;
-            if(g.RunEncounterId=="thin_market"&&evt==RunHookEvent.RunStart){g.Shop.CoinOfferCount=3;g.Shop.CoinPriceDiscount=2;}
-            if(g.RunEncounterId=="upgrade"&&evt==RunHookEvent.RunStart){
-                var pool=new List<CoinDef>();foreach(var coin in UsablePool(g))if(coin.Rarity==Rarity.Common)pool.Add(coin);
-                if(pool.Count>0){if(g.Coins.Count>=g.Slots&&g.Slots<DeckMax)g.Slots++;AddToDeck(g,pool[Rng.Int(g,1,pool.Count)-1]);}
-            }
-            if(g.RunEncounterId=="house_clock"&&evt==RunHookEvent.EncounterStart&&e?.Payout!=null)e.Payout=Math.Floor(e.Payout.Value*1.25+.5);
+            if(evt==RunHookEvent.RunStart)g.RunEncounter?.RunStart?.Invoke(g);
+            if(evt==RunHookEvent.EncounterStart&&e!=null)g.RunEncounter?.EncounterStart?.Invoke(g,e);
             if(HasAugment(g,"scrap_dealer")&&evt==RunHookEvent.Discard&&e!=null){g.Player.Gold++;e.MaxQuota+=2;if(!e.Cleared)e.Quota+=2;Log(g,"Scrap Dealer: +1 gold, quota +2.");}
         }
 
@@ -271,18 +290,18 @@ namespace Tossup
         }
         public static bool ChooseAugmentOption(GameState g,string key){var p=g.AugmentPending;if(p==null)return false;var options=AugmentChoices(g);AugmentChoice chosen=null;foreach(var x in options)if(x.Key==key)chosen=x;if(chosen==null)return false;if(p.Id=="type_specialist")g.AugmentData["type_specialist"]=key;else if(p.Id=="upgrade_press"){var bits=key.Split(':');var c=GetCoin(g,int.Parse(bits[0]));c.Definition.TryGetUpgrade(bits[1],out var upgrade);c.Upgrade=upgrade;}else{var old=GetCoin(g,int.Parse(key));string id=p.RewardId;if(p.Id=="reforger"){var ids=new List<string>();foreach(var x in Content.CoinOrder)if(x.Id!=old.Id&&x.Rarity==old.Definition.Rarity)ids.Add(x.Id);id=ids[Rng.Int(g,1,ids.Count)-1];}int index=g.Coins.IndexOf(old);var replacement=NewCoin(g,id);g.Coins[index]=replacement;g.SelectedUid=replacement.Uid;}FinishAugment(g);return true;}
 
-        public static SideBetQuote SideBetQuote(GameState g,string side){if(g.Dealt==null||(side!=Side.Heads&&side!=Side.Tails))return null;double odds=side==Side.Heads?g.Dealt.Probability:1-g.Dealt.Probability-g.Dealt.TieProbability;if(odds<=0)return null;int stake=5,payout=Math.Max(stake,(int)Math.Floor(stake/odds+.5));if(g.RunEncounterId=="high_roller_table"){stake*=2;payout*=2;}if(HasAugment(g,"hedge_fund"))payout=(int)Math.Floor(payout*1.25+.5);return new SideBetQuote{Side=side,Stake=stake,Payout=payout};}
+        public static SideBetQuote SideBetQuote(GameState g,string side){if(g.Dealt==null||(side!=Side.Heads&&side!=Side.Tails))return null;double odds=side==Side.Heads?g.Dealt.Probability:1-g.Dealt.Probability-g.Dealt.TieProbability;if(odds<=0)return null;int multiplier=g.RunEncounter?.SideBetMultiplier??1;int stake=5*multiplier,payout=Math.Max(stake,(int)Math.Floor(stake/odds+.5))*multiplier;if(HasAugment(g,"hedge_fund"))payout=(int)Math.Floor(payout*1.25+.5);return new SideBetQuote{Side=side,Stake=stake,Payout=payout};}
         public static bool PlaceSideBet(GameState g,string side){var e=g.Encounter;if(g.Phase!=Phase.Encounter||e==null||e.Flips!=0||g.Dealt==null||e.SideBetSide!=null)return false;var q=SideBetQuote(g,side);if(q==null||g.Player.Gold<q.Stake)return false;g.Player.Gold-=q.Stake;e.SideBetSide=side;e.SideBetOutcome=null;e.SideBetCost=q.Stake;e.SideBetPayout=q.Payout;Log(g,"Bet "+q.Stake+" gold on "+side+" ("+q.Payout+" gold payout).");return true;}
 
         static double ComboPot(double len)=>Math.Max(0,(len-1)*len/2);
         public static bool CanBankCombo(GameState g)=>g!=null&&g.Phase==Phase.Encounter&&g.Encounter!=null&&g.Pending==null&&g.Mulligan==null&&g.Encounter.ComboPot>0;
-        static int BankComboPot(GameState g,bool counts=true){var e=g.Encounter;int amount=(int)Math.Floor(e.ComboPot);if(amount<=0)return 0;if(g.RunEncounterId=="dead_heat")amount+=2;if(HasAugment(g,"bankers_cut")){amount+=2;g.NextLevelQuotaBonus+=2;}g.Player.Gold+=amount;if(counts)e.ComboBanked=true;e.ComboPot=0;e.ComboSide=null;e.ComboLen=0;Log(g,"Banked "+amount+" combo gold.");return amount;}
+        static int BankComboPot(GameState g,bool counts=true){var e=g.Encounter;int amount=(int)Math.Floor(e.ComboPot);if(amount<=0)return 0;amount+=g.RunEncounter?.ComboBankBonus??0;if(HasAugment(g,"bankers_cut")){amount+=2;g.NextLevelQuotaBonus+=2;}g.Player.Gold+=amount;if(counts)e.ComboBanked=true;e.ComboPot=0;e.ComboSide=null;e.ComboLen=0;Log(g,"Banked "+amount+" combo gold.");return amount;}
         public static int BankCombo(GameState g)=>CanBankCombo(g)?BankComboPot(g):0;
         public static bool DiscardBank(GameState g,int uid){var e=g.Encounter;if(e==null||e.BankDiscards<1)return false;int i=e.Queue.IndexOf(uid);if(i<0||i>=Visible||Discard(g,new[]{uid})==0)return false;e.BankDiscards--;return true;}
         public static int ExchangesLeft(GameState g)=>(int)Rule(g,"exchange_max",ExchangeMax)+g.Encounter.ExtraExchanges-g.Encounter.Exchanges;
         public static int SlotPrice(GameState g)=>SlotCost+SlotStep*(g.Slots-StartMax);
         public static bool BuySlot(GameState g){int cost=SlotPrice(g);if(g.Phase!=Phase.Shop||g.Slots>=DeckMax||g.Player.Gold<cost)return false;g.Player.Gold-=cost;g.Slots++;Log(g,"Bought deck slot "+g.Slots+" for "+cost+" gold.");return true;}
-        public static int CoinOfferCost(GameState g,int index){if(index<0||index>=g.ShopOffers.Count||g.ShopOffers[index]==null)return -1;var coin=g.ShopOffers[index];int cost=coin.Cost;if(index<g.ShopUpgrades.Count&&g.ShopUpgrades[index]!=null&&coin.TryGetUpgrade(g.ShopUpgrades[index].Id,out var u))cost+=u.Cost;return Math.Max(0,Price(g,cost)-(int)g.Shop.CoinPriceDiscount-(int)CharacterPerkValue(g,CharacterPerkType.CoinDiscount));}
+        public static int CoinOfferCost(GameState g,int index){if(index<0||index>=g.ShopOffers.Count||g.ShopOffers[index]==null)return -1;var coin=g.ShopOffers[index];int cost=coin.Cost;if(index<g.ShopUpgrades.Count&&g.ShopUpgrades[index]!=null&&coin.TryGetUpgrade(g.ShopUpgrades[index].Id,out var u))cost+=u.Cost;int discount=g.RunEncounter?.CoinDiscount?.Invoke(g,coin)??0;return Math.Max(0,Price(g,cost)-(int)g.Shop.CoinPriceDiscount-(int)CharacterPerkValue(g,CharacterPerkType.CoinDiscount)-discount);}
 
         static void SetShopStock(GameState g)
         {

@@ -31,6 +31,7 @@ namespace Tossup
                 if (root.Kind != JsonKind.Object || root["version"]?.Kind != JsonKind.Number || (int)root["version"].Number != Version)
                     return null;
                 var game = (GameState)StateJson.Decode(root["game"], typeof(GameState));
+                if (game?.RunEncounterId != null && Game.EncounterById.TryGetValue(game.RunEncounterId, out var encounter)) game.RunEncounter = encounter;
                 if (!Valid(game)) return null;
                 Hooks.Unbind();
                 Items.Clear();
@@ -72,7 +73,8 @@ namespace Tossup
                 g.Shop == null || g.Shop.RefreshCost < 0 || g.Shop.CoinOfferCount < 1 || g.Shop.CoinOfferCount > 99 ||
                 !Finite(g.Shop.CoinPriceDiscount) || g.Shop.CoinPriceDiscount < 0 ||
                 g.ShopRelic != null && !Content.Relics.ContainsKey(g.ShopRelic) ||
-                g.RunEncounterId != null && !Game.Encounters.ContainsKey(g.RunEncounterId)) return false;
+                g.RunEncounterId != null && (!Game.EncounterById.TryGetValue(g.RunEncounterId,out var savedEncounter) || g.RunEncounter != savedEncounter) ||
+                g.RunEncounterId == null && g.RunEncounter != null) return false;
             for (int i = 0; i < g.ShopUpgrades.Count; i++)
                 if (g.ShopUpgrades[i] != null && (g.ShopOffers[i] == null || !g.ShopOffers[i].TryGetUpgrade(g.ShopUpgrades[i].Id,out _))) return false;
             if (!Ids(g.Augments, Game.AugmentDefs.ContainsKey) || g.Augments.Count > 2 || new HashSet<string>(g.Augments).Count != g.Augments.Count || g.AugmentData == null) return false;
@@ -200,9 +202,12 @@ namespace Tossup
             output.Append('{');
             var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
             Array.Sort(fields, (a, b) => string.CompareOrdinal(FieldName(a), FieldName(b)));
+            bool firstField = true;
             for (int i = 0; i < fields.Length; i++)
             {
-                if (i > 0) output.Append(',');
+                if (Attribute.IsDefined(fields[i], typeof(NonSerializedAttribute))) continue;
+                if (!firstField) output.Append(',');
+                firstField = false;
                 output.Append(JsonData.Quote(FieldName(fields[i]))).Append(':');
                 Write(output, fields[i].GetValue(value), fields[i].FieldType);
             }
@@ -264,7 +269,7 @@ namespace Tossup
             if (data.Kind != JsonKind.Object) throw new FormatException("expected object");
             object result = Activator.CreateInstance(type);
             foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public))
-                if (data.Object.TryGetValue(FieldName(field), out var fieldData)) field.SetValue(result, Decode(fieldData, field.FieldType));
+                if (!Attribute.IsDefined(field, typeof(NonSerializedAttribute)) && data.Object.TryGetValue(FieldName(field), out var fieldData)) field.SetValue(result, Decode(fieldData, field.FieldType));
             return result;
         }
 

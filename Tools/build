@@ -79,8 +79,18 @@ if [ "$TARGET" = macos ] && [ ! -x "$OUTPUT/Contents/MacOS/Tossup" ]; then
   tail -n 60 "$LOG" >&2 || true
   exit 1
 fi
+if [ "$TARGET" = macos ] && [ ! -d "$OUTPUT/Contents/Resources/Data" ]; then
+  echo "Unity exited without creating $OUTPUT/Contents/Resources/Data; log: $LOG" >&2
+  tail -n 60 "$LOG" >&2 || true
+  exit 1
+fi
 if [ "$TARGET" != macos ] && [ ! -s "$OUTPUT" ]; then
   echo "Unity exited without creating $OUTPUT; log: $LOG" >&2
+  tail -n 60 "$LOG" >&2 || true
+  exit 1
+fi
+if [ "$TARGET" = linux ] && [ ! -d "$ROOT/Builds/Linux/Tossup_Data" ]; then
+  echo "Unity exited without creating $ROOT/Builds/Linux/Tossup_Data; log: $LOG" >&2
   tail -n 60 "$LOG" >&2 || true
   exit 1
 fi

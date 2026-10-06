@@ -33,6 +33,8 @@ namespace Tossup.UI
                 else if (g.Encounter.Cleared) Game.EndLevel(g);
                 else break;
             }
+            // This helper drives fixed screenshot states, so a losing seed must not erase the shop scene.
+            if (g.Phase != Phase.Shop) Game.OpenSandboxShop(g);
             Ui.Holding = false;
             Ui.FlipAnimation = null;
             Ui.ResolveTimer = 0;

@@ -694,6 +694,119 @@
       "description": "Eine schlichte Münze. Kaum ein Kratzer.",
       "name": "Normal"
     },
+    "reprise": {
+      "description": "Kopf: 3 Punkte. Zahl: 1 Gold. Kommt nach dem ersten Wurf pro Level einmal zurück in den Stapel.",
+      "heads_description": "Erziele 3 Punkte.",
+      "name": "Reprise",
+      "special_rule": "Beim ersten Wurf pro Level kommt diese Münze einmal zurück in den Stapel.",
+      "tails_description": "Erhalte 1 Gold."
+    },
+    "parry": {
+      "description": "Kopf: 1 Punkt und ein Serien-Schild. Zahl: 1 Punkt.",
+      "name": "Parade"
+    },
+    "executioner": {
+      "description": "Kopf: 9 Punkte. Zahl: Ziel +2.",
+      "name": "Henker"
+    },
+    "blood_price": {
+      "description": "Kopf: 4 Punkte. Zahl: -2 Gold.",
+      "name": "Blutpreis"
+    },
+    "omen": {
+      "description": "Kopf: 3 Punkte und die nächste Münze erhält +10 % Kopf. Zahl: 2 Punkte.",
+      "name": "Omen"
+    },
+    "moonwatch": {
+      "description": "Alle 2 Sekunden wechseln die Boni zwischen Kopf und Gleichstand.",
+      "name": "Mondwache",
+      "special_rule": "Alle 2 Sekunden wechselt die bevorzugte Seite zwischen Kopf und Gleichstand."
+    },
+    "paradox": {
+      "description": "Kopf: 4 Punkte. Zahl: Die nächste Münze nutzt ihre andere Seite. Gleichstand: 3 Punkte und dieselbe Wirkung.",
+      "name": "Paradox"
+    },
+    "harvest": {
+      "description": "Kopf: 1 Gold und 1 Punkt. Zahl: 1 Punkt.",
+      "name": "Ernte"
+    },
+    "broker": {
+      "description": "Kopf: 2 Gold und die nächste Münze zahlt doppelt. Zahl: 3 Punkte.",
+      "name": "Makler"
+    },
+    "windfall": {
+      "description": "Kopf: 6 Gold. Zahl: 1 Punkt.",
+      "name": "Geldsegen"
+    },
+    "spare_coil": {
+      "description": "Kopf: +1 Energie. Zahl: 1 Punkt.",
+      "name": "Ersatzspule"
+    },
+    "overclock": {
+      "description": "Ist das erste Ergebnis dieses Levels Kopf, erziele 3 Punkte und lege die Münze für einen weiteren Wurf zurück.",
+      "name": "Übertaktung",
+      "special_rule": "Ist das erste Ergebnis dieses Levels Kopf, kommt diese Münze für genau einen weiteren Wurf zurück."
+    },
+    "seedling": {
+      "description": "Kopf: 2 Punkte und dauerhaft +3 % Kopfchance. Das geht einmal pro Level. Zahl: 2 Punkte.",
+      "name": "Setzling"
+    },
+    "symbiosis": {
+      "description": "Kopf: 3 Punkte; die nächste Glücksmünze erhält +2 Punkte auf Kopf. Zahl: +1 Energie.",
+      "heads_description": "Erziele 3 Punkte und verstärke die nächste Glücksmünze: +2 Punkte auf Kopf.",
+      "name": "Symbiose",
+      "tails_description": "Erhalte 1 Energie."
+    },
+    "crescendo": {
+      "description": "Kopf: 3 Punkte und verlängere die Serie um 1. Zahl: 1 Punkt.",
+      "name": "Crescendo"
+    },
+    "counterpoint": {
+      "description": "Unterscheidet sich das Ergebnis von der vorherigen Münze, erziele 5 Punkte.",
+      "heads_description": "Erziele 5 Punkte, wenn die vorherige Münze auf Zahl landete.",
+      "tails_description": "Erziele 5 Punkte, wenn die vorherige Münze auf Kopf landete.",
+      "edge_description": "Kein Bonus bei Gleichstand.",
+      "name": "Kontrapunkt",
+      "special_rule": "Ein Kopf- oder Zahl-Ergebnis, das vom Ergebnis der vorherigen Münze abweicht, erzielt 5 Punkte."
+    },
+    "lunge": { "description": "Kopf: 2 Punkte. Zahl: 1 Punkt.", "name": "Stoß" },
+    "feint": { "description": "Kopf: 1 Punkt und die nächste Münze nutzt ihre andere Seite. Zahl: 3 Punkte.", "name": "Finte" },
+    "sunder": { "description": "Kopf: 7 Punkte. Zahl: Ziel +1.", "name": "Zerschmetterer" },
+    "grit": { "description": "Kopf: 1 Punkt. Zahl: +1 Energie.", "name": "Kampfgeist" },
+    "bloodletting": { "description": "Kopf: 5 Punkte. Zahl: -1 Gold.", "name": "Aderlass" },
+    "premonition": { "description": "Kopf: Die nächste Münze landet auf Kopf. Zahl: 3 Punkte. Gleichstand: +1 Energie.", "name": "Vorahnung" },
+    "constellation": { "description": "Kopf: 2 Punkte. Gleichstand: 4 Punkte. Zahl: Ziel +1.", "name": "Sternbild" },
+    "fateweaver": {
+      "description": "Kopf: 2 Punkte und die nächste Glücksmünze erzielt +2 Punkte auf Kopf. Zahl: 1 Punkt.",
+      "heads_description": "Erziele 2 Punkte und verstärke die nächste Glücksmünze: +2 Punkte auf Kopf.",
+      "name": "Schicksalsweber"
+    },
+    "looking_glass": { "description": "Kopf: Die nächste Münze landet auf Kopf. Zahl: Die nächste Münze nutzt ihre andere Seite. Gleichstand: 3 Punkte.", "name": "Spiegelbild" },
+    "dividend": { "description": "Kopf: Erhalte 1 Gold je 30 Gold, bis zu 3. Zahl: 1 Punkt.", "heads_description": "Erhalte 1 Gold je 30 Gold, bis zu 3.", "name": "Dividende" },
+    "loan_note": { "description": "Kopf: +7 Gold. Zahl: -1 Gold und Ziel +1. Gleichstand: +1 Gold.", "name": "Schuldschein" },
+    "rebate": { "description": "Kopf: +1 Gold. Zahl: 2 Punkte. Gleichstand: +1 Gold.", "name": "Rückerstattung" },
+    "arbitrage": { "description": "Kopf: +3 Gold. Zahl: 2 Punkte.", "name": "Arbitrage" },
+    "salvage": { "description": "Kopf: 3 Punkte. Zahl: 1 Punkt. Beim Abwerfen: +2 Energie.", "name": "Bergung", "special_rule": "Beim Abwerfen erhältst du 2 Energie." },
+    "caliper": { "description": "Kopf: 2 Punkte. Bei höchstens 1 Energie erhält sie +12 % Kopfchance.", "name": "Messschieber", "special_rule": "Bei höchstens 1 Energie erhält diese Münze +12 % Kopfchance." },
+    "prototype": {
+      "description": "Jedes Ergebnis löst einen zufälligen Effekt aus: 3 Punkte, 2 Gold oder 1 Energie.",
+      "heads_description": "Löst zufällig aus: 3 Punkte, 2 Gold oder 1 Energie.",
+      "tails_description": "Löst zufällig aus: 3 Punkte, 2 Gold oder 1 Energie.",
+      "name": "Prototyp"
+    },
+    "reactor": { "description": "Kopf: +1 Energie und 1 Punkt. Zahl: 1 Punkt.", "name": "Reaktor" },
+    "rootstock": { "description": "Kopf: 2 Punkte plus 1 je begonnenem Level (max. +5). Zahl: +1 Energie.", "heads_description": "Erziele 2 Punkte plus 1 je begonnenem Level (max. +5).", "name": "Wurzelstock" },
+    "mycelium": { "description": "Kopf: 4 Punkte. Zahl: +1 Energie.", "name": "Myzel" },
+    "thicket": { "description": "Kopf, Zahl oder Gleichstand: 1 Punkt.", "name": "Dickicht" },
+    "pollinator": {
+      "description": "Kopf: 2 Punkte und die nächste Glücksmünze erzielt +2 Punkte auf Kopf. Zahl: +1 Energie.",
+      "heads_description": "Erziele 2 Punkte und verstärke die nächste Glücksmünze: +2 Punkte auf Kopf.",
+      "name": "Bestäuber"
+    },
+    "encore": { "description": "Beim ersten Zahl-Ergebnis pro Level erzielt sie 1 Punkt und kommt für einen weiteren Wurf zurück in den Stapel.", "name": "Zugabe", "special_rule": "Beim ersten Zahl-Ergebnis pro Level kommt diese Münze genau einmal für einen weiteren Wurf zurück in den Stapel." },
+    "drumroll": { "description": "Kopf: 1 Punkt. Jeder dritte Wurf erzielt 3 zusätzliche Punkte.", "heads_description": "Erziele 1 Punkt und jeden dritten Wurf zusätzlich 3 Punkte.", "name": "Trommelwirbel" },
+    "syncopation": { "description": "Kopf: 2 Punkte. Zahl: 1 Punkt. Wiederholt sie die vorherige Seite, steigt die Serie um 1.", "name": "Synkope", "special_rule": "Wiederholt sie das vorherige Kopf- oder Zahl-Ergebnis, steigt die Serie um 1." },
+    "finale": { "description": "Kopf: 4 Punkte und +2 Serien-Schritte. Zahl: +2 Gold.", "name": "Finale" },
     "orchestra": {
       "description": "Kopf: 2 Punkte je verschiedenem Münztyp in deinem Deck.",
       "name": "Orchester"

@@ -373,7 +373,7 @@ namespace Tossup.UI
             Ui.Holding = false;
             Ui.Marked = new HashSet<int>();
             Ui.Notice = "";
-            Ui.EncounterReveal = Ui.Game.RunEncounterId == null ? null : new EncounterReveal { Elapsed = 0 };
+            Ui.EncounterReveal = Ui.Game.RunEncounter == null ? null : new EncounterReveal { Elapsed = 0 };
             Ui.Game.Tutorial = false;
             Ui.Game.ContractsEnabled = false;
             savedKey = null;

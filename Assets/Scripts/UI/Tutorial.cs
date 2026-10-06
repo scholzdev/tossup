@@ -45,7 +45,7 @@ namespace Tossup.UI
         public static void Start()
         {
             var game = Game.New(7, "blade", new List<string>(), new List<CoinDef>{CoinCatalog.Normal,CoinCatalog.Normal,CoinCatalog.Normal}, true, 1, false);
-            game.RunEncounterId = null;
+            game.SetRunEncounter(null);
             game.ContractsEnabled = false;
             game.Tutorial = true;
             game.TutorialHeads = 3;

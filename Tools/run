@@ -11,8 +11,11 @@ PLATFORM=$1
 HOST=$(uname -s)
 case "$PLATFORM:$HOST" in
   mac:Darwin|macos:Darwin)
-    "$ROOT/Tools/build" mac
-    exec open "$ROOT/Builds/macOS/Tossup.app"
+    APP="$ROOT/Builds/macOS/Tossup.app"
+    if [ ! -x "$APP/Contents/MacOS/Tossup" ] || [ ! -d "$APP/Contents/Resources/Data" ]; then
+      "$ROOT/Tools/build" macos
+    fi
+    exec open "$APP"
     ;;
   windows:MINGW*|windows:MSYS*|windows:CYGWIN*)
     POWERSHELL=${POWERSHELL:-powershell.exe}
@@ -23,8 +26,11 @@ case "$PLATFORM:$HOST" in
     exec "$POWERSHELL" -NoProfile -ExecutionPolicy Bypass -File "$ROOT/Tools/build_windows.ps1" -Run
     ;;
   linux:Linux)
-    "$ROOT/Tools/build" linux
-    exec "$ROOT/Builds/Linux/Tossup.x86_64"
+    PLAYER="$ROOT/Builds/Linux/Tossup.x86_64"
+    if [ ! -x "$PLAYER" ] || [ ! -d "$ROOT/Builds/Linux/Tossup_Data" ]; then
+      "$ROOT/Tools/build" linux
+    fi
+    exec "$PLAYER"
     ;;
   mac|macos)
     echo "macOS players can only run on macOS (this host is $HOST)." >&2

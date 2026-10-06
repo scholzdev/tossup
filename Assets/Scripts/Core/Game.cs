@@ -17,7 +17,7 @@ namespace Tossup
     {
         public const int Visible = 3; // coins shown in the bank; the first one is the coin you are about to play
         public const int MulliganSize = 5; // coins drawn at the start of a level, from which you may discard
-        public const int StartMax = 5; // starting deck slots; more can be bought in shops
+        public const int StartMax = 6; // starting deck slots; more can be bought in shops
         public const int DeckMax = 10; // the shop cannot grow the deck past this: buying is refused when it is full
         public const int SlotCost = 5, SlotStep = 2;
         public const int ExchangeBase = 7; // gold for the first exchange of a level (empty stack): played coins come back
@@ -379,11 +379,11 @@ namespace Tossup
             Items.Clear();
             if (applyRunEncounter && !RuntimeMode.Sandbox)
             {
-                game.RunEncounterId = EncounterOrder[Rng.Int(game, 1, EncounterOrder.Count) - 1];
+                game.SetRunEncounter(Encounters[Rng.Int(game, 1, Encounters.Count) - 1]);
                 TriggerRunHook(game, RunHookEvent.RunStart);
             }
             StartEncounter(game);
-            if(game.RunEncounterId!=null) Log(game, "Run Encounter: " + Encounters[game.RunEncounterId].Name + ".");
+            if(game.RunEncounter!=null) Log(game, "Run Encounter: " + game.RunEncounter.Name + ".");
             return game;
         }
 
@@ -431,7 +431,7 @@ namespace Tossup
             flip.Altered = final != before ? "RELIC" : null; // shown in the UI so a changed side is never a mystery
             int interval = (int)Rule(game, "boss_every", 5);
             bool stageInvert = !outcome.Final && final != Side.Tie && (e.Boss || e.Inverts) && nth % interval == 0;
-            bool clockInvert = final != Side.Tie && game.RunEncounterId == "house_clock" && nth % 3 == 0 && !stageInvert;
+            bool clockInvert = final != Side.Tie && game.RunEncounter?.InvertsFlip?.Invoke(nth) == true && !stageInvert;
             if (stageInvert || clockInvert)
             {
                 final = Side.Other(final);
@@ -783,7 +783,7 @@ namespace Tossup
             result.Final = final;
             if (e.SideBetSide != null && e.SideBetOutcome == null)
             {
-                if (final == Side.Tie && game.RunEncounterId != "high_roller_table") { game.Player.Gold += e.SideBetCost; e.SideBetOutcome = "PUSH"; Log(game, "Side bet pushed; stake returned."); }
+                if (final == Side.Tie && !(game.RunEncounter?.SideBetTieLoses ?? false)) { game.Player.Gold += e.SideBetCost; e.SideBetOutcome = "PUSH"; Log(game, "Side bet pushed; stake returned."); }
                 else if (final == e.SideBetSide) { game.Player.Gold += e.SideBetPayout; e.SideBetOutcome = "WON"; Log(game, "Side bet won: +" + N(e.SideBetPayout) + " gold."); }
                 else { e.SideBetOutcome = "LOST"; Log(game, "Side bet lost."); if (HasAugment(game, "hedge_fund")) game.NextLevelQuotaBonus += 2; }
             }
@@ -791,7 +791,7 @@ namespace Tossup
             else if (final == Side.Tails) e.Streak = 0; // a Tie holds the streak
             // combo: consecutive identical results. A shield (Anchor) lets one different result pass without breaking it.
             string previousComboSide = e.ComboSide;
-            bool tieBreaks = e.Contract?.Id == "hot_streak" || game.RunEncounterId == "dead_heat";
+            bool tieBreaks = e.Contract?.Id == "hot_streak" || (game.RunEncounter?.BreaksComboOnTie ?? false);
             if (final == Side.Tie && e.ComboSide != null && tieBreaks) { e.ComboSide = null; e.ComboLen = 0; }
             else if (final != Side.Tie)
             {

@@ -62,6 +62,8 @@ namespace Tossup
             cam.orthographic = true;
             cam.allowHDR = false;
             cam.allowMSAA = false;
+            if (FindObjectOfType<AudioListener>() == null)
+                gameObject.AddComponent<AudioListener>();
             var cameraData = cam.GetUniversalAdditionalCameraData();
             cameraData.renderPostProcessing = false;
             cameraData.antialiasing = AntialiasingMode.None;
@@ -287,6 +289,8 @@ namespace Tossup
         {
             var texture = Resources.Load<Texture2D>(path);
             if (texture == null) throw new FileNotFoundException("missing image Resources/" + path);
+            if (path.StartsWith("coins/", StringComparison.Ordinal))
+                texture.filterMode = FilterMode.Point;
             return new Img { Key = path, Width = texture.width, Height = texture.height, Native = texture };
         }
 
@@ -346,8 +350,14 @@ namespace Tossup
 
         public void SetCursor(string name)
         {
-            // The platform pointer stays compact over small chips and run modifiers.
-            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+            var cursor = Resources.Load<Texture2D>("ui/cursor_" + name);
+            if (cursor == null)
+            {
+                Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+                return;
+            }
+
+            Cursor.SetCursor(cursor, new Vector2(2, 2), CursorMode.Auto);
         }
 
         public void SetFullscreen(bool fullscreen)

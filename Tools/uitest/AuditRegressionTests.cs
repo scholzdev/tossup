@@ -30,7 +30,7 @@ static class AuditRegressionTests
         for(int seed=1;seed<=100;seed++)
         {
             var run=Game.New(seed*100003,"trader");
-            if(run.RunEncounterId!="upgrade")continue;
+            if(run.RunEncounter!=Game.EncounterById["upgrade"])continue;
             upgradeRewards++;
             Check(Content.Characters[run.CharacterId].Pool.Contains(run.Coins[run.Coins.Count-1].Definition),"Upgrade encounter reward belongs to the usable pool");
         }
@@ -45,6 +45,15 @@ static class AuditRegressionTests
         var g = Scene("normal", "normal", "normal");
         Game.PlaceSideBet(g, Side.Heads); Play(g, "normal", Side.Heads); Play(g, "normal", Side.Heads);
         Check(Near(g.Player.Gold, 53), "side bets settle once");
+        g = Scene("reprise");
+        int repriseUid = g.Coins[0].Uid;
+        Play(g, "reprise", Side.Heads);
+        Check(g.Encounter.Returned == 1 && (g.Encounter.Pile.Contains(repriseUid) || g.Dealt?.Uid == repriseUid),
+            "Reprise returns itself after its first resolved flip");
+        if (g.Dealt?.Uid != repriseUid) Check(Game.Select(g, repriseUid), "Reprise can be selected for its repeat flip");
+        Check(Game.Flip(g), "Reprise can be flipped again");
+        g.Pending.Result = Side.Heads;
+        Check(Game.Resolve(g) && g.Encounter.Returned == 1, "Reprise pays twice but returns only once per level");
         g = Scene("normal", "hammer"); Play(g, "normal", Side.Tails); g.Player.Energy = 0; Game.Select(g, g.Coins[1].Uid);
         Check(Game.CoinsLeft(g) == 1 && Game.CanFlip(g), "last remaining coin can emergency flip");
         Game.Flip(g); Check(Near(g.Player.Gold, 48), "emergency energy costs at most two gold");
@@ -122,9 +131,44 @@ static class AuditRegressionTests
 
     static void DefinitionObjects()
     {
-        Check(Content.CoinOrder.Count == 59 && Content.CoinOrder.Select(c=>c.Id).Distinct().Count()==59, "catalog keeps all unique coin objects");
+        Check(Content.CoinOrder.Count == 100 && Content.CoinOrder.Select(c=>c.Id).Distinct().Count()==100, "catalog keeps all unique coin objects");
         foreach(var definition in Content.CoinOrder)
             Check(ReferenceEquals(definition,Content.Coins[definition.Id]) && definition.GetType()!=typeof(CoinDef), "catalog indexes the concrete definition object");
+        var additions = new[] { "parry", "executioner", "blood_price", "omen", "moonwatch", "paradox", "harvest", "broker", "windfall", "spare_coil", "overclock", "seedling", "symbiosis", "crescendo", "counterpoint", "lunge", "feint", "sunder", "grit", "bloodletting", "premonition", "constellation", "fateweaver", "looking_glass", "dividend", "loan_note", "rebate", "arbitrage", "salvage", "caliper", "prototype", "reactor", "rootstock", "mycelium", "thicket", "pollinator", "encore", "drumroll", "syncopation", "finale" };
+        foreach(var id in additions)
+        {
+            Check(Content.Coins.ContainsKey(id), id + " is registered");
+            string repositoryRoot = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+            Check(System.IO.File.Exists(System.IO.Path.Combine(repositoryRoot, "Assets", "Resources", "coins", id + ".png")), id + " has coin art");
+            bool discoverable = false;
+            foreach(var character in Content.Characters.Values)
+            {
+                if(character.Pool.Exists(c=>c.Id==id) || character.Deck.Exists(c=>c.Id==id) || character.Locked.Exists(c=>c.Id==id)) discoverable=true;
+            }
+            Check(discoverable, id + " is available through a character");
+        }
+        var moonwatch = Scene("moonwatch");
+        var moonCoin = moonwatch.Coins[0];
+        moonwatch.Encounter.ElapsedSeconds = 0;
+        var moonHeads = Game.GetOdds(moonwatch, moonCoin);
+        moonwatch.Encounter.ElapsedSeconds = 2;
+        var moonEdge = Game.GetOdds(moonwatch, moonCoin);
+        Check(moonHeads.Heads > moonEdge.Heads && moonEdge.Edge > moonHeads.Edge, "Moonwatch shifts odds between Heads and Edge on its clock");
+        var overclock = Scene("overclock", "normal");
+        int overclockUid = overclock.Coins.Find(c=>c.Id=="overclock").Uid;
+        Play(overclock, "overclock", Side.Heads);
+        Check(overclock.Encounter.Returned==1 && !overclock.Encounter.Played.Contains(overclockUid), "Overclock returns itself after its first Heads for a second flip");
+        var symbiosis = Scene("symbiosis", "compost");
+        Play(symbiosis, "symbiosis", Side.Heads);
+        Check(symbiosis.Encounter.Buffs.Exists(b=>b.SpecId=="symbiosis" && b.TargetType==CoinType.Fortune && b.Left==1), "Symbiosis queues its buff for the next Fortune coin");
+        double symbiosisScored = symbiosis.Encounter.Scored;
+        Play(symbiosis, "compost", Side.Heads);
+        Check(symbiosis.Encounter.Scored-symbiosisScored>=2, "Symbiosis buff adds points to the next Fortune coin");
+        var counterpoint = Scene("normal", "counterpoint");
+        Play(counterpoint, "normal", Side.Heads);
+        double beforeCounterpoint = counterpoint.Encounter.Scored;
+        Play(counterpoint, "counterpoint", Side.Tails);
+        Check(counterpoint.Encounter.Scored-beforeCounterpoint==5, "Counterpoint rewards a side change from the preceding result");
         Check(UpgradeCatalog.Ordered.Count==18 && UpgradeCatalog.Ordered.Select(u=>u.Id).Distinct().Count()==18,"all upgrade definitions have unique IDs");
         foreach(var coin in Content.CoinOrder)
             foreach(var upgrade in coin.Upgrades)

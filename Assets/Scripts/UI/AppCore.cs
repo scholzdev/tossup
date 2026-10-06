@@ -39,7 +39,7 @@ namespace Tossup.UI
             foreach (var id in Content.ItemOrder) Ui.ItemImages[id] = platform.LoadImage("items/" + id);
             foreach (var id in Content.RelicOrder) Ui.RelicImages[id] = platform.LoadImage("relics/" + id);
             foreach (var id in Game.AugmentOrder) Ui.AugmentImages[id] = platform.LoadImage("augments/" + Game.AugmentDefs[id].Tier + "/" + id);
-            foreach (var id in Game.EncounterOrder) Ui.EncounterImages[id] = platform.LoadImage("encounters/" + id);
+            foreach (var encounter in Game.Encounters) Ui.EncounterImages[encounter.Id] = platform.LoadImage("encounters/" + encounter.Id);
             foreach (var name in UiImageNames) Ui.UiImages[name] = platform.LoadImage("ui/" + name);
             Ui.UiImages["title_shop"] = Ui.UiImages["shop_title"];
             foreach (var id in Content.CharacterOrder) Ui.CharacterImages[id] = platform.LoadImage("characters/" + id);

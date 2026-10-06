@@ -64,6 +64,47 @@ namespace Tossup
         public static readonly CrystalBallCoin CrystalBall = new CrystalBallCoin();
         public static readonly AllInCoin AllIn = new AllInCoin();
         public static readonly SafePort SafePort = new SafePort();
+        public static readonly RepriseCoin Reprise = new RepriseCoin();
+        public static readonly ParryCoin Parry = new ParryCoin();
+        public static readonly ExecutionerCoin Executioner = new ExecutionerCoin();
+        public static readonly BloodPriceCoin BloodPrice = new BloodPriceCoin();
+        public static readonly OmenCoin Omen = new OmenCoin();
+        public static readonly MoonwatchCoin Moonwatch = new MoonwatchCoin();
+        public static readonly ParadoxCoin Paradox = new ParadoxCoin();
+        public static readonly HarvestCoin Harvest = new HarvestCoin();
+        public static readonly BrokerCoin Broker = new BrokerCoin();
+        public static readonly WindfallCoin Windfall = new WindfallCoin();
+        public static readonly SpareCoilCoin SpareCoil = new SpareCoilCoin();
+        public static readonly OverclockCoin Overclock = new OverclockCoin();
+        public static readonly SeedlingCoin Seedling = new SeedlingCoin();
+        public static readonly SymbiosisCoin Symbiosis = new SymbiosisCoin();
+        public static readonly CrescendoCoin Crescendo = new CrescendoCoin();
+        public static readonly CounterpointCoin Counterpoint = new CounterpointCoin();
+        public static readonly LungeCoin Lunge = new LungeCoin();
+        public static readonly FeintCoin Feint = new FeintCoin();
+        public static readonly SunderCoin Sunder = new SunderCoin();
+        public static readonly GritCoin Grit = new GritCoin();
+        public static readonly BloodlettingCoin Bloodletting = new BloodlettingCoin();
+        public static readonly PremonitionCoin Premonition = new PremonitionCoin();
+        public static readonly ConstellationCoin Constellation = new ConstellationCoin();
+        public static readonly FateweaverCoin Fateweaver = new FateweaverCoin();
+        public static readonly LookingGlassCoin LookingGlass = new LookingGlassCoin();
+        public static readonly DividendCoin Dividend = new DividendCoin();
+        public static readonly LoanNoteCoin LoanNote = new LoanNoteCoin();
+        public static readonly RebateCoin Rebate = new RebateCoin();
+        public static readonly ArbitrageCoin Arbitrage = new ArbitrageCoin();
+        public static readonly SalvageCoin Salvage = new SalvageCoin();
+        public static readonly CaliperCoin Caliper = new CaliperCoin();
+        public static readonly PrototypeCoin Prototype = new PrototypeCoin();
+        public static readonly ReactorCoin Reactor = new ReactorCoin();
+        public static readonly RootstockCoin Rootstock = new RootstockCoin();
+        public static readonly MyceliumCoin Mycelium = new MyceliumCoin();
+        public static readonly ThicketCoin Thicket = new ThicketCoin();
+        public static readonly PollinatorCoin Pollinator = new PollinatorCoin();
+        public static readonly EncoreCoin Encore = new EncoreCoin();
+        public static readonly DrumrollCoin Drumroll = new DrumrollCoin();
+        public static readonly SyncopationCoin Syncopation = new SyncopationCoin();
+        public static readonly FinaleCoin Finale = new FinaleCoin();
 
         public static readonly List<CoinDef> Ordered = new List<CoinDef>
         {
@@ -125,7 +166,48 @@ namespace Tossup
             Horoscope,
             CrystalBall,
             AllIn,
-            SafePort
+            SafePort,
+            Reprise,
+            Parry,
+            Executioner,
+            BloodPrice,
+            Omen,
+            Moonwatch,
+            Paradox,
+            Harvest,
+            Broker,
+            Windfall,
+            SpareCoil,
+            Overclock,
+            Seedling,
+            Symbiosis,
+            Crescendo,
+            Counterpoint,
+            Lunge,
+            Feint,
+            Sunder,
+            Grit,
+            Bloodletting,
+            Premonition,
+            Constellation,
+            Fateweaver,
+            LookingGlass,
+            Dividend,
+            LoanNote,
+            Rebate,
+            Arbitrage,
+            Salvage,
+            Caliper,
+            Prototype,
+            Reactor,
+            Rootstock,
+            Mycelium,
+            Thicket,
+            Pollinator,
+            Encore,
+            Drumroll,
+            Syncopation,
+            Finale
         };
     }
 }
