@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the run Encounter emblems and tiered Augment icons.
+"""Generate tiered Augment icons.
 
 Run from the repository root with: python3 tools/gen_encounter_augment_icons.py
 Requires Pillow, like the other asset generators. Outputs transparent 512px PNGs.
-Encounter icons go in assets/Resources/encounters/; Augments are generated for all three
-visual tiers in assets/Resources/augments/{silver,gold,prismatic}/ until content assigns tiers.
+Encounter icons are authored artwork and are not regenerated. Augments are
+generated for all three tiers in assets/Resources/augments/{silver,gold,prismatic}/.
 """
 
 from pathlib import Path
@@ -29,13 +29,6 @@ TIERS = {
     "silver": ((171, 204, 225, 255), 1),
     "gold": ((248, 195, 62, 255), 2),
     "prismatic": ((153, 229, 241, 255), 3),
-}
-
-ENCOUNTERS = {
-    "house_clock": "clock",
-    "dead_heat": "dead_heat",
-    "high_roller_table": "dice",
-    "thin_market": "market",
 }
 
 AUGMENTS = {
@@ -65,41 +58,7 @@ def points(coords):
 def draw_emblem(draw, kind):
     line_width = p(5)
 
-    if kind == "clock":
-        draw.ellipse(box(35, 29, 93, 87), outline=GOLD, width=p(5))
-        draw.line(points([(64, 36), (64, 57), (79, 67)]), fill=IVORY, width=p(6))
-        draw.polygon(points([(51, 90), (77, 90), (64, 107)]), fill=GOLD)
-        draw.polygon(points([(51, 25), (77, 25), (64, 10)]), fill=GOLD)
-        draw.ellipse(box(59, 55, 69, 65), fill=IVORY)
-    elif kind == "dead_heat":
-        for x in (37, 65):
-            draw.ellipse(box(x, 38, x + 31, 88), outline=GOLD, width=p(5))
-            draw.ellipse(box(x + 7, 46, x + 24, 80), outline=IVORY, width=p(3))
-        draw.line(points([(57, 34), (65, 24), (73, 34)]), fill=IVORY, width=p(4))
-        draw.line(points([(57, 94), (65, 104), (73, 94)]), fill=GOLD, width=p(4))
-    elif kind == "dice":
-        draw.polygon(points([(23, 47), (49, 32), (76, 47), (49, 62)]), fill=GOLD, outline=INK)
-        draw.polygon(points([(23, 47), (49, 62), (49, 93), (23, 78)]), fill=IVORY, outline=INK)
-        draw.polygon(points([(49, 62), (76, 47), (76, 78), (49, 93)]), fill=(225, 161, 34, 255), outline=INK)
-        draw.ellipse(box(32, 51, 38, 57), fill=INK)
-        draw.ellipse(box(55, 46, 61, 52), fill=INK)
-        draw.ellipse(box(39, 72, 45, 78), fill=INK)
-        draw.ellipse(box(57, 72, 63, 78), fill=INK)
-        draw.polygon(points([(60, 35), (82, 21), (105, 34), (82, 48)]), fill=GOLD, outline=INK)
-        draw.polygon(points([(60, 35), (82, 48), (82, 75), (60, 62)]), fill=IVORY, outline=INK)
-        draw.polygon(points([(82, 48), (105, 34), (105, 62), (82, 75)]), fill=(225, 161, 34, 255), outline=INK)
-        draw.ellipse(box(70, 38, 76, 44), fill=INK)
-        draw.ellipse(box(89, 52, 95, 58), fill=INK)
-        draw.ellipse(box(70, 57, 76, 63), fill=INK)
-    elif kind == "market":
-        draw.rectangle(box(31, 56, 94, 95), outline=GOLD, width=p(5))
-        draw.line(points([(25, 55), (35, 32), (91, 32), (101, 55)]), fill=IVORY, width=p(6))
-        draw.line(points([(25, 55), (101, 55)]), fill=GOLD, width=p(5))
-        draw.line(points([(42, 35), (42, 54), (57, 54), (57, 35), (72, 54), (86, 54), (86, 35)]),
-                  fill=GOLD, width=p(4))
-        draw.line(points([(53, 95), (53, 70), (72, 70), (72, 95)]), fill=IVORY, width=p(4))
-        draw.ellipse(box(80, 72, 91, 83), fill=GOLD)
-    elif kind == "bank":
+    if kind == "bank":
         for y, width in ((75, 44), (61, 52), (47, 38)):
             x = 64 - width // 2
             draw.rounded_rectangle(box(x, y, x + width, y + 16), radius=p(5), fill=GOLD,
@@ -188,18 +147,13 @@ def make_icon(kind, accent, tier=None):
 
 
 def main():
-    for icon_id, symbol in ENCOUNTERS.items():
-        path = RESOURCES / "encounters" / f"{icon_id}.png"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        make_icon(symbol, GOLD).save(path)
-
     for tier, (accent, _) in TIERS.items():
         for icon_id, symbol in AUGMENTS.items():
             path = RESOURCES / "augments" / tier / f"{icon_id}.png"
             path.parent.mkdir(parents=True, exist_ok=True)
             make_icon(symbol, accent, tier).save(path)
 
-    print(f"Generated {len(ENCOUNTERS)} Encounter icons and {len(AUGMENTS) * len(TIERS)} tiered Augment icons.")
+    print(f"Generated {len(AUGMENTS) * len(TIERS)} tiered Augment icons; authored Encounter art was preserved.")
 
 
 if __name__ == "__main__":
