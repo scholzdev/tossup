@@ -60,9 +60,10 @@ namespace Tossup.UI
                 {
                     int cost = Game.CoinOfferCost(g, i);
                     Price(cost, x, 186, 110, g.Player.Gold >= cost && !full);
-                    CoinImage(id, x + 7, 228, 96);
-                    CoinHover(id, x, 228, 110, 96);
-                    if (i < g.ShopUpgrades.Count && g.ShopUpgrades[i] != null) Centered("UPGRADED", x, 326, 110, Ui.F16, C.Gold);
+                    var offerUpgrade = i < g.ShopUpgrades.Count ? g.ShopUpgrades[i] : null;
+                    CoinImage(id, x + 7, 228, 96, offerUpgrade);
+                    CoinHover(id, x, 228, 110, 96, upgrade: offerUpgrade);
+                    if (offerUpgrade != null) Centered("UPGRADED", x, 326, 110, Ui.F16, C.Gold);
                     int index = i;
                     Button(full ? "FULL" : "BUY", x, 336, 110, 34, C.Blue, () => Game.Buy(g, index), g.Player.Gold >= cost && !full);
                 }
@@ -139,10 +140,10 @@ namespace Tossup.UI
                 Box(x, 664, 84, 76, item != null ? PanelColor : C.Slot);
                 Outline(x, 664, 84, 76, chosen ? C.Orange : C.PanelLight);
                 if (item == null) continue;
-                CoinImage(item.Id, x + 18, 668, 48);
+                CoinImage(item, x + 18, 668, 48);
                 double p = Game.Probability(g, item);
                 Centered(L("%d%% H", Math.Floor(p * 100 + .5)), x, 718, 84, Ui.F16, C.Gold);
-                CoinHover(item.Id, x, 664, 84, 76, p);
+                CoinHover(item.Id, x, 664, 84, 76, p, upgrade: item.Upgrade, oddsTuned: item.Bonus > 0);
                 AddButton(x, 664, 84, 76, () => A.CoinAction(item), "COIN");
             }
 

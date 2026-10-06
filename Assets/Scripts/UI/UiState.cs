@@ -26,6 +26,7 @@ namespace Tossup.UI
         public bool Locked;
         public double TieProbability;
         public Upgrade Upgrade;
+        public bool OddsTuned;
     }
 
     public sealed class HoverRegion

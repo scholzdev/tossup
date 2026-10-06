@@ -226,25 +226,57 @@ namespace Tossup.UI
         }
 
         public static void CoinHover(CoinDef def, float x, float y, float w, float h, double? probability = null, bool locked = false,
-            Upgrade upgrade = null, double? tieProbability = null)
+            Upgrade upgrade = null, double? tieProbability = null, bool oddsTuned = false)
         {
             double heads = probability ?? def.Probability;
             if (!probability.HasValue) heads += def.UpgradeHeadsProbability(upgrade);
             double tie = tieProbability ?? def.TieProbability;
-            var hovered = new HoveredCoin { Definition = def, Probability = Math.Max(0, Math.Min(1 - tie, heads)), TieProbability = tie, Upgrade = upgrade, Locked = locked };
+            var hovered = new HoveredCoin { Definition = def, Probability = Math.Max(0, Math.Min(1 - tie, heads)), TieProbability = tie,
+                Upgrade = upgrade, Locked = locked, OddsTuned = oddsTuned };
             Ui.Regions.Add(new HoverRegion { X = x, Y = y, W = w, H = h, Coin = hovered });
             if (Over(x, y, w, h)) Ui.HoveredCoin = hovered;
         }
 
         public static void CoinImage(CoinDef coin, float x, float y, float size) => CoinImage(coin.Id, x, y, size);
-        public static void CoinHover(string id, float x, float y, float w, float h, double? probability = null, bool locked = false, Upgrade upgrade = null, double? tieProbability = null) =>
-            CoinHover(Content.Coins[id],x,y,w,h,probability,locked,upgrade,tieProbability);
+        public static void CoinHover(string id, float x, float y, float w, float h, double? probability = null, bool locked = false,
+            Upgrade upgrade = null, double? tieProbability = null, bool oddsTuned = false) =>
+            CoinHover(Content.Coins[id],x,y,w,h,probability,locked,upgrade,tieProbability,oddsTuned);
 
-        public static void CoinImage(string id, float x, float y, float size)
+        static Rgba UpgradeBorderColor(Upgrade upgrade)
+        {
+            if (upgrade == null) return C.Gold;
+            foreach (var change in upgrade.Changes)
+            {
+                if (change.Kind == UpgradeChangeKind.HeadsProbability) return C.Blue;
+                if (change.Kind == UpgradeChangeKind.AddBuff) return C.Purple;
+                if (change.Kind == UpgradeChangeKind.AddOutcomeEffect) return C.Orange;
+            }
+            return C.Gold;
+        }
+
+        public static void CoinImage(CoinInst coin, float x, float y, float size)
+        {
+            CoinImage(coin.Id, x, y, size, coin.Upgrade, coin.Bonus > 0);
+        }
+
+        public static void CoinImage(string id, float x, float y, float size, Upgrade upgrade = null) =>
+            CoinImage(id, x, y, size, upgrade, false);
+
+        static void CoinImage(string id, float x, float y, float size, Upgrade upgrade, bool oddsTuned)
         {
             Color(C.White);
             var image = Ui.CoinImages[id];
             Gfx.Draw(image, x, y, size / image.Width, size / image.Height);
+            if (upgrade == null && !oddsTuned) return;
+
+            // Keep the coin's own face; the colored double rim marks its installed upgrade.
+            float cx = x + size / 2, cy = y + size / 2;
+            Color(oddsTuned ? C.Blue : UpgradeBorderColor(upgrade));
+            Gfx.SetLineWidth(Math.Max(2, size / 24));
+            Gfx.Circle(false, cx, cy, size * .485f);
+            Color(C.Ink);
+            Gfx.Circle(false, cx, cy, size * .46f);
+            Gfx.SetLineWidth(1);
         }
 
         // Draw any loaded image scaled to a square size.
@@ -411,7 +443,8 @@ namespace Tossup.UI
             float x = Ui.Screen == "sets" && (game == null || game.Paused) ? 24 : mx > Ui.Width / 2 ? mx - w - 18 : mx + 18;
             float y = my > 400 ? my - h - 18 : my + 18;
             x = Math.Max(12, Math.Min(x, Ui.Width - w - 12)); y = Math.Max(12, Math.Min(y, 788 - h - 12));
-            Box(x, y, w, h, C.Ink); Outline(x, y, w, h, C.Gold); CoinImage(hovered.Id, x + 14, y + 13, 66);
+            Box(x, y, w, h, C.Ink); Outline(x, y, w, h, C.Gold);
+            CoinImage(hovered.Id, x + 14, y + 13, 66, upgrade, hovered.OddsTuned);
             Text(Lang.Upper(Lang.CoinName(hovered.Id)), x + 94, y + 16, Ui.F20, C.Face);
             string rarity = coin.Rarity == Rarity.Common ? "Common" : coin.Rarity == Rarity.Uncommon ? "Uncommon" : coin.Rarity == Rarity.Rare ? "Rare" : "Epic";
             Text(Lang.Upper(L(rarity)), x + 94, y + 47, Ui.F16, RarityColor(coin.Rarity));
@@ -509,7 +542,7 @@ namespace Tossup.UI
             if (hovered.Locked) { Gfx.SetFont(Ui.F16); Color(C.Orange); Gfx.Printf(L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"), x + 24, rowY + 8, w - 48); }
         }
 
-        public static void CoinFace(float cx, float cy, float radius, string outcome, bool selected, string id)
+        public static void CoinFace(float cx, float cy, float radius, string outcome, bool selected, string id, Upgrade upgrade = null, bool oddsTuned = false)
         {
             float size = radius * 2.6f;
             if (selected)
@@ -517,7 +550,7 @@ namespace Tossup.UI
                 Color(C.Orange, .35f);
                 Gfx.Circle(true, cx, cy, radius + 4);
             }
-            CoinImage(id ?? "copper", cx - size / 2, cy - size / 2, size);
+            CoinImage(id ?? "copper", cx - size / 2, cy - size / 2, size, upgrade, oddsTuned);
             if (outcome != null)
             {
                 var tint = outcome == Side.Heads ? C.Blue : C.Red;
