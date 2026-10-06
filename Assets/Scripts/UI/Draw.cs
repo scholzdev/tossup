@@ -193,16 +193,16 @@ namespace Tossup.UI
         // title image at the top left and, when given, a button at the top right.
         public static void Frame(Img titleImage, string backLabel = null, Action backAction = null)
         {
-            Box(0, 0, 1620, 800, C.FeltDark);
-            Box(46, 36, 1529, 728, C.Screen);
-            Outline(46, 36, 1529, 728, C.Gold);
+            Box(0, 0, Ui.Width, Ui.Height, C.FeltDark);
+            Box(36, 36, Ui.Width - 72, Ui.Height - 72, C.Screen);
+            Outline(36, 36, Ui.Width - 72, Ui.Height - 72, C.Gold);
             if (titleImage != null)
             {
                 float scale = 90f / titleImage.Height;
                 Color(C.White);
-                Gfx.Draw(titleImage, 89, 46, scale, scale);
+                Gfx.Draw(titleImage, 70, 46, scale, scale);
             }
-            if (backAction != null) Button(backLabel, 1418, 56, 127, 34, C.PanelLight, backAction, true, "B");
+            if (backAction != null) Button(backLabel, Ui.Width - 160, 56, 100, 34, C.PanelLight, backAction, true, "B");
         }
 
         // The pixel title image for a screen, in the current language when there is one.
@@ -220,19 +220,20 @@ namespace Tossup.UI
             if (c == null) return;
             Ui.Buttons.Clear(); // nothing behind the popup can be clicked
             Color(C.Ink, .72f);
-            Gfx.Rectangle(true, 0, 0, 1620, 800);
-            Box(481, 270, 658, 260, C.PanelDk);
-            Outline(481, 270, 658, 260, C.Red);
-            Centered(c.Title, 481, 292, 658, Ui.F32, C.Red);
+            Gfx.Rectangle(true, 0, 0, Ui.Width, Ui.Height);
+            float x = (Ui.Width - 520) / 2;
+            Box(x, 270, 520, 260, C.PanelDk);
+            Outline(x, 270, 520, 260, C.Red);
+            Centered(c.Title, x, 292, 520, Ui.F32, C.Red);
             Gfx.SetFont(Ui.F20);
             Color(C.Face);
-            Gfx.Printf(L(c.Text), 519, 352, 582, Align.Center);
+            Gfx.Printf(L(c.Text), x + 30, 352, 460, Align.Center);
             if (c.Single)
-                Button("OK", 683, 454, 253, 52, C.Red, () => { Ui.Confirm = null; c.Ok(); });
+                Button("OK", x + 130, 454, 200, 52, C.Red, () => { Ui.Confirm = null; c.Ok(); });
             else
             {
-                Button("OK", 532, 454, 253, 52, C.Red, () => { Ui.Confirm = null; c.Ok(); });
-                Button("CANCEL", 835, 454, 253, 52, C.PanelLight, () => Ui.Confirm = null, true, "B");
+                Button("OK", x + 40, 454, 200, 52, C.Red, () => { Ui.Confirm = null; c.Ok(); });
+                Button("CANCEL", x + 280, 454, 200, 52, C.PanelLight, () => Ui.Confirm = null, true, "B");
             }
         }
 

@@ -16,6 +16,11 @@ namespace Tossup
     {
         public const int DefaultWindowWidth = 1280;
         public const int DefaultWindowHeight = 800;
+        static int WindowPixelScale => Application.platform == RuntimePlatform.OSXPlayer ? 2 : 1;
+        static int DefaultPixelWidth => DefaultWindowWidth * WindowPixelScale;
+        static int DefaultPixelHeight => DefaultWindowHeight * WindowPixelScale;
+        static void SetDefaultWindowResolution() =>
+            Screen.SetResolution(DefaultPixelWidth, DefaultPixelHeight, FullScreenMode.Windowed);
         const string FontPath = "fonts/m6x11plus";
         const int SfxVoices = 16;
         // m6x11plus metrics (unitsPerEm 1024, ascender 768, descender -256) at FreeType's rounding, as LÖVE uses them
@@ -162,8 +167,11 @@ namespace Tossup
         void Update()
         {
             if (!loaded || shotMode) return;
-            if (!Application.isEditor && Screen.fullScreenMode == FullScreenMode.Windowed && (Screen.width < 640 || Screen.height < 400))
-                Screen.SetResolution(Math.Max(640, Screen.width), Math.Max(400, Screen.height), FullScreenMode.Windowed);
+            int pixelScale = WindowPixelScale;
+            if (!Application.isEditor && Screen.fullScreenMode == FullScreenMode.Windowed &&
+                (Screen.width < 640 * pixelScale || Screen.height < 400 * pixelScale))
+                Screen.SetResolution(Math.Max(640 * pixelScale, Screen.width),
+                    Math.Max(400 * pixelScale, Screen.height), FullScreenMode.Windowed);
             bool revealWasOpen = Ui.EncounterReveal != null;
             if (Input.GetMouseButtonDown(0)) AppCore.MousePressed(MouseX, MouseY);
             if (Input.mousePosition != lastMouse)
@@ -233,7 +241,7 @@ namespace Tossup
         IEnumerator CaptureShots()
         {
             Directory.CreateDirectory(shotsDir);
-            Screen.SetResolution(DefaultWindowWidth, DefaultWindowHeight, FullScreenMode.Windowed);
+            SetDefaultWindowResolution();
             for (int k = 0; k < 10; k++) yield return null; // let the window settle
             foreach (var shot in Shots.Script())
             {
@@ -350,7 +358,7 @@ namespace Tossup
                     Screen.SetResolution(Display.main.systemWidth, Display.main.systemHeight, FullScreenMode.FullScreenWindow);
             }
             else if (Screen.fullScreenMode != FullScreenMode.Windowed)
-                Screen.SetResolution(DefaultWindowWidth, DefaultWindowHeight, FullScreenMode.Windowed);
+                SetDefaultWindowResolution();
         }
 
         public void Quit()

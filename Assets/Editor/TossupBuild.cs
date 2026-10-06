@@ -79,6 +79,7 @@ namespace Tossup.EditorTools
             PlayerSettings.defaultScreenWidth = TossupApp.DefaultWindowWidth;
             PlayerSettings.defaultScreenHeight = TossupApp.DefaultWindowHeight;
             PlayerSettings.defaultIsNativeResolution = false;
+            PlayerSettings.macRetinaSupport = false;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
             PlayerSettings.resizableWindow = true;
             PlayerSettings.runInBackground = true;
@@ -179,6 +180,15 @@ namespace Tossup.EditorTools
             Setup();
             if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Standalone, target))
                 throw new InvalidOperationException("Install Unity's " + target + " build support module for this Editor version.");
+            // LÖVE's highdpi window is 1280x800 points with a 2x backing buffer
+            // on Retina Macs. Unity's macOS player setting takes backing pixels,
+            // so double the logical canvas size for the same visible window.
+            if (target == BuildTarget.StandaloneOSX)
+            {
+                PlayerSettings.defaultScreenWidth = TossupApp.DefaultWindowWidth * 2;
+                PlayerSettings.defaultScreenHeight = TossupApp.DefaultWindowHeight * 2;
+                PlayerSettings.macRetinaSupport = true;
+            }
             string original=File.ReadAllText(VersionPath);
             var version=JsonUtility.FromJson<VersionData>(original);
             var args=Environment.GetCommandLineArgs();

@@ -274,7 +274,7 @@ namespace Tossup.UI
             if (game != null && !game.Paused)
             {
                 if (game.Phase == Phase.Encounter) { x = 861; y = 708; return; }
-                if (game.Phase == Phase.Shop) { x = 1405; y = 658; return; }
+                if (game.Phase == Phase.Shop) { x = 1110; y = 658; return; }
                 x = 810; y = 614;
                 return;
             }

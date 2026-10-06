@@ -79,7 +79,7 @@ namespace Tossup.UI
             }
         }
 
-        // Draws one frame onto the 1620x800 canvas. The backend has already cleared the window with the felt
+        // Draws one frame onto the 1280x800 canvas. The backend has already cleared the window with the felt
         // colour (which fills the bars around the design canvas).
         public static void Draw()
         {

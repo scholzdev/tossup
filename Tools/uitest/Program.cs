@@ -72,7 +72,7 @@ sealed class HeadlessPlatform : IPlatform
 
     public float MouseX => X;
     public float MouseY => Y;
-    public int WindowWidth { get; set; } = 1620;
+    public int WindowWidth { get; set; } = 1280;
     public int WindowHeight { get; set; } = 800;
     public double Time => Clock;
     public long UnixTime => 1_700_000_000;
@@ -243,7 +243,7 @@ static class Program
             Ui.Game = null; Ui.Confirm = null; Ui.Tutorial = null; Ui.EncounterReveal = null;
             Lang.Set("en"); A.Go("title"); Capture();
             Ui.Layout(out float scale, out float ox, out float oy);
-            if (size == (1620,800)) Check(scale == 1 && ox == 0 && oy == 0, "the default view fills the full window");
+            if (size == (1280,800)) Check(scale == 1 && ox == 0 && oy == 0, "the Lua-resolution view fills the full window");
             var quad = backend.Images["ui/title_scene"];
             Check(quad[0] <= 0 && quad[1] <= 0 && quad[4] >= Ui.Width && quad[5] >= Ui.Height,
                 "title artwork covers the canvas without side bars");
@@ -256,7 +256,7 @@ static class Program
             Ui.ToCanvas(platform.X, platform.Y, out float cx, out float cy);
             Check(menu.Contains(cx,cy), "drawing and pointer transforms agree after resizing");
         }
-        platform.WindowWidth = 1620; platform.WindowHeight = 800;
+        platform.WindowWidth = 1280; platform.WindowHeight = 800;
         Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> {"dagger","normal"}, Seed = 6, Energy = 99 });
         Ui.Game.Encounter.Quota = Ui.Game.Encounter.MaxQuota = 999;
         Ui.Holding = false; Ui.FlipAnimation = null; Ui.ResolveTimer = 0;

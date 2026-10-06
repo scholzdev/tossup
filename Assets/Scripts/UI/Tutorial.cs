@@ -110,7 +110,7 @@ namespace Tossup.UI
                 foreach(var b in Ui.Buttons){float cx=b.X+b.W/2,cy=b.Y+b.H/2;if(cx>=step.X&&cx<=step.X+step.W&&cy>=step.Y&&cy<=step.Y+spotHeight)kept.Add(b);}
             else kept.Add(new Button{X=0,Y=0,W=Ui.Width,H=800,Action=Next});
             Ui.Buttons=kept;
-            Button("SKIP",1450,750,140,36,C.PanelLight,Finish);
+            Button("SKIP",Ui.Width-160,750,140,36,C.PanelLight,Finish);
         }
     }
 
