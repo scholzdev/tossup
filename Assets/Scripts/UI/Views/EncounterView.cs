@@ -112,9 +112,7 @@ namespace Tossup.UI
         {
             var g = G;
             var e = g.Encounter;
-            Box(0, 0, 1280, 800, C.FeltDark);
-            Box(36, 36, 1208, 728, C.Screen);
-            Outline(36, 36, 1208, 728, C.Gold);
+            Frame(null);
 
             // header: logo + level, points in the middle, menu and stats on the right
             Color(C.White);

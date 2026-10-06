@@ -10,7 +10,7 @@ static class LatestTests
 
     public static void Run()
     {
-        Check(Content.CoinOrder.Count==100&&Content.Coins.Count==100,"all 100 coins are registered");
+        Check(Content.CoinOrder.Count>=100&&Content.Coins.Count==Content.CoinOrder.Count,"all coins are registered");
         Check(Content.Characters["conductor"].Locked.Exists(c=>c.Id=="reprise"),"Reprise is a Conductor unlock");
         Check(Content.CharacterOrder.Count==6,"six characters are registered");
         var characterProfile=Profile.New();

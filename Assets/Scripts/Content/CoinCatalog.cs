@@ -45,6 +45,7 @@ namespace Tossup
         public static readonly MirrorCoin Mirror = new MirrorCoin();
         public static readonly TwinCoin Twin = new TwinCoin();
         public static readonly PotCoin Pot = new PotCoin();
+        public static readonly PotOfGreedCoin PotOfGreed = new PotOfGreedCoin();
         public static readonly DominoCoin Domino = new DominoCoin();
         public static readonly HotHandCoin HotHand = new HotHandCoin();
         public static readonly AnchorCoin Anchor = new AnchorCoin();
@@ -148,6 +149,7 @@ namespace Tossup
             Mirror,
             Twin,
             Pot,
+            PotOfGreed,
             Domino,
             HotHand,
             Anchor,

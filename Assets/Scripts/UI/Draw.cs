@@ -14,19 +14,38 @@ namespace Tossup.UI
 
         public static void Color(Rgba c, float alpha = 1) => Gfx.SetColor(c.R, c.G, c.B, alpha);
 
+        static Rgba Mix(Rgba a, Rgba b, float amount) => new Rgba(
+            a.R + (b.R - a.R) * amount, a.G + (b.G - a.G) * amount, a.B + (b.B - a.B) * amount);
+
+        static void SteppedFill(float x, float y, float w, float h)
+        {
+            float corner = Math.Min(5, Math.Min(w, h) / 4);
+            Gfx.Rectangle(true, x + corner, y, w - corner * 2, h);
+            Gfx.Rectangle(true, x, y + corner, w, h - corner * 2);
+        }
+
         public static void Box(float x, float y, float w, float h, Rgba fill, float radius = 6)
         {
-            Color(C.Black, .34f);
-            Gfx.Rectangle(true, x, y + 5, w, h, radius);
+            Color(C.Black, .42f);
+            SteppedFill(x, y + 5, w, h);
             Color(fill);
-            Gfx.Rectangle(true, x, y, w, h, radius);
+            SteppedFill(x, y, w, h);
+            if (w >= 24 && h >= 18)
+            {
+                Color(C.White, .08f);
+                Gfx.Rectangle(true, x + 8, y + 3, w - 16, 2);
+                Color(C.Black, .16f);
+                Gfx.Rectangle(true, x + 8, y + h - 5, w - 16, 2);
+            }
         }
 
         public static void Outline(float x, float y, float w, float h, Rgba tint, float radius = 6)
         {
             Color(tint);
             Gfx.SetLineWidth(2);
-            Gfx.Rectangle(false, x + 1, y + 1, w - 2, h - 2, radius);
+            Gfx.Line(x + 5, y + 1, x + w - 5, y + 1, x + w - 1, y + 5,
+                x + w - 1, y + h - 5, x + w - 5, y + h - 1, x + 5, y + h - 1,
+                x + 1, y + h - 5, x + 1, y + 5, x + 5, y + 1);
             Gfx.SetLineWidth(1);
         }
 
@@ -58,12 +77,27 @@ namespace Tossup.UI
         {
             face = face ?? Ui.F20;
             bool hover = enabled && Over(x, y, w, h);
-            var fill = enabled ? tint : C.PanelLight;
-            float lift = hover ? -3 : 0;
-            Box(x, y + lift, w, h, fill);
-            Outline(x, y + lift, w, h, enabled ? C.Face : C.Slot);
-            Centered(str, x, y + (h - face.Height) / 2f + lift, w, face, enabled ? C.Ink : C.Muted);
+            float lift = hover ? -2 : 0;
+            ButtonSurface(x, y + lift, w, h, tint, enabled, hover);
+            Centered(str, x, y + (h - face.Height) / 2f + lift, w, face, enabled ? C.Face : C.Muted);
             AddButton(x, y + lift, w, h, action, str, !enabled, hotkey);
+        }
+
+        static void ButtonSurface(float x, float y, float w, float h, Rgba tint, bool enabled, bool hover)
+        {
+            var edge = enabled ? Mix(tint, C.Face, hover ? .4f : .2f) : C.Line;
+            var fill = enabled ? Mix(C.Ink, tint, hover ? .60f : .48f) : Mix(C.Ink, C.PanelLight, .36f);
+            Box(x, y, w, h, fill);
+            Outline(x, y, w, h, edge);
+            if (w < 36 || h < 20) return;
+            Color(edge, enabled ? .78f : .35f);
+            Gfx.Rectangle(true, x + 10, y + 5, w - 20, 2);
+            if (w < 80) return;
+            Color(C.Black, .24f);
+            Gfx.Rectangle(true, x + 9, y + h - 7, w - 18, 2);
+            Color(edge, enabled ? .7f : .3f);
+            Gfx.Rectangle(true, x + 7, y + h / 2 - 1, 3, 3);
+            Gfx.Rectangle(true, x + w - 10, y + h / 2 - 1, 3, 3);
         }
 
         // Short effect list for cards: "+5 PTS, NEXT 2 x2".
@@ -290,24 +324,28 @@ namespace Tossup.UI
         public static void IconButton(string label, Img icon, float x, float y, float w, float h, Rgba tint, Action action, bool enabled = true, string hotkey = null)
         {
             bool hover = enabled && Over(x, y, w, h);
-            float top = y + (hover ? -3 : 0);
-            Box(x, top, w, h, enabled ? tint : C.PanelLight);
-            Outline(x, top, w, h, enabled ? C.Face : C.Slot);
+            float top = y + (hover ? -2 : 0);
+            ButtonSurface(x, top, w, h, tint, enabled, hover);
             float size = h - 12;
             if (enabled) Color(C.White);
             else Gfx.SetColor(1, 1, 1, .45f);
             Gfx.Draw(icon, x + 8, top + 6, size / icon.Width, size / icon.Height);
-            Centered(label, x + size + 8, top + (h - Ui.F20.Height) / 2f, w - size - 8, Ui.F20, enabled ? C.Ink : C.Muted);
+            Centered(label, x + size + 8, top + (h - Ui.F20.Height) / 2f, w - size - 8, Ui.F20, enabled ? C.Face : C.Muted);
             AddButton(x, y, w, h, action, label, !enabled, hotkey);
         }
 
-        // The shared full-screen look (the shop's): felt backdrop, a teal screen with a gold border, a pixel
-        // title image at the top left and, when given, a button at the top right.
+        // Felt, an inset cabinet surface and brass corner pins shared by every full-screen view.
         public static void Frame(Img titleImage, string backLabel = null, Action backAction = null)
         {
-            Box(0, 0, Ui.Width, Ui.Height, C.FeltDark);
+            Color(C.FeltDark);
+            Gfx.Rectangle(true, 0, 0, Ui.Width, Ui.Height);
             Box(36, 36, Ui.Width - 72, Ui.Height - 72, C.Screen);
             Outline(36, 36, Ui.Width - 72, Ui.Height - 72, C.Gold);
+            Color(C.Gold);
+            Gfx.Rectangle(true, 48, 48, 5, 5);
+            Gfx.Rectangle(true, Ui.Width - 53, 48, 5, 5);
+            Gfx.Rectangle(true, 48, Ui.Height - 53, 5, 5);
+            Gfx.Rectangle(true, Ui.Width - 53, Ui.Height - 53, 5, 5);
             if (titleImage != null)
             {
                 float scale = 90f / titleImage.Height;
@@ -416,7 +454,7 @@ namespace Tossup.UI
             var rows = new List<(string Label, double Chance, string Detail, Rgba Tint, float Height)>();
             void Row(string label, double chance, string detail, Rgba tint)
             {
-                float height = 38 + Ui.F16.GetWrap(detail, w - 52).Count * 18;
+                float height = 50 + Ui.F16.GetWrap(detail, w - 52).Count * 18;
                 rows.Add((L(label), Math.Floor(chance * 100 + .5), detail, tint, height)); h += height + 7;
             }
             if (hovered.Probability > 0) Row("HEADS", hovered.Probability, CoinOutcomeDescription(coin, Side.Heads, upgrade), C.Blue);
@@ -481,8 +519,10 @@ namespace Tossup.UI
             foreach (var row in rows)
             {
                 Box(x + 12, rowY, w - 24, row.Height, C.Slot); Color(row.Tint); Gfx.Rectangle(true, x + 12, rowY, 4, row.Height);
-                Text(row.Label, x + 26, rowY + 7, Ui.F16, row.Tint); Text(row.Chance + "%", x + w - 78, rowY + 7, Ui.F16, row.Tint);
-                Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(row.Detail, x + 26, rowY + 29, w - 52); rowY += row.Height + 7;
+                Text(row.Label, x + 26, rowY + 8, Ui.F20, row.Tint);
+                string chanceText = row.Chance + "%";
+                Text(chanceText, x + w - 26 - Ui.F32.GetWidth(chanceText), rowY + 3, Ui.F32, row.Tint);
+                Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(row.Detail, x + 26, rowY + 42, w - 52); rowY += row.Height + 7;
             }
             if (buffDescriptions.Count > 0)
             {

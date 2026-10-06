@@ -77,6 +77,7 @@ namespace Tossup.UI
         public static string SetsCharacter = "blade"; // coin set editor: which character and which of its sets is open
         public static string SetsReturn = "title";
         public static int SetsIndex = 1;
+        public static int SetsCatalogPage = 1;
         public static SetDraft SetDraft; // unsaved edits of the open coin set
         public static HashSet<int> Marked = new HashSet<int>(); // coins marked for discarding in the opening hand
         public static int CollectionPage = 1;

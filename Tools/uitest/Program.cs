@@ -260,6 +260,19 @@ static class Program
             Check(menu.Contains(cx,cy), "drawing and pointer transforms agree after resizing");
         }
         platform.WindowWidth = 1280; platform.WindowHeight = 800;
+        Ui.Game = null;
+        A.OpenSets("trader"); Capture();
+        int traderCoins = Content.Characters["trader"].Pool.Count + Content.Characters["trader"].Locked.Count;
+        Check(traderCoins > 32, "the trader exercises catalog paging");
+        var firstPageCoins = Ui.Regions.FindAll(r => r.Coin != null && r.X >= 520 && r.X < 1220);
+        Check(firstPageCoins.Count == 32 && firstPageCoins.TrueForAll(r => r.Y + r.H < 690),
+            "the first catalog page fits every coin above its paging controls");
+        var nextCatalogPage = Ui.Buttons.Find(b => b.Label == ">" && b.X > 1100 && b.Y > 680);
+        Check(nextCatalogPage != null && !nextCatalogPage.Disabled, "overflow coins have a next-page control");
+        ClickCanvas(nextCatalogPage); Capture();
+        var secondPageCoins = Ui.Regions.FindAll(r => r.Coin != null && r.X >= 520 && r.X < 1220);
+        Check(Ui.SetsCatalogPage == 2 && secondPageCoins.Count == Math.Min(32, traderCoins - 32),
+            "the remaining character coins are reachable on the second page");
         Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> {"dagger","normal"}, Seed = 6, Energy = 99 });
         Ui.Game.Encounter.Quota = Ui.Game.Encounter.MaxQuota = 999;
         Ui.Holding = false; Ui.FlipAnimation = null; Ui.ResolveTimer = 0;

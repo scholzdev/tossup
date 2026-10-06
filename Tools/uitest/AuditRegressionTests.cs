@@ -131,7 +131,7 @@ static class AuditRegressionTests
 
     static void DefinitionObjects()
     {
-        Check(Content.CoinOrder.Count == 100 && Content.CoinOrder.Select(c=>c.Id).Distinct().Count()==100, "catalog keeps all unique coin objects");
+        Check(Content.CoinOrder.Count >= 100 && Content.CoinOrder.Select(c=>c.Id).Distinct().Count()==Content.CoinOrder.Count, "catalog keeps all unique coin objects");
         foreach(var definition in Content.CoinOrder)
             Check(ReferenceEquals(definition,Content.Coins[definition.Id]) && definition.GetType()!=typeof(CoinDef), "catalog indexes the concrete definition object");
         var additions = new[] { "parry", "executioner", "blood_price", "omen", "moonwatch", "paradox", "harvest", "broker", "windfall", "spare_coil", "overclock", "seedling", "symbiosis", "crescendo", "counterpoint", "lunge", "feint", "sunder", "grit", "bloodletting", "premonition", "constellation", "fateweaver", "looking_glass", "dividend", "loan_note", "rebate", "arbitrage", "salvage", "caliper", "prototype", "reactor", "rootstock", "mycelium", "thicket", "pollinator", "encore", "drumroll", "syncopation", "finale" };

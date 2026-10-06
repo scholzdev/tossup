@@ -62,7 +62,11 @@ namespace Tossup.UI
             new Shot { Name = "03_select", Setup = () => { Ui.SelectedCharacter = "seer"; A.Go("select"); } },
             new Shot { Name = "04_sets", Setup = () => A.OpenSets("trader") },
             new Shot { Name = "05_sets_tooltip", Setup = () => { }, MouseX = 740, MouseY = 294 },
+            new Shot { Name = "05b_sets_page_2", Setup = () => A.ChangeSetsCatalogPage(1) },
             new Shot { Name = "06_collection", Setup = () => A.Go("collection") },
+            new Shot { Name = "06b_collection_chips", Setup = () => { Ui.CollectionCategory = "items"; Ui.CollectionPage = 1; Ui.CollectionSort = "order"; } },
+            new Shot { Name = "06c_collection_relics", Setup = () => { Ui.CollectionCategory = "relics"; Ui.CollectionPage = 1; } },
+            new Shot { Name = "06d_collection_characters", Setup = () => { Ui.CollectionCategory = "characters"; Ui.CollectionPage = 1; } },
             new Shot { Name = "07_options", Setup = () => { Ui.OptionsTab = "game"; A.Go("options"); } },
             new Shot { Name = "08_options_sound", Setup = () => Ui.OptionsTab = "sound" },
             new Shot { Name = "09_confirm", Setup = A.ClearProgress, MouseX = 658, MouseY = 480 },
@@ -147,7 +151,7 @@ namespace Tossup.UI
             } },
             new Shot { Name="28_german_upgrade_choices", Setup=()=>Game.ChooseAugment(Ui.Game,"upgrade_press") },
             new Shot { Name="29_square_dance_tooltip", Setup=()=> {
-                Ui.Game=null;Lang.Set("en");A.Go("collection");Ui.CollectionPage=1;Ui.CollectionSort="order";Ui.CollectionFilter="ALL";
+                Ui.Game=null;Lang.Set("en");A.Go("collection");Ui.CollectionCategory="coins";Ui.CollectionPage=1;Ui.CollectionSort="order";Ui.CollectionFilter="ALL";
                 Ui.Profile.Collected.Add(CoinCatalog.SquareDance.Id);
             }, MouseX=1034,MouseY=422 },
             new Shot {Name="30_developer_reveal_start",Setup=()=> {

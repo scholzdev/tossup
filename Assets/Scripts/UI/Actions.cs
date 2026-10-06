@@ -274,6 +274,7 @@ namespace Tossup.UI
             Ui.SetsReturn = Ui.Screen == "select" ? "select" : "title";
             Ui.SetsCharacter = characterId ?? Ui.SelectedCharacter;
             Ui.SetsIndex = Tossup.Profile.Active(Ui.Profile, Ui.SetsCharacter);
+            Ui.SetsCatalogPage = 1;
             Ui.SetDraft = null;
             Go("sets");
         }
@@ -285,8 +286,12 @@ namespace Tossup.UI
             if (!Tossup.Profile.CharacterUnlocked(Ui.Profile, id)) return;
             Ui.SetsCharacter = id;
             Ui.SetsIndex = Tossup.Profile.Active(Ui.Profile, id);
+            Ui.SetsCatalogPage = 1;
             Ui.SetDraft = null;
         }
+
+        public static void ChangeSetsCatalogPage(int delta) =>
+            Ui.SetsCatalogPage = Math.Max(1, Ui.SetsCatalogPage + delta);
 
         public static void SetsPickSet(int index)
         {

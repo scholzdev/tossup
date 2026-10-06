@@ -19,6 +19,7 @@ static class FeatureParityTests
         ImpossibleOddsHideUnavailableSide();
         CollectionCatalogCategories();
         CoinTypeColorPalette();
+        PotOfGreedRewards();
         TitleAndEncounterScreens();
         DiscardParity();
         EncounterRevealFlow();
@@ -26,6 +27,39 @@ static class FeatureParityTests
         if(int.TryParse(Environment.GetEnvironmentVariable("TOSSUP_SEED_SWEEP"),out var requested))seeds=Math.Max(1,requested);
         SeedSweep(1, seeds);
         Console.WriteLine("features: saves, tutorial, modes, reveal and "+seeds+" full-run seed sweep passed");
+    }
+
+    static void PotOfGreedRewards()
+    {
+        var outcomes = new[]
+        {
+            (Side.Heads, Rarity.Common),
+            (Side.Tails, Rarity.Rare),
+            (Side.Tie, Rarity.Epic),
+        };
+        foreach (var (side, rarity) in outcomes)
+        {
+            var game = Game.NewSandbox(new SandboxConfig
+            {
+                Coins = new List<string> { "potofgreed", "normal", "normal", "normal", "normal", "normal" },
+                Seed = 801,
+            });
+            var coin = game.Coins[0];
+            Check(coin.Definition.HasHook(nameof(CoinDef.OnResolve)), "Pot of Greed registers its resolve hook");
+            coin.Definition.OnResolve(game, coin, new Res { Result = side });
+            Check(game.Coins.Count == 8 && game.Slots == 8, "Pot of Greed grants two deck slots and coins");
+            Check(game.Coins[6].Definition.Rarity == rarity && game.Coins[7].Definition.Rarity == rarity &&
+                game.Coins[6].Id != coin.Id && game.Coins[7].Id != coin.Id,
+                "Pot of Greed grants the rarity shown for " + side);
+            Game.MulliganDone(game);
+            var bank = new List<int>(game.Encounter.Queue);
+            bank.AddRange(game.Encounter.Pile);
+            Check(Game.Discard(game, bank) == 0, "new deck rewards do not allow discarding the entire current bank");
+            coin.Definition.OnResolve(game, coin, new Res { Result = side });
+            coin.Definition.OnResolve(game, coin, new Res { Result = side });
+            Check(game.Coins.Count == Game.DeckMax && game.Slots == Game.DeckMax,
+                "Pot of Greed respects the deck limit");
+        }
     }
 
     static void DiscardParity()

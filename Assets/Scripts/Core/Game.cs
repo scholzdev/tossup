@@ -74,6 +74,16 @@ namespace Tossup
 
         static CoinInst AddToDeck(GameState game, string id) => AddToDeck(game, Content.Coins[id]);
 
+        // A coin reward joins the deck for future levels, without changing the current encounter pile.
+        public static bool TryGrantCoin(GameState game, CoinDef definition)
+        {
+            if (game.Coins.Count >= DeckMax) return false;
+            if (game.Coins.Count >= game.Slots) game.Slots = game.Coins.Count + 1;
+            game.Coins.Add(NewCoin(game, definition));
+            Log(game, "Granted " + definition.Name + " coin.");
+            return true;
+        }
+
         static List<T> Offers<T>(GameState game, List<T> pool, int count)
         {
             var choices = new List<T>();
@@ -565,7 +575,10 @@ namespace Tossup
             var seen = new HashSet<int>();
             foreach (int uid in uids ?? new List<int> { game.Dealt.Uid })
                 if (inBank.Contains(uid) && seen.Add(uid)) targets.Add(uid);
-            if (targets.Count == 0 || game.Coins.Count - e.Discards - targets.Count < 1) return 0;
+            var usableThisLevel = new HashSet<int>(inBank);
+            foreach (int uid in e.Played) usableThisLevel.Add(uid);
+            foreach (int uid in e.Discarded) usableThisLevel.Remove(uid);
+            if (targets.Count == 0 || usableThisLevel.Count - targets.Count < 1) return 0;
             int front = game.Dealt.Uid;
             Hooks.Unbind();
             foreach (int uid in targets)

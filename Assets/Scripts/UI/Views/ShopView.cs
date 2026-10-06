@@ -8,18 +8,13 @@ namespace Tossup.UI
     // tune-ups for the coin you select in the deck strip. Buying a locked coin unlocks it for good.
     public static class ShopView
     {
-        static readonly Rgba ScreenColor = new Rgba(.09f, .27f, .30f);
         static readonly Rgba PanelColor = new Rgba(.06f, .20f, .23f);
 
         // Grid: offer columns start at X0 with a fixed step, so every row lines up with the coin row.
         const float X0 = 340, Step = 150;
 
-        static void VerticalLabel(string word, float x, float y)
-        {
-            var chars = Lang.Chars(L(word));
-            for (int i = 0; i < chars.Count; i++)
-                Centered(i == 0 ? Lang.Upper(chars[i]) : chars[i], x, y + i * 30, 30, Ui.F32, C.White);
-        }
+        static void RowLabel(string word, float x, float y) =>
+            Text(Lang.Upper(L(word)), x, y, Ui.F16, C.Gold);
 
         static void Price(int amount, float x, float y, float w, bool affordable) =>
             Centered(amount.ToString(), x, y, w, Ui.F32, affordable ? C.Gold : C.Red);
@@ -27,9 +22,7 @@ namespace Tossup.UI
         public static void Draw()
         {
             var g = Ui.Game;
-            Box(0, 0, 1280, 800, C.FeltDark);
-            Box(36, 36, 1208, 728, ScreenColor);
-            Outline(36, 36, 1208, 728, C.Gold);
+            Frame(null);
 
             // title, gold, menu
             Color(C.White);
@@ -51,7 +44,7 @@ namespace Tossup.UI
 
             // COIN row
             bool full = g.Coins.Count >= g.Slots;
-            VerticalLabel("Coin", 290, 232);
+            RowLabel("Coin", 270, 240);
             for (int i = 0; i < 4; i++)
             {
                 float x = X0 + i * Step;
@@ -71,7 +64,7 @@ namespace Tossup.UI
             }
 
             // CHIP row (items), columns 1-2
-            VerticalLabel("Chip", 290, 436);
+            RowLabel("Chip", 270, 442);
             for (int i = 0; i < 2; i++)
             {
                 float x = X0 + i * Step;
@@ -91,7 +84,7 @@ namespace Tossup.UI
 
             // PRIZE row (relic), column 4 so it lines up with the last coin offer
             float px = X0 + 3 * Step;
-            VerticalLabel("Prize", px - 50, 396);
+            RowLabel("Prize", 710, 442);
             if (g.ShopRelic != null)
             {
                 int relicCost=Game.Price(g,Game.RelicCost);
@@ -147,12 +140,8 @@ namespace Tossup.UI
                 AddButton(x, 664, 84, 76, () => A.CoinAction(item), "COIN");
             }
 
-            // next round: the big red button, under the tune-ups
-            Ui.Mouse(out float mx, out float my);
-            bool over = mx >= 1054 && mx <= 1166 && my >= 586 && my <= 698;
-            ImageAt(Ui.UiImages["next_round"], 1054, 586 + (over ? -3 : 0), 112);
-            Centered("NEXT ROUND", 1000, 706, 220, Ui.F20, C.White);
-            AddButton(1054, 586, 112, 144, () => Game.LeaveShop(g), "NEXT ROUND");
+            // A large cabinet button closes the shop and starts the next round.
+            Button("NEXT ROUND", 1000, 602, 220, 88, C.Red, () => Game.LeaveShop(g));
         }
     }
 }
