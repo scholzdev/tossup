@@ -97,7 +97,49 @@ static class LatestTests
         Check(Profile.RecordStakeWin(profile,"blade",1)==2&&Profile.MaxStake(profile,"blade")==2,"winning unlocks next stake");
         string json=Profile.Encode(profile);var restored=Profile.Decode(json);
         Check(Profile.MaxStake(restored,"blade")==2,"stake progression survives JSON");
+        CheckSettingsPersistence();
         FeatureParityTests.Run();
         Console.WriteLine("latest: focused gameplay checks passed");
+    }
+
+    static void CheckSettingsPersistence()
+    {
+        RuntimeMode.Configure(false, false);
+        string savedProfile = Ui.Platform.ReadSave("profile.json");
+        var options = new Options
+        {
+            ScreenShake = false,
+            FastFlip = true,
+            Fullscreen = true,
+            SeenHelp = true,
+            Language = "de",
+            VolumeMaster = 30,
+            VolumeMusic = 20,
+            VolumeSfx = 10,
+        };
+        Ui.Profile = Profile.New();
+        Ui.Profile.Options = options;
+        A.SaveOptions();
+
+        Ui.Profile = Profile.New();
+        A.LoadProfile();
+        var loaded = Ui.Profile.Options;
+        var platform = (HeadlessPlatform)Ui.Platform;
+        Check(!loaded.ScreenShake && loaded.FastFlip && loaded.Fullscreen && loaded.SeenHelp &&
+            loaded.Language == "de" && loaded.VolumeMaster == 30 && loaded.VolumeMusic == 20 && loaded.VolumeSfx == 10,
+            "all preferences restore from the saved profile on startup");
+        Check(platform.Fullscreen && Math.Abs(platform.MusicVolume - .036f) < .00001f,
+            "startup applies saved fullscreen and music volume to the platform");
+
+        A.SetVolume("volume_sfx", 15);
+        var written = Profile.Decode(Ui.Platform.ReadSave("profile.json"));
+        Check(written.Options.VolumeSfx == 15, "sound slider changes persist immediately");
+        Ui.Profile = Profile.New();
+        A.LoadProfile();
+        Check(Ui.Profile.Options.VolumeSfx == 15, "sound slider value survives profile reload");
+
+        if (savedProfile == null) Ui.Platform.DeleteSave("profile.json");
+        else Ui.Platform.WriteSave("profile.json", savedProfile);
+        A.LoadProfile();
     }
 }

@@ -56,6 +56,8 @@ sealed class HeadlessPlatform : IPlatform
     public float X = -50, Y = -50;
     public double Clock;
     public int Quits, Sounds;
+    public bool Fullscreen;
+    public float MusicVolume;
 
     public HeadlessPlatform(string root)
     {
@@ -111,9 +113,9 @@ sealed class HeadlessPlatform : IPlatform
         if (Array.IndexOf(Sound.Names, name) < 0) throw new InvalidOperationException("unknown sound " + name);
         Sounds++;
     }
-    public void SetMusicVolume(float volume) { }
+    public void SetMusicVolume(float volume) => MusicVolume = volume;
     public void SetCursor(string name) { }
-    public void SetFullscreen(bool fullscreen) { }
+    public void SetFullscreen(bool fullscreen) => Fullscreen = fullscreen;
     public void Quit() => Quits++;
 }
 

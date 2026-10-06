@@ -524,7 +524,7 @@ namespace Tossup.UI
             Outline(280, y, 720, 78, C.Line);
         }
 
-        // A slider is a clickable strip: pressing or dragging sets the value from the mouse x; releasing saves it.
+        // A slider is a clickable strip: pressing or dragging sets and saves the value as it changes.
         static void Slider(string key, string label, string hint, float y)
         {
             Panel(y);
@@ -544,10 +544,9 @@ namespace Tossup.UI
                 Adjust = direction =>
                 {
                     A.SetVolume(key, Ui.Profile.Options.GetVolume(key) + direction * 5);
-                    A.SaveOptions();
                     Sound.Play("score");
                 },
-                Release = () => { A.SaveOptions(); Sound.Play("score"); },
+                Release = () => Sound.Play("score"),
             });
         }
 

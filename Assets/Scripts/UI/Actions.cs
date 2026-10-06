@@ -172,11 +172,12 @@ namespace Tossup.UI
             SaveProfile();
         }
 
-        // A volume slider (0-100). Saved when the mouse is released (SaveOptions).
+        // A volume slider (0-100). Persist each update so changing sound settings survives an early exit.
         public static void SetVolume(string key, double value)
         {
             Ui.Profile.Options.SetVolume(key, Math.Max(0, Math.Min(100, Math.Floor(value + .5))));
             Sound.Apply(Ui.Profile.Options);
+            SaveProfile();
         }
 
         public static void SaveOptions() => SaveProfile();
