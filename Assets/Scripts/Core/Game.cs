@@ -176,6 +176,24 @@ namespace Tossup
         public static double TieProbability(GameState game, CoinInst item)
             => GetOdds(game, item).Edge;
 
+        // Encounter time advances only while the run is actively being played. Recompute a dealt
+        // coin's odds as time changes so OnOdds can express periodic chance changes in real time.
+        public static void AdvanceClock(GameState game, double dt)
+        {
+            if (game == null || game.Paused || game.Phase != Phase.Encounter || game.Encounter == null ||
+                game.Mulligan != null || dt <= 0 || double.IsNaN(dt) || double.IsInfinity(dt)) return;
+
+            game.Encounter.ElapsedSeconds += dt;
+            Hooks.Tick(game, dt);
+            if (game.Dealt == null) return;
+
+            var inst = GetCoin(game, game.Dealt.Uid);
+            if (inst == null) return;
+            var odds = GetOdds(game, inst);
+            game.Dealt.Probability = odds.Heads;
+            game.Dealt.TieProbability = odds.Edge;
+        }
+
         // Top the bank up to Visible coins from the draw pile. The pile is never reshuffled: a level lasts
         // exactly as long as the coins in your stack (bank + pile).
         static void Refill(GameState game)
@@ -229,7 +247,7 @@ namespace Tossup
             game.LastResult = null;
             game.Phase = Phase.Encounter;
             Log(game, "Encounter " + game.EncounterIndex + ": " + stage.Name + " (quota " + N(quota) + ")");
-            foreach (var owned in game.Coins) Hooks.Grow(owned, CoinGrowthEvent.Level);
+            foreach (var owned in game.Coins) Hooks.Grow(game, owned, CoinGrowthEvent.Level);
             Signal.Emit(GameSignal.EncounterStart, new GameEvent { Game = game, Encounter = game.Encounter });
             // mulligan: draw a hand to look at; the UI lets the player discard before play starts
             var hand = new List<int>();
@@ -293,7 +311,7 @@ namespace Tossup
                         Hooks.Bind(game, inst);
                         Signal.Emit(GameSignal.CoinDiscard, new GameEvent { Game = game, Inst = inst });
                         Hooks.Unbind();
-                        Hooks.Grow(inst, CoinGrowthEvent.Discard);
+                        Hooks.Grow(game, inst, CoinGrowthEvent.Discard);
                         count++;
                         break;
                     }
@@ -531,7 +549,7 @@ namespace Tossup
                 Hooks.Bind(game, inst); // so the coin's own on_discard hook runs even if it was not the front coin
                 Signal.Emit(GameSignal.CoinDiscard, new GameEvent { Game = game, Inst = inst });
                 Hooks.Unbind();
-                Hooks.Grow(inst, CoinGrowthEvent.Discard);
+                Hooks.Grow(game, inst, CoinGrowthEvent.Discard);
                 TriggerRunHook(game, RunHookEvent.Discard);
             }
             if (seen.Contains(front)) Deal(game);
@@ -686,6 +704,14 @@ namespace Tossup
             var itemIds = new List<string>(Content.Items.Keys);
             itemIds.Sort(string.CompareOrdinal);
             game.ShopItems = Offers(game, itemIds, 2);
+            Hooks.ShopOpened(game);
+        }
+
+        static ShopPurchase PrepareShopPurchase(GameState game, ShopPurchaseKind kind, string id, int cost, string upgradeId = null)
+        {
+            var purchase = new ShopPurchase(game, kind, id, cost, upgradeId);
+            if (!Hooks.BeforePurchase(game, purchase) || game.Player.Gold < purchase.Cost) return null;
+            return purchase;
         }
 
         // The level is over for good: the player opened the shop (or the boss fell). Only possible once the
@@ -811,7 +837,7 @@ namespace Tossup
             e.BestScores.TryGetValue(item.Uid, out var previousBest); e.BestScores[item.Uid] = Math.Max(previousBest, result.Gained.Value);
             Signal.Emit(GameSignal.CoinResolved, new GameEvent { Game = game, Inst = item, Res = res });
             Hooks.Unbind();
-            Hooks.Grow(item, CoinGrowthEvent.Flip);
+            Hooks.Grow(game, item, CoinGrowthEvent.Flip);
             Log(game, def.Name + " #" + item.Uid + ": " + final + (final != result.Raw ? " (raw " + result.Raw + ")" : "") +
                 " → " + (messages.Count > 0 ? string.Join(", ", messages) : "nothing"));
             game.LastResult = result;
@@ -940,12 +966,14 @@ namespace Tossup
         public static bool BuyItem(GameState game, int index)
         {
             string id = game.Phase == Phase.Shop && index >= 0 && index < game.ShopItems.Count ? game.ShopItems[index] : null;
-            int cost = id == null ? 0 : Price(game, Content.Items[id].Cost);
-            if (id == null || game.Items.Count >= Items.Max || game.Player.Gold < cost) return false;
+            if (id == null || game.Items.Count >= Items.Max) return false;
+            var purchase = PrepareShopPurchase(game, ShopPurchaseKind.Item, id, Price(game, Content.Items[id].Cost));
+            if (purchase == null) return false;
             game.ShopItems[index] = null;
-            game.Player.Gold -= cost;
+            game.Player.Gold -= purchase.Cost;
             game.Items.Add(id);
-            Log(game, "Bought " + Content.Items[id].Name + " for " + cost + " gold.");
+            Log(game, "Bought " + Content.Items[id].Name + " for " + purchase.Cost + " gold.");
+            Hooks.AfterPurchase(game, purchase);
             return true;
         }
 
@@ -955,12 +983,14 @@ namespace Tossup
 
         public static bool BuyRelic(GameState game)
         {
-            int cost = Price(game, RelicCost);
-            if (game.Phase != Phase.Shop || game.ShopRelic == null || game.Player.Gold < cost) return false;
-            game.Player.Gold -= cost;
+            if (game.Phase != Phase.Shop || game.ShopRelic == null) return false;
+            var purchase = PrepareShopPurchase(game, ShopPurchaseKind.Relic, game.ShopRelic, Price(game, RelicCost));
+            if (purchase == null) return false;
+            game.Player.Gold -= purchase.Cost;
             AddRelic(game, game.ShopRelic);
-            Log(game, "Bought relic " + Content.Relics[game.ShopRelic].Name + " for " + cost + " gold.");
+            Log(game, "Bought relic " + Content.Relics[game.ShopRelic].Name + " for " + purchase.Cost + " gold.");
             game.ShopRelic = null;
+            Hooks.AfterPurchase(game, purchase);
             return true;
         }
 
@@ -969,51 +999,62 @@ namespace Tossup
         public static bool Buy(GameState game, int index)
         {
             var coin = game.Phase == Phase.Shop && index >= 0 && index < game.ShopOffers.Count ? game.ShopOffers[index] : null;
-            int cost = coin == null ? -1 : CoinOfferCost(game, index);
-            if (coin == null || game.Player.Gold < cost) return false;
-            if (game.Coins.Count >= game.Slots) return false;
+            if (coin == null || game.Coins.Count >= game.Slots) return false;
             Upgrade upgrade = index < game.ShopUpgrades.Count ? game.ShopUpgrades[index] : null;
+            var purchase = PrepareShopPurchase(game, ShopPurchaseKind.Coin, coin.Id, CoinOfferCost(game, index), upgrade?.Id);
+            if (purchase == null) return false;
             game.ShopOffers[index] = null;
             if (index < game.ShopUpgrades.Count) game.ShopUpgrades[index] = null;
             game.Purchased.Add(coin.Id); // the UI turns purchases of locked coins into permanent unlocks
-            game.Player.Gold -= cost;
+            game.Player.Gold -= purchase.Cost;
             var bought = AddToDeck(game, coin); bought.Upgrade = upgrade;
-            Log(game, "Bought " + coin.Name + (upgrade == null ? "" : " (" + upgrade.Name + ")") + " for " + cost + " gold.");
+            Log(game, "Bought " + coin.Name + (upgrade == null ? "" : " (" + upgrade.Name + ")") + " for " + purchase.Cost + " gold.");
+            Hooks.AfterPurchase(game, purchase);
             return true;
         }
 
         // Rerolling the coin offers costs 4 gold, 2 more each time within one shop visit.
         public static bool RerollShop(GameState game)
         {
+            if (game.Phase != Phase.Shop) return false;
             int cost = game.RerollCost;
-            if (game.Phase != Phase.Shop || game.Player.Gold < cost) return false;
-            game.Player.Gold -= cost;
-            game.RerollCost = cost + game.RerollStep;
+            int nextCost = cost + game.RerollStep;
+            var purchase = PrepareShopPurchase(game, ShopPurchaseKind.Reroll, "reroll", cost);
+            if (purchase == null) return false;
+            game.Player.Gold -= purchase.Cost;
+            game.RerollCost = nextCost;
             SetShopStock(game);
-            Log(game, "Shop rerolled for " + cost + " gold.");
+            Log(game, "Shop rerolled for " + purchase.Cost + " gold.");
+            Hooks.AfterPurchase(game, purchase);
             return true;
         }
 
         public static bool BuyEnergy(GameState game)
         {
-            if (game.Phase != Phase.Shop || game.Player.Gold < 20 || game.Player.MaxEnergy >= 5) return false;
-            game.Player.Gold -= 20;
+            if (game.Phase != Phase.Shop || game.Player.MaxEnergy >= 5) return false;
+            var purchase = PrepareShopPurchase(game, ShopPurchaseKind.Energy, "energy", 20);
+            if (purchase == null) return false;
+            game.Player.Gold -= purchase.Cost;
             game.Player.MaxEnergy += 1;
-            Log(game, "Bought +1 maximum energy for 20 gold.");
+            Log(game, "Bought +1 maximum energy for " + purchase.Cost + " gold.");
+            Hooks.AfterPurchase(game, purchase);
             return true;
         }
 
         public static bool Remove(GameState game, int uid)
         {
-            if (game.Phase != Phase.Shop || game.Player.Gold < 8 || game.Coins.Count <= 1) return false;
+            if (game.Phase != Phase.Shop || game.Coins.Count <= 1) return false;
             for (int index = 0; index < game.Coins.Count; index++)
             {
                 var item = game.Coins[index];
                 if (item.Uid != uid) continue;
+                var purchase = PrepareShopPurchase(game, ShopPurchaseKind.CoinRemoval, item.Id, 8);
+                if (purchase == null) return false;
                 game.Coins.RemoveAt(index);
-                game.Player.Gold -= 8;
+                game.Player.Gold -= purchase.Cost;
                 game.SelectedUid = game.Coins[0].Uid;
-                Log(game, "Removed " + CoinName(item) + " for 8 gold.");
+                Log(game, "Removed " + CoinName(item) + " for " + purchase.Cost + " gold.");
+                Hooks.AfterPurchase(game, purchase);
                 return true;
             }
             return false;
@@ -1021,13 +1062,16 @@ namespace Tossup
 
         public static bool Upgrade(GameState game, int uid)
         {
-            if (game.Phase != Phase.Shop || game.Player.Gold < 10) return false;
+            if (game.Phase != Phase.Shop) return false;
             var item = GetCoin(game, uid);
             if (item == null || Probability(game, item) >= 1) return false;
-            game.Player.Gold -= 10;
+            var purchase = PrepareShopPurchase(game, ShopPurchaseKind.CoinUpgrade, item.Id, 10);
+            if (purchase == null) return false;
+            game.Player.Gold -= purchase.Cost;
             var def = item.Definition;
             item.Bonus = Math.Min(1 - def.Probability, item.Bonus + .10);
             Log(game, def.Name + " upgraded to " + N(Math.Floor((def.Probability + item.Bonus) * 100 + .5)) + "% Heads.");
+            Hooks.AfterPurchase(game, purchase);
             return true;
         }
 
@@ -1049,6 +1093,7 @@ namespace Tossup
         public static bool NextEncounter(GameState game)
         {
             if (game.Phase != Phase.Shop || ActiveCount(game) == 0) return false;
+            Hooks.ShopClosed(game);
             int next = game.EncounterIndex + 1;
             if (!game.Endless && OfferAugment(game, next)) return true;
             game.EncounterIndex = next;

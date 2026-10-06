@@ -94,7 +94,8 @@ namespace Tossup
             // The completed level is display-only in the shop; removed coins may still appear in its history.
             if (g.Phase == Phase.Shop) return g.Dealt == null && g.Pending == null;
             var e = g.Encounter;
-            if (e == null || e.Name == null || !Finite(e.Quota) || !Finite(e.MaxQuota) || !Finite(e.Scored) || !Finite(e.SurplusPaid) ||
+            if (e == null || e.Name == null || !Finite(e.ElapsedSeconds) || e.ElapsedSeconds < 0 ||
+                !Finite(e.Quota) || !Finite(e.MaxQuota) || !Finite(e.Scored) || !Finite(e.SurplusPaid) ||
                 !Finite(e.Magnet) || !Finite(e.ComboLen) || !Finite(e.Shield) || !Finite(e.ComboStep) || !Finite(e.ComboCap) ||
                 !Finite(e.ComboPot) || e.ComboPot < 0 || !Finite(e.BestComboLen) || e.BestComboLen < 0 || !Finite(e.GoldMult) ||
                 (e.Payout.HasValue && !Finite(e.Payout.Value)) || e.Flips < 0 || e.Discards < 0 || e.Returned < 0 || e.BankDiscards < 0 ||

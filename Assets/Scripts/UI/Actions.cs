@@ -95,6 +95,34 @@ namespace Tossup.UI
             Tutorial.Start();
         }
 
+        public static void ToggleDeveloperMode()
+        {
+            bool enable = !RuntimeMode.Dev;
+            Action changeMode = () =>
+            {
+                Ui.Game = null;
+                RuntimeMode.Configure(enable, false);
+                savedRunExists = null;
+                savedKey = null;
+                LoadProfile();
+                if (enable) Play();
+                else Go("title");
+            };
+
+            if (Ui.Game != null && Ui.Game.Phase != Phase.GameOver && Ui.Game.Phase != Phase.Victory)
+            {
+                Ui.Confirm = new Confirm
+                {
+                    Title = enable ? "DEVELOPER MODE" : "EXIT DEVELOPER MODE",
+                    Text = "THIS LEVEL STARTS OVER WHEN YOU CONTINUE.",
+                    Ok = changeMode,
+                };
+                return;
+            }
+
+            changeMode();
+        }
+
         public static void StartTutorial()
         {
             Ui.Profile.Options.SeenHelp = true;
@@ -461,6 +489,8 @@ namespace Tossup.UI
             Ui.Shake = Math.Max(0, Ui.Shake - dt);
             if (Ui.EncounterReveal != null && game != null && !game.Paused)
                 Ui.EncounterReveal.Elapsed = Math.Min(3.4, Ui.EncounterReveal.Elapsed + dt);
+            if (game != null && Ui.EncounterReveal == null)
+                Game.AdvanceClock(game, dt);
             Tutorial.Update();
             if (game != null && game.Phase != Phase.Encounter) Ui.Holding = false;
             if (game != null && Ui.Marked.Count > 0) // marks only make sense while the coin is still in the bank or hand

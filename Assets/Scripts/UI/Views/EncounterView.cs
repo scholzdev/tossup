@@ -327,7 +327,7 @@ namespace Tossup.UI
                 Text(k == 0 ? "HEADS" : "TAILS", cx + 14, 332, Ui.F20, accent);
                 Gfx.SetFont(Ui.F16);
                 Color(coin != null ? C.Face : C.Muted);
-                Gfx.Printf(coin != null ? EffectDescription(k == 0 ? coin.Heads : coin.Tails) : "?", cx + 14, 368, 172);
+                Gfx.Printf(coin != null ? CoinOutcomeDescription(coin, k == 0 ? Side.Heads : Side.Tails) : "?", cx + 14, 368, 172);
             }
 
             // result banner on the coin once it has landed
@@ -357,10 +357,13 @@ namespace Tossup.UI
                 if (!(g.Dealt != null && !Ui.Holding))
                 {
                     var accent = outcome == Side.Heads ? C.Blue : outcome == Side.Tie ? C.Purple : C.Red;
-                    Box(SX - 130, 456, 260, 62, C.Ink);
-                    Outline(SX - 130, 456, 260, 62, accent);
-                    Centered(outcome == Side.Tie ? "EDGE" : Lang.Upper(outcome), SX - 130, 460, 260, Ui.F32, accent);
-                    Centered(note, SX - 130, 496, 260, Ui.F16, noteColor);
+                    string label = outcome == Side.Tie ? "EDGE" : Lang.Upper(outcome);
+                    float bannerWidth = Math.Max(152, Math.Max(Ui.F32.GetWidth(label), Ui.F16.GetWidth(note)) + 32);
+                    float bannerX = SX - bannerWidth / 2;
+                    Box(bannerX, 456, bannerWidth, 62, C.Ink);
+                    Outline(bannerX, 456, bannerWidth, 62, accent);
+                    Centered(label, bannerX, 460, bannerWidth, Ui.F32, accent);
+                    Centered(note, bannerX, 496, bannerWidth, Ui.F16, noteColor);
                 }
             }
 
@@ -434,11 +437,12 @@ namespace Tossup.UI
                 }
             }
             int prizeCount = g.Augments.Count + (g.RunEncounterId != null ? 1 : 0);
-            Centered(L("PRIZES"), 930, 654, 280, Ui.F16, C.Gold);
+            const float prizeX = 930, prizeWidth = 280, prizeSize = 44, prizeGap = 6;
+            Centered(L("PRIZES"), prizeX, 654, prizeWidth, Ui.F16, C.Gold);
             if (prizeCount > 0)
             {
-                float prizeWidth = prizeCount * 40 + (prizeCount - 1) * 5;
-                RunModifierView.Draw(930 + (280 - prizeWidth) / 2, 706, 40);
+                float contentsWidth = prizeCount * prizeSize + (prizeCount - 1) * prizeGap;
+                RunModifierView.Draw(prizeX + (prizeWidth - contentsWidth) / 2, 680, prizeSize);
             }
             if (hint != null)
             {

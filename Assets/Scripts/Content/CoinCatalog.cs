@@ -62,6 +62,8 @@ namespace Tossup
         public static readonly LifelineCoin Lifeline = new LifelineCoin();
         public static readonly HoroscopeCoin Horoscope = new HoroscopeCoin();
         public static readonly CrystalBallCoin CrystalBall = new CrystalBallCoin();
+        public static readonly AllInCoin AllIn = new AllInCoin();
+        public static readonly SafePort SafePort = new SafePort();
 
         public static readonly List<CoinDef> Ordered = new List<CoinDef>
         {
@@ -122,6 +124,8 @@ namespace Tossup
             Lifeline,
             Horoscope,
             CrystalBall,
+            AllIn,
+            SafePort
         };
     }
 }

@@ -16,23 +16,11 @@ namespace Tossup
         public Action<GameSignal, Action<GameEvent>> On;
     }
 
-    // Coin effect hooks. Routes a coin def's hooks onto the Signal bus, scoped to the coin that is
-    // currently dealt/flipped.
+    // Coin and run hooks. A definition owns its event subscriptions; dispatch supplies the active
+    // run and owner instance, so handlers do not capture mutable run state in shared content.
     //
-    // A coin def (Content/Coins.cs) may declare hooks in two styles, mixed freely:
-    //   1. one delegate per hook:
-    //        OnDeal(game, inst)          coin was dealt from the stack (before you flip or discard)
-    //        OnFlip(game, inst, flip)    dice rolled; set flip.Result to change the outcome
-    //        OnResolve(game, inst, res)  outcome final, effects NOT yet applied. res.Effects is a
-    //                                    private copy: edit it, add to it, or replace it
-    //        OnDiscard(game, inst)       coin discarded for the level
-    //   2. Register(ctx): subscribe yourself, for several events or closure state:
-    //        ctx.On(GameSignal.CoinResolve, e => ...). Handlers are torn down when the coin resolves or is discarded.
-    //
-    // Pure (no side effects), evaluated any time odds are shown, for every owned coin:
-    //   OnOdds(game, inst, odds)     mutate odds.Heads, odds.Edge, and/or odds.Tails
-    // Persistent growth:
-    //   Grow(inst, event)            CoinGrowthEvent.Level | .Flip | .Discard
+    // Hooks are separate += events grouped by domain: On.Coins.Odds, On.Game.Shop.BeforePurchase,
+    // On.Game.Encounter.Start, On.Time.Tick, and so on. Legacy virtual coin hooks are bridged by CoinDef.
     //
     // Randomness inside a hook must use Rng.Random(game) / Rng.Int(game, a, b) to stay seeded.
     public static class Hooks
@@ -52,22 +40,80 @@ namespace Tossup
             var def = inst.Definition;
             var handles = new List<Handle>();
             active = handles;
+            var context = new HookContext(game, inst);
             void On(GameSignal signal, Action<GameEvent> handler)
             {
                 handles.Add(Signal.On(signal, e => { if (e.Inst == inst) handler(e); }));
             }
-            if (def.Overrides(nameof(CoinDef.OnDeal))) On(GameSignal.CoinDeal, e => def.OnDeal(e.Game, e.Inst));
-            if (def.Overrides(nameof(CoinDef.OnFlip))) On(GameSignal.CoinFlip, e => def.OnFlip(e.Game, e.Inst, e.Flip));
-            if (def.Overrides(nameof(CoinDef.OnResolve))) On(GameSignal.CoinResolve, e => def.OnResolve(e.Game, e.Inst, e.Res));
-            if (def.Overrides(nameof(CoinDef.OnDiscard))) On(GameSignal.CoinDiscard, e => def.OnDiscard(e.Game, e.Inst));
+            On(GameSignal.CoinDeal, e => def.On.Coins.RaiseDeal(context));
+            On(GameSignal.CoinFlip, e => def.On.Coins.RaiseFlip(context, e.Flip));
+            On(GameSignal.CoinResolve, e => def.On.Coins.RaiseResolve(context, e.Res));
+            On(GameSignal.CoinDiscard, e => def.On.Coins.RaiseDiscard(context));
             def.Register(new CoinCtx { Game = game, Inst = inst, On = On });
         }
 
-        public static void Grow(CoinInst inst, CoinGrowthEvent evt) => inst.Definition.Grow(inst, evt);
+        public static void Grow(GameState game, CoinInst inst, CoinGrowthEvent evt)
+        {
+            var context = new HookContext(game, inst);
+            inst.Definition.On.Coins.RaiseGrow(context, evt);
+        }
 
         public static void Odds(GameState game, CoinInst inst, Odds odds)
         {
-            inst.Definition.OnOdds(game, inst, odds);
+            inst.Definition.On.Coins.RaiseOdds(new HookContext(game, inst), odds);
+        }
+
+        public static void Tick(GameState game, double dt) => ForEachOwner(game,
+            (context, on) => on.Time.RaiseTick(context), dt);
+
+        internal static void GameEvent(GameSignal signal, GameEvent e)
+        {
+            if (e?.Game == null) return;
+            ForEachOwner(e.Game, (context, on) =>
+            {
+                switch (signal)
+                {
+                    case GameSignal.EncounterStart:
+                        on.Game.Encounter.RaiseStart(context);
+                        break;
+                    case GameSignal.EncounterEnd:
+                        on.Game.Encounter.RaiseEnd(context, e.Won);
+                        break;
+                    case GameSignal.EffectApplied:
+                        on.Game.Effects.RaiseApplied(context, e);
+                        break;
+                    default:
+                        on.Game.Coins.Raise(signal, context, e);
+                        break;
+                }
+            });
+        }
+
+        public static void ShopOpened(GameState game) => ForEachOwner(game,
+            (context, on) => on.Game.Shop.RaiseOpened(context));
+
+        public static void ShopClosed(GameState game) => ForEachOwner(game,
+            (context, on) => on.Game.Shop.RaiseClosed(context));
+
+        public static bool BeforePurchase(GameState game, ShopPurchase purchase)
+        {
+            ForEachOwner(game, (context, on) => on.Game.Shop.RaiseBeforePurchase(context, purchase));
+            purchase.Cost = Math.Max(0, purchase.Cost);
+            return !purchase.Cancelled;
+        }
+
+        public static void AfterPurchase(GameState game, ShopPurchase purchase) => ForEachOwner(game,
+            (context, on) => on.Game.Shop.RaiseAfterPurchase(context, purchase));
+
+        static void ForEachOwner(GameState game, Action<HookContext, OnHooks> invoke, double dt = 0)
+        {
+            if (game == null) return;
+            foreach (var coin in game.Coins.ToArray())
+                invoke(new HookContext(game, coin, dt), coin.Definition.On);
+            foreach (var id in game.Items.ToArray())
+                if (Content.Items.TryGetValue(id, out var item)) invoke(new HookContext(game, item, dt), item.On);
+            foreach (var id in game.Relics.ToArray())
+                if (Content.Relics.TryGetValue(id, out var relic)) invoke(new HookContext(game, relic, dt), relic.On);
         }
     }
 

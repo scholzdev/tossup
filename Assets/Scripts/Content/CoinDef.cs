@@ -14,6 +14,8 @@ namespace Tossup
     // belongs to CoinInst; resolving always copies effects before editing them.
     public abstract class CoinDef
     {
+        public OnHooks On { get; } = new OnHooks();
+
         public abstract string Id { get; }
         public abstract string Name { get; }
         public abstract string Description { get; }
@@ -27,6 +29,8 @@ namespace Tossup
         public abstract IReadOnlyList<Effect> Tails { get; }
         public abstract IReadOnlyList<Effect> Edge { get; }
         public virtual string HeadsDescription => null;
+        public virtual string TailsDescription => null;
+        public virtual string EdgeDescription => null;
         public virtual IReadOnlyList<Upgrade> Upgrades => Array.Empty<Upgrade>();
 
         // Quota estimation adds this to the expected printed effects. Stateful
@@ -46,5 +50,30 @@ namespace Tossup
         public virtual void Grow(CoinInst inst, CoinGrowthEvent evt) { }
         public virtual void Register(CoinCtx ctx) { }
         public bool Overrides(string hook) => GetType().GetMethod(hook).DeclaringType != typeof(CoinDef);
+        public bool HasHook(string hook)
+        {
+            switch (hook)
+            {
+                case nameof(OnDeal): return On.Coins.HasDeal;
+                case nameof(OnDiscard): return On.Coins.HasDiscard;
+                case nameof(OnFlip): return On.Coins.HasFlip;
+                case nameof(OnResolve): return On.Coins.HasResolve;
+                case nameof(OnOdds): return On.Coins.HasOdds;
+                case nameof(Grow): return On.Coins.HasGrow;
+                case nameof(Register): return Overrides(hook);
+                default: return false;
+            }
+        }
+
+        protected CoinDef()
+        {
+            // Bridge the existing virtual hooks through the event API while content migrates to +=.
+            if (Overrides(nameof(OnOdds))) On.Coins.Odds += (ctx, odds) => OnOdds(ctx.Game, ctx.Coin, odds);
+            if (Overrides(nameof(OnDeal))) On.Coins.Deal += ctx => OnDeal(ctx.Game, ctx.Coin);
+            if (Overrides(nameof(OnFlip))) On.Coins.Flip += (ctx, flip) => OnFlip(ctx.Game, ctx.Coin, flip);
+            if (Overrides(nameof(OnResolve))) On.Coins.Resolve += (ctx, res) => OnResolve(ctx.Game, ctx.Coin, res);
+            if (Overrides(nameof(OnDiscard))) On.Coins.Discard += ctx => OnDiscard(ctx.Game, ctx.Coin);
+            if (Overrides(nameof(Grow))) On.Coins.Grow += (ctx, evt) => Grow(ctx.Coin, evt);
+        }
     }
 }

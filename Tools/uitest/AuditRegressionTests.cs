@@ -108,13 +108,16 @@ static class AuditRegressionTests
 
     static void DefinitionObjects()
     {
-        Check(Content.CoinOrder.Count == 57 && Content.CoinOrder.Select(c=>c.Id).Distinct().Count()==57, "catalog keeps all unique coin objects");
+        Check(Content.CoinOrder.Count == 59 && Content.CoinOrder.Select(c=>c.Id).Distinct().Count()==59, "catalog keeps all unique coin objects");
         foreach(var definition in Content.CoinOrder)
             Check(ReferenceEquals(definition,Content.Coins[definition.Id]) && definition.GetType()!=typeof(CoinDef), "catalog indexes the concrete definition object");
         Check(UpgradeCatalog.Ordered.Count==18 && UpgradeCatalog.Ordered.Select(u=>u.Id).Distinct().Count()==18,"all upgrade definitions have unique IDs");
         foreach(var coin in Content.CoinOrder)
             foreach(var upgrade in coin.Upgrades)
                 Check(ReferenceEquals(upgrade,UpgradeCatalog.ById[upgrade.Id]),"coins reference the shared upgrade definitions");
+        Check(D.CoinOutcomeDescription(CoinCatalog.AllIn, Side.Heads) == "Doubles the score." &&
+              D.CoinOutcomeDescription(CoinCatalog.AllIn, Side.Tails) == "Scores nothing.",
+            "custom coin outcome descriptions replace the empty-effect placeholder");
         var game=Scene("normal","normal");game.Encounter.Quota=1;
         Check(ReferenceEquals(game.Coins[0].Definition,CoinCatalog.Normal),"owned coin carries its definition object");
         var effect=CoinCatalog.Normal.Heads[0];double original=effect.Amount;
@@ -137,6 +140,13 @@ static class AuditRegressionTests
         game.Player.Gold=100;
         Check(Game.Buy(game,0) && game.ShopOffers[0]==null && game.ShopUpgrades[0]==null && ReferenceEquals(game.Coins[game.Coins.Count-1].Upgrade,UpgradeCatalog.Mathematician),"buying an upgraded offer transfers its definition and clears sold-slot metadata");
         Check(RunSave.Decode(RunSave.Encode(game))!=null,"shop checkpoint remains resumable after buying an upgraded offer");
+
+        var allInHeads = Scene("allin");
+        Play(allInHeads, "allin", Side.Heads);
+        Check(Near(allInHeads.LastResult.Gained.Value, 10), "All-In doubles its score on Heads");
+        var allInTails = Scene("allin");
+        Play(allInTails, "allin", Side.Tails);
+        Check(Near(allInTails.LastResult.Gained.Value, 0), "All-In scores nothing on Tails");
         RuntimeMode.Configure(false,false);
     }
 }

@@ -132,6 +132,7 @@ namespace Tossup.UI
             PadNavigation.MouseUsed();
             if(Ui.EncounterReveal!=null){DismissEncounterReveal();return;}
             Ui.ToCanvas(x, y, out float cx, out float cy);
+            if (TitleView.HandleVersionClick(cx, cy)) return;
             for (int i = Ui.Buttons.Count - 1; i >= 0; i--)
             {
                 var b = Ui.Buttons[i];

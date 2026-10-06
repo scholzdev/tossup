@@ -12,7 +12,7 @@ import math
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
-RESOURCES = ROOT / "assets" / "Resources"
+RESOURCES = ROOT / "Assets" / "Resources"
 # Keep generated art in the same Unity/LÖVE resource tree used by both runtimes.
 OUT = RESOURCES / "coins"
 SCALE = 8  # supersampling: shapes are drawn at 8x, then reduced for smooth edges
@@ -78,6 +78,8 @@ COLORS = {
     "counterfeiter": "518774",
     "doppelganger": "79549d",
     "conductor": "487e9b",
+    "allin": "b84d3d",
+    "safeport": "4f9b91",
 }
 
 
@@ -352,6 +354,23 @@ def emblem(image, coin_id):
         d.line(points([(37, 91), (88, 37)]), fill=ivory, width=p(6))
         for x, y in ((45, 43), (64, 36), (85, 65)):
             d.ellipse(box(x - 5, y - 5, x + 5, y + 5), fill=ivory)
+    elif coin_id == "allin":  # chips pushed together: wager everything
+        d.ellipse(box(35, 48, 77, 76), fill=ivory, outline=dark, width=p(3))
+        d.arc(box(39, 53, 73, 71), 10, 170, fill=dark, width=p(3))
+        d.ellipse(box(51, 37, 93, 65), fill=(223, 116, 90, 255), outline=dark, width=p(3))
+        d.arc(box(55, 42, 89, 60), 10, 170, fill=dark, width=p(3))
+        d.line(points([(38, 86), (90, 86)]), fill=ivory, width=p(6))
+        d.line(points([(50, 96), (78, 96)]), fill=ivory, width=p(6))
+    elif coin_id == "safeport":  # lighthouse keeping ships safe in the harbor
+        d.polygon(points([(55, 87), (60, 50), (76, 50), (81, 87)]), fill=ivory, outline=dark)
+        d.rectangle(box(56, 84, 80, 90), fill=ivory, outline=dark, width=p(2))
+        d.rectangle(box(61, 57, 75, 67), fill=(79, 155, 145, 255), outline=dark, width=p(2))
+        d.polygon(points([(57, 50), (64, 38), (72, 38), (79, 50)]), fill=ivory, outline=dark)
+        d.rectangle(box(62, 33, 74, 40), fill=ivory, outline=dark, width=p(2))
+        d.line(points([(48, 43), (34, 36)]), fill=ivory, width=p(4))
+        d.line(points([(88, 43), (102, 36)]), fill=ivory, width=p(4))
+        d.arc(box(36, 82, 64, 99), 190, 345, fill=ivory, width=p(4))
+        d.arc(box(64, 82, 92, 99), 190, 345, fill=ivory, width=p(4))
     elif coin_id == "back":
         d.arc(box(44, 37, 84, 76), 190, 350, fill=ivory, width=p(8))
         d.line(points([(83, 59), (64, 77), (64, 82)]), fill=ivory, width=p(8))

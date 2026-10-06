@@ -183,6 +183,7 @@ namespace Tossup
     public sealed class Encounter
     {
         public string Name;
+        public double ElapsedSeconds;
         public double Quota, MaxQuota; // Quota is what is still missing; MaxQuota grows with penalties
         public bool Boss, Inverts;
         public int? Endless;

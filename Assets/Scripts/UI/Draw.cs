@@ -145,6 +145,17 @@ namespace Tossup.UI
             return string.Join("; ", parts);
         }
 
+        public static string CoinOutcomeDescription(CoinDef coin, string outcome)
+        {
+            if (outcome == Side.Heads)
+                return string.IsNullOrEmpty(coin.HeadsDescription) ? EffectDescription(coin.Heads) : Lang.CoinHeadsDescription(coin.Id);
+            if (outcome == Side.Tails)
+                return string.IsNullOrEmpty(coin.TailsDescription) ? EffectDescription(coin.Tails) : Lang.CoinTailsDescription(coin.Id);
+            if (outcome == Side.Tie)
+                return string.IsNullOrEmpty(coin.EdgeDescription) ? EffectDescription(Game.TieEffects(coin.Id)) : Lang.CoinEdgeDescription(coin.Id);
+            return L("No effect");
+        }
+
         public static void CoinHover(CoinDef def, float x, float y, float w, float h, double? probability = null, bool locked = false,
             Upgrade upgrade = null, double? tieProbability = null)
         {
@@ -286,9 +297,9 @@ namespace Tossup.UI
                 float height = 38 + Ui.F16.GetWrap(detail, w - 52).Count * 18;
                 rows.Add((L(label), Math.Floor(chance * 100 + .5), detail, tint, height)); h += height + 7;
             }
-            Row("HEADS", hovered.Probability, coin.HeadsDescription != null ? Lang.CoinHeadsDescription(hovered.Id) : EffectDescription(coin.Heads), C.Blue);
-            if (hovered.TieProbability > 0) Row("EDGE", hovered.TieProbability, EffectDescription(Game.TieEffects(hovered.Id)), C.Purple);
-            Row("TAILS", 1 - hovered.Probability - hovered.TieProbability, EffectDescription(coin.Tails), C.Red);
+            Row("HEADS", hovered.Probability, CoinOutcomeDescription(coin, Side.Heads), C.Blue);
+            if (hovered.TieProbability > 0) Row("EDGE", hovered.TieProbability, CoinOutcomeDescription(coin, Side.Tie), C.Purple);
+            Row("TAILS", 1 - hovered.Probability - hovered.TieProbability, CoinOutcomeDescription(coin, Side.Tails), C.Red);
             string description = coin.HeadsDescription == null ? Lang.CoinDescription(hovered.Id) : null;
             if (description != null) h += 40 + Ui.F16.GetWrap(description, w - 48).Count * 18;
             if (coin.EnergyCost > 0) h += 24;

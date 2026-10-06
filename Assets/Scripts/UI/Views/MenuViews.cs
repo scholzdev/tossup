@@ -7,6 +7,35 @@ namespace Tossup.UI
     // The Lua title screen: show the original three-coin scene behind the menu panel on the left.
     public static class TitleView
     {
+        static int versionClicks;
+        static double lastVersionClick;
+
+        public static bool HandleVersionClick(float x, float y)
+        {
+            if (Ui.Screen != "title" || Ui.Confirm != null)
+            {
+                versionClicks = 0;
+                return false;
+            }
+
+            string version = "v" + BuildInfo.Number + (RuntimeMode.Dev ? ".dev" : "") + " (" + BuildInfo.Build + ")";
+            if (x < 88 || x > 104 + Ui.F16.GetWidth(version) || y < 618 || y > 650)
+            {
+                versionClicks = 0;
+                return false;
+            }
+
+            double now = Ui.Platform.Time;
+            if (versionClicks == 0 || now - lastVersionClick > 1.25) versionClicks = 0;
+            lastVersionClick = now;
+            if (++versionClicks == 3)
+            {
+                versionClicks = 0;
+                A.ToggleDeveloperMode();
+            }
+            return true;
+        }
+
         public static void Draw()
         {
             var scene = Ui.UiImages["title_scene"];
@@ -512,6 +541,7 @@ namespace Tossup.UI
                 Text("CLEAR PROGRESS", 308, ly + 10, Ui.F32, C.Face);
                 Text("Resets unlocks, collection, sets and tokens. Options stay.", 308, ly + 46, Ui.F16, C.Muted);
                 Button("CLEAR", 820, ly + 16, 152, 46, C.Red, A.ClearProgress);
+                Button(RuntimeMode.Dev ? "EXIT DEVELOPER MODE" : "DEVELOPER MODE", 440, 644, 400, 48, C.Purple, A.ToggleDeveloperMode);
             }
             if (Ui.OptionsTab != "controls") Centered("F3 SHOWS DEBUG INFO IN A RUN", 0, 715, 1280, Ui.F16, C.Muted);
         }

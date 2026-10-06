@@ -18,10 +18,13 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
 
-        public override void OnOdds(GameState game, CoinInst inst, Odds odds)
+        public MomentumCoin()
         {
-            var e = game.Encounter;
-            if (e != null) odds.Heads += .05 * e.Streak;
+            On.Coins.Odds += (ctx, odds) =>
+            {
+                var encounter = ctx.Game.Encounter;
+                if (encounter != null) odds.Heads += .05 * encounter.Streak;
+            };
         }
     }
 }

@@ -10,7 +10,8 @@ static class LatestTests
 
     public static void Run()
     {
-        Check(Content.CoinOrder.Count==57&&Content.Coins.Count==57,"all 57 coins are registered");
+        Check(Content.CoinOrder.Count==59&&Content.Coins.Count==59,"all 59 coins are registered");
+        Check(Content.Characters["trader"].Pool.Contains(CoinCatalog.SafePort),"Safe Port is available to the Trader");
         Check(Content.ItemOrder.Count==11&&Content.Items.Count==11,"all 11 chips are registered");
         Check(Game.Route.Count==8&&Game.Route[7].Boss,"eight-stage route ends at The House");
         Check(Game.Stakes.Count==8&&Game.Modifiers.Count==8,"stakes and modifiers are complete");

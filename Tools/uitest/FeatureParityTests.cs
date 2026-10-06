@@ -117,6 +117,16 @@ static class FeatureParityTests
     static void RuntimeModesAndSandbox()
     {
         RuntimeMode.Configure(true, false);
+        var clockGame = new GameState { Phase = Phase.Encounter, Encounter = new Encounter() };
+        Game.AdvanceClock(clockGame, 1.5);
+        Check(Math.Abs(clockGame.Encounter.ElapsedSeconds - 1.5) < 1e-9, "active encounter time advances");
+        clockGame.Paused = true;
+        Game.AdvanceClock(clockGame, 2);
+        Check(Math.Abs(clockGame.Encounter.ElapsedSeconds - 1.5) < 1e-9, "paused encounter time stops");
+        clockGame.Paused = false;
+        clockGame.Mulligan = new Mulligan();
+        Game.AdvanceClock(clockGame, 2);
+        Check(Math.Abs(clockGame.Encounter.ElapsedSeconds - 1.5) < 1e-9, "the encounter clock waits until mulligan ends");
         var dev = Game.New(5501, "blade", null, null, false);
         Check(RuntimeMode.Dev && dev.Player.Gold == 5000, "developer mode grants test gold");
         var profile = Profile.New();
@@ -137,6 +147,50 @@ static class FeatureParityTests
         adjustedOdds.Normalize();
         Check(Math.Abs(adjustedOdds.Heads - .39) < 1e-9 && Math.Abs(adjustedOdds.Edge - .1) < 1e-9 && Math.Abs(adjustedOdds.Tails - .51) < 1e-9,
             "changing one outcome transfers its probability from Tails");
+
+        var hookCoin = new CoinInst { Uid = 1, Definition = CoinCatalog.Normal };
+        var hookGame = new GameState
+        {
+            Phase = Phase.Encounter,
+            Encounter = new Encounter(),
+            Coins = new List<CoinInst> { hookCoin },
+        };
+        double tickElapsed = -1;
+        int gameOutcomeCalls = 0;
+        Action<HookContext> tickHook = ctx => tickElapsed = ctx.ElapsedSeconds;
+        Action<HookContext, Odds> oddsHook = (ctx, value) => value.Heads += .1;
+        Action<HookContext, GameEvent> gameOutcomeHook = (ctx, evt) =>
+        {
+            if (ctx.Coin == hookCoin && evt.Result == "Heads") gameOutcomeCalls++;
+        };
+        CoinCatalog.Normal.On.Time.Tick += tickHook;
+        CoinCatalog.Normal.On.Coins.Odds += oddsHook;
+        CoinCatalog.Normal.On.Game.Coins.Outcome += gameOutcomeHook;
+        try
+        {
+            Game.AdvanceClock(hookGame, 1.25);
+            Check(Math.Abs(tickElapsed - 1.25) < 1e-9, "On.Time.Tick receives the elapsed encounter time");
+            Check(Math.Abs(Game.GetOdds(hookGame, hookCoin).Heads - .75) < 1e-9, "On.Coins.Odds can change a coin's chance");
+            Signal.Emit(GameSignal.CoinOutcome, new GameEvent { Game = hookGame, Inst = hookCoin, Result = "Heads" });
+            Check(gameOutcomeCalls == 1, "On.Game.Coins.Outcome receives run-wide coin events");
+
+            var shop = Game.NewSandbox(new SandboxConfig { Coins = new List<string> { "normal" }, Gold = 9, Seed = 3 });
+            Game.OpenSandboxShop(shop);
+            shop.ShopItems[0] = "force_heads";
+            Action<HookContext, ShopPurchase> discount = (ctx, purchase) =>
+            {
+                if (purchase.Kind == ShopPurchaseKind.Item) purchase.Cost -= 4;
+            };
+            CoinCatalog.Normal.On.Game.Shop.BeforePurchase += discount;
+            try { Check(Game.BuyItem(shop, 0) && shop.Player.Gold == 1, "On.Game.Shop.BeforePurchase can adjust purchase cost"); }
+            finally { CoinCatalog.Normal.On.Game.Shop.BeforePurchase -= discount; }
+        }
+        finally
+        {
+            CoinCatalog.Normal.On.Time.Tick -= tickHook;
+            CoinCatalog.Normal.On.Coins.Odds -= oddsHook;
+            CoinCatalog.Normal.On.Game.Coins.Outcome -= gameOutcomeHook;
+        }
         RuntimeMode.Configure(false, false);
     }
 
@@ -169,9 +223,24 @@ static class FeatureParityTests
         Ui.EncounterReveal = null;
         Ui.Screen = "title";
         Check(Ui.UiImages.ContainsKey("title_scene"), "the original title scene with its three coins is loaded");
+        Ui.Platform.WriteSave("run.json", "normal-run-checkpoint");
         AppCore.Draw();
         Check(Ui.Buttons.Exists(b => b.Label == "PLAY" && b.X == 100 && b.Y == 240 && b.W == 340 && b.H == 52),
             "title actions match the Lua menu layout");
+        Check(!Ui.Buttons.Exists(b => b.Label == "DEVELOPER MODE"), "title menu keeps Developer Mode hidden");
+        AppCore.MousePressed(100, 630);
+        AppCore.MousePressed(100, 630);
+        AppCore.MousePressed(100, 630);
+        Check(RuntimeMode.Dev && Ui.Screen == "select" && Ui.Profile.Collected.Count == Content.CoinOrder.Count && !A.HasSavedRun(),
+            "triple-clicking the title version opens Developer Mode with the full collection");
+        A.Go("options");
+        Ui.OptionsTab = "game";
+        AppCore.Draw();
+        Check(Ui.Buttons.Exists(b => b.Label == "EXIT DEVELOPER MODE"), "Options contains the relocated Developer Mode button");
+        AppCore.MousePressed(640, 668);
+        Check(!RuntimeMode.Dev && Ui.Screen == "title" && A.HasSavedRun(),
+            "the Options button exits Developer Mode and preserves the normal saved run");
+        A.DeleteRun();
 
         Ui.SelectedCharacter = "blade";
         A.Start(6602);

@@ -65,10 +65,14 @@ namespace Tossup
 
         public static GameEvent Emit(GameSignal signal, GameEvent e)
         {
-            if (!listeners.TryGetValue(signal, out var list)) return e;
-            var snapshot = list.ToArray(); // listeners added/removed mid-emit only affect later emits
-            foreach (var handle in snapshot)
-                if (handle.Active) handle.Callback(e);
+            if (listeners.TryGetValue(signal, out var list))
+            {
+                var snapshot = list.ToArray(); // listeners added/removed mid-emit only affect later emits
+                foreach (var handle in snapshot)
+                    if (handle.Active) handle.Callback(e);
+            }
+            // Definition-owned hooks run after bus listeners and before gameplay consumes the event.
+            Hooks.GameEvent(signal, e);
             return e;
         }
 

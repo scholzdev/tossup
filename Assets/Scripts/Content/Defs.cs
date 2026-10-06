@@ -6,6 +6,7 @@ namespace Tossup
     // A chip (consumable item). Use returns false to refuse; the item is then kept.
     public sealed class ItemDef
     {
+        public OnHooks On { get; } = new OnHooks();
         public string Id, Name, Short, Description;
         public int Cost;
         public Func<GameState, bool> Use;
@@ -14,6 +15,7 @@ namespace Tossup
     // A prize (relic): a passive, run-long modifier.
     public sealed class RelicDef
     {
+        public OnHooks On { get; } = new OnHooks();
         public string Id, Name, Description;
         public Action<RelicCtx> Register;
     }
