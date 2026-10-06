@@ -251,7 +251,8 @@ static class Program
             Check(Math.Abs((quad[4]-quad[0])/scene.Width-(quad[5]-quad[1])/scene.Height) < .001,
                 "title artwork keeps its aspect ratio");
             var menu = Ui.Buttons.Find(b => b.Label == "COLLECTION");
-            Check(menu.W >= Ui.Width * .45f, "main menu controls occupy almost half the view");
+            Check(menu.X == 100 && menu.W == 340 && menu.H == 52,
+                "main menu controls match the Lua-sized layout");
             ClickCanvas(menu); Check(Ui.Screen == "collection", "resized pointer activates the visible control");
             Ui.ToCanvas(platform.X, platform.Y, out float cx, out float cy);
             Check(menu.Contains(cx,cy), "drawing and pointer transforms agree after resizing");
@@ -324,7 +325,7 @@ static class Program
         }
         Ui.Game = null; Ui.Confirm = null; Ui.EncounterReveal = null; Ui.FlipAnimation = null;
         Ui.Holding = false; Ui.ResolveTimer = 0; PadNavigation.MouseUsed(); Lang.Set("en");
-        Console.WriteLine("layout: full-width art, half-screen menu, resized input, result feedback and tour bounds passed");
+        Console.WriteLine("layout: full-width art, Lua-sized menu, resized input, result feedback and tour bounds passed");
     }
 
     static Button Find(string label)

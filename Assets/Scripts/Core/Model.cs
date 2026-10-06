@@ -122,7 +122,52 @@ namespace Tossup
 
     public sealed class Odds
     {
-        public double P;
+        double heads, edge, tails;
+        bool headsTouched, edgeTouched, tailsTouched;
+
+        public double Heads { get => heads; set { heads = value; headsTouched = true; } }
+        public double Edge { get => edge; set { edge = value; edgeTouched = true; } }
+        public double Tails { get => tails; set { tails = value; tailsTouched = true; } }
+
+        public Odds() { }
+
+        public Odds(double heads, double edge, double tails)
+        {
+            this.heads = heads;
+            this.edge = edge;
+            this.tails = tails;
+        }
+
+        // A hook changing Heads or Edge alone transfers the difference to/from Tails;
+        // changing Tails alone transfers it to/from Heads. Explicit multi-side edits are normalized.
+        public void Normalize()
+        {
+            heads = Valid(heads);
+            edge = Valid(edge);
+            tails = Valid(tails);
+
+            if ((headsTouched || edgeTouched) && !tailsTouched)
+            {
+                double total = heads + edge;
+                if (total > 1) { heads /= total; edge /= total; }
+                tails = 1 - heads - edge;
+            }
+            else if (tailsTouched && !headsTouched && !edgeTouched)
+            {
+                tails = Math.Min(tails, 1 - edge);
+                heads = 1 - edge - tails;
+            }
+            else
+            {
+                double total = heads + edge + tails;
+                if (total <= 0) { heads = edge = 0; tails = 1; }
+                else { heads /= total; edge /= total; tails /= total; }
+            }
+
+            headsTouched = edgeTouched = tailsTouched = false;
+        }
+
+        static double Valid(double value) => double.IsNaN(value) || double.IsInfinity(value) ? 0 : Math.Max(0, value);
     }
 
     public sealed class Player

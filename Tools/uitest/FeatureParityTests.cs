@@ -129,6 +129,14 @@ static class FeatureParityTests
         Check(sandbox.Sandbox != null && sandbox.CharacterId == "trader" && sandbox.Stake == 4, "sandbox JSON selects character and stake");
         Check(sandbox.Player.Gold == 91 && sandbox.Player.Energy == 7 && sandbox.Coins.Count == 2, "sandbox JSON selects resources and deck");
         Check(Math.Abs(Game.Probability(sandbox, sandbox.Coins[0]) - .2) < 1e-9 && Math.Abs(Game.TieProbability(sandbox, sandbox.Coins[0]) - .3) < 1e-9, "sandbox odds override runtime odds");
+        var odds = Game.GetOdds(sandbox, sandbox.Coins[0]);
+        Check(Math.Abs(odds.Heads - .2) < 1e-9 && Math.Abs(odds.Edge - .3) < 1e-9 && Math.Abs(odds.Tails - .5) < 1e-9,
+            "coin odds expose Heads, Edge, and Tails as one distribution");
+        var adjustedOdds = new Odds(.35, .1, .55);
+        adjustedOdds.Heads += .04;
+        adjustedOdds.Normalize();
+        Check(Math.Abs(adjustedOdds.Heads - .39) < 1e-9 && Math.Abs(adjustedOdds.Edge - .1) < 1e-9 && Math.Abs(adjustedOdds.Tails - .51) < 1e-9,
+            "changing one outcome transfers its probability from Tails");
         RuntimeMode.Configure(false, false);
     }
 
@@ -162,8 +170,8 @@ static class FeatureParityTests
         Ui.Screen = "title";
         Check(Ui.UiImages.ContainsKey("title_scene"), "the original title scene with its three coins is loaded");
         AppCore.Draw();
-        Check(Ui.Buttons.Exists(b => b.Label == "PLAY" && b.X < Ui.Width / 2 && b.W >= Ui.Width * .45f && b.H >= 70),
-            "title actions fill the requested half-screen menu with larger controls");
+        Check(Ui.Buttons.Exists(b => b.Label == "PLAY" && b.X == 100 && b.Y == 240 && b.W == 340 && b.H == 52),
+            "title actions match the Lua menu layout");
 
         Ui.SelectedCharacter = "blade";
         A.Start(6602);

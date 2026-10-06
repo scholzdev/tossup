@@ -21,7 +21,7 @@ namespace Tossup.Coins
         public override void OnOdds(GameState game, CoinInst inst, Odds odds)
         {
             foreach (var other in game.Coins)
-                if (other != inst && other.Id == inst.Id) odds.P += .1;
+                if (other != inst && other.Id == inst.Id) odds.Heads += .1;
         }
     }
 }

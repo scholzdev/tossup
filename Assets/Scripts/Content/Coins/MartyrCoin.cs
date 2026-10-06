@@ -21,7 +21,7 @@ namespace Tossup.Coins
         public override void OnResolve(GameState g, CoinInst i, Res r)
         {if(r.Result==Side.Heads&&g.Encounter.Tails>0)r.Effects.Add(Effect.Score(g.Encounter.Tails));}
 
-        public override void Grow(CoinInst inst, string evt)
-        { if (evt == "level") inst.Debt = 0; }
+        public override void Grow(CoinInst inst, CoinGrowthEvent evt)
+        { if (evt == CoinGrowthEvent.Level) inst.Debt = 0; }
     }
 }

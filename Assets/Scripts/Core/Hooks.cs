@@ -7,13 +7,13 @@ namespace Tossup
     {
         public GameState Game;
         public CoinInst Inst;
-        public Action<string, Action<GameEvent>> On;
+        public Action<GameSignal, Action<GameEvent>> On;
     }
 
     public sealed class RelicCtx
     {
         public GameState Game;
-        public Action<string, Action<GameEvent>> On;
+        public Action<GameSignal, Action<GameEvent>> On;
     }
 
     // Coin effect hooks. Routes a coin def's hooks onto the Signal bus, scoped to the coin that is
@@ -27,12 +27,12 @@ namespace Tossup
     //                                    private copy: edit it, add to it, or replace it
     //        OnDiscard(game, inst)       coin discarded for the level
     //   2. Register(ctx): subscribe yourself, for several events or closure state:
-    //        ctx.On("coin_resolve", e => ...). Handlers are torn down when the coin resolves or is discarded.
+    //        ctx.On(GameSignal.CoinResolve, e => ...). Handlers are torn down when the coin resolves or is discarded.
     //
     // Pure (no side effects), evaluated any time odds are shown, for every owned coin:
-    //   OnOdds(game, inst, odds)     mutate odds.P
+    //   OnOdds(game, inst, odds)     mutate odds.Heads, odds.Edge, and/or odds.Tails
     // Persistent growth:
-    //   Grow(inst, event)            "level" (each level start, every owned coin) | "flip" | "discard"
+    //   Grow(inst, event)            CoinGrowthEvent.Level | .Flip | .Discard
     //
     // Randomness inside a hook must use Rng.Random(game) / Rng.Int(game, a, b) to stay seeded.
     public static class Hooks
@@ -52,30 +52,27 @@ namespace Tossup
             var def = inst.Definition;
             var handles = new List<Handle>();
             active = handles;
-            void On(string evt, Action<GameEvent> handler)
+            void On(GameSignal signal, Action<GameEvent> handler)
             {
-                handles.Add(Signal.On(evt, e => { if (e.Inst == inst) handler(e); }));
+                handles.Add(Signal.On(signal, e => { if (e.Inst == inst) handler(e); }));
             }
-            if (def.Overrides(nameof(CoinDef.OnDeal))) On("coin_deal", e => def.OnDeal(e.Game, e.Inst));
-            if (def.Overrides(nameof(CoinDef.OnFlip))) On("coin_flip", e => def.OnFlip(e.Game, e.Inst, e.Flip));
-            if (def.Overrides(nameof(CoinDef.OnResolve))) On("coin_resolve", e => def.OnResolve(e.Game, e.Inst, e.Res));
-            if (def.Overrides(nameof(CoinDef.OnDiscard))) On("coin_discard", e => def.OnDiscard(e.Game, e.Inst));
+            if (def.Overrides(nameof(CoinDef.OnDeal))) On(GameSignal.CoinDeal, e => def.OnDeal(e.Game, e.Inst));
+            if (def.Overrides(nameof(CoinDef.OnFlip))) On(GameSignal.CoinFlip, e => def.OnFlip(e.Game, e.Inst, e.Flip));
+            if (def.Overrides(nameof(CoinDef.OnResolve))) On(GameSignal.CoinResolve, e => def.OnResolve(e.Game, e.Inst, e.Res));
+            if (def.Overrides(nameof(CoinDef.OnDiscard))) On(GameSignal.CoinDiscard, e => def.OnDiscard(e.Game, e.Inst));
             def.Register(new CoinCtx { Game = game, Inst = inst, On = On });
         }
 
-        public static void Grow(CoinInst inst, string evt) => inst.Definition.Grow(inst, evt);
+        public static void Grow(CoinInst inst, CoinGrowthEvent evt) => inst.Definition.Grow(inst, evt);
 
-        public static double Odds(GameState game, CoinInst inst, double p)
+        public static void Odds(GameState game, CoinInst inst, Odds odds)
         {
-            var def = inst.Definition;
-            var odds = new Odds { P = p };
-            def.OnOdds(game, inst, odds);
-            return odds.P;
+            inst.Definition.OnOdds(game, inst, odds);
         }
     }
 
     // Relics are passive, run-long modifiers. Each relic def has Register(ctx); ctx.On(event, handler)
-    // subscribes to the bus while the relic is owned. coin_outcome fires before the boss inversion:
+    // subscribes to the bus while the relic is owned. GameSignal.CoinOutcome fires before the boss inversion:
     // set e.Result to change it.
     public static class Relics
     {
@@ -91,9 +88,9 @@ namespace Tossup
         public static void Bind(GameState game)
         {
             Unbind();
-            void On(string evt, Action<GameEvent> handler)
+            void On(GameSignal signal, Action<GameEvent> handler)
             {
-                handles.Add(Signal.On(evt, e => { if (e.Game == game) handler(e); }));
+                handles.Add(Signal.On(signal, e => { if (e.Game == game) handler(e); }));
             }
             foreach (var id in game.Relics) Content.Relics[id].Register(new RelicCtx { Game = game, On = On });
         }
@@ -101,7 +98,7 @@ namespace Tossup
 
     // Consumable items: bought in the shop, used in the middle of a level while a coin is dealt.
     // Use returns false to refuse (the item is then not consumed). To change the coming flip, arm a
-    // one-shot listener: Items.Arm("coin_flip", e => e.Flip.Result = "Heads"). Armed listeners are
+    // one-shot listener: Items.Arm(GameSignal.CoinFlip, e => e.Flip.Result = Side.Heads). Armed listeners are
     // dropped at encounter end and when a new game starts.
     public static class Items
     {
@@ -116,10 +113,10 @@ namespace Tossup
         }
 
         // Run fn once on the next emit of the event.
-        public static void Arm(string evt, Action<GameEvent> fn)
+        public static void Arm(GameSignal signal, Action<GameEvent> fn)
         {
             Handle handle = null;
-            handle = Signal.On(evt, e =>
+            handle = Signal.On(signal, e =>
             {
                 Signal.Off(handle);
                 armed.Remove(handle);

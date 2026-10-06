@@ -138,7 +138,7 @@ namespace Tossup
             return pile;
         }
 
-        public static double Probability(GameState game, CoinInst item)
+        public static Odds GetOdds(GameState game, CoinInst item)
         {
             SandboxOdds sandboxOdds = null;
             game.Sandbox?.Odds.TryGetValue(item.Id, out sandboxOdds);
@@ -155,18 +155,26 @@ namespace Tossup
             double upgrade = item.Upgrade != null && def.TryGetUpgrade(item.Upgrade.Id, out var up) ? (up.Type==UpgradeType.Probability?up.Value:0) : 0;
             double fortune = HasType(item, "fortune") ? game.FortuneBonus : 0;
             double p = (sandboxOdds?.Heads ?? def.Probability) + item.Bonus + bonus + magnet + boost + upgrade + fortune;
-            double maxHeads = 1 - TieProbability(game, item);
-            if (game.Phase != Phase.Encounter) return Math.Max(0, Math.Min(maxHeads, p));
-            p = Hooks.Odds(game, item, p);
-            if (e != null && e.Contract != null && Contracts.TryGetValue(e.Contract.Id, out var contract)) p -= contract.HeadsPenalty;
-            return Math.Max(0, Math.Min(maxHeads, p));
+            double edge = Math.Max(0, Math.Min(1, sandboxOdds?.Tie ?? def.TieProbability));
+            double heads = Math.Max(0, Math.Min(1 - edge, p));
+            var odds = new Odds(heads, edge, 1 - heads - edge);
+            if (game.Phase != Phase.Encounter) return odds;
+
+            Hooks.Odds(game, item, odds);
+            if (e != null && e.Contract != null && Contracts.TryGetValue(e.Contract.Id, out var contract))
+            {
+                double penalty = Math.Min(odds.Heads, contract.HeadsPenalty);
+                odds.Heads -= penalty;
+                odds.Tails += penalty;
+            }
+            odds.Normalize();
+            return odds;
         }
 
+        public static double Probability(GameState game, CoinInst item) => GetOdds(game, item).Heads;
+
         public static double TieProbability(GameState game, CoinInst item)
-        {
-            if (game.Sandbox != null && game.Sandbox.Odds.TryGetValue(item.Id, out var sandboxOdds)) return sandboxOdds.Tie;
-            return item.Definition.TieProbability;
-        }
+            => GetOdds(game, item).Edge;
 
         // Top the bank up to Visible coins from the draw pile. The pile is never reshuffled: a level lasts
         // exactly as long as the coins in your stack (bank + pile).
@@ -216,13 +224,13 @@ namespace Tossup
             };
             game.Player.Energy = game.Player.MaxEnergy;
             ApplyModifier(game);
-            TriggerRunHook(game, "encounter_start");
+            TriggerRunHook(game, RunHookEvent.EncounterStart);
             game.Pending = null;
             game.LastResult = null;
             game.Phase = Phase.Encounter;
             Log(game, "Encounter " + game.EncounterIndex + ": " + stage.Name + " (quota " + N(quota) + ")");
-            foreach (var owned in game.Coins) Hooks.Grow(owned, "level");
-            Signal.Emit("encounter_start", new GameEvent { Game = game, Encounter = game.Encounter });
+            foreach (var owned in game.Coins) Hooks.Grow(owned, CoinGrowthEvent.Level);
+            Signal.Emit(GameSignal.EncounterStart, new GameEvent { Game = game, Encounter = game.Encounter });
             // mulligan: draw a hand to look at; the UI lets the player discard before play starts
             var hand = new List<int>();
             int draw = Math.Min(MulliganSize, game.Encounter.Pile.Count);
@@ -257,9 +265,10 @@ namespace Tossup
             Log(game, CoinName(inst) + " #" + uid + " dealt.");
             game.Peek = null;
             Hooks.Bind(game, inst);
-            Signal.Emit("coin_deal", new GameEvent { Game = game, Inst = inst });
-            game.Dealt.Probability = Probability(game, inst); // on_deal may have changed the odds
-            game.Dealt.TieProbability = TieProbability(game, inst);
+            Signal.Emit(GameSignal.CoinDeal, new GameEvent { Game = game, Inst = inst });
+            var odds = GetOdds(game, inst); // on_deal may have changed the odds
+            game.Dealt.Probability = odds.Heads;
+            game.Dealt.TieProbability = odds.Edge;
         }
 
         // Discard coins from the opening hand (free). They stay out of play for the level, and at least
@@ -282,9 +291,9 @@ namespace Tossup
                         var inst = GetCoin(game, uid);
                         Log(game, CoinName(inst) + " #" + uid + " discarded from the opening hand.");
                         Hooks.Bind(game, inst);
-                        Signal.Emit("coin_discard", new GameEvent { Game = game, Inst = inst });
+                        Signal.Emit(GameSignal.CoinDiscard, new GameEvent { Game = game, Inst = inst });
                         Hooks.Unbind();
-                        Hooks.Grow(inst, "discard");
+                        Hooks.Grow(inst, CoinGrowthEvent.Discard);
                         count++;
                         break;
                     }
@@ -352,7 +361,7 @@ namespace Tossup
             if (applyRunEncounter && !RuntimeMode.Sandbox)
             {
                 game.RunEncounterId = EncounterOrder[Rng.Int(game, 1, EncounterOrder.Count) - 1];
-                TriggerRunHook(game, "run_start");
+                TriggerRunHook(game, RunHookEvent.RunStart);
             }
             StartEncounter(game);
             if(game.RunEncounterId!=null) Log(game, "Run Encounter: " + Encounters[game.RunEncounterId].Name + ".");
@@ -371,8 +380,9 @@ namespace Tossup
             if (game.Dealt != null)
             {
                 var item = GetCoin(game, game.Dealt.Uid);
-                game.Dealt.Probability = Probability(game, item);
-                game.Dealt.TieProbability = TieProbability(game, item);
+                var odds = GetOdds(game, item);
+                game.Dealt.Probability = odds.Heads;
+                game.Dealt.TieProbability = odds.Edge;
             }
             return game;
         }
@@ -397,7 +407,7 @@ namespace Tossup
             int nth = e.Flips + 1;
             string before = flip.Result;
             var outcome = new GameEvent { Game = game, Inst = item, Flips = nth, Result = before };
-            Signal.Emit("coin_outcome", outcome);
+            Signal.Emit(GameSignal.CoinOutcome, outcome);
             string final = outcome.Result;
             flip.Altered = final != before ? "RELIC" : null; // shown in the UI so a changed side is never a mystery
             int interval = (int)Rule(game, "boss_every", 5);
@@ -454,7 +464,7 @@ namespace Tossup
                 flip.Altered = "TUTORIAL";
             }
             if (BuffActive(game, "heads") != null) { flip.Result = Side.Heads; flip.Altered = "BUFF"; }
-            Signal.Emit("coin_flip", new GameEvent { Game = game, Inst = item, Flip = flip });
+            Signal.Emit(GameSignal.CoinFlip, new GameEvent { Game = game, Inst = item, Flip = flip });
             Finalize(game, item, flip);
         }
 
@@ -519,10 +529,10 @@ namespace Tossup
                 var inst = GetCoin(game, uid);
                 Log(game, CoinName(inst) + " #" + uid + " discarded for this level.");
                 Hooks.Bind(game, inst); // so the coin's own on_discard hook runs even if it was not the front coin
-                Signal.Emit("coin_discard", new GameEvent { Game = game, Inst = inst });
+                Signal.Emit(GameSignal.CoinDiscard, new GameEvent { Game = game, Inst = inst });
                 Hooks.Unbind();
-                Hooks.Grow(inst, "discard");
-                TriggerRunHook(game, "discard");
+                Hooks.Grow(inst, CoinGrowthEvent.Discard);
+                TriggerRunHook(game, RunHookEvent.Discard);
             }
             if (seen.Contains(front)) Deal(game);
             else
@@ -688,7 +698,7 @@ namespace Tossup
             Hooks.Unbind();
             game.Dealt = null;
             Items.Clear();
-            Signal.Emit("encounter_end", new GameEvent { Game = game, Won = true });
+            Signal.Emit(GameSignal.EncounterEnd, new GameEvent { Game = game, Won = true });
             if (e.Boss) game.Phase = Phase.Victory;
             else EnterShop(game);
             if (e.Contract?.Result == "COMPLETE" && Contracts[e.Contract.Id].RewardAction != null) Contracts[e.Contract.Id].RewardAction(game, e);
@@ -745,7 +755,7 @@ namespace Tossup
             foreach (var effect in sideEffects) res.Effects.Add(effect.Copy());
             if (headsEffects && item.Upgrade != null && def.TryGetUpgrade(item.Upgrade.Id, out var upgrade) && (upgrade.Type==UpgradeType.ScoreBonus?upgrade.Value:0) != 0)
                 res.Effects.Add(new Effect(EffectType.Score, (upgrade.Type==UpgradeType.ScoreBonus?upgrade.Value:0)));
-            Signal.Emit("coin_resolve", new GameEvent { Game = game, Inst = item, Res = res });
+            Signal.Emit(GameSignal.CoinResolve, new GameEvent { Game = game, Inst = item, Res = res });
             if (final == Side.Heads && game.AugmentData.TryGetValue("type_specialist", out var specialist) && HasType(item, specialist) && e.TypeSpecialistPaid.Add(item.Uid))
                 res.Effects.Add(new Effect(EffectType.Score, 1));
             ApplyTypeBuffs(game, item, final, comboBroke, res.Effects);
@@ -781,7 +791,7 @@ namespace Tossup
                 double goldBefore = game.Player.Gold;
                 string text = ApplyEffect(game, item, effect);
                 messages.Add(text);
-                Signal.Emit("effect_applied", new GameEvent { Game = game, Inst = item, Effect = effect, Text = text });
+                Signal.Emit(GameSignal.EffectApplied, new GameEvent { Game = game, Inst = item, Effect = effect, Text = text });
                 double gainedGold = Math.Max(0, game.Player.Gold - goldBefore);
                 if (greed > 0 && gainedGold > 0) { double extra = gainedGold * (Math.Pow(2, greed) - 1); game.Player.Gold += extra; messages.Add("+" + N(extra) + " greed gold"); }
             }
@@ -799,9 +809,9 @@ namespace Tossup
             result.Gained = e.Scored - scoredBefore; // for the UI: what this flip was worth
             result.Penalty = e.MaxQuota - quotaTotalBefore;
             e.BestScores.TryGetValue(item.Uid, out var previousBest); e.BestScores[item.Uid] = Math.Max(previousBest, result.Gained.Value);
-            Signal.Emit("coin_resolved", new GameEvent { Game = game, Inst = item, Res = res });
+            Signal.Emit(GameSignal.CoinResolved, new GameEvent { Game = game, Inst = item, Res = res });
             Hooks.Unbind();
-            Hooks.Grow(item, "flip");
+            Hooks.Grow(item, CoinGrowthEvent.Flip);
             Log(game, def.Name + " #" + item.Uid + ": " + final + (final != result.Raw ? " (raw " + result.Raw + ")" : "") +
                 " → " + (messages.Count > 0 ? string.Join(", ", messages) : "nothing"));
             game.LastResult = result;
@@ -842,7 +852,7 @@ namespace Tossup
             Log(game, "Defeat: " + why);
             Hooks.Unbind();
             Items.Clear();
-            Signal.Emit("encounter_end", new GameEvent { Game = game, Won = false });
+            Signal.Emit(GameSignal.EncounterEnd, new GameEvent { Game = game, Won = false });
         }
 
         // Gold an exchange costs right now: it rises with every exchange already made this level.

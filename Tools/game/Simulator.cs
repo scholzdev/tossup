@@ -19,9 +19,9 @@ static class Simulator
         Content.Characters["sim"] = new CharacterDef { Id="sim", Name="Sim", Starter=CoinCatalog.Normal, Pool=new List<CoinDef>{CoinCatalog.Normal,CoinCatalog.Sword,CoinCatalog.Dagger,CoinCatalog.Hammer}, Deck=new List<CoinDef>{Content.Coins[id],CoinCatalog.Sword,CoinCatalog.Dagger,CoinCatalog.Normal,CoinCatalog.Normal} };
         var m = new Measurement(); double before=0;
         var handles = new[] {
-            Signal.On("coin_flip", e=> { if(e.Inst.Id==id) before=e.Game.Player.Gold; }),
-            Signal.On("effect_applied", e=> { if(e.Inst.Id!=id)return; switch(e.Effect.Type) {case EffectType.Score:m.Points+=e.Effect.Amount;break;case EffectType.Penalty:m.Penalty+=e.Effect.Amount;break;case EffectType.Energy:m.Energy+=e.Effect.Amount;break;} }),
-            Signal.On("coin_resolved", e=> { if(e.Inst.Id==id){m.Gold+=e.Game.Player.Gold-before;m.Flips++;} })
+            Signal.On(GameSignal.CoinFlip, e=> { if(e.Inst.Id==id) before=e.Game.Player.Gold; }),
+            Signal.On(GameSignal.EffectApplied, e=> { if(e.Inst.Id!=id)return; switch(e.Effect.Type) {case EffectType.Score:m.Points+=e.Effect.Amount;break;case EffectType.Penalty:m.Penalty+=e.Effect.Amount;break;case EffectType.Energy:m.Energy+=e.Effect.Amount;break;} }),
+            Signal.On(GameSignal.CoinResolved, e=> { if(e.Inst.Id==id){m.Gold+=e.Game.Player.Gold-before;m.Flips++;} })
         };
         try
         {

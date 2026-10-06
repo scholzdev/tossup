@@ -3,10 +3,23 @@ using System.Collections.Generic;
 
 namespace Tossup
 {
-    // One event shape for every bus event; each event fills only the fields it needs.
-    //   encounter_start{Encounter}  encounter_end{Won}
-    //   coin_deal{Inst}  coin_flip{Inst, Flip}  coin_outcome{Inst, Flips, Result}  coin_resolve{Inst, Res}
-    //   effect_applied{Inst, Effect, Text}  coin_resolved{Inst, Res}  coin_discard{Inst}
+    public enum GameSignal
+    {
+        EncounterStart,
+        EncounterEnd,
+        CoinDeal,
+        CoinFlip,
+        CoinOutcome,
+        CoinResolve,
+        EffectApplied,
+        CoinResolved,
+        CoinDiscard,
+    }
+
+    // One payload shape for every bus signal; each signal fills only the fields it needs.
+    //   EncounterStart{Encounter}  EncounterEnd{Won}
+    //   CoinDeal{Inst}  CoinFlip{Inst, Flip}  CoinOutcome{Inst, Flips, Result}  CoinResolve{Inst, Res}
+    //   EffectApplied{Inst, Effect, Text}  CoinResolved{Inst, Res}  CoinDiscard{Inst}
     public sealed class GameEvent
     {
         public GameState Game;
@@ -24,7 +37,7 @@ namespace Tossup
 
     public sealed class Handle
     {
-        public string Event;
+        public GameSignal Event;
         public Action<GameEvent> Callback;
         public bool Active = true;
     }
@@ -33,12 +46,12 @@ namespace Tossup
     // listeners may mutate it, and gameplay reads the final result after Emit.
     public static class Signal
     {
-        static Dictionary<string, List<Handle>> listeners = new Dictionary<string, List<Handle>>();
+        static Dictionary<GameSignal, List<Handle>> listeners = new Dictionary<GameSignal, List<Handle>>();
 
-        public static Handle On(string name, Action<GameEvent> callback)
+        public static Handle On(GameSignal signal, Action<GameEvent> callback)
         {
-            var handle = new Handle { Event = name, Callback = callback };
-            if (!listeners.TryGetValue(name, out var list)) listeners[name] = list = new List<Handle>();
+            var handle = new Handle { Event = signal, Callback = callback };
+            if (!listeners.TryGetValue(signal, out var list)) listeners[signal] = list = new List<Handle>();
             list.Add(handle);
             return handle;
         }
@@ -50,15 +63,15 @@ namespace Tossup
             if (listeners.TryGetValue(handle.Event, out var list)) list.Remove(handle);
         }
 
-        public static GameEvent Emit(string name, GameEvent e)
+        public static GameEvent Emit(GameSignal signal, GameEvent e)
         {
-            if (!listeners.TryGetValue(name, out var list)) return e;
+            if (!listeners.TryGetValue(signal, out var list)) return e;
             var snapshot = list.ToArray(); // listeners added/removed mid-emit only affect later emits
             foreach (var handle in snapshot)
                 if (handle.Active) handle.Callback(e);
             return e;
         }
 
-        public static void ClearAll() => listeners = new Dictionary<string, List<Handle>>();
+        public static void ClearAll() => listeners = new Dictionary<GameSignal, List<Handle>>();
     }
 }

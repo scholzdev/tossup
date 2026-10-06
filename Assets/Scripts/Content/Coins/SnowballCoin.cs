@@ -23,7 +23,7 @@ namespace Tossup.Coins
         public override void OnResolve(GameState g, CoinInst inst, Res res)
         {if(res.Result==Side.Heads)foreach(var effect in res.Effects)if(effect.Type==EffectType.Score)effect.Amount+=inst.Stack;}
 
-        public override void Grow(CoinInst inst, string evt)
-        {if(evt=="flip")inst.Stack=Math.Min(8,inst.Stack+1);}
+        public override void Grow(CoinInst inst, CoinGrowthEvent evt)
+        {if(evt==CoinGrowthEvent.Flip)inst.Stack=Math.Min(8,inst.Stack+1);}
     }
 }

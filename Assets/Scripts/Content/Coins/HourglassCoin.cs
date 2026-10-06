@@ -21,7 +21,7 @@ namespace Tossup.Coins
         public override void OnOdds(GameState game, CoinInst inst, Odds odds)
         {
             var level = game.Encounter;
-            if (level != null && level.Queue.Count + level.Pile.Count <= 3) odds.P += .3;
+            if (level != null && level.Queue.Count + level.Pile.Count <= 3) odds.Heads += .3;
         }
     }
 }

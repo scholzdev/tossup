@@ -21,7 +21,7 @@ namespace Tossup.Coins
         public override void OnOdds(GameState game, CoinInst inst, Odds odds)
         {
             var e = game.Encounter;
-            if (e != null) odds.P += .05 * e.Streak;
+            if (e != null) odds.Heads += .05 * e.Streak;
         }
     }
 }

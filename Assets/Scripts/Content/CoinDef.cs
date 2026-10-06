@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace Tossup
 {
+    public enum CoinGrowthEvent
+    {
+        Level,
+        Flip,
+        Discard,
+    }
+
     // Shared definitions are read-only data and virtual rule hooks. Per-run state
     // belongs to CoinInst; resolving always copies effects before editing them.
     public abstract class CoinDef
@@ -36,7 +43,7 @@ namespace Tossup
         public virtual void OnFlip(GameState game, CoinInst inst, FlipState flip) { }
         public virtual void OnResolve(GameState game, CoinInst inst, Res res) { }
         public virtual void OnOdds(GameState game, CoinInst inst, Odds odds) { }
-        public virtual void Grow(CoinInst inst, string evt) { }
+        public virtual void Grow(CoinInst inst, CoinGrowthEvent evt) { }
         public virtual void Register(CoinCtx ctx) { }
         public bool Overrides(string hook) => GetType().GetMethod(hook).DeclaringType != typeof(CoinDef);
     }

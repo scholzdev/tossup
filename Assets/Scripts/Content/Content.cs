@@ -53,7 +53,7 @@ namespace Tossup
                 Id = "double_down", Name = "Double Down", Short = "DOUBLE", Cost = 14, Description = "Next coin: points, gold, energy and penalties x2",
                 Use = game =>
                 {
-                    global::Tossup.Items.Arm("coin_resolve", e =>
+                    global::Tossup.Items.Arm(GameSignal.CoinResolve, e =>
                     {
                         foreach (var effect in e.Res.Effects)
                             if (effect.Type == EffectType.Score || effect.Type == EffectType.Gold || effect.Type == EffectType.Energy || effect.Type == EffectType.Penalty) effect.Amount *= 2;
@@ -80,7 +80,7 @@ namespace Tossup
                 Id = "force_heads", Name = "Force Heads", Short = "FORCE H", Cost = 12, Description = "Dealt coin lands Heads",
                 Use = game =>
                 {
-                    global::Tossup.Items.Arm("coin_flip", e => { e.Flip.Result = Side.Heads; e.Flip.Forced = true; });
+                    global::Tossup.Items.Arm(GameSignal.CoinFlip, e => { e.Flip.Result = Side.Heads; e.Flip.Forced = true; });
                     return true;
                 },
             },
@@ -89,7 +89,7 @@ namespace Tossup
                 Id = "force_tails", Name = "Force Tails", Short = "FORCE T", Cost = 12, Description = "Dealt coin lands Tails",
                 Use = game =>
                 {
-                    global::Tossup.Items.Arm("coin_flip", e => { e.Flip.Result = Side.Tails; e.Flip.Forced = true; });
+                    global::Tossup.Items.Arm(GameSignal.CoinFlip, e => { e.Flip.Result = Side.Tails; e.Flip.Forced = true; });
                     return true;
                 },
             },
@@ -127,7 +127,7 @@ namespace Tossup
             new RelicDef
             {
                 Id = "magnet", Name = "Magnet", Description = "Every 3 Heads in a row: +5% Heads this level",
-                Register = ctx => ctx.On("coin_resolved", e =>
+                Register = ctx => ctx.On(GameSignal.CoinResolved, e =>
                 {
                     var level = e.Game.Encounter;
                     if (level.Streak > 0 && level.Streak % 3 == 0) level.Magnet += .05;
@@ -139,8 +139,8 @@ namespace Tossup
                 Register = ctx =>
                 {
                     bool used = false;
-                    ctx.On("encounter_start", e => used = false);
-                    ctx.On("coin_outcome", e =>
+                    ctx.On(GameSignal.EncounterStart, e => used = false);
+                    ctx.On(GameSignal.CoinOutcome, e =>
                     {
                         if (e.Result == Side.Tails && !used)
                         {
@@ -153,12 +153,12 @@ namespace Tossup
             new RelicDef
             {
                 Id = "clock", Name = "Broken Clock", Description = "Every 10th flip is Heads",
-                Register = ctx => ctx.On("coin_outcome", e => { if (e.Flips % 10 == 0) { e.Result = Side.Heads; e.Final = true; } }),
+                Register = ctx => ctx.On(GameSignal.CoinOutcome, e => { if (e.Flips % 10 == 0) { e.Result = Side.Heads; e.Final = true; } }),
             },
             new RelicDef
             {
                 Id = "metronome", Name = "Metronome", Description = "Every 4th flip pays double",
-                Register = ctx => ctx.On("coin_resolve", e =>
+                Register = ctx => ctx.On(GameSignal.CoinResolve, e =>
                 {
                     if (e.Game.Encounter.Flips % 4 != 0) return;
                     foreach (var effect in e.Res.Effects)
@@ -168,7 +168,7 @@ namespace Tossup
             new RelicDef
             {
                 Id = "baton", Name = "Baton", Description = "Combo: +0.4 per step instead of 0.25, up to x4",
-                Register = ctx => ctx.On("encounter_start", e =>
+                Register = ctx => ctx.On(GameSignal.EncounterStart, e =>
                 {
                     e.Encounter.ComboStep = 0.4;
                     e.Encounter.ComboCap = 4;

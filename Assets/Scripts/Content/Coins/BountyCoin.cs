@@ -19,7 +19,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
 
         public override void Register(CoinCtx ctx)
-        { ctx.On("effect_applied", e =>
+        { ctx.On(GameSignal.EffectApplied, e =>
         {
             if (e.Effect.Type == EffectType.Score) e.Game.Player.Gold += Math.Floor(e.Effect.Amount / 2);
         }); }

@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace Tossup
 {
+    public enum RunHookEvent
+    {
+        RunStart,
+        EncounterStart,
+        Discard,
+    }
+
     public sealed class SideBetQuote { public string Side; public int Stake, Payout; }
 
     public static partial class Game
@@ -135,16 +142,16 @@ namespace Tossup
 
         static bool HasAugment(GameState g,string id)=>g.Augments.Contains(id);
 
-        static void TriggerRunHook(GameState g,string evt)
+        static void TriggerRunHook(GameState g, RunHookEvent evt)
         {
             var e=g.Encounter;
-            if(g.RunEncounterId=="thin_market"&&evt=="run_start"){g.Shop.CoinOfferCount=3;g.Shop.CoinPriceDiscount=2;}
-            if(g.RunEncounterId=="upgrade"&&evt=="run_start"){
+            if(g.RunEncounterId=="thin_market"&&evt==RunHookEvent.RunStart){g.Shop.CoinOfferCount=3;g.Shop.CoinPriceDiscount=2;}
+            if(g.RunEncounterId=="upgrade"&&evt==RunHookEvent.RunStart){
                 var pool=new List<CoinDef>();foreach(var coin in UsablePool(g))if(coin.Rarity==Rarity.Common)pool.Add(coin);
                 if(pool.Count>0){if(g.Coins.Count>=g.Slots&&g.Slots<DeckMax)g.Slots++;AddToDeck(g,pool[Rng.Int(g,1,pool.Count)-1]);}
             }
-            if(g.RunEncounterId=="house_clock"&&evt=="encounter_start"&&e?.Payout!=null)e.Payout=Math.Floor(e.Payout.Value*1.25+.5);
-            if(HasAugment(g,"scrap_dealer")&&evt=="discard"&&e!=null){g.Player.Gold++;e.MaxQuota+=2;if(!e.Cleared)e.Quota+=2;Log(g,"Scrap Dealer: +1 gold, quota +2.");}
+            if(g.RunEncounterId=="house_clock"&&evt==RunHookEvent.EncounterStart&&e?.Payout!=null)e.Payout=Math.Floor(e.Payout.Value*1.25+.5);
+            if(HasAugment(g,"scrap_dealer")&&evt==RunHookEvent.Discard&&e!=null){g.Player.Gold++;e.MaxQuota+=2;if(!e.Cleared)e.Quota+=2;Log(g,"Scrap Dealer: +1 gold, quota +2.");}
         }
 
         public static bool OfferContract(GameState g)
