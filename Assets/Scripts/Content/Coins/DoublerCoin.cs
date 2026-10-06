@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "doubler";
         public override string Name => "Doubler";
         public override string Description => "Heads: 3 points, doubled for every Doubler flip so far this level (3, 6, 12, 24... up to 384).";
+        public override string HeadsDescription => "Score 3 points, doubled for every Doubler flipped earlier this level (max 384).";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
         public override int EnergyCost => 0;

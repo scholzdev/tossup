@@ -100,6 +100,7 @@ namespace Tossup.UI
             bool enable = !RuntimeMode.Dev;
             Action changeMode = () =>
             {
+                Ui.Platform.WriteSave(RuntimeMode.DeveloperModePreference, enable ? "1" : "0");
                 Ui.Game = null;
                 RuntimeMode.Configure(enable, false);
                 savedRunExists = null;

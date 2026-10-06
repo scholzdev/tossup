@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "bank";
         public override string Name => "Bank";
         public override string Description => "Heads: +3 gold, plus 1 per 10 gold held (max +3).";
+        public override string SpecialRule => "Gain up to 3 bonus gold based on how much gold you already hold.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 15;
         public override int EnergyCost => 0;

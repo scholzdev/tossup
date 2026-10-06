@@ -5,6 +5,7 @@ namespace Tossup
 {
     public static class RuntimeMode
     {
+        public const string DeveloperModePreference = "developer-mode.json";
         public static bool Dev { get; private set; }
         public static bool Sandbox { get; private set; }
 

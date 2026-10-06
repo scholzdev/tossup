@@ -92,8 +92,11 @@
   "COIN SET": "MÜNZSET",
   "COIN SETS": "MÜNZSETS",
   "COINS LEFT %d / 3": "MÜNZEN ÜBRIG %d / 3",
+  "COINS": "MÜNZEN",
   "COLLECTED %d / %d": "GESAMMELT %d / %d",
   "COLLECTION": "SAMMLUNG",
+  "CHARACTERS": "CHARAKTERE",
+  "CHARACTERS: %s": "CHARAKTERE: %s",
   "COM": "GEW",
   "COMBO": "SERIE",
   "COMBO  %s x%d": "SERIE  %s x%d",
@@ -244,6 +247,9 @@
   "LEVELS CLEARED OF 8": "VON 8 LEVELN GESCHAFFT",
   "LOCK IT IN": "SICHERE AB",
   "LOCKED": "GESPERRT",
+  "CONDUCTOR": "DIRIGENT",
+  "NATURALIST": "NATURFORSCHERIN",
+  "TINKERER": "TÜFTLER",
   "LOCKED  -  BUY IT IN THE SHOP TO UNLOCK": "GESPERRT  -  KAUFE SIE IM SHOP, UM SIE FREIZUSCHALTEN",
   "Language of all texts.": "Sprache aller Texte.",
   "Last Call": "Letzte Runde",
@@ -341,6 +347,7 @@
   "RARE 1  -  EPIC 1": "SELTEN 1  -  EPISCH 1",
   "RELIC": "PRÄMIE",
   "RELIC + THE HOUSE": "PRÄMIE + DAS HAUS",
+  "RELICS": "RELIKTEN",
   "REMOVE": "ENTFERNEN",
   "REPLAY": "NOCHMAL",
   "REROLL": "NEU WÜRFELN",
@@ -377,6 +384,8 @@
   "SKIP CONTRACT": "ÜBERSPRINGEN",
   "SOLD": "WEG",
   "SORT": "SORT.",
+  "UNLOCKED %d / %d": "FREIGESCHALTET %d / %d",
+  "UPGRADES": "VERBESSERUNGEN",
   "SOUND": "TON",
   "SOUND EFFECTS": "SOUNDEFFEKTE",
   "STAGE %d / %d": "STUFE %d / %d",
@@ -425,6 +434,7 @@
   "TRY A NEW SET": "PROBIERE EIN NEUES SET",
   "TUTORIAL": "TUTORIAL",
   "TYPE: %s": "TYP: %s",
+  "TYPE:": "TYP:",
   "Tails": "Zahl",
   "The House": "Das Haus",
   "The House inverts every 4th flip": "Das Haus dreht jeden 4. Wurf um",
@@ -461,14 +471,38 @@
   "Your coins. Click one to select it for removal. The dark slots on the right are extra deck slots: 5 gold, 2 more for each one you buy, up to ten.": "Deine Münzen. Klicke eine an, um sie zum Entfernen auszuwählen. Die dunklen Plätze rechts sind zusätzliche Deckplätze: 5 Gold, für jeden gekauften 2 mehr, bis zu zehn.",
   "Your combo multiplier is capped at x2.": "Der Serienmultiplikator ist auf x2 begrenzt.",
   "Your remaining coins stay visible in the bank. Click any coin to choose what to play next. Playing is free unless a coin shows an energy cost.": "Deine übrigen Münzen bleiben vollständig sichtbar. Klicke eine Münze an, um sie als Nächstes zu spielen. Das Spielen ist kostenlos, außer eine Münze zeigt Energiekosten.",
+  "Overclock": "Übertaktung",
+  "Start each level with +1 Energy.": "Beginne jedes Level mit +1 Energie.",
+  "Bulk Parts": "Großbestellung",
+  "Coin offers cost 2 less gold.": "Münzangebote kosten 2 Gold weniger.",
+  "Bountiful Harvest": "Reiche Ernte",
+  "Tails earns +1 gold.": "Zahl bringt +1 Gold.",
+  "Second Wind": "Zweite Chance",
+  "One extra exchange each level.": "Eine zusätzliche Rückgabe pro Level.",
+  "Good Rhythm": "Guter Takt",
+  "Combo multiplier grows +0.2 per step.": "Der Kombomultiplikator wächst pro Stufe um +0,2.",
+  "Encore": "Zugabe",
+  "Start each level with a combo shield.": "Beginne jedes Level mit einem Komboschild.",
   "characters": {
     "blade": {
       "description": "Verlässliche Punkte",
       "name": "Die Klinge"
     },
+    "conductor": {
+      "description": "Baue lange Serien und mächtige Kombos auf",
+      "name": "Der Dirigent"
+    },
+    "naturalist": {
+      "description": "Lass ein Deck wachsen, das immer wiederkommt",
+      "name": "Die Naturforscherin"
+    },
     "seer": {
       "description": "Risiko und wechselnde Chancen",
       "name": "Die Seherin"
+    },
+    "tinkerer": {
+      "description": "Stimme deine Münzen ab und verbessere sie",
+      "name": "Der Tüftler"
     },
     "trader": {
       "description": "Gold und Energie",

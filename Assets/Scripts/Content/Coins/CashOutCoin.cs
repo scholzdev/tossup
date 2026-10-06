@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "cash_out";
         public override string Name => "Cash Out";
         public override string Description => "Heads: 3 points, squares the combo multiplier, banks its pot, then resets the combo.";
+        public override string HeadsDescription => "Score 3 points, square the combo payout, bank its pot, then reset the combo.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
         public override int EnergyCost => 0;

@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "bettor";
         public override string Name => "Bettor";
         public override string Description => "Heads: 3 points per flip in the current combo (max 30). Tails: quota +2.";
+        public override string HeadsDescription => "Score 3 points per flip in the current combo (max 30).";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
         public override int EnergyCost => 1;

@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "flock";
         public override string Name => "Flock";
         public override string Description => "+10% Heads for every other Flock in your deck.";
+        public override string SpecialRule => "+10% Heads for every other Flock in your deck.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 15;
         public override int EnergyCost => 0;

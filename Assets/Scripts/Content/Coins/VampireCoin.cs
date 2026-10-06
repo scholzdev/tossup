@@ -14,11 +14,9 @@ namespace Tossup.Coins
         public override double Probability => 0.35;
         public override double TieProbability => 0;
         public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Blood };
-        public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2) };
+        public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2), Effect.Gold(2) };
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
 
-        public override void OnResolve(GameState game, CoinInst inst, Res res)
-        { if (res.Result == Side.Heads) res.Effects.Add(Effect.Gold( 2)); }
     }
 }

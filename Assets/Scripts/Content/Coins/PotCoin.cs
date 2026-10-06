@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "pot";
         public override string Name => "Pot";
         public override string Description => "Heads: points equal to the flips made so far this level (max 8).";
+        public override string HeadsDescription => "Score 1 point per flip so far this level (max 8).";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 15;
         public override int EnergyCost => 0;

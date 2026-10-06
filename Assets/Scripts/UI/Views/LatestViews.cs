@@ -113,8 +113,12 @@ namespace Tossup.UI
                 var choice = choices[i];
                 float x = startX + (i % cols) * (width + gap);
                 float y = 210 + (i / cols) * (height + gap);
+                Rgba typeColor = C.Line;
+                CoinType choiceType = default;
+                bool typedChoice = pending.Id == "type_specialist" && Enum.TryParse(choice.Key, true, out choiceType);
+                if (typedChoice) typeColor = CoinTypeColor(choiceType);
                 Box(x, y, width, height, C.PanelDk);
-                Outline(x, y, width, height, C.Line);
+                Outline(x, y, width, height, typeColor);
                 bool hasCoin = choice.CoinId != null;
                 if (hasCoin)
                 {
@@ -124,7 +128,7 @@ namespace Tossup.UI
                 float textX = x + (hasCoin ? 64 : 16);
                 float textWidth = width - (textX - x) - 12;
                 string title = hasCoin ? Lang.CoinName(choice.CoinId) : L(choice.Title);
-                Text(title, textX, y + 8, Ui.F20, C.Gold);
+                Text(title, textX, y + 8, Ui.F20, typedChoice ? typeColor : C.Gold);
                 bool compact = choices.Count > 12;
                 string detail = choice.UpgradeName != null
                     ? L(choice.UpgradeName) + (compact ? "" : ": " + L(choice.Detail))

@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "true_echo";
         public override string Name => "True Echo";
         public override string Description => "Repeats what the previous coin really did, including its buffs and growth, on either side.";
+        public override string SpecialRule => "Repeats the previous coin's resolved effects, buffs, and growth.";
         public override Rarity Rarity => Rarity.Epic;
         public override int Cost => 15;
         public override int EnergyCost => 0;
@@ -23,6 +24,8 @@ namespace Tossup.Coins
             var previous = game.LastResult;
             if (previous == null || previous.BaseEffects == null) return;
             foreach (var effect in previous.BaseEffects) res.Effects.Add(effect.Copy());
+            if (previous.BaseBuffs != null)
+                foreach (var buff in previous.BaseBuffs) res.Buffs.Add(buff.Copy());
         }
     }
 }

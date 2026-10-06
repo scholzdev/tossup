@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "capacitor";
         public override string Name => "Flux Capacitor";
         public override string Description => "Heads: 2 points per energy you hold. Tails: +1 energy.";
+        public override string HeadsDescription => "Score 2 points per energy you hold.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 15;
         public override int EnergyCost => 1;

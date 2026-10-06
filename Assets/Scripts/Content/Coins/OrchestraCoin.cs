@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "orchestra";
         public override string Name => "Orchestra";
         public override string Description => "Heads: 2 points per different coin type in your deck.";
+        public override string HeadsDescription => "Score 2 points per different coin type in your deck.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 15;
         public override int EnergyCost => 0;

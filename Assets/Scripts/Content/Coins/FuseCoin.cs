@@ -8,6 +8,8 @@ namespace Tossup.Coins
         public override string Id => "fuse";
         public override string Name => "Fuse";
         public override string Description => "Discard it to charge +6. Heads spends all charge as points.";
+        public override string SpecialRule => "Discard this coin to gain 6 charge.";
+        public override string HeadsDescription => "Score 1 point plus all stored charge.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 10;
         public override int EnergyCost => 0;

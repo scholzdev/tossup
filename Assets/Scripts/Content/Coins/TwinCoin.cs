@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "twin";
         public override string Name => "Twin";
         public override string Description => "Always lands the same as the previous flip.";
+        public override string SpecialRule => "Always lands the same as the previous flip.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
         public override int EnergyCost => 0;

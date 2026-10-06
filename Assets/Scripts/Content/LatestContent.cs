@@ -22,6 +22,43 @@ namespace Tossup
             c["seer"].Locked=new List<LockedCoin>{K(CoinCatalog.Horoscope,4),K(CoinCatalog.CrystalBall,5),K(CoinCatalog.Mimic,6),K(CoinCatalog.Contrarian,4),K(CoinCatalog.LuckySeven,4),K(CoinCatalog.Blood,4),K(CoinCatalog.Hourglass,5),K(CoinCatalog.Jester,5),K(CoinCatalog.Echo,6),K(CoinCatalog.Phoenix,6),K(CoinCatalog.Mirror,5),K(CoinCatalog.Domino,6),K(CoinCatalog.Twin,5),K(CoinCatalog.ColdStreak,4),K(CoinCatalog.Anchor,4),K(CoinCatalog.TrueEcho,6),K(CoinCatalog.Amplifier,6),K(CoinCatalog.SquareDance,4),K(CoinCatalog.GoodDog,6),K(CoinCatalog.BloodPact,5),K(CoinCatalog.Doppelganger,6)};
             c["trader"].Deck=S(CoinCatalog.Normal,CoinCatalog.Loaded,CoinCatalog.Dagger); c["trader"].Pool=S(CoinCatalog.Normal,CoinCatalog.Copper,CoinCatalog.Loaded,CoinCatalog.Dagger,CoinCatalog.Sword,CoinCatalog.SquareDance,CoinCatalog.SafePort);
             c["trader"].Locked=new List<LockedCoin>{K(CoinCatalog.Spark,3),K(CoinCatalog.Bank,4),K(CoinCatalog.Miser,4),K(CoinCatalog.Hammer,4),K(CoinCatalog.Bounty,5),K(CoinCatalog.Flock,5),K(CoinCatalog.Momentum,5),K(CoinCatalog.Capacitor,6),K(CoinCatalog.Cheerleader,4),K(CoinCatalog.Megaphone,5),K(CoinCatalog.Orchestra,4),K(CoinCatalog.Lifeline,4),K(CoinCatalog.Jackpot,5),K(CoinCatalog.Bettor,5),K(CoinCatalog.Anchor,4),K(CoinCatalog.Doubler,6),K(CoinCatalog.TrueEcho,6),K(CoinCatalog.Compost,4),K(CoinCatalog.GoodDog,6),K(CoinCatalog.Counterfeiter,4),K(CoinCatalog.Conductor,4),K(CoinCatalog.AllIn,6)};
+
+            c["tinkerer"] = new CharacterDef
+            {
+                Id="tinkerer", Name="The Tinkerer", Description="Tune and upgrade your coins", Starter=CoinCatalog.Normal,
+                Perks=new List<CharacterPerkDef>
+                {
+                    new CharacterPerkDef { Type=CharacterPerkType.StartEnergy, Value=1, Name="Overclock", Description="Start each level with +1 Energy." },
+                    new CharacterPerkDef { Type=CharacterPerkType.CoinDiscount, Value=2, Name="Bulk Parts", Description="Coin offers cost 2 less gold." }
+                },
+                Deck=S(CoinCatalog.Normal,CoinCatalog.Copper,CoinCatalog.Spark,CoinCatalog.Focus,CoinCatalog.Whetstone),
+                Pool=S(CoinCatalog.Normal,CoinCatalog.Copper,CoinCatalog.Spark,CoinCatalog.Focus,CoinCatalog.Whetstone,CoinCatalog.Capacitor,CoinCatalog.Amplifier,CoinCatalog.Counterfeiter),
+                Locked=new List<LockedCoin>{K(CoinCatalog.Hammer,3),K(CoinCatalog.Bank,4),K(CoinCatalog.Fuse,4),K(CoinCatalog.Hourglass,5),K(CoinCatalog.Doubler,6),K(CoinCatalog.SafePort,5)}
+            };
+            c["naturalist"] = new CharacterDef
+            {
+                Id="naturalist", Name="The Naturalist", Description="Grow a deck that keeps coming back", Starter=CoinCatalog.Normal,
+                Perks=new List<CharacterPerkDef>
+                {
+                    new CharacterPerkDef { Type=CharacterPerkType.TailsGold, Value=1, Name="Bountiful Harvest", Description="Tails earns +1 gold." },
+                    new CharacterPerkDef { Type=CharacterPerkType.ExtraExchange, Value=1, Name="Second Wind", Description="One extra exchange each level." }
+                },
+                Deck=S(CoinCatalog.Normal,CoinCatalog.Compost,CoinCatalog.Flock,CoinCatalog.GoodDog,CoinCatalog.Lifeline),
+                Pool=S(CoinCatalog.Normal,CoinCatalog.Compost,CoinCatalog.Flock,CoinCatalog.GoodDog,CoinCatalog.Snowball,CoinCatalog.Lifeline,CoinCatalog.Phoenix),
+                Locked=new List<LockedCoin>{K(CoinCatalog.Vampire,4),K(CoinCatalog.Blood,4),K(CoinCatalog.BloodPact,5),K(CoinCatalog.SquareDance,4),K(CoinCatalog.Martyr,5),K(CoinCatalog.Doppelganger,6)}
+            };
+            c["conductor"] = new CharacterDef
+            {
+                Id="conductor", Name="The Conductor", Description="Build powerful streaks and combos", Starter=CoinCatalog.Normal,
+                Perks=new List<CharacterPerkDef>
+                {
+                    new CharacterPerkDef { Type=CharacterPerkType.ComboStep, Value=.2, Name="Good Rhythm", Description="Combo multiplier grows +0.2 per step." },
+                    new CharacterPerkDef { Type=CharacterPerkType.ComboShield, Value=1, Name="Encore", Description="Start each level with a combo shield." }
+                },
+                Deck=S(CoinCatalog.Normal,CoinCatalog.Momentum,CoinCatalog.Cheerleader,CoinCatalog.Echo,CoinCatalog.Orchestra),
+                Pool=S(CoinCatalog.Normal,CoinCatalog.Momentum,CoinCatalog.Cheerleader,CoinCatalog.Echo,CoinCatalog.Orchestra,CoinCatalog.Megaphone,CoinCatalog.TrueEcho,CoinCatalog.Conductor),
+                Locked=new List<LockedCoin>{K(CoinCatalog.Twin,4),K(CoinCatalog.Chain,4),K(CoinCatalog.Anchor,5),K(CoinCatalog.Doubler,6),K(CoinCatalog.Jackpot,5),K(CoinCatalog.AllIn,6)}
+            };
         }
     }
 }

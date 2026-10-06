@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "bounty";
         public override string Name => "Bounty";
         public override string Description => "Pays 1 gold for every 2 points it scores.";
+        public override string SpecialRule => "Pays 1 gold for every 2 points this coin scores.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
         public override int EnergyCost => 1;

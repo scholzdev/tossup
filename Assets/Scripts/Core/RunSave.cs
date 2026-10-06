@@ -59,6 +59,7 @@ namespace Tossup
                 !Finite(g.FortuneBonus) || g.FortuneBonus < 0 || g.FortuneBonus > .55 ||
                 !Finite(g.NextLevelQuotaBonus) || g.NextLevelQuotaBonus < 0 || g.RerollStep < 1 || g.RerollStep > 2 || g.RerollCost < 0) return false;
             var uids = new HashSet<int>();
+            if (g.LastResult != null && g.LastResult.CoinId != null && !Content.Coins.ContainsKey(g.LastResult.CoinId)) return false;
             foreach (var c in g.Coins)
                 if (c == null || c.Id == null || !Content.Coins.ContainsKey(c.Id) || c.Uid < 1 || c.Uid > g.NextUid || !uids.Add(c.Uid) ||
                     !Finite(c.Bonus) || !Finite(c.Charge) || !Finite(c.Debt) || !Finite(c.Stack) || !Finite(c.Anger) ||

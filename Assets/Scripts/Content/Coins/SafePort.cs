@@ -7,7 +7,7 @@ namespace Tossup.Coins
     {
         public override string Id => "safeport";
         public override string Name => "Safe Port";
-        public override string Description => "Heads: 1 point. No Tail - No Edge.";
+        public override string Description => string.Empty;
         public override Rarity Rarity => Rarity.Common;
         public override int Cost => 18;
         public override int EnergyCost => 1;

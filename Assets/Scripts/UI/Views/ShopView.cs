@@ -38,7 +38,7 @@ namespace Tossup.UI
             Button("MENU", 1120, 56, 100, 34, C.PanelLight, A.OpenMenu);
             ImageAt(Ui.UiImages["gold"], 1010, 100, 44);
             Text(GameText.Num(g.Player.Gold), 1062, 104, Ui.F32, C.Gold);
-            RunModifierView.Draw(250,104,32);
+            RunModifierView.Draw(460, 104, 32);
 
             // reroll (coin offers only), level with the coin icons
             int rerollCost = g.RerollCost;

@@ -8,6 +8,8 @@ namespace Tossup.Coins
         public override string Id => "phoenix";
         public override string Name => "Phoenix";
         public override string Description => "Each Tails stores anger (max 5). Heads: 3 points +2 per anger.";
+        public override string SpecialRule => "Each Tails stores anger (max 5).";
+        public override string HeadsDescription => "Score 3 points, plus 2 per stored anger.";
         public override Rarity Rarity => Rarity.Epic;
         public override int Cost => 15;
         public override int EnergyCost => 0;

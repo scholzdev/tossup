@@ -20,6 +20,12 @@ namespace Tossup.UI
             return list;
         }
 
+        static CoinType? BuffCoinType(Buff buff)
+        {
+            if (buff.TargetType.HasValue) return buff.TargetType;
+            return Enum.TryParse(buff.Kind, true, out CoinType type) ? type : (CoinType?)null;
+        }
+
         // Opening hand: the first coin that would play sits on the stage as always; the hand hovers over it as
         // a row of floating cards. Click to mark, Discard throws the marked ones away (free), then start.
         static int FirstUnmarked()
@@ -61,9 +67,10 @@ namespace Tossup.UI
                 Outline(x, y, w, h, marked ? C.Red : uid == first ? C.Gold : C.Line);
                 CoinImage(owned.Id, x + (w - 80) / 2, y + 12, 80);
                 Centered(Lang.Upper(Lang.CoinName(owned.Id)), x, y + 102, w, Ui.F20, C.Face);
-                Centered(L("%d%% HEADS", Pct(Game.Probability(G, owned))), x, y + 128, w, Ui.F16, C.Gold);
-                Text(L("H") + " " + Effects(def.Heads), x + 12, y + 156, Ui.F16, C.Blue);
-                Text(L("T") + " " + Effects(def.Tails), x + 12, y + 180, Ui.F16, C.Red);
+                var odds = Game.GetOdds(G, owned);
+                Centered(L("%d%% HEADS", Pct(odds.Heads)), x, y + 128, w, Ui.F16, C.Gold);
+                if (odds.Heads > 0) Text(L("H") + " " + Effects(def.Heads), x + 12, y + 156, Ui.F16, C.Blue);
+                if (odds.Tails > 0) Text(L("T") + " " + Effects(def.Tails), x + 12, y + 180, Ui.F16, C.Red);
                 if (marked) Tab(x + (w - 76) / 2, y - 9, C.Red, "DISCARD");
                 else if (uid == first) Tab(x + (w - 76) / 2, y - 9, C.Gold, "PLAYS FIRST");
                 if (def.EnergyCost > 0) Text("E" + def.EnergyCost, x + w - 30, y + 10, Ui.F16, C.Orange);
@@ -181,8 +188,8 @@ namespace Tossup.UI
                 Ui.FlipAnimation == null && !Ui.Holding && g.Mulligan == null;
             if (!discardAvailable) Ui.BankDiscardMode = false;
             bool picking = discardAvailable && Ui.BankDiscardMode;
-            bool bankSelectable = !picking && g.Dealt != null && g.Pending == null &&
-                Ui.FlipAnimation == null && !Ui.Holding && g.Mulligan == null;
+            bool bankSelectable = !picking && (g.Dealt != null || Ui.Holding) && g.Pending == null &&
+                Ui.FlipAnimation == null && g.Mulligan == null;
             int rowStart = discardAvailable ? 236 : 226;
             int buffRows = Math.Min(2, e.Buffs.Count) + (e.Buffs.Count > 2 ? 1 : 0);
             float footerHeight = 22 + buffRows * 18;
@@ -209,6 +216,19 @@ namespace Tossup.UI
                 bool discardable = i < Game.Visible;
                 Box(x, y, 214, rowHeight, marked ? C.Marked : owned != null ? C.Card : C.SlotDk);
                 Outline(x, y, 214, rowHeight, picking && discardable ? C.Orange : marked ? C.Red : current ? C.Gold : owned != null ? C.Line : C.Ink);
+                CoinType? targetType = null;
+                foreach (var buff in e.Buffs)
+                {
+                    var buffType = BuffCoinType(buff);
+                    if (buff.Fresh || !buffType.HasValue || !Game.HasType(owned, buffType.Value)) continue;
+                    targetType = buffType;
+                    break;
+                }
+                if (targetType.HasValue)
+                {
+                    Color(CoinTypeColor(targetType.Value));
+                    Gfx.Rectangle(true, x + 209, y + 3, 4, rowHeight - 6);
+                }
                 float iconSize = Math.Min(48, rowHeight - 4);
                 CoinImage(owned.Id, x + 4, y + (rowHeight - iconSize) / 2, iconSize);
                 float nameX = x + iconSize + 10;
@@ -245,8 +265,17 @@ namespace Tossup.UI
                 else if (buff.Kind == "odds") label = L("BUFF +%d%% HEADS  (%d LEFT)", Pct(buff.Amount), buff.Left);
                 else if (buff.Kind == "swap") label = L("BUFF: NEXT COIN SWAPS SIDES");
                 else if (buff.Kind == "heads") label = L("BUFF: NEXT COIN LANDS HEADS");
+                else if (buff.Kind == "effect" && buff.AppliedEffect != null)
+                {
+                    string target = buff.TargetType.HasValue ? L("NEXT %s", L(buff.TargetType.Value.ToString().ToUpperInvariant())) : L("NEXT COIN");
+                    string effect = EffectDescription(new[] { buff.AppliedEffect });
+                    label = buff.AppliesOn.HasValue
+                        ? L("BUFF %s ON %s: %s (%d LEFT)", target, L(buff.AppliesOn.Value.ToString().ToUpperInvariant()), effect, buff.Left)
+                        : L("BUFF %s: %s (%d LEFT)", target, effect, buff.Left);
+                }
                 else label = L("BUFF %s  (%d LEFT)", L(buff.Kind.ToUpper()), buff.Left);
-                if (i < 2) Text(label, 84, footerY + 18 + i * 18, Ui.F16, C.Orange);
+                CoinType? targetType = BuffCoinType(buff);
+                if (i < 2) Text(label, 84, footerY + 18 + i * 18, Ui.F16, targetType.HasValue ? CoinTypeColor(targetType.Value) : C.Orange);
             }
             if (e.Buffs.Count > 2) Text(L("+%d MORE BUFFS", e.Buffs.Count - 2), 84, footerY + 18 + 2 * 18, Ui.F16, C.Orange);
 
@@ -263,6 +292,13 @@ namespace Tossup.UI
                 result = new FlipState { Uid = uid, Probability = Game.Probability(g, Game.GetCoin(g, uid)) };
             }
             var item = result != null ? Game.GetCoin(g, result.Uid) : null;
+            string coinId = item?.Id ?? result?.CoinId ?? Ui.FlipAnimation?.Id;
+            var oddsCoin = item ?? (g.Pending != null ? Game.GetCoin(g, g.Pending.Uid) : null);
+            Odds displayedOdds = result != null
+                ? new Odds(result.Probability, result.TieProbability, Math.Max(0, 1 - result.Probability - result.TieProbability))
+                : g.Pending != null
+                    ? new Odds(g.Pending.Probability, g.Pending.TieProbability, Math.Max(0, 1 - g.Pending.Probability - g.Pending.TieProbability))
+                    : oddsCoin != null ? Game.GetOdds(g, oddsCoin) : null;
             string outcome = result != null ? result.Final ?? result.Result : null;
             Centered(g.Mulligan != null ? "" : Ui.FlipAnimation != null ? "FLIPPING" : g.Pending != null ? "CURRENT FLIP" :
                 g.Dealt != null && !Ui.Holding ? "SELECTED COIN" : item != null ? "LAST FLIP" : "NO COIN", 330, 186, 880, Ui.F20, C.Gold);
@@ -271,10 +307,11 @@ namespace Tossup.UI
                     330, 214, 880, Ui.F16, C.Orange);
             Color(C.PanelDk);
             Gfx.Circle(true, SX, 385, 160);
-            if (item != null) CoinFace(SX, 385, 135, null, true, item.Id);
+            if (item != null) CoinFace(SX, 385, 135, null, true, coinId);
+            else if (Ui.FlipAnimation == null && coinId != null) CoinFace(SX, 385, 135, null, false, coinId);
             if (Ui.FlipAnimation == null && g.Pending == null && (Ui.Holding || Game.CanFlip(g)))
                 AddButton(SX - 150, 235, 300, 300, A.NextOrFlip, "CENTRAL COIN");
-            else if (Ui.FlipAnimation == null) CoinImage("back", SX - 150, 235, 300);
+            else if (Ui.FlipAnimation == null && coinId == null) CoinImage("back", SX - 150, 235, 300);
             DrawFlipAnimation();
 
             // combo meter: consecutive identical results multiply points; drawn in the stage's top right corner
@@ -316,10 +353,10 @@ namespace Tossup.UI
             }
 
             // the two effects
-            string coinId = item != null ? item.Id : Ui.FlipAnimation?.Id;
             var coin = coinId != null ? Content.Coins[coinId] : null;
             for (int k = 0; k < 2; k++)
             {
+                if (displayedOdds != null && (k == 0 ? displayedOdds.Heads : displayedOdds.Tails) <= 0) continue;
                 float cx = k == 0 ? 354 : 986;
                 var accent = k == 0 ? C.Blue : C.Red;
                 Box(cx, 320, 200, 130, coin != null ? C.PanelDk : C.SlotDk);
@@ -376,21 +413,23 @@ namespace Tossup.UI
             {
                 // the hand floats over this part
             }
-            else if (coin != null && result != null)
+            else if (coin != null && result != null && displayedOdds != null)
             {
-                double chance = result.Probability;
+                double chance = displayedOdds.Heads;
+                double edgeChance = displayedOdds.Edge;
+                double tailsChance = displayedOdds.Tails;
                 Color(C.Blue);
                 Gfx.Rectangle(true, SX - 170, 596, 340 * (float)chance, 10);
                 Color(C.Purple);
-                Gfx.Rectangle(true, SX - 170 + 340 * (float)chance, 596, 340 * (float)result.TieProbability, 10);
+                Gfx.Rectangle(true, SX - 170 + 340 * (float)chance, 596, 340 * (float)edgeChance, 10);
                 Color(C.Red);
-                Gfx.Rectangle(true, SX - 170 + 340 * (float)(chance + result.TieProbability), 596, 340 * (float)(1 - chance - result.TieProbability), 10);
-                Text(L("HEADS %d%%", Pct(chance)), SX - 170, 612, Ui.F16, C.Blue);
-                if (result.TieProbability > 0) Centered(L("EDGE %d%%", Pct(result.TieProbability)), SX - 55, 612, 110, Ui.F16, C.Purple);
-                string tailsText = L("TAILS %d%%", Math.Floor((1 - chance - result.TieProbability) * 100 + .5));
-                Text(tailsText, SX + 170 - Ui.F16.GetWidth(tailsText), 612, Ui.F16, C.Red);
+                Gfx.Rectangle(true, SX - 170 + 340 * (float)(chance + edgeChance), 596, 340 * (float)tailsChance, 10);
+                if (chance > 0) Text(L("HEADS %d%%", Pct(chance)), SX - 170, 612, Ui.F16, C.Blue);
+                if (edgeChance > 0) Centered(L("EDGE %d%%", Pct(edgeChance)), SX - 55, 612, 110, Ui.F16, C.Purple);
+                string tailsText = L("TAILS %d%%", Math.Floor(tailsChance * 100 + .5));
+                if (tailsChance > 0) Text(tailsText, SX + 170 - Ui.F16.GetWidth(tailsText), 612, Ui.F16, C.Red);
                 if (shownCost > 0 && Ui.FlipAnimation == null && !(e.Flips == 0 && e.SideBetSide == null && betAvailable))
-                    Centered(L("ENERGY COST %d", shownCost), SX - 60, result.TieProbability > 0 ? 632 : 612, 120, Ui.F16, C.Orange);
+                    Centered(L("ENERGY COST %d", shownCost), SX - 60, edgeChance > 0 ? 632 : 612, 120, Ui.F16, C.Orange);
             }
             else if (Ui.FlipAnimation == null) Centered("ONE COIN AT A TIME", 330, 596, 880, Ui.F16, C.Muted);
 

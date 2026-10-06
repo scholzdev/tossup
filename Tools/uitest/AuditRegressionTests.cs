@@ -51,12 +51,26 @@ static class AuditRegressionTests
         g = Scene("normal", "normal"); g.Coins[0].Upgrade = UpgradeCatalog.LuckyDay; Game.AddBuff(g, "swap", 0, 1, true); Play(g, "normal", Side.Tails);
         Check(Near(g.LastResult.Gained.Value, 2), "upgrades follow swapped effect side");
         g = Scene("whetstone", "echo", "normal"); Play(g, "whetstone", Side.Heads); Play(g, "echo", Side.Heads);
-        Check(g.LastResult.BaseEffects.Any(e => e.Kind == CoinType.Steel && e.Coins == 2), "Echo retains coin type and duration");
+        Check(g.LastResult.BaseBuffs.Any(b => b.Id == "whetstone_steel" && b.Target.Type == CoinType.Steel && b.Target.Count == 2), "Echo retains typed coin target and duration");
         g = Scene("megaphone", "echo", "normal"); Play(g, "megaphone", Side.Heads); Play(g, "echo", Side.Heads);
-        Check(g.LastResult.BaseEffects.Any(e => e.Type == EffectType.NextMult && e.Coins == 2), "Echo retains multiplier duration");
+        Check(g.LastResult.BaseBuffs.Any(b => b.Id == "megaphone_double_next" && b.Effect.Type == EffectType.NextMult && b.Target.Count == 2), "Echo retains typed multiplier duration");
         g = Scene("doppelganger", "contrarian", "normal"); g.Augments.Add("type_specialist"); g.AugmentData["type_specialist"] = "chaos";
         Play(g, "doppelganger", Side.Heads); Play(g, "contrarian", Side.Heads);
         Check(g.LastResult.BaseEffects.Where(e => e.Type == EffectType.Score).Select(e => e.Amount).SequenceEqual(new double[] { 4,1,4,1 }), "Chaos includes specialist before duplication");
+        g = Scene("counterfeiter", "normal", "bank"); Play(g, "counterfeiter", Side.Heads);
+        Play(g, "normal", Side.Heads);
+        Check(g.Encounter.Buffs.Exists(b => b.Kind == "greed" && b.Left == 2), "type-targeted buff waits through unrelated coins");
+        Play(g, "bank", Side.Heads);
+        Check(g.Encounter.Buffs.Exists(b => b.Kind == "greed" && b.Left == 1), "type-targeted buff consumes one matching coin");
+        g = Scene("normal", "normal");
+        Game.AddBuff(g, new BuffSpec("test_heads_gold", OutcomeSide.Heads, BuffTarget.NextCoins(), Effect.Gold(2), OutcomeSide.Heads), true);
+        Play(g, "normal", Side.Heads);
+        Check(Near(g.Player.Gold, 52) && g.LastResult.BaseEffects.Exists(e => e.Type == EffectType.Gold && e.Amount == 2), "typed buff effects apply on their declared outcome");
+        g = Scene("normal", "normal");
+        Game.AddBuff(g, new BuffSpec("test_any_side_gold", OutcomeSide.Heads, BuffTarget.NextCoins(), Effect.Gold(3)), true);
+        Play(g, "normal", Side.Tails);
+        Check(Near(g.Player.Gold, 53) && g.LastResult.BaseEffects.Exists(e => e.Type == EffectType.Gold && e.Amount == 3),
+            "typed buff effects without an outcome restriction apply on either side");
         g = Scene("normal", "normal"); g.Relics.Add("clock"); Relics.Bind(g); g.Encounter.Flips = 9; g.Encounter.Inverts = true; Game.Flip(g);
         Check(g.Pending.Result == Side.Heads, "Broken Clock protects tenth Heads from stage inversion");
         g = Scene("cash_out", "normal"); Play(g, "cash_out", Side.Heads);

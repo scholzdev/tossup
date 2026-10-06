@@ -14,8 +14,12 @@ namespace Tossup.Coins
         public override double Probability => 0.58;
         public override double TieProbability => 0;
         public override IReadOnlyList<CoinType> Types { get; } = Array.Empty<CoinType>();
-        public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.TypeBuff(0, 1, CoinType.Blood) };
+        public override IReadOnlyList<Effect> Heads { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override IReadOnlyList<BuffSpec> Buffs { get; } = new[]
+        {
+            new BuffSpec("blood_pact_blood", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Blood), Effect.TypeBuff(kind: CoinType.Blood)),
+        };
     }
 }

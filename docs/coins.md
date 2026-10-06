@@ -3,10 +3,32 @@
 Every coin has a complete C# definition in `Assets/Scripts/Content/Coins/<Name>Coin.cs`. A coin has:
 
 - a **Heads chance** (`probability`),
-- an effect list for **Heads** and one for **Tails**,
+- typed effect lists for **Heads**, **Tails**, and **Edge**,
+- optional triggered **Buffs** with a typed target and effect,
+- optional **SpecialRule** text for behavior implemented by code hooks,
 - an optional **energy cost** to flip,
 - a **rarity** (N common, R uncommon, SR rare, UR epic, used for sorting and colour in the Collection screen),
 - optional **hooks** that change the rules (see [architecture.md](architecture.md#coin-hooks)).
+
+Outcome rows and declarative Buffs build their hover descriptions from the same data the game applies. Keep hook-only behavior in the hook, and set `SpecialRule` to explain it. Upgrades use `UpgradeChange` entries to add outcome effects, adjust Heads chance, or add a Buff; the upgraded hover uses those same changes.
+
+```csharp
+public override IReadOnlyList<Effect> Heads { get; } = [Effect.Score(1)];
+public override IReadOnlyList<Effect> Tails { get; } = [Effect.Quota(1)];
+
+public override IReadOnlyList<BuffSpec> Buffs { get; } =
+[
+    new("chaos_gold", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Chaos),
+        Effect.Gold(2), appliesOn: OutcomeSide.Heads)
+];
+```
+
+This renders the buff as “On Heads, the next Chaos coin gains 2 gold when landing Heads.” A future upgrade can compose another declarative change with the base definition:
+
+```csharp
+UpgradeChange.AddEffect(OutcomeSide.Heads, Effect.Score(2));
+UpgradeChange.AddHeadsProbability(.06);
+```
 
 Prices are in the table below and in each coin heading (generated from the code). "EV" below is the expected value of one flip ignoring hooks, in points unless
 stated, with an unmodified Heads chance. A "quota +N" is a penalty that moves the goal posts by N, which is roughly

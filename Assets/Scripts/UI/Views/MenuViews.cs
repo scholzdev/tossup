@@ -118,10 +118,19 @@ namespace Tossup.UI
             Box(70, 220, 384, 400, C.Card);
             Outline(70, 220, 384, 400, C.Line);
             var portrait = Ui.CharacterImages[characterId];
-            float scale = Math.Min(366f / portrait.Width, 380f / portrait.Height);
+            float scale = Math.Min(350f / portrait.Width, 270f / portrait.Height);
             float width = portrait.Width * scale, height = portrait.Height * scale;
             Color(C.White, locked ? .22f : 1f);
-            Gfx.Draw(portrait, 70 + (384 - width) / 2, 226 + (388 - height) / 2, scale, scale);
+            Gfx.Draw(portrait, 70 + (384 - width) / 2, 226 + (270 - height) / 2, scale, scale);
+            var perks = Content.Characters[characterId].Perks;
+            for (int i = 0; i < Math.Min(2, perks.Count); i++)
+            {
+                float perkY = 500 + i * 48;
+                Box(84, perkY, 356, 42, C.PanelDk);
+                Outline(84, perkY, 356, 42, C.Line);
+                Text(Lang.Upper(Lang.T(perks[i].Name)), 94, perkY + 2, Ui.F16, C.Gold);
+                Text(Lang.T(perks[i].Description), 94, perkY + 21, Ui.F16, C.Muted);
+            }
             if(locked){Centered("LOCKED",70,440,384,Ui.F32,C.Face);int ci=Content.CharacterOrder.IndexOf(characterId);string required=ci>0?Lang.CharacterName(Content.CharacterOrder[ci-1]):"";Centered("WIN A RUN WITH: "+Lang.Upper(required),70,632,384,Ui.F16,C.Orange);}
             else {Centered(Lang.Upper(Lang.CharacterDescription(characterId)), 70, 632, 384, Ui.F16, C.Muted);if(Ui.Profile.BestEndless.TryGetValue(characterId,out var best))Centered("BEST ENDLESS: "+best,70,596,384,Ui.F16,C.Gold);}
 
@@ -166,7 +175,11 @@ namespace Tossup.UI
     public static class SetsView
     {
         const float SlotSize = 64, SlotGap = 14;
-        static readonly Dictionary<string, string> Labels = new Dictionary<string, string> { { "blade", "BLADE" }, { "seer", "SEER" }, { "trader", "TRADER" } };
+        static readonly Dictionary<string, string> Labels = new Dictionary<string, string>
+        {
+            { "blade", "BLADE" }, { "seer", "SEER" }, { "trader", "TRADER" },
+            { "tinkerer", "TINKERER" }, { "naturalist", "NATURALIST" }, { "conductor", "CONDUCTOR" }
+        };
         static readonly Dictionary<string, int> RarityRank = new Dictionary<string, int> { { "N", 1 }, { "R", 2 }, { "SR", 3 }, { "UR", 4 } };
 
         static void Padlock(float cx, float cy)
@@ -185,10 +198,12 @@ namespace Tossup.UI
             Frame(Title("sets"), "BACK", A.BackFromSets);
 
             // every character
+            const float tabLeft = 70, tabRight = 1220, tabGap = 8;
+            float tabWidth = (tabRight - tabLeft - tabGap * (Content.CharacterOrder.Count - 1)) / Content.CharacterOrder.Count;
             for (int i = 0; i < Content.CharacterOrder.Count; i++)
             {
                 string id = Content.CharacterOrder[i];
-                Button(L(Labels[id]), 340 + i * 210, 148, 190, 44, id == Ui.SetsCharacter ? C.Gold : C.PanelLight,
+                Button(L(Labels[id]), tabLeft + i * (tabWidth + tabGap), 148, tabWidth, 44, id == Ui.SetsCharacter ? C.Gold : C.PanelLight,
                     () => A.SetsPickCharacter(id), Profile.CharacterUnlocked(Ui.Profile, id));
             }
 
@@ -273,6 +288,19 @@ namespace Tossup.UI
         const int Columns = 5, Rows = 3, PerPage = Columns * Rows;
         const float CellW = 170, Icon = 88;
 
+        sealed class Entry
+        {
+            public string Id, Name, Description, ImageId;
+            public int Rank, Index;
+            public bool Available = true;
+        }
+
+        static readonly (string key, string label)[] Categories =
+        {
+            ("coins", "COINS"), ("items", "CHIPS"), ("relics", "RELICS"),
+            ("characters", "CHARACTERS"),
+        };
+
         // rarity code (in the coin data) -> display name and tab colour
         static readonly (string key, string label, Rgba fill)[] Tabs =
         {
@@ -293,41 +321,68 @@ namespace Tossup.UI
 
         static void CycleSort()
         {
-            for (int i = 0; i < Sorts.Length; i++)
+            (string key, string label)[] sorts = Ui.CollectionCategory == "coins" ? Sorts : new[] { ("name", "Name"), ("order", "Default") };
+            for (int i = 0; i < sorts.Length; i++)
             {
-                if (Sorts[i].key != Ui.CollectionSort) continue;
-                Ui.CollectionSort = Sorts[(i + 1) % Sorts.Length].key;
+                if (sorts[i].key != Ui.CollectionSort) continue;
+                Ui.CollectionSort = sorts[(i + 1) % sorts.Length].key;
                 Ui.CollectionPage = 1;
                 return;
             }
+            Ui.CollectionSort = sorts[0].key;
         }
 
-        static List<string> VisibleIds()
+        static List<Entry> VisibleEntries()
         {
-            var ids = new List<(string id, int index)>();
-            for (int index = 0; index < Content.CoinOrder.Count; index++)
+            var entries = new List<Entry>();
+            if (Ui.CollectionCategory == "coins")
             {
-                string id = Content.CoinOrder[index].Id;
-                if (Ui.CollectionFilter == "ALL" || DefinitionKeys.RarityCode(Content.Coins[id].Rarity) == Ui.CollectionFilter) ids.Add((id, index));
-            }
-            ids.Sort((a, b) =>
-            {
-                if (Ui.CollectionSort == "rarity")
+                for (int index = 0; index < Content.CoinOrder.Count; index++)
                 {
-                    int ra = Rank.TryGetValue(DefinitionKeys.RarityCode(Content.Coins[a.id].Rarity), out int x) ? x : 9;
-                    int rb = Rank.TryGetValue(DefinitionKeys.RarityCode(Content.Coins[b.id].Rarity), out int y) ? y : 9;
-                    if (ra != rb) return ra.CompareTo(rb);
+                    var coin = Content.CoinOrder[index];
+                    string rarity = DefinitionKeys.RarityCode(coin.Rarity);
+                    if (Ui.CollectionFilter != "ALL" && rarity != Ui.CollectionFilter) continue;
+                    entries.Add(new Entry { Id = coin.Id, Name = Lang.CoinName(coin.Id), ImageId = coin.Id,
+                        Rank = Rank.TryGetValue(rarity, out int rank) ? rank : 9, Index = index,
+                        Available = Ui.Profile.Collected.Contains(coin.Id) });
                 }
-                else if (Ui.CollectionSort == "name")
+            }
+            else if (Ui.CollectionCategory == "items")
+            {
+                for (int index = 0; index < Content.ItemOrder.Count; index++)
                 {
-                    int byName = string.CompareOrdinal(Content.Coins[a.id].Name, Content.Coins[b.id].Name);
+                    string id = Content.ItemOrder[index];
+                    entries.Add(new Entry { Id = id, Name = Lang.ItemName(id), Description = Lang.ItemDescription(id), ImageId = id, Index = index });
+                }
+            }
+            else if (Ui.CollectionCategory == "relics")
+            {
+                for (int index = 0; index < Content.RelicOrder.Count; index++)
+                {
+                    string id = Content.RelicOrder[index];
+                    entries.Add(new Entry { Id = id, Name = Lang.RelicName(id), Description = Lang.RelicDescription(id), ImageId = id, Index = index });
+                }
+            }
+            else if (Ui.CollectionCategory == "characters")
+            {
+                for (int index = 0; index < Content.CharacterOrder.Count; index++)
+                {
+                    string id = Content.CharacterOrder[index];
+                    entries.Add(new Entry { Id = id, Name = Lang.CharacterName(id), Description = Lang.CharacterDescription(id),
+                        ImageId = id, Index = index, Available = Profile.CharacterUnlocked(Ui.Profile, id) });
+                }
+            }
+            entries.Sort((a, b) =>
+            {
+                if (Ui.CollectionCategory == "coins" && Ui.CollectionSort == "rarity" && a.Rank != b.Rank) return a.Rank.CompareTo(b.Rank);
+                if (Ui.CollectionSort == "name")
+                {
+                    int byName = string.CompareOrdinal(a.Name, b.Name);
                     if (byName != 0) return byName;
                 }
-                return a.index.CompareTo(b.index);
+                return a.Index.CompareTo(b.Index);
             });
-            var list = new List<string>();
-            foreach (var entry in ids) list.Add(entry.id);
-            return list;
+            return entries;
         }
 
         // A dark pill with light text (the shared Button draws dark text, which is unreadable here).
@@ -338,47 +393,66 @@ namespace Tossup.UI
             Box(x, y + (hover ? -2 : 0), w, h, fill);
             if (selected) Outline(x, y, w, h, C.White);
             Centered(label, x, y + (h - Ui.F20.Height) / 2f + (hover ? -2 : 0), w, Ui.F20, C.White);
-            AddButton(x, y, w, h, action);
+            AddButton(x, y, w, h, action, label);
         }
 
         public static void Draw()
         {
             Frame(Title("collection"), "BACK", () => A.Go("title"));
 
-            // sort + rarity filters
-            Text("SORT", 70, 168, Ui.F16, C.Muted);
-            Pill(SortLabel(), 120, 156, 120, 40, Tabs[0].fill, CycleSort);
-            Color(C.White);
-            Gfx.Rectangle(true, 254, 152, 3, 48);
-            for (int i = 0; i < Tabs.Length; i++)
+            for (int i = 0; i < Categories.Length; i++)
             {
-                var tab = Tabs[i];
-                float x = 274 + i * 126;
-                bool on = Ui.CollectionFilter == tab.key;
-                Pill(tab.label, x, 156 + (on ? 3 : 0), 116, 40, tab.fill, () => A.SetFilter(tab.key), on);
+                var category = Categories[i];
+                bool selected = Ui.CollectionCategory == category.key;
+                Pill(L(category.label), 144 + i * 198, 146 + (selected ? 3 : 0), 184, 40,
+                    selected ? new Rgba(.13f, .27f, .50f) : C.PanelLight,
+                    () => { Ui.CollectionCategory = category.key; Ui.CollectionPage = 1; Ui.CollectionFilter = "ALL"; Ui.CollectionSort = category.key == "coins" ? "rarity" : "order"; }, selected);
             }
 
-            // coin grid, five across
-            var ids = VisibleIds();
-            int pages = Math.Max(1, (int)Math.Ceiling(ids.Count / (double)PerPage));
+            // sort + rarity filters
+            Text("SORT", 70, 211, Ui.F16, C.Muted);
+            Pill(SortLabel(), 120, 198, 120, 40, Tabs[0].fill, CycleSort);
+            if (Ui.CollectionCategory == "coins")
+            {
+                Color(C.White);
+                Gfx.Rectangle(true, 254, 194, 3, 48);
+                for (int i = 0; i < Tabs.Length; i++)
+                {
+                    var tab = Tabs[i];
+                    float x = 274 + i * 126;
+                    bool on = Ui.CollectionFilter == tab.key;
+                    Pill(tab.label, x, 198 + (on ? 3 : 0), 116, 40, tab.fill, () => A.SetFilter(tab.key), on);
+                }
+            }
+
+            // Five columns shared by every catalogue category.
+            var entries = VisibleEntries();
+            int pages = Math.Max(1, (int)Math.Ceiling(entries.Count / (double)PerPage));
             Ui.CollectionPage = Math.Min(Ui.CollectionPage, pages);
             int first = (Ui.CollectionPage - 1) * PerPage;
             float x0 = 640 - Columns * CellW / 2;
             for (int slot = 0; slot < PerPage; slot++)
             {
-                if (first + slot >= ids.Count) break;
-                string id = ids[first + slot];
+                if (first + slot >= entries.Count) break;
+                var entry = entries[first + slot];
                 float x = x0 + (slot % Columns) * CellW;
-                float y = 224 + (slot / Columns) * 154;
-                bool collected = Ui.Profile.Collected.Contains(id);
-                var image = Ui.CoinImages[id];
-                if (collected) Color(C.White);
+                float y = 260 + (slot / Columns) * 154;
+                Img image = Ui.CollectionCategory == "items" ? Ui.ItemImages[entry.ImageId] :
+                    Ui.CollectionCategory == "relics" ? Ui.RelicImages[entry.ImageId] :
+                    Ui.CollectionCategory == "characters" ? Ui.CharacterImages[entry.ImageId] : Ui.CoinImages[entry.ImageId];
+                if (entry.Available) Color(C.White);
                 else Gfx.SetColor(0, 0, 0, .8f);
                 Gfx.Draw(image, x + (CellW - Icon) / 2, y, Icon / image.Width, Icon / image.Height);
                 Box(x + 11, y + 100, CellW - 22, 32, C.Card);
                 Outline(x + 11, y + 100, CellW - 22, 32, C.Line);
-                Centered(collected ? Lang.CoinName(id) : "Uncollected", x + 11, y + 106, CellW - 22, Ui.F20, collected ? C.White : C.Muted);
-                if (collected) CoinHover(id, x + 37, y, Icon, 132);
+                string cardName = entry.Available ? entry.Name : Ui.CollectionCategory == "coins" ? "Uncollected" : "Locked";
+                Centered(cardName, x + 11, y + 106, CellW - 22, Ui.F20, entry.Available ? C.White : C.Muted);
+                if (Ui.CollectionCategory == "coins")
+                {
+                    if (entry.Available) CoinHover(entry.Id, x + 37, y, Icon, 132);
+                }
+                else
+                    TextHover(entry.Name, entry.Description, x + 37, y, Icon, 132);
             }
 
             // paging inside the frame
@@ -386,7 +460,17 @@ namespace Tossup.UI
             Button("<", 70, 380, 50, 90, C.Green, () => A.ChangeCollectionPage(-1), canPrev);
             Button(">", 1160, 380, 50, 90, C.Green, () => A.ChangeCollectionPage(1), canNext);
             Centered(Ui.CollectionPage + "/" + pages, 440, 700, 400, Ui.F32, C.White);
-            Centered(L("COLLECTED %d / %d", Ui.Profile.Collected.Count, Content.CoinOrder.Count), 880, 710, 320, Ui.F16, C.Muted);
+            string count = Ui.CollectionCategory == "coins" ? L("COLLECTED %d / %d", Ui.Profile.Collected.Count, Content.CoinOrder.Count) :
+                Ui.CollectionCategory == "characters" ? L("UNLOCKED %d / %d", CountAvailable(entries), entries.Count) :
+                L("%d %s", entries.Count, Categories[Array.FindIndex(Categories, category => category.key == Ui.CollectionCategory)].label);
+            Centered(count, 850, 710, 360, Ui.F16, C.Muted);
+        }
+
+        static int CountAvailable(List<Entry> entries)
+        {
+            int count = 0;
+            foreach (var entry in entries) if (entry.Available) count++;
+            return count;
         }
     }
 

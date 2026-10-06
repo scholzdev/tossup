@@ -42,6 +42,14 @@ namespace Tossup
         public CoinDef Starter;
         public List<CoinDef> Deck, Pool;
         public List<LockedCoin> Locked = new List<LockedCoin>();
+        public List<CharacterPerkDef> Perks = new List<CharacterPerkDef>();
+    }
+
+    public sealed class CharacterPerkDef
+    {
+        public CharacterPerkType Type;
+        public string Name, Description;
+        public double Value;
     }
 
     public sealed class ModifierDef

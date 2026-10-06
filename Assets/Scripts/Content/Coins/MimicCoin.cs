@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "mimic";
         public override string Name => "Mimic";
         public override string Description => "Heads: does what the Heads side of a random other coin in your deck does.";
+        public override string HeadsDescription => "Copy the Heads effects of a random other coin in your deck.";
         public override Rarity Rarity => Rarity.Epic;
         public override int Cost => 15;
         public override int EnergyCost => 0;

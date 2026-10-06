@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "momentum";
         public override string Name => "Momentum";
         public override string Description => "+5% Heads for every Heads in a row this level.";
+        public override string SpecialRule => "+5% Heads for every Heads in a row this level.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
         public override int EnergyCost => 0;

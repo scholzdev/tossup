@@ -15,6 +15,10 @@ static class FeatureParityTests
         SavedRunRoundTrip();
         TutorialFlow();
         RuntimeModesAndSandbox();
+        CanSelectNextCoinWhileHolding();
+        ImpossibleOddsHideUnavailableSide();
+        CollectionCatalogCategories();
+        CoinTypeColorPalette();
         TitleAndEncounterScreens();
         DiscardParity();
         EncounterRevealFlow();
@@ -215,6 +219,219 @@ static class FeatureParityTests
         Ui.Game = null;
     }
 
+    static void CanSelectNextCoinWhileHolding()
+    {
+        RuntimeMode.Configure(false, false);
+        var game = Game.New(6610, "blade", null, null, false);
+        var last = game.Dealt;
+        Check(last != null, "selection test starts with a dealt coin");
+        game.Dealt = null;
+        game.Encounter.Queue.Remove(last.Uid);
+        game.Encounter.Played.Add(last.Uid);
+        game.LastResult = new FlipState { Uid = last.Uid, CoinId = Game.GetCoin(game, last.Uid).Id, Result = Side.Heads };
+        Ui.Game = game;
+        Ui.Holding = true;
+        Ui.FlipAnimation = null;
+        Ui.EncounterReveal = null;
+        AppCore.Draw();
+        var select = Ui.Buttons.Find(b => b.Label == "BANK COIN");
+        Check(select != null, "the bank stays selectable while the last result is held");
+        select.Action();
+        Check(game.Dealt != null && game.Dealt.Uid != last.Uid, "selecting a bank coin deals it for the next flip");
+        Ui.Holding = false;
+        Ui.Game = null;
+        Hooks.Unbind();
+    }
+
+    static void ImpossibleOddsHideUnavailableSide()
+    {
+        RuntimeMode.Configure(false, false);
+        Action<HookContext, Odds> forceHeads = (ctx, odds) => { odds.Heads = 1; odds.Edge = 0; };
+        CoinCatalog.Normal.On.Coins.Odds += forceHeads;
+        try
+        {
+            var game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> { "normal", "safeport" }, Seed = 6611 });
+            var last = game.Dealt;
+            var lastCoin = Game.GetCoin(game, last.Uid);
+            game.Coins.Remove(lastCoin);
+            game.Encounter.Queue.Remove(last.Uid);
+            game.Encounter.Played.Add(last.Uid);
+            game.Dealt = null;
+            game.LastResult = new FlipState
+            {
+                Uid = last.Uid, CoinId = lastCoin.Id, Probability = 1, Result = Side.Heads, Gained = 2,
+            };
+            Ui.Game = game;
+            Ui.Holding = true;
+            Ui.FlipAnimation = null;
+            var backend = (HeadlessBackend)Gfx.Backend;
+            backend.Capture = true;
+            backend.Texts.Clear();
+            backend.Images.Clear();
+            AppCore.Draw();
+            Check(backend.Images.ContainsKey("coins/normal"), "last-result coin art remains visible after the coin leaves play");
+            Check(backend.Texts.Exists(t => t.Value == "HEADS"), "possible outcome details remain visible");
+            Check(!backend.Texts.Exists(t => t.Value == "TAILS" || t.Value.StartsWith("TAILS ")),
+                "zero-probability Tails details and banner are hidden");
+
+            var handGame = Game.NewSandbox(new SandboxConfig { Coins = new List<string> { "normal", "safeport" }, Seed = 6612 });
+            handGame.Mulligan = new Mulligan { Hand = new List<int>() };
+            foreach (var coin in handGame.Coins) handGame.Mulligan.Hand.Add(coin.Uid);
+            handGame.Encounter.Queue.Clear();
+            handGame.Encounter.Pile.Clear();
+            handGame.Dealt = null;
+            handGame.Pending = null;
+            Ui.Game = handGame;
+            Ui.Holding = false;
+            backend.Texts.Clear();
+            AppCore.Draw();
+            Check(!backend.Texts.Exists(t => t.Value.StartsWith("T ")),
+                "opening-hand cards omit the effect line for an impossible Tails result");
+
+            Ui.Game = null;
+            Ui.Screen = "collection";
+            Ui.CollectionCategory = "coins";
+            Ui.CollectionFilter = "ALL";
+            Ui.CollectionSort = "order";
+            Ui.Profile.Collected.Add(CoinCatalog.SafePort.Id);
+            int safePortIndex = Content.CoinOrder.FindIndex(coin => coin.Id == CoinCatalog.SafePort.Id);
+            Check(safePortIndex >= 0, "Safe Port is present in the collection order");
+            Ui.CollectionPage = safePortIndex / 15 + 1;
+            var platform = (HeadlessPlatform)Ui.Platform;
+            platform.X = 215 + (safePortIndex % 5) * 170 + 80;
+            platform.Y = 260 + ((safePortIndex % 15) / 5) * 154 + 44;
+            backend.Texts.Clear();
+            AppCore.Draw();
+            Check(Ui.HoveredCoin != null && Ui.HoveredCoin.Id == CoinCatalog.SafePort.Id,
+                "Safe Port can be hovered from the collection grid");
+            Check(!backend.Texts.Exists(t => t.Value == "TAILS" || t.Value.StartsWith("TAILS ")),
+                "collection tooltip omits Safe Port's impossible Tails outcome");
+            Check(!backend.Texts.Exists(t => t.Value == "ADDITIONAL EFFECT"),
+                "collection tooltip omits an empty additional-effect section");
+
+            int doublerIndex = Content.CoinOrder.FindIndex(coin => coin.Id == CoinCatalog.Doubler.Id);
+            Ui.Profile.Collected.Add(CoinCatalog.Doubler.Id);
+            Ui.CollectionPage = doublerIndex / 15 + 1;
+            platform.X = 215 + (doublerIndex % 5) * 170 + 80;
+            platform.Y = 260 + ((doublerIndex % 15) / 5) * 154 + 44;
+            backend.Texts.Clear();
+            AppCore.Draw();
+            var headsLabel = backend.Texts.Find(t => t.Value == "HEADS");
+            Check(headsLabel.Value != null && backend.Texts.Exists(t => t.Value.Contains("doubled for every Doubler")),
+                "collection tooltip uses the custom Heads description for a stateful score");
+
+            int cheerleaderIndex = Content.CoinOrder.FindIndex(coin => coin.Id == CoinCatalog.Cheerleader.Id);
+            Ui.Profile.Collected.Add(CoinCatalog.Cheerleader.Id);
+            Ui.CollectionPage = cheerleaderIndex / 15 + 1;
+            platform.X = 215 + (cheerleaderIndex % 5) * 170 + 80;
+            platform.Y = 260 + ((cheerleaderIndex % 15) / 5) * 154 + 44;
+            backend.Texts.Clear();
+            AppCore.Draw();
+            headsLabel = backend.Texts.Find(t => t.Value == "HEADS");
+            var buffsLabel = backend.Texts.Find(t => t.Value == "BUFFS");
+            Check(headsLabel.Value != null && buffsLabel.Value != null && headsLabel.Y < buffsLabel.Y &&
+                backend.Texts.Exists(t => t.Value.Contains("20%")),
+                "collection tooltip generates a separate typed Buffs section after outcomes");
+
+            int echoIndex = Content.CoinOrder.FindIndex(coin => coin.Id == CoinCatalog.TrueEcho.Id);
+            Ui.Profile.Collected.Add(CoinCatalog.TrueEcho.Id);
+            Ui.CollectionPage = echoIndex / 15 + 1;
+            platform.X = 215 + (echoIndex % 5) * 170 + 80;
+            platform.Y = 260 + ((echoIndex % 15) / 5) * 154 + 44;
+            backend.Texts.Clear();
+            AppCore.Draw();
+            Check(backend.Texts.Exists(t => t.Value == "SPECIAL RULE"),
+                "collection tooltip shows an explicit description for hook-driven behavior");
+        }
+        finally
+        {
+            CoinCatalog.Normal.On.Coins.Odds -= forceHeads;
+            Hooks.Unbind();
+            Ui.Game = null;
+            Ui.Holding = false;
+            RuntimeMode.Configure(false, false);
+            ((HeadlessBackend)Gfx.Backend).Capture = false;
+        }
+    }
+
+    static void CollectionCatalogCategories()
+    {
+        var oldProfile = Ui.Profile;
+        var backend = (HeadlessBackend)Gfx.Backend;
+        try
+        {
+            Ui.Profile = Profile.New();
+            Ui.Game = null;
+            Ui.Screen = "collection";
+            Ui.CollectionPage = 1;
+            Ui.CollectionFilter = "ALL";
+            Ui.CollectionSort = "order";
+            Ui.Holding = false;
+            backend.Capture = true;
+
+            Ui.CollectionCategory = "coins";
+            AppCore.Draw();
+            var chipsTab = Ui.Buttons.Find(button => button.Label == "CHIPS");
+            Check(chipsTab != null, "collection categories are keyboard and controller focusable");
+            chipsTab.Action();
+            Check(Ui.CollectionCategory == "items" && Ui.CollectionPage == 1, "selecting the Chips tab changes category and resets paging");
+
+            backend.Images.Clear(); backend.Texts.Clear();
+            AppCore.Draw();
+            Check(backend.Images.ContainsKey("items/force_heads") && backend.Texts.Exists(t => t.Value == "Force Heads"),
+                "collection shows chip artwork and names");
+
+            Ui.CollectionCategory = "relics";
+            backend.Images.Clear(); backend.Texts.Clear();
+            AppCore.Draw();
+            Check(backend.Images.ContainsKey("relics/magnet") && backend.Texts.Exists(t => t.Value == "Magnet"),
+                "collection shows relic artwork and names");
+
+            Ui.CollectionCategory = "characters";
+            backend.Images.Clear(); backend.Texts.Clear();
+            AppCore.Draw();
+            Check(backend.Images.ContainsKey("characters/blade") && backend.Texts.Exists(t => t.Value == "The Blade"),
+                "collection shows character portraits and names");
+
+            Ui.CollectionCategory = "coins";
+            Ui.Profile.Collected.Add(CoinCatalog.Normal.Id);
+            Ui.CollectionPage = 1;
+            Ui.CollectionSort = "order";
+            var platform = (HeadlessPlatform)Ui.Platform;
+            platform.X = 295;
+            platform.Y = 304;
+            backend.Texts.Clear();
+            AppCore.Draw();
+            Check(Ui.HoveredCoin != null && Ui.HoveredCoin.Id == CoinCatalog.Normal.Id &&
+                backend.Texts.Exists(t => t.Value == "UPGRADES") &&
+                backend.Texts.Exists(t => t.Value == "LUCKY DAY") &&
+                backend.Texts.Exists(t => t.Value == "MATHEMATICIAN"),
+                "coin collection hover lists all its upgrades together in one section");
+        }
+        finally
+        {
+            Ui.Profile = oldProfile;
+            Ui.CollectionCategory = "coins";
+            backend.Capture = false;
+            Ui.Game = null;
+        }
+    }
+
+    static void CoinTypeColorPalette()
+    {
+        foreach (CoinType type in Enum.GetValues(typeof(CoinType)))
+        {
+            var color = D.CoinTypeColor(type);
+            Check(DefinitionKeys.CoinColorHex(type).Length == 6 && color.R >= 0 && color.R <= 1,
+                "every coin type has a valid RGB palette color");
+        }
+        var steel = D.CoinTypeColor(CoinType.Steel);
+        Check(steel.R > .7f && Math.Abs(steel.R - steel.G) < .03f && Math.Abs(steel.G - steel.B) < .03f,
+            "Steel uses a gray coin-type color");
+        Check(D.CoinTypeColor(CoinType.Blood).R > D.CoinTypeColor(CoinType.Blood).G,
+            "Blood uses its red coin-type color");
+    }
+
     static void TitleAndEncounterScreens()
     {
         RuntimeMode.Configure(false, false);
@@ -233,6 +450,7 @@ static class FeatureParityTests
         AppCore.MousePressed(100, 630);
         Check(RuntimeMode.Dev && Ui.Screen == "select" && Ui.Profile.Collected.Count == Content.CoinOrder.Count && !A.HasSavedRun(),
             "triple-clicking the title version opens Developer Mode with the full collection");
+        Check(Ui.Platform.ReadSave(RuntimeMode.DeveloperModePreference) == "1", "enabling Developer Mode persists the preference");
         A.Go("options");
         Ui.OptionsTab = "game";
         AppCore.Draw();
@@ -240,6 +458,7 @@ static class FeatureParityTests
         AppCore.MousePressed(640, 668);
         Check(!RuntimeMode.Dev && Ui.Screen == "title" && A.HasSavedRun(),
             "the Options button exits Developer Mode and preserves the normal saved run");
+        Check(Ui.Platform.ReadSave(RuntimeMode.DeveloperModePreference) == "0", "exiting Developer Mode persists the preference");
         A.DeleteRun();
 
         Ui.SelectedCharacter = "blade";
@@ -271,7 +490,7 @@ static class FeatureParityTests
 
     static void SeedSweep(int first, int count)
     {
-        string[] characters = { "blade", "trader", "seer" };
+        string[] characters = { "blade", "trader", "seer", "tinkerer", "naturalist", "conductor" };
         for (int seed = first; seed < first + count; seed++)
         {
             var game = Game.New(seed, characters[seed % characters.Length], null, null, false, 1 + seed % Game.Stakes.Count);

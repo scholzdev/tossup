@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "miser";
         public override string Name => "Miser";
         public override string Description => "Heads: 1 point per 10 gold you hold.";
+        public override string HeadsDescription => "Score 1 point per 10 gold you hold.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 15;
         public override int EnergyCost => 0;

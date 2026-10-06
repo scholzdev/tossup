@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "cold_streak";
         public override string Name => "Cold Streak";
         public override string Description => "Tails: 2 points per Tails in a row (max 20). Heads: 1 point.";
+        public override string TailsDescription => "Score 2 points per Tails in a row (max 20).";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 15;
         public override int EnergyCost => 0;

@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "lucky_seven";
         public override string Name => "Lucky Seven";
         public override string Description => "1 in 7: lands Heads and pays triple points.";
+        public override string SpecialRule => "One flip in seven is forced to Heads and triples the payout.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
         public override int EnergyCost => 0;

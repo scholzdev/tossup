@@ -81,12 +81,13 @@ namespace Tossup
                 if(args[i]=="-tossup-sandbox"&&i+1<args.Length)sandboxScenePath=args[++i];
             }
             bool sandboxMode=Environment.GetEnvironmentVariable("TOSSUP_SANDBOX")=="1"||!string.IsNullOrEmpty(sandboxScenePath);
-            RuntimeMode.Configure(devMode,sandboxMode);
             shotMode = shotsDir != null;
             saveDir = shotMode ? Path.Combine(Application.temporaryCachePath, "shots-save") : Application.persistentDataPath;
             if (shotMode && Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
             Directory.CreateDirectory(saveDir);
 
+            if (!shotMode) devMode |= ReadSave(RuntimeMode.DeveloperModePreference) == "1";
+            RuntimeMode.Configure(devMode,sandboxMode);
             if (!shotMode && !RuntimeMode.Dev && !RuntimeMode.Sandbox) ImportLegacySaves();
             Application.logMessageReceived += RecordCrash;
             backend = new UnityGfxBackend();

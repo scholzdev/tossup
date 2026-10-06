@@ -25,6 +25,25 @@ namespace Tossup
         public static readonly Dictionary<string, AugmentDef> AugmentDefs = BuildAugments();
         public static readonly List<string> AugmentOrder = new List<string> { "bankers_cut", "all_in", "hedge_fund", "scrap_dealer", "epic_windfall", "reforger", "type_specialist", "upgrade_press" };
 
+        public static double CharacterPerkValue(GameState game, CharacterPerkType type)
+        {
+            if (game == null || string.IsNullOrEmpty(game.CharacterId) || !Content.Characters.TryGetValue(game.CharacterId, out var character) || character.Perks == null)
+                return 0;
+
+            double value = 0;
+            foreach (var perk in character.Perks)
+                if (perk.Type == type) value += perk.Value;
+            return value;
+        }
+
+        static void ApplyCharacterEncounterPerks(GameState game, Encounter encounter)
+        {
+            game.Player.Energy += CharacterPerkValue(game, CharacterPerkType.StartEnergy);
+            encounter.ExtraExchanges += (int)CharacterPerkValue(game, CharacterPerkType.ExtraExchange);
+            encounter.ComboStep += CharacterPerkValue(game, CharacterPerkType.ComboStep);
+            encounter.Shield += CharacterPerkValue(game, CharacterPerkType.ComboShield);
+        }
+
         static Dictionary<string, ModifierDef> BuildModifiers()
         {
             var d = new Dictionary<string, ModifierDef>();
@@ -127,7 +146,7 @@ namespace Tossup
         static double DeckQuota(GameState game)
         {
             double power=0;
-            foreach(var coin in game.Coins){var d=coin.Definition;SandboxOdds odds=null;game.Sandbox?.Odds.TryGetValue(coin.Id,out odds);double tie=odds?.Tie??d.TieProbability;double heads=Math.Max(0,Math.Min(1-tie,(odds?.Heads??d.Probability)+coin.Bonus+(HasType(coin,"fortune")?game.FortuneBonus:0)));if(coin.Upgrade!=null&&d.TryGetUpgrade(coin.Upgrade.Id,out var u))heads=Math.Min(1-tie,heads+(u.Type==UpgradeType.Probability?u.Value:0));double tails=1-heads-tie;double expected=heads*PrintedNet(d.Heads)+tails*PrintedNet(d.Tails)+tie*PrintedNet(TieEffects(coin.Id));if(coin.Upgrade!=null&&d.TryGetUpgrade(coin.Upgrade.Id,out var up))expected+=heads*(up.Type==UpgradeType.ScoreBonus?up.Value:0);
+            foreach(var coin in game.Coins){var d=coin.Definition;SandboxOdds odds=null;game.Sandbox?.Odds.TryGetValue(coin.Id,out odds);double tie=odds?.Tie??d.TieProbability;double heads=Math.Max(0,Math.Min(1-tie,(odds?.Heads??d.Probability)+coin.Bonus+(HasType(coin,"fortune")?game.FortuneBonus:0)+d.UpgradeHeadsProbability(coin.Upgrade)));double tails=1-heads-tie;double expected=heads*PrintedNet(d.EffectsFor(OutcomeSide.Heads,coin.Upgrade))+tails*PrintedNet(d.EffectsFor(OutcomeSide.Tails,coin.Upgrade))+tie*PrintedNet(d.EffectsFor(OutcomeSide.Edge,coin.Upgrade));
                 expected+=d.EstimateExtraScore(game,coin,heads,tails);power+=Math.Max(0,expected);}
             double mult=Rule(game,"quota_mult",1), basis=QuotaFor(game.EncounterIndex,game.Coins.Count,mult), excess=Math.Max(0,power-1.5*game.Coins.Count);
             return basis+Math.Floor(excess*1.3*mult+.5);
@@ -263,7 +282,7 @@ namespace Tossup
         public static int ExchangesLeft(GameState g)=>(int)Rule(g,"exchange_max",ExchangeMax)+g.Encounter.ExtraExchanges-g.Encounter.Exchanges;
         public static int SlotPrice(GameState g)=>SlotCost+SlotStep*(g.Slots-StartMax);
         public static bool BuySlot(GameState g){int cost=SlotPrice(g);if(g.Phase!=Phase.Shop||g.Slots>=DeckMax||g.Player.Gold<cost)return false;g.Player.Gold-=cost;g.Slots++;Log(g,"Bought deck slot "+g.Slots+" for "+cost+" gold.");return true;}
-        public static int CoinOfferCost(GameState g,int index){if(index<0||index>=g.ShopOffers.Count||g.ShopOffers[index]==null)return -1;var coin=g.ShopOffers[index];int cost=coin.Cost;if(index<g.ShopUpgrades.Count&&g.ShopUpgrades[index]!=null&&coin.TryGetUpgrade(g.ShopUpgrades[index].Id,out var u))cost+=u.Cost;return Math.Max(0,Price(g,cost)-(int)g.Shop.CoinPriceDiscount);}
+        public static int CoinOfferCost(GameState g,int index){if(index<0||index>=g.ShopOffers.Count||g.ShopOffers[index]==null)return -1;var coin=g.ShopOffers[index];int cost=coin.Cost;if(index<g.ShopUpgrades.Count&&g.ShopUpgrades[index]!=null&&coin.TryGetUpgrade(g.ShopUpgrades[index].Id,out var u))cost+=u.Cost;return Math.Max(0,Price(g,cost)-(int)g.Shop.CoinPriceDiscount-(int)CharacterPerkValue(g,CharacterPerkType.CoinDiscount));}
 
         static void SetShopStock(GameState g)
         {

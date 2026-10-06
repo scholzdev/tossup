@@ -11,6 +11,36 @@ static class LatestTests
     public static void Run()
     {
         Check(Content.CoinOrder.Count==59&&Content.Coins.Count==59,"all 59 coins are registered");
+        Check(Content.CharacterOrder.Count==6,"six characters are registered");
+        var characterProfile=Profile.New();
+        Check(Profile.CharacterUnlocked(characterProfile,Content.CharacterOrder[0]),"the first character starts unlocked");
+        for(int i=1;i<Content.CharacterOrder.Count;i++)
+            Check(!Profile.CharacterUnlocked(characterProfile,Content.CharacterOrder[i]),"later characters start locked");
+        for(int i=0;i+1<Content.CharacterOrder.Count;i++)
+        {
+            Check(Profile.RecordWin(characterProfile,Content.CharacterOrder[i])==Content.CharacterOrder[i+1],"a win unlocks the next character");
+            Check(Profile.CharacterUnlocked(characterProfile,Content.CharacterOrder[i+1]),"unlocked character can be selected");
+        }
+        foreach(string characterId in new[]{"tinkerer","naturalist","conductor"})
+        {
+            var loadout=Profile.Loadout(Profile.New(),characterId,Game.StartMax,Game.MaxCopies);
+            var definitions=loadout.ConvertAll(id=>Content.Coins[id]);
+            var characterRun=Game.New(900+Content.CharacterOrder.IndexOf(characterId),characterId,null,definitions,false);
+            Check(loadout.Count>0&&loadout.Count<=Game.StartMax&&characterRun.Coins.Count==loadout.Count,"valid default deck starts for "+characterId);
+            Check(Content.Characters[characterId].Perks.Count==2,"two visible perks are defined for "+characterId);
+        }
+        var tinkerer=Game.New(911,"tinkerer",null,null,false);
+        Check(tinkerer.Player.Energy==tinkerer.Player.MaxEnergy+1,"Tinkerer starts each level with bonus energy");
+        tinkerer.ShopOffers=new List<CoinDef>{Content.Coins["normal"]};
+        Check(Game.CoinOfferCost(tinkerer,0)==Content.Coins["normal"].Cost-2,"Tinkerer discounts shop coin offers");
+        var naturalist=Game.New(912,"naturalist",null,null,false);
+        Check(naturalist.Encounter.ExtraExchanges==1&&Game.CharacterPerkValue(naturalist,CharacterPerkType.TailsGold)==1,"Naturalist gains tails gold and an extra exchange");
+        var naturalistCoin=naturalist.Coins.Find(c=>c.Id=="normal");
+        naturalist.Pending=new FlipState{Uid=naturalistCoin.Uid,CoinId=naturalistCoin.Id,Raw=Side.Tails,Result=Side.Tails};
+        double naturalistGold=naturalist.Player.Gold;
+        Check(Game.Resolve(naturalist)&&naturalist.Player.Gold==naturalistGold+1,"Naturalist earns perk gold when Tails resolves");
+        var conductor=Game.New(913,"conductor",null,null,false);
+        Check(Near(conductor.Encounter.ComboStep,Game.ComboStep+.2)&&conductor.Encounter.Shield==1,"Conductor improves combo growth and starts shielded");
         Check(Content.Characters["trader"].Pool.Contains(CoinCatalog.SafePort),"Safe Port is available to the Trader");
         Check(Content.ItemOrder.Count==11&&Content.Items.Count==11,"all 11 chips are registered");
         Check(Game.Route.Count==8&&Game.Route[7].Boss,"eight-stage route ends at The House");

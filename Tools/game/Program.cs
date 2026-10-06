@@ -8,6 +8,66 @@ using Tossup;
 static class Program
 {
     static object Effects(IReadOnlyList<Effect> list) => list.Select(e => new { type=DefinitionKeys.Key(e.Type), amount=e.Amount, coins=e.Coins, kind=e.Kind.HasValue?DefinitionKeys.Key(e.Kind.Value):null }).ToArray();
+    static object Buff(BuffSpec buff) => new
+    {
+        id = buff.Id,
+        trigger = DefinitionKeys.Key(buff.Trigger),
+        target = DefinitionKeys.Key(buff.Target.Kind),
+        target_type = buff.Target.Type.HasValue ? DefinitionKeys.Key(buff.Target.Type.Value) : null,
+        target_count = buff.Target.Count,
+        applies_on = buff.AppliesOn.HasValue ? DefinitionKeys.Key(buff.AppliesOn.Value) : null,
+        effect = Effects(new[] { buff.Effect })
+    };
+
+    static object UpgradeData(Upgrade upgrade) => new
+    {
+        name = upgrade.Name,
+        description = upgrade.Description,
+        cost = upgrade.Cost,
+        heads_score = upgrade.Type == UpgradeType.ScoreBonus ? upgrade.Value : 0,
+        heads_probability = upgrade.Type == UpgradeType.Probability ? upgrade.Value : 0,
+        changes = upgrade.Changes.Select(change => new
+        {
+            kind = DefinitionKeys.Key(change.Kind),
+            side = DefinitionKeys.Key(change.Side),
+            amount = change.Amount,
+            effect = change.Effect == null ? null : Effects(new[] { change.Effect }),
+            buff = change.Buff == null ? null : Buff(change.Buff)
+        })
+    };
+
+    static object CoinData(CoinDef coin) => new
+    {
+        id = coin.Id,
+        name = coin.Name,
+        description = coin.Description,
+        special_rule = coin.SpecialRule,
+        heads_description = coin.HeadsDescription,
+        tails_description = coin.TailsDescription,
+        edge_description = coin.EdgeDescription,
+        rarity = DefinitionKeys.RarityCode(coin.Rarity),
+        probability = coin.Probability,
+        tie_probability = coin.TieProbability,
+        cost = coin.Cost,
+        energy_cost = coin.EnergyCost,
+        coin_types = coin.Types.Select(type => DefinitionKeys.Key(type)),
+        heads = Effects(coin.Heads),
+        tails = Effects(coin.Tails),
+        edge = Effects(coin.Edge),
+        buffs = coin.Buffs.Select(Buff),
+        upgrades = coin.Upgrades.ToDictionary(upgrade => upgrade.Id, UpgradeData),
+        hooks = new[]
+        {
+            ("on_deal", nameof(CoinDef.OnDeal)),
+            ("on_discard", nameof(CoinDef.OnDiscard)),
+            ("on_flip", nameof(CoinDef.OnFlip)),
+            ("on_resolve", nameof(CoinDef.OnResolve)),
+            ("on_odds", nameof(CoinDef.OnOdds)),
+            ("grow", nameof(CoinDef.Grow)),
+            ("register", nameof(CoinDef.Register))
+        }.Where(hook => coin.HasHook(hook.Item2)).Select(hook => hook.Item1).ToArray()
+    };
+
     static string root;
     public static int Main(string[] args)
     {
@@ -30,7 +90,7 @@ static class Program
         foreach(var p in deDoc.RootElement.EnumerateObject()) (p.Value.ValueKind==JsonValueKind.Object ? de : flat)[p.Name]=p.Value;
         object data = new {
             version=JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(root,"Assets","Resources","version.json"))),
-            coins=Content.CoinOrder.Select(c=> { return new { id=c.Id, name=c.Name,description=c.Description,heads_description=c.HeadsDescription,rarity=DefinitionKeys.RarityCode(c.Rarity),probability=c.Probability,tie_probability=c.TieProbability,cost=c.Cost,energy_cost=c.EnergyCost,coin_types=c.Types.Select(type=>DefinitionKeys.Key(type)),heads=Effects(c.Heads),tails=Effects(c.Tails),upgrades=c.Upgrades.ToDictionary(u=>u.Id,u=>new {name=u.Name,description=u.Description,cost=u.Cost,heads_score=u.Type==UpgradeType.ScoreBonus?u.Value:0,heads_probability=u.Type==UpgradeType.Probability?u.Value:0}),hooks=new[]{("on_deal",nameof(CoinDef.OnDeal)),("on_discard",nameof(CoinDef.OnDiscard)),("on_flip",nameof(CoinDef.OnFlip)),("on_resolve",nameof(CoinDef.OnResolve)),("on_odds",nameof(CoinDef.OnOdds)),("grow",nameof(CoinDef.Grow)),("register",nameof(CoinDef.Register))}.Where(x=>c.HasHook(x.Item2)).Select(x=>x.Item1).ToArray()}; }).ToArray(),
+            coins=Content.CoinOrder.Select(CoinData).ToArray(),
             items=Content.Items.Values.OrderBy(x=>x.Id,StringComparer.Ordinal).Select(c=>new { id=c.Id,name=c.Name,description=c.Description,cost=c.Cost,@short=c.Short }).ToArray(),
             relics=Content.Relics.Values.OrderBy(x=>x.Id,StringComparer.Ordinal).Select(c=>new {id=c.Id,name=c.Name,description=c.Description,hooks=new[]{"register"}}).ToArray(),
             characters=Content.CharacterOrder.Select(id=> {var c=Content.Characters[id];return new {id,name=c.Name,description=c.Description,deck=c.Deck.Select(x=>x.Id),pool=c.Pool.Select(x=>x.Id),locked=c.Locked.Select(x=>x.Id).ToArray()};}).ToArray(),

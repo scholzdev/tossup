@@ -14,8 +14,13 @@ namespace Tossup.Coins
         public override double Probability => 0.7;
         public override double TieProbability => 0;
         public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Rhythm };
-        public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2), Effect.NextOdds(0.2, 2) };
-        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.NextOdds(0.2, 1) };
+        public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2) };
+        public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override IReadOnlyList<BuffSpec> Buffs { get; } = new[]
+        {
+            new BuffSpec("cheerleader_heads_odds", OutcomeSide.Heads, BuffTarget.NextCoins(2), Effect.NextOdds(.2)),
+            new BuffSpec("cheerleader_tails_odds", OutcomeSide.Tails, BuffTarget.NextCoins(), Effect.NextOdds(.2)),
+        };
     }
 }

@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "martyr";
         public override string Name => "Martyr";
         public override string Description => "Tails: quota +3. Heads: 4 points, +1 per Tails so far this level.";
+        public override string HeadsDescription => "Score 4 points, plus 1 for every Tails this level.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
         public override int EnergyCost => 1;

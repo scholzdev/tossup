@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "hourglass";
         public override string Name => "Hourglass Coin";
         public override string Description => "Every 2 seconds, its odds shift to favor Heads, Edge, then Tails";
+        public override string SpecialRule => "Every 2 seconds, its odds shift to favor Heads, Edge, then Tails.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 22;
         public override int EnergyCost => 1;

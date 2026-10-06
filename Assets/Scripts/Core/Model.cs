@@ -84,10 +84,15 @@ namespace Tossup
     // fresh and starts with the following coin.
     public sealed class Buff
     {
+        // Kind is retained as a stable save key for the original encounter buffs.
         public string Kind;
         public double Amount;
         public int Left;
         public bool Fresh;
+        public string SpecId;
+        public CoinType? TargetType;
+        public OutcomeSide? AppliesOn;
+        public Effect AppliedEffect;
     }
 
     public sealed class Combo
@@ -102,12 +107,14 @@ namespace Tossup
     public sealed class FlipState
     {
         public int Uid;
+        public string CoinId;
         public double Probability;
         public double TieProbability;
         public string Raw, Result, Final;
         public bool Forced;
         public string Altered; // "BUFF", "RELIC", "THE HOUSE": shown so a changed side is never a mystery
         public List<Effect> BaseEffects;
+        public List<BuffSpec> BaseBuffs;
         public Combo Combo;
         public double? Gained, Penalty;
     }
@@ -117,6 +124,7 @@ namespace Tossup
     {
         public string Result, Raw;
         public List<Effect> Effects = new List<Effect>();
+        public List<BuffSpec> Buffs = new List<BuffSpec>();
         public bool CashOut;
     }
 

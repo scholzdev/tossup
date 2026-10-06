@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "chain";
         public override string Name => "Chain";
         public override string Description => "Heads: 2 points per Heads in a row, including this one.";
+        public override string HeadsDescription => "Score 2 points per Heads in a row, including this one.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 15;
         public override int EnergyCost => 0;

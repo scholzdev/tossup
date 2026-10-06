@@ -8,6 +8,8 @@ namespace Tossup.Coins
         public override string Id => "snowball";
         public override string Name => "Snowball";
         public override string Description => "Heads gains +1 point every flip for the whole run (max +8).";
+        public override string HeadsDescription => "Score 3 points, plus 1 for every stored Snowball stack.";
+        public override string SpecialRule => "Gain 1 permanent point of Heads power after each flip (max +8).";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 24;
         public override int EnergyCost => 1;

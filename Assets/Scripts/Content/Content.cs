@@ -18,7 +18,8 @@ namespace Tossup
 
         public static readonly List<string> RelicOrder = new List<string> { "magnet", "penny", "clock", "metronome", "baton" };
 
-        public static readonly List<string> CharacterOrder = new List<string> { "blade", "seer", "trader" };
+        public static readonly List<string> CharacterOrder = new List<string>
+            { "blade", "seer", "trader", "tinkerer", "naturalist", "conductor" };
 
         public static readonly Dictionary<string, CoinDef> Coins = Index(CoinOrder, c => c.Id);
         public static readonly Dictionary<string, ItemDef> Items = BuildItemMap();

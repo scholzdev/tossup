@@ -9,6 +9,8 @@ namespace Tossup.Coins
         public override string Id => "jester";
         public override string Name => "Jester";
         public override string Description => "Heads or Tails, it does something random.";
+        public override string HeadsDescription => "Trigger a random effect.";
+        public override string TailsDescription => "Trigger a random effect.";
         public override Rarity Rarity => Rarity.Epic;
         public override int Cost => 15;
         public override int EnergyCost => 1;

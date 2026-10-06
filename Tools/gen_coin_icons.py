@@ -392,7 +392,7 @@ def make_icon(coin_id, value):
     symbol = transparent.copy()
     emblem(symbol, coin_id)
     image = Image.alpha_composite(image, symbol)
-    image.resize((OUT_SIZE, OUT_SIZE), Image.Resampling.LANCZOS).save(OUT / f"{coin_id}.png")
+    image.resize((OUT_SIZE, OUT_SIZE), Image.Resampling.NEAREST).save(OUT / f"{coin_id}.png")
 
 
 def main():

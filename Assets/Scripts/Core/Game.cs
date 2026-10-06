@@ -149,10 +149,10 @@ namespace Tossup
                 if (e.Bonus.TryGetValue(item.Uid, out double b)) bonus = b;
                 magnet = e.Magnet;
                 foreach (var buff in e.Buffs)
-                    if (buff.Kind == "odds" && !buff.Fresh) boost += buff.Amount;
+                    if (buff.Kind == "odds" && !buff.Fresh && BuffTargets(buff, item)) boost += buff.Amount;
             }
             var def = item.Definition;
-            double upgrade = item.Upgrade != null && def.TryGetUpgrade(item.Upgrade.Id, out var up) ? (up.Type==UpgradeType.Probability?up.Value:0) : 0;
+            double upgrade = def.UpgradeHeadsProbability(item.Upgrade);
             double fortune = HasType(item, "fortune") ? game.FortuneBonus : 0;
             double p = (sandboxOdds?.Heads ?? def.Probability) + item.Bonus + bonus + magnet + boost + upgrade + fortune;
             double edge = Math.Max(0, Math.Min(1, sandboxOdds?.Tie ?? def.TieProbability));
@@ -242,6 +242,7 @@ namespace Tossup
             };
             game.Player.Energy = game.Player.MaxEnergy;
             ApplyModifier(game);
+            ApplyCharacterEncounterPerks(game, game.Encounter);
             TriggerRunHook(game, RunHookEvent.EncounterStart);
             game.Pending = null;
             game.LastResult = null;
@@ -447,10 +448,37 @@ namespace Tossup
             game.Encounter.Buffs.Add(new Buff { Kind = kind, Amount = amount, Left = coins ?? 1, Fresh = !immediate });
         }
 
-        static Buff BuffActive(GameState game, string kind)
+        public static void AddBuff(GameState game, BuffSpec spec, bool immediate = false)
+        {
+            if (game == null) throw new ArgumentNullException(nameof(game));
+            if (spec == null) throw new ArgumentNullException(nameof(spec));
+            var buff = new Buff
+            {
+                Kind = "effect", SpecId = spec.Id, TargetType = spec.Target.Type,
+                AppliesOn = spec.AppliesOn, AppliedEffect = spec.Effect.Copy(),
+                Left = spec.Target.Count, Fresh = !immediate,
+            };
+            switch (spec.Effect.Type)
+            {
+                case EffectType.NextOdds: buff.Kind = "odds"; buff.Amount = spec.Effect.Amount; break;
+                case EffectType.NextMult: buff.Kind = "mult"; buff.Amount = spec.Effect.Amount; break;
+                case EffectType.NextSwap: buff.Kind = "swap"; break;
+                case EffectType.NextHeads: buff.Kind = "heads"; break;
+                case EffectType.TypeBuff:
+                    if (!spec.Effect.Kind.HasValue) throw new ArgumentException("Type buffs require a coin type.", nameof(spec));
+                    buff.Kind = DefinitionKeys.Key(spec.Effect.Kind.Value);
+                    buff.TargetType = spec.Effect.Kind;
+                    break;
+            }
+            game.Encounter.Buffs.Add(buff);
+        }
+
+        static bool BuffTargets(Buff buff, CoinInst item) => !buff.TargetType.HasValue || HasType(item, buff.TargetType.Value);
+
+        static Buff BuffActive(GameState game, string kind, CoinInst item)
         {
             foreach (var buff in game.Encounter.Buffs)
-                if (buff.Kind == kind && !buff.Fresh) return buff;
+                if (buff.Kind == kind && !buff.Fresh && BuffTargets(buff, item)) return buff;
             return null;
         }
 
@@ -460,7 +488,8 @@ namespace Tossup
             foreach (var buff in game.Encounter.Buffs)
             {
                 if (buff.Fresh) buff.Fresh = false;
-                else if (!IsTypeBuff(buff.Kind) || HasType(item, buff.Kind)) buff.Left--;
+                else if (buff.TargetType.HasValue ? HasType(item, buff.TargetType.Value) :
+                    !IsTypeBuff(buff.Kind) || HasType(item, buff.Kind)) buff.Left--;
                 if (buff.Left > 0) kept.Add(buff);
             }
             game.Encounter.Buffs = kept;
@@ -481,7 +510,7 @@ namespace Tossup
                 flip.Forced = true;
                 flip.Altered = "TUTORIAL";
             }
-            if (BuffActive(game, "heads") != null) { flip.Result = Side.Heads; flip.Altered = "BUFF"; }
+            if (BuffActive(game, "heads", item) != null) { flip.Result = Side.Heads; flip.Altered = "BUFF"; }
             Signal.Emit(GameSignal.CoinFlip, new GameEvent { Game = game, Inst = item, Flip = flip });
             Finalize(game, item, flip);
         }
@@ -501,7 +530,7 @@ namespace Tossup
                 game.Player.Gold -= lost;
                 Log(game, "EMERGENCY FLIP: -" + N(lost) + " GOLD FOR UNPAID ENERGY.");
             }
-            game.Pending = new FlipState { Uid = uid, Probability = probability, TieProbability = tieProbability };
+            game.Pending = new FlipState { Uid = uid, CoinId = item.Id, Probability = probability, TieProbability = tieProbability };
             game.Dealt = null;
             game.Encounter.Queue.Remove(uid); // the selected coin leaves the bank at once
             game.Encounter.Played.Add(uid);
@@ -775,23 +804,33 @@ namespace Tossup
             if (comboBroke) e.ComboPot = 0;
             // hooks get a private copy of the effect list so they can edit it without touching the def
             var res = new Res { Result = final, Raw = result.Raw };
-            bool swap = BuffActive(game, "swap") != null;
+            bool swap = BuffActive(game, "swap", item) != null;
             bool headsEffects = final != Side.Tie && (swap ? final != Side.Heads : final == Side.Heads);
-            var sideEffects = final == Side.Tie ? TieEffects(item.Id) : headsEffects ? def.Heads : def.Tails;
-            foreach (var effect in sideEffects) res.Effects.Add(effect.Copy());
-            if (headsEffects && item.Upgrade != null && def.TryGetUpgrade(item.Upgrade.Id, out var upgrade) && (upgrade.Type==UpgradeType.ScoreBonus?upgrade.Value:0) != 0)
-                res.Effects.Add(new Effect(EffectType.Score, (upgrade.Type==UpgradeType.ScoreBonus?upgrade.Value:0)));
+            var outcome = final == Side.Tie ? OutcomeSide.Edge : headsEffects ? OutcomeSide.Heads : OutcomeSide.Tails;
+            foreach (var effect in def.EffectsFor(outcome, item.Upgrade)) res.Effects.Add(effect.Copy());
+            double tailsGold = final == Side.Tails ? CharacterPerkValue(game, CharacterPerkType.TailsGold) : 0;
+            if (tailsGold > 0) res.Effects.Add(Effect.Gold(tailsGold));
             Signal.Emit(GameSignal.CoinResolve, new GameEvent { Game = game, Inst = item, Res = res });
+            foreach (var buff in def.BuffsFor(item.Upgrade))
+                if (buff.Trigger == outcome) res.Buffs.Add(buff.Copy());
+            foreach (var buff in res.Buffs) AddBuff(game, buff);
+            foreach (var buff in e.Buffs)
+                if (!buff.Fresh && buff.Kind == "effect" &&
+                    (!buff.TargetType.HasValue || HasType(item, buff.TargetType.Value)) &&
+                    (!buff.AppliesOn.HasValue || buff.AppliesOn == outcome) && buff.AppliedEffect != null)
+                    res.Effects.Add(buff.AppliedEffect.Copy());
             if (final == Side.Heads && game.AugmentData.TryGetValue("type_specialist", out var specialist) && HasType(item, specialist) && e.TypeSpecialistPaid.Add(item.Uid))
                 res.Effects.Add(new Effect(EffectType.Score, 1));
             ApplyTypeBuffs(game, item, final, comboBroke, res.Effects);
             if(final==Side.Tails)e.Tails++;
             result.BaseEffects = new List<Effect>(); // what this coin did before multipliers (True Echo repeats it)
             foreach (var effect in res.Effects) result.BaseEffects.Add(effect.Copy());
+            result.BaseBuffs = new List<BuffSpec>();
+            foreach (var buff in res.Buffs) result.BaseBuffs.Add(buff.Copy());
             double multiplier = 1;
             string messagesAllIn = null;
             foreach (var buff in e.Buffs)
-                if (buff.Kind == "mult" && !buff.Fresh) multiplier *= buff.Amount;
+                if (buff.Kind == "mult" && !buff.Fresh && BuffTargets(buff, item)) multiplier *= buff.Amount;
             double combo = Math.Min(e.ComboCap, 1 + e.ComboStep * (Math.Max(e.ComboLen, 1) - 1));
             if (e.PushUsed && HasAugment(game, "all_in"))
             {

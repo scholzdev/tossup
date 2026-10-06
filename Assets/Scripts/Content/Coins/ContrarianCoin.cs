@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "contrarian";
         public override string Name => "Contrarian";
         public override string Description => "Always lands opposite of the previous flip.";
+        public override string SpecialRule => "Always lands opposite of the previous flip.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
         public override int EnergyCost => 0;

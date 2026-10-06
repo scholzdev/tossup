@@ -8,6 +8,7 @@ namespace Tossup.Coins
         public override string Id => "gambler";
         public override string Name => "Gambler";
         public override string Description => "Heads is a bet: 50% triple points, otherwise nothing.";
+        public override string HeadsDescription => "A 50% bet: triple the points or score nothing.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 22;
         public override int EnergyCost => 1;

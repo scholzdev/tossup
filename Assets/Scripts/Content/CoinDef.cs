@@ -28,10 +28,44 @@ namespace Tossup
         public abstract IReadOnlyList<Effect> Heads { get; }
         public abstract IReadOnlyList<Effect> Tails { get; }
         public abstract IReadOnlyList<Effect> Edge { get; }
+        // Hook-driven behavior belongs here; outcome and buff text is generated from its typed data.
+        public virtual string SpecialRule => null;
+        public virtual IReadOnlyList<BuffSpec> Buffs => Array.Empty<BuffSpec>();
         public virtual string HeadsDescription => null;
         public virtual string TailsDescription => null;
         public virtual string EdgeDescription => null;
         public virtual IReadOnlyList<Upgrade> Upgrades => Array.Empty<Upgrade>();
+
+        public IReadOnlyList<Effect> EffectsFor(OutcomeSide side, Upgrade upgrade = null)
+        {
+            IReadOnlyList<Effect> source = side == OutcomeSide.Heads ? Heads : side == OutcomeSide.Tails ? Tails : Edge;
+            var effects = new List<Effect>();
+            foreach (var effect in source) effects.Add(effect.Copy());
+            if (upgrade != null && TryGetUpgrade(upgrade.Id, out var owned))
+                foreach (var change in owned.Changes)
+                    if (change.Kind == UpgradeChangeKind.AddOutcomeEffect && change.Side == side)
+                        effects.Add(change.Effect.Copy());
+            return effects;
+        }
+
+        public double UpgradeHeadsProbability(Upgrade upgrade)
+        {
+            double amount = 0;
+            if (upgrade != null && TryGetUpgrade(upgrade.Id, out var owned))
+                foreach (var change in owned.Changes)
+                    if (change.Kind == UpgradeChangeKind.HeadsProbability) amount += change.Amount;
+            return amount;
+        }
+
+        public IReadOnlyList<BuffSpec> BuffsFor(Upgrade upgrade = null)
+        {
+            var buffs = new List<BuffSpec>();
+            foreach (var buff in Buffs) buffs.Add(buff.Copy());
+            if (upgrade != null && TryGetUpgrade(upgrade.Id, out var owned))
+                foreach (var change in owned.Changes)
+                    if (change.Kind == UpgradeChangeKind.AddBuff) buffs.Add(change.Buff.Copy());
+            return buffs;
+        }
 
         // Quota estimation adds this to the expected printed effects. Stateful
         // coins own their Lua balance estimates alongside their resolving rules.

@@ -79,6 +79,7 @@ namespace Tossup.UI
         public static SetDraft SetDraft; // unsaved edits of the open coin set
         public static HashSet<int> Marked = new HashSet<int>(); // coins marked for discarding in the opening hand
         public static int CollectionPage = 1;
+        public static string CollectionCategory = "coins";
         public static readonly Dictionary<string,int> StakePick = new Dictionary<string,int>();
         public static string CollectionFilter = "ALL";
         public static string CollectionSort = "rarity";

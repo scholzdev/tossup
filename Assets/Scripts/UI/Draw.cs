@@ -10,6 +10,8 @@ namespace Tossup.UI
 
         static string N(double v) => GameText.Num(v);
 
+        public static Rgba CoinTypeColor(CoinType type) => Rgba.Hex(DefinitionKeys.CoinColorHex(type));
+
         public static void Color(Rgba c, float alpha = 1) => Gfx.SetColor(c.R, c.G, c.B, alpha);
 
         public static void Box(float x, float y, float w, float h, Rgba fill, float radius = 6)
@@ -145,22 +147,89 @@ namespace Tossup.UI
             return string.Join("; ", parts);
         }
 
-        public static string CoinOutcomeDescription(CoinDef coin, string outcome)
+        public static string CoinOutcomeDescription(CoinDef coin, string outcome, Upgrade upgrade = null)
         {
+            OutcomeSide side = outcome == Side.Heads ? OutcomeSide.Heads : outcome == Side.Tails ? OutcomeSide.Tails : OutcomeSide.Edge;
+            IReadOnlyList<Effect> effects = coin.EffectsFor(side, upgrade);
             if (outcome == Side.Heads)
-                return string.IsNullOrEmpty(coin.HeadsDescription) ? EffectDescription(coin.Heads) : Lang.CoinHeadsDescription(coin.Id);
+                return string.IsNullOrEmpty(coin.HeadsDescription) ? EffectDescription(effects) : Lang.CoinHeadsDescription(coin.Id) + UpgradeEffectDescription(coin, upgrade, side);
             if (outcome == Side.Tails)
-                return string.IsNullOrEmpty(coin.TailsDescription) ? EffectDescription(coin.Tails) : Lang.CoinTailsDescription(coin.Id);
+                return string.IsNullOrEmpty(coin.TailsDescription) ? EffectDescription(effects) : Lang.CoinTailsDescription(coin.Id) + UpgradeEffectDescription(coin, upgrade, side);
             if (outcome == Side.Tie)
-                return string.IsNullOrEmpty(coin.EdgeDescription) ? EffectDescription(Game.TieEffects(coin.Id)) : Lang.CoinEdgeDescription(coin.Id);
+                return string.IsNullOrEmpty(coin.EdgeDescription) ? EffectDescription(effects) : Lang.CoinEdgeDescription(coin.Id) + UpgradeEffectDescription(coin, upgrade, side);
             return L("No effect");
+        }
+
+        static string UpgradeEffectDescription(CoinDef coin, Upgrade upgrade, OutcomeSide side)
+        {
+            if (upgrade == null || !coin.TryGetUpgrade(upgrade.Id, out var owned)) return "";
+            var added = new List<Effect>();
+            foreach (var change in owned.Changes)
+                if (change.Kind == UpgradeChangeKind.AddOutcomeEffect && change.Side == side) added.Add(change.Effect);
+            return added.Count == 0 ? "" : "; " + EffectDescription(added);
+        }
+
+        static string BuffDescription(BuffSpec buff)
+        {
+            string type = buff.Target.Type.HasValue ? L(buff.Target.Type.Value.ToString().ToUpperInvariant()) + " " : "";
+            string target = buff.Target.Count == 1 ? L("the next %scoin", type) : L("the next %d %scoins", buff.Target.Count, type);
+            string trigger = L(buff.Trigger.ToString().ToUpperInvariant());
+            switch (buff.Effect.Type)
+            {
+                case EffectType.NextOdds: return L("On %s, %s gain +%d%% Heads chance", trigger, target, Math.Floor(buff.Effect.Amount * 100 + .5));
+                case EffectType.NextMult: return L("On %s, %s multiply score and gold by x%d", trigger, target, buff.Effect.Amount);
+                case EffectType.NextSwap: return L("On %s, %s use the other side's effects", trigger, target);
+                case EffectType.NextHeads: return L("On %s, %s are forced to land Heads", trigger, target);
+                case EffectType.TypeBuff: return L("On %s, %s: %s", trigger, target, TypeBuffDescription(buff.Effect.Kind.Value));
+                default:
+                    string effect = EffectDescription(new[] { buff.Effect });
+                    return buff.AppliesOn.HasValue
+                        ? L("On %s, %s gain %s when landing %s", trigger, target, effect, L(buff.AppliesOn.Value.ToString().ToUpperInvariant()))
+                        : L("On %s, %s gain %s", trigger, target, effect);
+            }
+        }
+
+        static CoinType? BuffTargetType(BuffSpec buff) => buff.Target.Type;
+
+        static string TypeBuffDescription(CoinType type)
+        {
+            switch (type)
+            {
+                case CoinType.Steel: return L("Heads score +3; Tails add +2 quota");
+                case CoinType.Blood: return L("Heads score +8; Tails add +4 quota; Edge gets half of both");
+                case CoinType.Greed: return L("Gold gains are doubled");
+                case CoinType.Chaos: return L("Resolved effects are applied twice");
+                case CoinType.Rhythm: return L("Combo steps add points; a broken combo adds quota");
+                default: return L("gain a type buff");
+            }
+        }
+
+        static string UpgradeChangesDescription(Upgrade upgrade)
+        {
+            var parts = new List<string>();
+            foreach (var change in upgrade.Changes)
+            {
+                switch (change.Kind)
+                {
+                    case UpgradeChangeKind.AddOutcomeEffect:
+                        parts.Add(L("%s: %s", L(change.Side.ToString().ToUpperInvariant()), EffectDescription(new[] { change.Effect })));
+                        break;
+                    case UpgradeChangeKind.HeadsProbability:
+                        parts.Add(L("+%d%% Heads chance", Math.Floor(change.Amount * 100 + .5)));
+                        break;
+                    case UpgradeChangeKind.AddBuff:
+                        parts.Add(BuffDescription(change.Buff));
+                        break;
+                }
+            }
+            return string.Join("; ", parts);
         }
 
         public static void CoinHover(CoinDef def, float x, float y, float w, float h, double? probability = null, bool locked = false,
             Upgrade upgrade = null, double? tieProbability = null)
         {
             double heads = probability ?? def.Probability;
-            if (!probability.HasValue && upgrade != null && def.TryGetUpgrade(upgrade.Id, out var up)) heads += (up.Type==UpgradeType.Probability?up.Value:0);
+            if (!probability.HasValue) heads += def.UpgradeHeadsProbability(upgrade);
             double tie = tieProbability ?? def.TieProbability;
             var hovered = new HoveredCoin { Definition = def, Probability = Math.Max(0, Math.Min(1 - tie, heads)), TieProbability = tie, Upgrade = upgrade, Locked = locked };
             Ui.Regions.Add(new HoverRegion { X = x, Y = y, W = w, H = h, Coin = hovered });
@@ -289,21 +358,54 @@ namespace Tossup.UI
             var coin = hovered.Definition;
             Upgrade upgrade = null;
             if (hovered.Upgrade != null) coin.TryGetUpgrade(hovered.Upgrade.Id, out upgrade);
+            string upgradeDescription = upgrade == null ? null : UpgradeChangesDescription(upgrade);
+            IReadOnlyList<Upgrade> collectionUpgrades = Ui.Screen == "collection" && Ui.CollectionCategory == "coins" && upgrade == null
+                ? coin.Upgrades : Array.Empty<Upgrade>();
+            string characterAvailability = null;
+            if (Ui.Screen == "collection" && Ui.CollectionCategory == "coins")
+            {
+                var characters = new List<string>();
+                foreach (var characterId in Content.CharacterOrder)
+                {
+                    var character = Content.Characters[characterId];
+                    bool inPool = character.Pool.Exists(candidate => candidate.Id == coin.Id);
+                    bool locked = character.Locked.Exists(candidate => candidate.Id == coin.Id);
+                    if (inPool || locked)
+                        characters.Add(Lang.Upper(Lang.CharacterName(characterId)) + (locked && !inPool ? " (" + L("LOCKED") + ")" : ""));
+                }
+                if (characters.Count > 0) characterAvailability = L("CHARACTERS: %s", string.Join(" / ", characters));
+            }
             Ui.Pointer(out float mx, out float my);
-            float w = 470, header = coin.Types.Count > 0 ? 110 : 94, h = header;
+            float w = 470, header = coin.Types.Count > 0 ? 110 : 94, h;
+            if (coin.EnergyCost > 0) header += 22;
+            int characterAvailabilityLines = characterAvailability == null ? 0 : Ui.F16.GetWrap(characterAvailability, w - 114).Count;
+            if (characterAvailabilityLines > 0) header += Math.Max(22, characterAvailabilityLines * 18 + 4);
+            h = header;
             var rows = new List<(string Label, double Chance, string Detail, Rgba Tint, float Height)>();
             void Row(string label, double chance, string detail, Rgba tint)
             {
                 float height = 38 + Ui.F16.GetWrap(detail, w - 52).Count * 18;
                 rows.Add((L(label), Math.Floor(chance * 100 + .5), detail, tint, height)); h += height + 7;
             }
-            Row("HEADS", hovered.Probability, CoinOutcomeDescription(coin, Side.Heads), C.Blue);
-            if (hovered.TieProbability > 0) Row("EDGE", hovered.TieProbability, CoinOutcomeDescription(coin, Side.Tie), C.Purple);
-            Row("TAILS", 1 - hovered.Probability - hovered.TieProbability, CoinOutcomeDescription(coin, Side.Tails), C.Red);
-            string description = coin.HeadsDescription == null ? Lang.CoinDescription(hovered.Id) : null;
-            if (description != null) h += 40 + Ui.F16.GetWrap(description, w - 48).Count * 18;
-            if (coin.EnergyCost > 0) h += 24;
-            if (upgrade != null) h += 42 + Ui.F16.GetWrap(L(upgrade.Description), w - 48).Count * 18;
+            if (hovered.Probability > 0) Row("HEADS", hovered.Probability, CoinOutcomeDescription(coin, Side.Heads, upgrade), C.Blue);
+            if (hovered.TieProbability > 0) Row("EDGE", hovered.TieProbability, CoinOutcomeDescription(coin, Side.Tie, upgrade), C.Purple);
+            double tailsChance = 1 - hovered.Probability - hovered.TieProbability;
+            if (tailsChance > 0) Row("TAILS", tailsChance, CoinOutcomeDescription(coin, Side.Tails, upgrade), C.Red);
+            var buffs = coin.BuffsFor(upgrade);
+            var buffDescriptions = new List<string>();
+            foreach (var buff in buffs) buffDescriptions.Add(BuffDescription(buff));
+            string specialRule = Lang.CoinSpecialRule(hovered.Id);
+            if (string.IsNullOrWhiteSpace(specialRule)) specialRule = null;
+            int buffLines = 0;
+            foreach (var detail in buffDescriptions) buffLines += Ui.F16.GetWrap(detail, w - 62).Count;
+            if (buffDescriptions.Count > 0) h += 40 + buffLines * 18 + (buffDescriptions.Count - 1) * 3;
+            if (specialRule != null) h += 40 + Ui.F16.GetWrap(specialRule, w - 52).Count * 18;
+            int upgradeDescriptionLines = 0;
+            foreach (var collectionUpgrade in collectionUpgrades)
+                upgradeDescriptionLines += Ui.F16.GetWrap(L(collectionUpgrade.Description), w - 52).Count;
+            if (collectionUpgrades.Count > 0)
+                h += 40 + collectionUpgrades.Count * 18 + upgradeDescriptionLines * 18 + collectionUpgrades.Count * 3;
+            if (!string.IsNullOrWhiteSpace(upgradeDescription)) h += 42 + Ui.F16.GetWrap(upgradeDescription, w - 48).Count * 18;
             if (hovered.Locked) h += 14 + Ui.F16.GetWrap(L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"), w - 48).Count * 18;
             h += 8;
             float x = Ui.Screen == "sets" && (game == null || game.Paused) ? 24 : mx > Ui.Width / 2 ? mx - w - 18 : mx + 18;
@@ -315,10 +417,32 @@ namespace Tossup.UI
             Text(Lang.Upper(L(rarity)), x + 94, y + 47, Ui.F16, RarityColor(coin.Rarity));
             if (coin.Types.Count > 0)
             {
-                var names = new List<string>();
-                foreach (var kind in coin.Types)
-                    names.Add(L(kind.ToString().ToUpperInvariant()) + (kind == CoinType.Fortune && game != null && game.FortuneBonus > 0 ? L(" +%d%%", Math.Floor(game.FortuneBonus * 100 + .5)) : ""));
-                Text(L("TYPE: %s", string.Join(" / ", names)), x + 94, y + 69, Ui.F16, C.Muted);
+                string typeLabel = L("TYPE:");
+                Text(typeLabel, x + 94, y + 69, Ui.F16, C.Muted);
+                float typeX = x + 94 + Ui.F16.GetWidth(typeLabel) + Ui.F16.GetWidth(" ");
+                for (int i = 0; i < coin.Types.Count; i++)
+                {
+                    var kind = coin.Types[i];
+                    string name = L(kind.ToString().ToUpperInvariant()) + (kind == CoinType.Fortune && game != null && game.FortuneBonus > 0 ? L(" +%d%%", Math.Floor(game.FortuneBonus * 100 + .5)) : "");
+                    Text(name, typeX, y + 69, Ui.F16, CoinTypeColor(kind));
+                    typeX += Ui.F16.GetWidth(name) + Ui.F16.GetWidth(" ");
+                    if (i + 1 < coin.Types.Count)
+                    {
+                        Text("/", typeX, y + 69, Ui.F16, C.Muted);
+                        typeX += Ui.F16.GetWidth("/ ");
+                    }
+                }
+            }
+            float infoY = y + (coin.Types.Count > 0 ? 91 : 69);
+            if (coin.EnergyCost > 0)
+            {
+                Text(L("COSTS %d ENERGY", coin.EnergyCost), x + 94, infoY, Ui.F16, C.Gold);
+                infoY += 22;
+            }
+            if (characterAvailability != null)
+            {
+                Gfx.SetFont(Ui.F16); Color(C.Muted);
+                Gfx.Printf(characterAvailability, x + 94, infoY, w - 114);
             }
             float rowY = y + header;
             foreach (var row in rows)
@@ -327,17 +451,60 @@ namespace Tossup.UI
                 Text(row.Label, x + 26, rowY + 7, Ui.F16, row.Tint); Text(row.Chance + "%", x + w - 78, rowY + 7, Ui.F16, row.Tint);
                 Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(row.Detail, x + 26, rowY + 29, w - 52); rowY += row.Height + 7;
             }
-            if (description != null)
+            if (buffDescriptions.Count > 0)
             {
-                Text("DETAILS", x + 24, rowY + 7, Ui.F16, C.Gold); Gfx.SetFont(Ui.F16); Color(C.Muted); Gfx.Printf(description, x + 24, rowY + 28, w - 48);
-                rowY += 40 + Ui.F16.GetWrap(description, w - 48).Count * 18;
+                int lines = 0;
+                foreach (var detail in buffDescriptions) lines += Ui.F16.GetWrap(detail, w - 62).Count;
+                float sectionHeight = 40 + lines * 18 + (buffDescriptions.Count - 1) * 3;
+                Box(x + 12, rowY, w - 24, sectionHeight, C.Slot); Outline(x + 12, rowY, w - 24, sectionHeight, C.Line);
+                Color(C.Purple); Gfx.Rectangle(true, x + 12, rowY, 4, sectionHeight);
+                Text(L("BUFFS"), x + 26, rowY + 7, Ui.F16, C.Purple);
+                float detailY = rowY + 28;
+                for (int i = 0; i < buffDescriptions.Count; i++)
+                {
+                    string detail = buffDescriptions[i];
+                    int detailLines = Ui.F16.GetWrap(detail, w - 62).Count;
+                    if (BuffTargetType(buffs[i]).HasValue)
+                    {
+                        Color(CoinTypeColor(BuffTargetType(buffs[i]).Value));
+                        Gfx.Rectangle(true, x + 26, detailY + 2, 4, Math.Min(12, detailLines * 18));
+                    }
+                    Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(detail, x + 36, detailY, w - 62);
+                    detailY += detailLines * 18 + 3;
+                }
+                rowY += sectionHeight;
             }
-            if (coin.EnergyCost > 0) { Text(L("COSTS %d ENERGY", coin.EnergyCost), x + 24, rowY + 4, Ui.F16, C.Gold); rowY += 24; }
-            if (upgrade != null)
+            if (specialRule != null)
+            {
+                float ruleHeight = 40 + Ui.F16.GetWrap(specialRule, w - 52).Count * 18;
+                Box(x + 12, rowY, w - 24, ruleHeight, C.Slot); Outline(x + 12, rowY, w - 24, ruleHeight, C.Line);
+                Color(C.Gold); Gfx.Rectangle(true, x + 12, rowY, 4, ruleHeight);
+                Text(L("SPECIAL RULE"), x + 26, rowY + 7, Ui.F16, C.Gold);
+                Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(specialRule, x + 26, rowY + 28, w - 52);
+                rowY += ruleHeight;
+            }
+            if (collectionUpgrades.Count > 0)
+            {
+                float sectionHeight = 40 + collectionUpgrades.Count * 18 + upgradeDescriptionLines * 18 + collectionUpgrades.Count * 3;
+                Box(x + 12, rowY, w - 24, sectionHeight, C.Slot); Outline(x + 12, rowY, w - 24, sectionHeight, C.Line);
+                Color(C.Gold); Gfx.Rectangle(true, x + 12, rowY, 4, sectionHeight);
+                Text("UPGRADES", x + 26, rowY + 7, Ui.F16, C.Gold);
+                float detailY = rowY + 28;
+                foreach (var collectionUpgrade in collectionUpgrades)
+                {
+                    Text(Lang.Upper(L(collectionUpgrade.Name)), x + 26, detailY, Ui.F16, C.Gold);
+                    detailY += 18;
+                    int descriptionLines = Ui.F16.GetWrap(L(collectionUpgrade.Description), w - 52).Count;
+                    Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(L(collectionUpgrade.Description), x + 26, detailY, w - 52);
+                    detailY += descriptionLines * 18 + 3;
+                }
+                rowY += sectionHeight;
+            }
+            if (!string.IsNullOrWhiteSpace(upgradeDescription))
             {
                 Text(L("UPGRADE: %s", Lang.Upper(L(upgrade.Name))), x + 24, rowY + 4, Ui.F16, C.Gold);
-                Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(L(upgrade.Description), x + 24, rowY + 25, w - 48);
-                rowY += 42 + Ui.F16.GetWrap(L(upgrade.Description), w - 48).Count * 18;
+                Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(upgradeDescription, x + 24, rowY + 25, w - 48);
+                rowY += 42 + Ui.F16.GetWrap(upgradeDescription, w - 48).Count * 18;
             }
             if (hovered.Locked) { Gfx.SetFont(Ui.F16); Color(C.Orange); Gfx.Printf(L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"), x + 24, rowY + 8, w - 48); }
         }
