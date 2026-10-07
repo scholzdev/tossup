@@ -25,6 +25,14 @@ namespace Tossup.UI
 
         static void Scroll(float amount) => scroll = Math.Max(0, Math.Min(maxScroll, scroll + amount));
 
+        public static void ScrollAt(float x, float y, float wheelDelta)
+        {
+            if (x < 553 || x > 1208 || y < ViewTop || y > ViewBottom) return;
+            Scroll(-wheelDelta * 70);
+        }
+
+        public static void ScrollByKey(int direction) => Scroll(direction * 70);
+
         static float Description(string title, string body, float y, Rgba tint)
         {
             int lines = Ui.F16.GetWrap(body, InfoW - 58).Count;
@@ -180,8 +188,11 @@ namespace Tossup.UI
             if (scroll > maxScroll) scroll = maxScroll;
             if (maxScroll > 0)
             {
-                Button("UP", 1116, 137, 76, 35, C.PanelLight, () => Scroll(-125), scroll > 0);
-                Button("DOWN", 1116, 177, 76, 35, C.PanelLight, () => Scroll(125), scroll < maxScroll);
+                const float trackX = 1195, trackY = ViewTop, trackH = ViewBottom - ViewTop;
+                float thumbH = Math.Max(35, trackH * trackH / (trackH + maxScroll));
+                float thumbY = trackY + (trackH - thumbH) * scroll / maxScroll;
+                Color(C.Line); Gfx.Rectangle(true, trackX, trackY, 5, trackH);
+                Color(C.Gold); Gfx.Rectangle(true, trackX, thumbY, 5, thumbH);
             }
         }
     }

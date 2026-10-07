@@ -30,6 +30,17 @@ static class LatestTests
             Check(loadout.Count>0&&loadout.Count<=Game.StartMax&&characterRun.Coins.Count==loadout.Count,"valid default deck starts for "+characterId);
             Check(Content.Characters[characterId].Perks.Count==2,"two visible perks are defined for "+characterId);
         }
+        var stackedProfile = Profile.New();
+        var mixedCommons = new List<string> { "normal", "sword", "dagger" };
+        Check(Profile.CanAdd(stackedProfile, "blade", mixedCommons, "normal", 5, Game.MaxCopies),
+            "different common coins do not consume Normal's copy limit");
+        Check(Profile.LimitedSet(new List<string> { "normal", "normal", "normal", "sword", "dagger" }, 5)
+                .Count == 5, "loadout repair keeps distinct common coins");
+        Check(Game.New(901, "blade", null,
+                new List<CoinDef> { CoinCatalog.Normal, CoinCatalog.Normal, CoinCatalog.Normal, CoinCatalog.Sword, CoinCatalog.Dagger }, false)
+                .Coins.Count == 5, "run validation accepts stacked copies of distinct common coins");
+        Check(!Profile.CanAdd(stackedProfile, "blade", new List<string> { "normal", "normal", "normal" }, "normal", 5, Game.MaxCopies),
+            "a fourth copy of one common coin remains blocked");
         var tinkerer=Game.New(911,"tinkerer",null,null,false);
         Check(tinkerer.Player.Energy==tinkerer.Player.MaxEnergy+1,"Tinkerer starts each level with bonus energy");
         tinkerer.ShopOffers=new List<CoinDef>{Content.Coins["normal"]};
@@ -122,6 +133,8 @@ static class LatestTests
     {
         var profile = Profile.New();
         var normal = CoinCatalog.Normal;
+        Check(normal.Mastery.Thresholds[0] == 10 && normal.Mastery.Thresholds[2] == 150,
+            "per-coin mastery goals are halved");
         Profile.AddMastery(profile, normal, 12);
         Profile.AddMastery(profile, normal, 8);
         Check(Profile.MasteryLevel(profile, normal) == 1 && profile.MasteryDirty,
@@ -134,12 +147,24 @@ static class LatestTests
         Check(Profile.MasteryProgress(restored, normal) == 20 && Profile.MasteryLevel(restored, normal) == 1,
             "mastery survives profile save and load");
         Profile.AddMastery(restored, normal, 1000);
-        Check(Profile.MasteryLevel(restored, normal) == 3 && Profile.MasteryProgress(restored, normal) == 300,
+        Check(Profile.MasteryLevel(restored, normal) == 3 && Profile.MasteryProgress(restored, normal) == normal.Mastery.Thresholds[2],
             "mastery caps at level three");
         Ui.Profile = restored;
         Check(D.CoinMasteryOutcomeDescription(normal, Side.Heads)?.Contains("first Heads") == true &&
             D.CoinMasteryOutcomeDescription(normal, Side.Tails)?.Contains("Tails scores 1") == true,
             "conditional and Tails mastery rewards appear on their own outcome cards");
+
+        var loadedProfile = Profile.New();
+        Profile.AddMastery(loadedProfile, CoinCatalog.Loaded, CoinCatalog.Loaded.Mastery.Thresholds[2]);
+        var loadedRun = Game.New(1200, "trader", null, new List<CoinDef> { CoinCatalog.Loaded }, false);
+        loadedRun.MasteryProfile = loadedProfile;
+        var loadedCoin = loadedRun.Coins[0];
+        Hooks.Bind(loadedRun, loadedCoin);
+        Check(Near(Game.Probability(loadedRun, loadedCoin), .67), "Loaded mastery adds eight points of Heads chance");
+        loadedRun.Pending = new FlipState { Uid = loadedCoin.Uid, CoinId = loadedCoin.Id, Raw = Side.Heads, Result = Side.Heads };
+        double loadedGold = loadedRun.Player.Gold;
+        Check(Game.Resolve(loadedRun) && loadedRun.Player.Gold == loadedGold + 7,
+            "Loaded mastery adds three gold to its Heads payout");
 
         var run = Game.New(1201, "blade", null, new List<CoinDef> { normal }, false);
         run.MasteryProfile = restored;

@@ -238,8 +238,8 @@ namespace Tossup.UI
             Centered(dirty ? "UNSAVED CHANGES" : "CLICK A COIN HERE TO REMOVE IT", 70, 505, 430, Ui.F16, dirty ? C.Orange : C.Muted);
             Button(dirty ? "SAVE SET" : "SAVED", 100, 530, 370, 48, dirty ? C.Blue : C.PanelLight, A.SaveSet, dirty);
             Button("CLEAR SET", 100, 592, 370, 44, C.Red, A.ClearSet, coins.Count > 0);
-            Centered("PER SET: COMMON 3  -  UNCOMMON 2", 70, 680, 430, Ui.F16, C.Muted);
-            Centered("RARE 1  -  EPIC 1", 70, 704, 430, Ui.F16, C.Muted);
+            Centered("MAX COPIES OF EACH COIN", 70, 680, 430, Ui.F16, C.Muted);
+            Centered("COMMON 3  -  UNCOMMON 2  -  RARE/EPIC 1", 70, 704, 430, Ui.F16, C.Muted);
 
             // right: all of this character's coins
             Box(520, 212, 700, 528, C.PanelDk);

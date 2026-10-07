@@ -21,7 +21,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Previous effects repeated by Echo", 20, 70, 200,
-            "Successful repeats score +1 point.", "Heads chance +3%.",
+            "Successful repeats score +1 point.", "Heads chance +8%.",
             "Successful repeats score another +2 points.",
             MasterySides.All, MasterySides.Heads, MasterySides.All);
 
@@ -36,7 +36,7 @@ namespace Tossup.Coins
                     res.Effects.Add(Effect.Score(ctx.Mastery.Level >= 3 ? 3 : 1));
             };
             On.Coins.Odds += (ctx, odds) =>
-            { if (ctx.Mastery.Level >= 2) odds.Heads += .03; };
+            { if (ctx.Mastery.Level >= 2) odds.Heads += .08; };
         }
 
         public override void OnResolve(GameState game, CoinInst inst, Res res)

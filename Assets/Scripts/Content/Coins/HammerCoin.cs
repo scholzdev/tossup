@@ -19,14 +19,14 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Hammer Heads landed", 10, 35, 100,
-            "Heads scores +2 points.", "Heads chance +3%.", "Tails scores +1 point.",
+            "Heads scores +2 points.", "Heads chance +8%.", "Tails scores +1 point.",
             MasterySides.Heads, MasterySides.Heads, MasterySides.Tails);
 
         public HammerCoin()
         {
             On.Game.Coins.Resolved += (ctx,e) => { if(e.Inst==ctx.Coin && e.Res.Result==Side.Heads) ctx.Mastery.Add(1); };
             On.Coins.Resolve += (ctx,res) => { if(res.Result==Side.Heads && ctx.Mastery.Level>=1) res.Effects.Add(Effect.Score(2)); if(res.Result==Side.Tails && ctx.Mastery.Level>=3) res.Effects.Add(Effect.Score(1)); };
-            On.Coins.Odds += (ctx,odds) => { if(ctx.Mastery.Level>=2) odds.Heads+=.03; };
+            On.Coins.Odds += (ctx,odds) => { if(ctx.Mastery.Level>=2) odds.Heads+=.08; };
         }
     }
 }

@@ -22,7 +22,8 @@ namespace Tossup
             if (string.IsNullOrWhiteSpace(progressDescription) || first <= 0 || second <= first || third <= second)
                 throw new ArgumentException("Mastery thresholds must be positive and increasing.");
             ProgressDescription = progressDescription;
-            Thresholds = new[] { first, second, third };
+            // Mastery progress is earned per coin, so halve the original grind for every coin.
+            Thresholds = new[] { Math.Ceiling(first / 2), Math.Ceiling(second / 2), Math.Ceiling(third / 2) };
             Rewards = new[] { firstReward, secondReward, thirdReward };
             RewardSides = new[] { firstSide, secondSide, thirdSide };
         }

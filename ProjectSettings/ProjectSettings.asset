@@ -41,8 +41,8 @@ PlayerSettings:
     height: 1
   m_SplashScreenLogos: []
   m_VirtualRealitySplashScreen: {fileID: 0}
-  defaultScreenWidth: 2560
-  defaultScreenHeight: 1600
+  defaultScreenWidth: 1280
+  defaultScreenHeight: 800
   defaultScreenWidthWeb: 960
   defaultScreenHeightWeb: 600
   m_StereoRenderingPath: 0
@@ -86,7 +86,7 @@ PlayerSettings:
   androidPredictiveBackSupport: 1
   androidApplicationEntry: 1
   defaultIsNativeResolution: 0
-  macRetinaSupport: 1
+  macRetinaSupport: 0
   runInBackground: 1
   callOnDisableOnAssetBundleUnload: 1
   muteOtherAudioSources: 0

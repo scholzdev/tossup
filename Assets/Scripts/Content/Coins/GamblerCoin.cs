@@ -20,7 +20,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Gambler bets won", 10, 35, 100,
-            "Winning bets score +3 points.", "Heads chance +3%.",
+            "Winning bets score +3 points.", "Heads chance +8%.",
             "Winning bets score another +3 points.",
             MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
 
@@ -34,7 +34,7 @@ namespace Tossup.Coins
                     res.Effects.Add(Effect.Score(ctx.Mastery.Level >= 3 ? 6 : 3));
             };
             On.Coins.Odds += (ctx, odds) =>
-            { if (ctx.Mastery.Level >= 2) odds.Heads += .03; };
+            { if (ctx.Mastery.Level >= 2) odds.Heads += .08; };
         }
 
         public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * 3.5;

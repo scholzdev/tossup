@@ -364,12 +364,13 @@ namespace Tossup
                 if (loadout.Count < 1 || loadout.Count > StartMax)
                     throw new GameRuleException("loadout must have 1-" + StartMax + " coins");
                 var allowed = new HashSet<CoinDef>(UsablePool(game));
-                var copies = new Dictionary<Rarity, int>();
+                var copies = new Dictionary<string, int>();
                 foreach (var coin in loadout)
                 {
                     if (coin == null || !allowed.Contains(coin)) throw new GameRuleException("coin not available to this character: " + coin?.Id);
-                    var rarity=coin.Rarity;copies.TryGetValue(rarity, out int n);copies[rarity] = n + 1;
-                    if (copies[rarity] > Profile.RarityLimit(coin.Id)) throw new GameRuleException("too many " + rarity + " coins");
+                    copies.TryGetValue(coin.Id, out int n);
+                    copies[coin.Id] = n + 1;
+                    if (copies[coin.Id] > Profile.RarityLimit(coin.Id)) throw new GameRuleException("too many " + coin.Id + " coins");
                 }
             }
             var ids = sandbox?.Coins;

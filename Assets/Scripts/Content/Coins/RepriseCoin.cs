@@ -22,7 +22,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "First Reprise plays across levels", 10, 35, 100,
-            "Heads scores +1 point.", "Tails gains +1 gold.", "Heads scores another +2 points.",
+            "Heads scores +1 point.", "Tails gains +3 gold.", "Heads scores another +2 points.",
             MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
 
         public RepriseCoin()
@@ -37,7 +37,7 @@ namespace Tossup.Coins
                     if (level >= 1) res.Effects.Add(Effect.Score(1));
                     if (level >= 3) res.Effects.Add(Effect.Score(2));
                 }
-                else if (res.Result == Side.Tails && level >= 2) res.Effects.Add(Effect.Gold(1));
+                else if (res.Result == Side.Tails && level >= 2) res.Effects.Add(Effect.Gold(3));
             };
         }
 

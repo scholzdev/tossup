@@ -19,7 +19,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Gold earned on Arbitrage Heads", 30, 120, 360,
-            "Tails scores +1 point.", "Heads gains +1 gold.", "Heads also scores 2 points.",
+            "Tails scores +1 point.", "Heads gains +3 gold.", "Heads also scores 2 points.",
             MasterySides.Tails, MasterySides.Heads, MasterySides.Heads);
 
         public ArbitrageCoin()
@@ -34,7 +34,7 @@ namespace Tossup.Coins
                 if (res.Result == Side.Tails && level >= 1) res.Effects.Add(Effect.Score(1));
                 if (res.Result == Side.Heads)
                 {
-                    if (level >= 2) res.Effects.Add(Effect.Gold(1));
+                    if (level >= 2) res.Effects.Add(Effect.Gold(3));
                     if (level >= 3) res.Effects.Add(Effect.Score(2));
                 }
             };

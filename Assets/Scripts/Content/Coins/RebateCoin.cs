@@ -19,7 +19,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge { get; } = new[] { Effect.Gold(1) };
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Points scored on Rebate Tails", 20, 80, 240,
-            "Tails scores +1 point.", "Heads gains +1 gold.", "Edge scores 2 points.",
+            "Tails scores +1 point.", "Heads gains +3 gold.", "Edge scores 2 points.",
             MasterySides.Tails, MasterySides.Heads, MasterySides.Edge);
 
         public RebateCoin()
@@ -32,7 +32,7 @@ namespace Tossup.Coins
             {
                 int level = ctx.Mastery.Level;
                 if (res.Result == Side.Tails && level >= 1) res.Effects.Add(Effect.Score(1));
-                if (res.Result == Side.Heads && level >= 2) res.Effects.Add(Effect.Gold(1));
+                if (res.Result == Side.Heads && level >= 2) res.Effects.Add(Effect.Gold(3));
                 if (res.Result == Side.Tie && level >= 3) res.Effects.Add(Effect.Score(2));
             };
         }

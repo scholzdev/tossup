@@ -20,7 +20,7 @@ namespace Tossup.Coins
         public override string HeadsDescription => "1/2/3 copies: 2/8/18 points";
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Square Dance Heads with at least two copies", 10, 35, 100,
-            "Heads scores +1 point per copy.", "Heads chance +3%.",
+            "Heads scores +1 point per copy.", "Heads chance +8%.",
             "Heads scores another +1 point per copy.",
             MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
 
@@ -43,7 +43,7 @@ namespace Tossup.Coins
                 res.Effects.Add(Effect.Score(copies * (ctx.Mastery.Level >= 3 ? 2 : 1)));
             };
             On.Coins.Odds += (ctx, odds) =>
-            { if (ctx.Mastery.Level >= 2) odds.Heads += .03; };
+            { if (ctx.Mastery.Level >= 2) odds.Heads += .08; };
         }
 
         public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails)

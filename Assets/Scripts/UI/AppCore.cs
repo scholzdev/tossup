@@ -163,6 +163,14 @@ namespace Tossup.UI
             slider?.Release?.Invoke();
         }
 
+        public static void MouseScrolled(float x, float y, float delta)
+        {
+            if (delta == 0 || Ui.Confirm != null || Ui.Tutorial != null || Ui.EncounterReveal != null ||
+                Ui.Screen != UiScreen.CoinDetail || Ui.Game != null && !Ui.Game.Paused) return;
+            Ui.ToCanvas(x, y, out float cx, out float cy);
+            CoinDetailView.ScrollAt(cx, cy, delta);
+        }
+
         public static void ActivateButton(Button button)
         {
             if (button == null || button.Disabled || button.Action == null) return;
@@ -213,6 +221,13 @@ namespace Tossup.UI
                 else if (Ui.Screen == UiScreen.CoinDetail) CoinDetailView.Close();
                 else if (Ui.Screen != UiScreen.Title) A.Go(UiScreen.Title);
                 else if (game != null) game.Paused = false;
+                return;
+            }
+
+            if (Ui.Screen == UiScreen.CoinDetail && (Ui.Game == null || Ui.Game.Paused) &&
+                (key == "up" || key == "down"))
+            {
+                CoinDetailView.ScrollByKey(key == "up" ? -1 : 1);
                 return;
             }
 

@@ -182,6 +182,8 @@ namespace Tossup
                 lastMouse = Input.mousePosition;
                 AppCore.MouseMoved(MouseX, MouseY);
             }
+            if (Input.mouseScrollDelta.y != 0)
+                AppCore.MouseScrolled(MouseX, MouseY, Input.mouseScrollDelta.y);
             if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1) || Input.GetMouseButtonUp(2)) AppCore.MouseReleased();
             // Unity's anyKeyDown includes mouse buttons. The Start click may
             // create the reveal above; only an already-open reveal can consume it.

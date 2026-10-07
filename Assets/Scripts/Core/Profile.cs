@@ -187,13 +187,12 @@ namespace Tossup
             if (index >= 1 && index <= SetCount) profile.ActiveSet[characterId] = index;
         }
 
-        // Can one more coin go into a set: it is available, the set has room, and the copy limit allows it.
-        // maxCopies does not apply to the plain Normal coin.
+        // Can one more coin go into a set: it is available, the set has room, and this coin's copy limit allows it.
         public static bool CanAdd(ProfileData profile, string characterId, List<string> coins, string coinId, int max, int maxCopies)
         {
             if (coins.Count >= max || !Available(profile, characterId).Contains(coinId)) return false;
-            int copies = 0; var rarity=Content.Coins[coinId].Rarity;
-            foreach (var id in coins) if (Content.Coins[id].Rarity==rarity) copies++;
+            int copies = 0;
+            foreach (var id in coins) if (id == coinId) copies++;
             return copies < RarityLimit(coinId);
         }
 
@@ -214,7 +213,7 @@ namespace Tossup
         }
 
         // The coins a new run starts with: the active set, limited to coins that are available, to max entries
-        // and to maxCopies of a coin (Normal is exempt), so an old or hand-edited save can never produce a set
+        // and to the per-coin copy limit, so an old or hand-edited save can never produce a set
         // the game would reject. An empty (or unusable) set falls back to the default deck.
         public static List<string> Loadout(ProfileData profile, string characterId, int max, int maxCopies)
         {
@@ -373,13 +372,13 @@ namespace Tossup
             foreach (var id in source)
                 if (id != null && Content.Coins.ContainsKey(id) && (allowed == null || allowed.Contains(id)) && entries.Count < max) entries.Add(id);
             var result = new List<string>();
-            var counts = new Dictionary<Rarity, int>();
+            var counts = new Dictionary<string, int>();
             for (int i = entries.Count - 1; i >= 0; i--)
             {
-                string id = entries[i];var rarity = Content.Coins[id].Rarity;
-                counts.TryGetValue(rarity, out int n);
+                string id = entries[i];
+                counts.TryGetValue(id, out int n);
                 if (n >= RarityLimit(id)) continue;
-                counts[rarity] = n + 1;
+                counts[id] = n + 1;
                 result.Insert(0, id);
             }
             return result;

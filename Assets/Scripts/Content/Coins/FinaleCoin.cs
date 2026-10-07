@@ -19,7 +19,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Combo steps added by Finale", 30, 100, 300,
-            "Heads scores +1 point.", "Tails gains +1 gold.", "Heads adds another combo step.",
+            "Heads scores +1 point.", "Tails gains +3 gold.", "Heads adds another combo step.",
             MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
 
         public FinaleCoin()
@@ -36,7 +36,7 @@ namespace Tossup.Coins
                     if (level >= 1) res.Effects.Add(Effect.Score(1));
                     if (level >= 3) res.Effects.Add(Effect.ComboBonus(1));
                 }
-                else if (res.Result == Side.Tails && level >= 2) res.Effects.Add(Effect.Gold(1));
+                else if (res.Result == Side.Tails && level >= 2) res.Effects.Add(Effect.Gold(3));
             };
         }
     }

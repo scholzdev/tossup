@@ -19,14 +19,14 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Loaded losing outcomes endured", 12, 40, 120,
-            "Heads grants +1 gold.", "Losing outcomes cost 1 less gold.", "Heads chance +3%.",
+            "Heads grants +3 gold.", "Losing outcomes cost 1 less gold.", "Heads chance +8%.",
             MasterySides.Heads, MasterySides.None, MasterySides.Heads);
 
         public LoadedCoin()
         {
             On.Game.Coins.Resolved += (ctx,e) => { if(e.Inst==ctx.Coin && e.Res.Result!=Side.Heads) ctx.Mastery.Add(1); };
-            On.Coins.Resolve += (ctx,res) => { if(res.Result==Side.Heads && ctx.Mastery.Level>=1) res.Effects.Add(Effect.Gold(1)); if(res.Result!=Side.Heads && ctx.Mastery.Level>=2) foreach(var effect in res.Effects) if(effect.Type==EffectType.GoldLoss) effect.Amount=Math.Max(0,effect.Amount-1); };
-            On.Coins.Odds += (ctx,odds) => { if(ctx.Mastery.Level>=3) odds.Heads+=.03; };
+            On.Coins.Resolve += (ctx,res) => { if(res.Result==Side.Heads && ctx.Mastery.Level>=1) res.Effects.Add(Effect.Gold(3)); if(res.Result!=Side.Heads && ctx.Mastery.Level>=2) foreach(var effect in res.Effects) if(effect.Type==EffectType.GoldLoss) effect.Amount=Math.Max(0,effect.Amount-1); };
+            On.Coins.Odds += (ctx,odds) => { if(ctx.Mastery.Level>=3) odds.Heads+=.08; };
         }
     }
 }

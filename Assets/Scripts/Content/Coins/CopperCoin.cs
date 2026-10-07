@@ -20,7 +20,7 @@ namespace Tossup.Coins
 
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Gold earned by Copper", 20, 80, 240,
-            "Heads grants +1 gold.",
+            "Heads grants +3 gold.",
             "Tails grants +1 energy.",
             "Heads also scores 2 points.",
             MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
@@ -36,7 +36,7 @@ namespace Tossup.Coins
                 int level = ctx.Mastery.Level;
                 if (res.Result == Side.Heads)
                 {
-                    if (level >= 1) res.Effects.Add(Effect.Gold(1));
+                    if (level >= 1) res.Effects.Add(Effect.Gold(3));
                     if (level >= 3) res.Effects.Add(Effect.Score(2));
                 }
                 else if (res.Result == Side.Tails && level >= 2) res.Effects.Add(Effect.Energy(1));

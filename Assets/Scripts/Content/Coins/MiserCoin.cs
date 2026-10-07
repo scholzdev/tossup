@@ -20,7 +20,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Miser Heads with at least 30 gold", 12, 45, 135,
-            "Heads scores per 9 gold instead of 10.", "Tails grants +1 gold.",
+            "Heads scores per 9 gold instead of 10.", "Tails grants +3 gold.",
             "Heads scores +1 per 20 gold held.",
             MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
 
@@ -30,7 +30,7 @@ namespace Tossup.Coins
             { if (e.Inst == ctx.Coin && e.Res.Result == Side.Heads && ctx.Game.Player.Gold >= 30) ctx.Mastery.Add(1); };
             On.Coins.Resolve += (ctx, res) =>
             {
-                if (res.Result == Side.Tails && ctx.Mastery.Level >= 2) res.Effects.Add(Effect.Gold(1));
+                if (res.Result == Side.Tails && ctx.Mastery.Level >= 2) res.Effects.Add(Effect.Gold(3));
                 if (res.Result != Side.Heads) return;
                 double gold = ctx.Game.Player.Gold;
                 if (ctx.Mastery.Level >= 1)

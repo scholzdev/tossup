@@ -20,14 +20,14 @@ namespace Tossup.Coins
 
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Vampire Heads landed", 15, 55, 160,
-            "Heads drains +1 gold.", "Heads scores +1 point.", "Heads chance +3%.",
+            "Heads drains +3 gold.", "Heads scores +1 point.", "Heads chance +8%.",
             MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
 
         public VampireCoin()
         {
             On.Game.Coins.Resolved += (ctx,e) => { if(e.Inst==ctx.Coin && e.Res.Result==Side.Heads) ctx.Mastery.Add(1); };
-            On.Coins.Resolve += (ctx,res) => { if(res.Result!=Side.Heads) return; if(ctx.Mastery.Level>=1) res.Effects.Add(Effect.Gold(1)); if(ctx.Mastery.Level>=2) res.Effects.Add(Effect.Score(1)); };
-            On.Coins.Odds += (ctx,odds) => { if(ctx.Mastery.Level>=3) odds.Heads+=.03; };
+            On.Coins.Resolve += (ctx,res) => { if(res.Result!=Side.Heads) return; if(ctx.Mastery.Level>=1) res.Effects.Add(Effect.Gold(3)); if(ctx.Mastery.Level>=2) res.Effects.Add(Effect.Score(1)); };
+            On.Coins.Odds += (ctx,odds) => { if(ctx.Mastery.Level>=3) odds.Heads+=.08; };
         }
     }
 }

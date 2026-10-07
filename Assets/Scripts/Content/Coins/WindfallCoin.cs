@@ -19,13 +19,13 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Gold earned from Windfall Heads", 60, 240, 720,
-            "Heads grants +1 gold.", "Heads grants +2 gold total.", "Heads grants +3 gold total.",
+            "Heads grants +2 gold.", "Heads grants +4 gold total.", "Heads grants +6 gold total.",
             MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
 
         public WindfallCoin()
         {
             On.Game.Effects.Applied += (ctx, e) => { if (e.Inst == ctx.Coin && e.Effect?.Type == EffectType.Gold && e.GoldDelta > 0) ctx.Mastery.Add(e.GoldDelta); };
-            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Gold(ctx.Mastery.Level)); };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Gold(ctx.Mastery.Level * 2)); };
         }
     }
 }

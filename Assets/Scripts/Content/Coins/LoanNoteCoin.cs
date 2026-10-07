@@ -19,7 +19,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge { get; } = new[] { Effect.Gold(1) };
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Gold repaid on Loan Note Tails", 10, 35, 100,
-            "Heads gains +1 gold.", "Tails no longer adds quota.", "Heads gains another +2 gold.",
+            "Heads gains +3 gold.", "Tails no longer adds quota.", "Heads gains another +4 gold.",
             MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
 
         public LoanNoteCoin()
@@ -33,8 +33,8 @@ namespace Tossup.Coins
                 int level = ctx.Mastery.Level;
                 if (res.Result == Side.Heads)
                 {
-                    if (level >= 1) res.Effects.Add(Effect.Gold(1));
-                    if (level >= 3) res.Effects.Add(Effect.Gold(2));
+                    if (level >= 1) res.Effects.Add(Effect.Gold(3));
+                    if (level >= 3) res.Effects.Add(Effect.Gold(4));
                 }
                 else if (res.Result == Side.Tails && level >= 2)
                 {

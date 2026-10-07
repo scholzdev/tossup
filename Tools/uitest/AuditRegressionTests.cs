@@ -102,7 +102,7 @@ static class AuditRegressionTests
         var profile = Profile.Decode("{\"tokens\":-3,\"stakes\":{\"blade\":99},\"options\":{\"volumeMaster\":200,\"language\":\"xx\"}}");
         Check(profile.Tokens == 0 && Profile.MaxStake(profile,"blade") == 8 && profile.Options.VolumeMaster == 100 && profile.Options.Language == "en", "profile values are sanitized");
         profile = Profile.New(); Profile.Grant(profile,"blade","compost"); profile.Sets["blade"] = new List<CoinSet> { new CoinSet { Coins = new List<string> { "normal","normal","normal","compost" } } };
-        Check(Profile.Loadout(profile,"blade",5,3).SequenceEqual(new[] { "normal","normal","compost" }), "loadout repairs preserve later picks");
+        Check(Profile.Loadout(profile,"blade",5,3).SequenceEqual(new[] { "normal","normal","normal","compost" }), "loadout preserves stacked copies of distinct common coins");
         RuntimeMode.Configure(false,false);
         g = Game.New(6,"blade",null,null,true); Check(RunSave.Decode(RunSave.Encode(g)) != null, "untouched level can resume");
         Game.MulliganDone(g); Game.Flip(g); Check(!RunSave.IsSafePoint(g), "pending flips cannot overwrite restart checkpoint");

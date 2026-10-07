@@ -135,12 +135,13 @@ Subscribe to bus events through `register(ctx)` while owned (`src/relics.lua`). 
 
 ### 1.8 Deck and coin sets
 - A **coin set** = up to `Game.START_MAX` (5) coins (older longer sets are cut on load, `Profile.SET_SIZE`).
-  Per set, common coins allow 3 total, uncommon 2 total, rare 1 total and epic 1 total (`Profile.rarity_limit`). Normal counts as common.
+  Per set, each distinct common coin allows 3 copies, each uncommon coin 2 copies, and each rare or epic coin 1 copy (`Profile.RarityLimit`). Normal is a common coin.
   Each character has 3 sets (`Profile.SET_COUNT`). Set 1 starts as the character's default deck; sets 2 and 3 start empty (an empty set falls back to the default).
 - A run starts with the set selected on the play screen. During a run the deck can only grow through the shop (buy a slot, then a coin),
   up to 10 coins.
 - Coins can be added to a set only if they are in the character's **starting pool** or **unlocked**.
 - **Unlocking:** buy the coin in the shop during a run. There is no token-based unlocking any more.
+- Coin mastery goals use half of each coin's authored thresholds, rounded up. Small repeatable mastery gold rewards grant at least +2 gold; mastery rewards that formerly gave +3% Heads chance give +8%.
 
 ---
 
