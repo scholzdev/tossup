@@ -75,22 +75,25 @@ namespace Tossup.UI
             {
                 var character = Content.Characters[id];
                 if (character.Pool.Exists(candidate => candidate == coin)) available.Add((character, false));
-                else if (character.Locked.Exists(candidate => candidate.Id == coin.Id)) available.Add((character, true));
+                else if (character.Locked.Exists(candidate => candidate.Id == coin.Id)) available.Add((character, !Profile.IsUnlocked(Ui.Profile, character.Id, coin.Id)));
             }
             if (available.Count == 0) return y;
 
             int rows = (available.Count + 2) / 3;
-            float height = 43 + rows * 128;
+            bool anyLocked = available.Exists(entry => entry.Locked);
+            float cardH = anyLocked ? 148 : 117, pitch = cardH + 11;
+            float height = 43 + rows * pitch;
             Box(InfoX, y, InfoW, height, C.Slot);
             Color(C.Green); Gfx.Rectangle(true, InfoX, y, 4, height);
             Text(L("CHARACTERS"), InfoX + 17, y + 7, Ui.F20, C.Green);
+            if (anyLocked) Text(L("TOKENS: %d", (int)Ui.Profile.Tokens), InfoX + 400, y + 11, Ui.F16, C.Gold);
             for (int index = 0; index < available.Count; index++)
             {
                 var character = available[index];
                 float x = InfoX + 16 + (index % 3) * 198;
-                float cardY = y + 35 + (index / 3) * 128;
-                Box(x, cardY, 188, 117, C.PanelDk);
-                Outline(x, cardY, 188, 117, C.Line);
+                float cardY = y + 35 + (index / 3) * pitch;
+                Box(x, cardY, 188, cardH, C.PanelDk);
+                Outline(x, cardY, 188, cardH, C.Line);
                 var image = Ui.CharacterImages[character.Def.Id];
                 float scale = Math.Min(82f / image.Width, 96f / image.Height);
                 float width = image.Width * scale, imageHeight = image.Height * scale;
@@ -98,7 +101,13 @@ namespace Tossup.UI
                 Gfx.Draw(image, x + 7 + (82 - width) / 2, cardY + 10 + (96 - imageHeight) / 2, scale, scale);
                 Gfx.SetFont(Ui.F16); Color(C.Face);
                 Gfx.Printf(Lang.CharacterName(character.Def.Id), x + 97, cardY + 19, 83);
-                if (character.Locked) Text(L("LOCKED"), x + 97, cardY + 88, Ui.F16, C.Orange);
+                if (!character.Locked) continue;
+                Text(L("LOCKED"), x + 97, cardY + 88, Ui.F16, C.Orange);
+                var def = character.Def;
+                int price = Game.TokenPrice(coin), missing = price - (int)Ui.Profile.Tokens;
+                if (cardY + 114 >= ViewTop && cardY + 140 <= ViewBottom) // buttons inside the scrolled area only while fully visible
+                    Button(missing > 0 ? L("NEED %d MORE TOKENS", missing) : L("UNLOCK (%d TOKENS)", price), x + 8, cardY + 114, 172, 26, C.Green,
+                        () => A.UnlockWithTokens(def.Id, coin), missing <= 0, null, Ui.F16);
             }
             return y + height + 9;
         }

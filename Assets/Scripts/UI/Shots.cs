@@ -15,35 +15,31 @@ namespace Tossup.UI
 
     public static class Shots
     {
-        // Play the current level with a simple policy until the shop opens (or the run ends).
+        // Play the current fight with a simple policy (flip everything you can afford, end the round) until the
+        // shop opens (or the run ends).
         static void PlayToShop()
         {
             var g = Ui.Game;
             for (int guard = 0; guard < 400 && g.Phase == Phase.Encounter; guard++)
             {
-                if (g.Mulligan != null) Game.MulliganDone(g);
-                else if (g.Pending != null) Game.Resolve(g);
-                else if (g.Dealt != null)
-                {
-                    if (g.Encounter.Cleared) Game.EndLevel(g);
-                    else if (Game.CanFlip(g)) Game.Flip(g);
-                    else Game.Discard(g);
-                }
-                else if (Game.CanExchange(g)) Game.Exchange(g);
+                if (g.Pending != null) Game.Resolve(g);
                 else if (g.Encounter.Cleared) Game.EndLevel(g);
-                else break;
+                else
+                {
+                    int uid = g.Encounter.Hand.Find(u => Game.CanFlip(g, u));
+                    if (uid != 0) Game.Flip(g, uid);
+                    else Game.EndRound(g);
+                }
             }
             // This helper drives fixed screenshot states, so a losing seed must not erase the shop scene.
             if (g.Phase != Phase.Shop) Game.OpenSandboxShop(g);
-            Ui.Holding = false;
             Ui.FlipAnimation = null;
             Ui.ResolveTimer = 0;
         }
 
-        static void NewRun(string character, double seed)
+        static void NewRun(string character, double seed, bool stayOnMap = false)
         {
             Ui.Confirm = null;
-            Ui.Holding = false;
             Ui.FlipAnimation = null;
             Ui.ResolveTimer = 0;
             // Screenshot saves are isolated; unlock the requested fixture character explicitly.
@@ -51,6 +47,7 @@ namespace Tossup.UI
             if (characterIndex > 0) Ui.Profile.Wins.Add(Content.CharacterOrder[characterIndex - 1]);
             Ui.SelectedCharacter = Content.Characters[character];
             A.Start(seed);
+            if (!stayOnMap) Game.ChooseNode(Ui.Game, Ui.Game.Map.FindIndex(n => n.Row == 0)); // step onto the first table
             Ui.EncounterReveal = null; // ordinary gameplay shots should show the screen behind the reveal
             Ui.Shake = 0;
         }
@@ -70,23 +67,13 @@ namespace Tossup.UI
             new Shot { Name = "07_options", Setup = () => { Ui.OptionsTab = "game"; A.Go(UiScreen.Options); } },
             new Shot { Name = "08_options_sound", Setup = () => Ui.OptionsTab = "sound" },
             new Shot { Name = "09_confirm", Setup = A.ClearProgress, MouseX = 658, MouseY = 480 },
-            new Shot
-            {
-                Name = "10_mulligan",
-                Setup = () =>
-                {
-                    Ui.Confirm = null;
-                    NewRun("blade", 12345);
-                    Ui.Marked.Add(Ui.Game.Mulligan.Hand[1]);
-                },
-            },
-            new Shot { Name = "11_dealt", Setup = () => { Game.MulliganDone(Ui.Game); Ui.Marked.Clear(); } },
+            new Shot { Name = "10_hand", Setup = () => { Ui.Confirm = null; NewRun("blade", 12345); } },
             new Shot
             {
                 Name = "12_flip",
                 Setup = () =>
                 {
-                    A.FlipNextCoin();
+                    A.FlipFirst();
                     Ui.FlipAnimation.Elapsed = Ui.FlipAnimation.Duration * .55;
                 },
             },
@@ -97,10 +84,10 @@ namespace Tossup.UI
                 {
                     Ui.FlipAnimation = null;
                     Game.Resolve(Ui.Game);
-                    Ui.Holding = true;
                 },
             },
-            new Shot { Name = "14_bank_tooltip", Setup = () => { }, MouseX = 150, MouseY = 270 },
+            new Shot { Name = "14_hand_tooltip", Setup = () => { }, MouseX = 180, MouseY = 560 },
+            new Shot { Name = "14b_enemy_tooltip", Setup = () => { }, MouseX = 150, MouseY = 130 },
             new Shot { Name = "15_shop", Setup = PlayToShop },
             new Shot { Name = "16_shop_tooltip", Setup = () => { }, MouseX = 500, MouseY = 270 },
             new Shot
@@ -109,7 +96,7 @@ namespace Tossup.UI
                 Setup = () =>
                 {
                     Ui.Game.Phase = Phase.GameOver;
-                    Ui.Game.LostWhy = "out of coins, and not enough gold to exchange.";
+                    Ui.Game.LostWhy = "The Rookie won 14 to 9.";
                 },
             },
             new Shot { Name = "18_victory", Setup = () => Ui.Game.Phase = Phase.Victory },
@@ -120,20 +107,17 @@ namespace Tossup.UI
                 Setup = () =>
                 {
                     NewRun("seer", 777);
-                    Game.MulliganDone(Ui.Game);
-                    A.FlipNextCoin();
+                    A.FlipFirst();
                     Ui.FlipAnimation = null;
                     Game.Resolve(Ui.Game);
-                    Ui.Holding = true;
                     Ui.DebugVisible = true;
                 },
             },
             new Shot { Name = "21_german_shop", Setup = () => { Ui.DebugVisible = false; PlayToShop(); } },
             new Shot { Name = "22_run_encounter_reveal", Setup = () => { Ui.SelectedCharacter=Content.Characters["blade"];A.Start(6601);AppCore.Update(.9); } },
-            new Shot { Name = "23_contract", Setup = () => { NewRun("blade", 6602); Ui.EncounterReveal = null; Ui.Game.ContractsEnabled=true; Game.OfferContract(Ui.Game); } },
             new Shot { Name="24_edge", Setup=()=> {
-                Lang.Set("en"); NewRun("blade",6); Game.MulliganDone(Ui.Game);
-                Game.Flip(Ui.Game);Ui.Game.Pending.Result=Side.Tie;
+                Lang.Set("en"); NewRun("blade",6);
+                Game.Flip(Ui.Game,Ui.Game.Encounter.Hand[0]);Ui.Game.Pending.Result=Side.Tie;
                 Ui.FlipAnimation=new FlipAnimation {Id=Game.GetCoin(Ui.Game,Ui.Game.Pending.Uid).Id,Outcome=Side.Tie,Duration=1.0,Elapsed=.995};
             } },
             new Shot { Name="25_shop_coin", Setup=()=> {
@@ -147,7 +131,7 @@ namespace Tossup.UI
             } },
             new Shot { Name="27_german_augment", Setup=()=> {
                 PadNavigation.Connected=false;PadNavigation.MouseUsed();Lang.Set("de");NewRun("seer",6);
-                Ui.Game.Phase=Phase.Augment;Ui.Game.AugmentLevel=3;Ui.Game.AugmentOptions=new List<string>{"bankers_cut","type_specialist","hedge_fund"};
+                Ui.Game.Phase=Phase.Augment;Ui.Game.AugmentLevel=3;Ui.Game.AugmentOptions=new List<string>{"bankers_cut","type_specialist","deep_pockets"};
             } },
             new Shot { Name="28_german_augment_choices", Setup=()=>Game.ChooseAugment(Ui.Game,"bankers_cut") },
             new Shot { Name="29_square_dance_tooltip", Setup=()=> {
@@ -164,9 +148,11 @@ namespace Tossup.UI
                 Lang.Set("en");NewRun("blade",6603);A.OpenMenu();
             }},
             new Shot {Name="33_applying_result",Setup=()=> {
-                Ui.Game.Paused=false;Ui.EncounterReveal=null;Game.MulliganDone(Ui.Game);
-                A.FlipNextCoin();Ui.FlipAnimation=null;Ui.ResolveTimer=.9;Ui.Shake=0;
+                Ui.Game.Paused=false;Ui.EncounterReveal=null;
+                A.FlipFirst();Ui.FlipAnimation=null;Ui.ResolveTimer=.9;Ui.Shake=0;
             }},
+            new Shot {Name="34_map",Setup=()=> { Ui.Game=null;NewRun("blade",4242,true); }},
+            new Shot {Name="35_map_mint",Setup=()=> { Ui.Game.MapAt=Ui.Game.Map.FindIndex(n=>n.Kind==NodeKind.Mint);Ui.Game.MapPrompt="mint"; }},
         };
     }
 }

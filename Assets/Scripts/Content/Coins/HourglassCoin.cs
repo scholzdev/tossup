@@ -17,7 +17,7 @@ namespace Tossup.Coins
         public override IReadOnlyList<CoinType> Types { get; } = Array.Empty<CoinType>();
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(7) };
         public override IReadOnlyList<Effect> Edge { get; } = new[] { Effect.Energy(2) };
-        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Quota(4) };
+        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Penalty(4) };
 
         public HourglassCoin()
         {

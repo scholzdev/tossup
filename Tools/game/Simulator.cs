@@ -5,7 +5,7 @@ using System.Linq;
 using Tossup;
 
 // Balance tools use the same rules and event bus as the player. Measurements are
-// isolated neutral decks; full runs retain encounters, contracts and augments.
+// isolated neutral pouches; full runs retain enemies, the map and augments.
 static class Simulator
 {
     sealed class Measurement
@@ -27,13 +27,16 @@ static class Simulator
         {
             for(int seed=1;seed<=games;seed++)
             {
-                var g=Game.New(seed,"sim",applyRunEncounter:false);g.ContractsEnabled=false;g.Player.Gold=30;
+                // a fight of ten copies of the coin and no enemy; the fight never ends (the round counter is held at 1)
+                var g=Game.New(seed,"sim",applyRunEncounter:false);g.Player.Gold=30;
+                var e=g.Encounter;g.Coins.Clear();e.Hand.Clear();e.Pouch.Clear();e.Discard.Clear();e.EnemyId=null;
+                for(int i=0;i<10;i++){var coin=Game.NewCoin(g,id);g.Coins.Add(coin);e.Pouch.Add(coin.Uid);}
                 for(int step=1;step<=flips;step++)
                 {
-                    g.Encounter.Quota=g.Encounter.MaxQuota=1e9;
-                    if(step%15==1){g.Encounter.Doubler=0;g.Encounter.Tails=0;}
-                    g.Reshuffle=true;g.Player.Energy=Math.Max(g.Player.Energy,3);
-                    if(g.Dealt!=null&&Game.Flip(g))Game.Resolve(g);
+                    if(step%15==1){e.Doubler=0;e.Tails=0;}
+                    g.Player.Energy=Math.Max(g.Player.Energy,3);
+                    if(e.Hand.Count==0){e.Round=1;Game.EndRound(g);if(e.Hand.Count==0)break;}
+                    if(Game.Flip(g,e.Hand[0]))Game.Resolve(g);
                 }
             }
         }
@@ -56,31 +59,43 @@ static class Simulator
         foreach(string id in ids)if(id!="normal"&&Value(id)>Value("normal"))Add(id);
         Add("normal");return set;
     }
-    static void FinishFlip(GameState g)
+    // Flip a hand coin and resolve it. smart: re-flip a Tails when the energy left is not needed for the rest of the hand.
+    static void FlipCoin(GameState g,int uid,bool smart=false)
     {
-        if(!Game.CanFlip(g)&&Game.Discard(g)>0)return;
-        if(Game.Flip(g))Game.Resolve(g);
+        if(!Game.Flip(g,uid))return;
+        if(smart&&g.Pending.Result==Side.Tails&&Game.CanReroll(g)&&g.Player.Energy>g.Encounter.Hand.Sum(u=>Game.FlipCost(g,u)))Game.Reroll(g);
+        Game.Resolve(g);
     }
-    static void PlayCoin(GameState g,string bot,Dictionary<string,double> values)
+    // One round: flip every coin of the hand you can pay for, then end the round. smart: setup coins (buffs, odds) go
+    // first, then the strongest coins, and chips are used when behind.
+    static void PlayRound(GameState g,string bot,Dictionary<string,double> values)
     {
-        if(bot!="smart"){FinishFlip(g);return;}
-        double mean=g.Coins.Average(c=>values[c.Id]);
-        var coin=Game.GetCoin(g,g.Dealt.Uid);double v=values[coin.Id];
-        bool behind=g.Encounter.Quota>Game.CoinsLeft(g)*mean*.9;
-        if(v<0&&g.Coins.Count-g.Encounter.Discards>1&&Game.Discard(g)>0)return;
+        var e=g.Encounter;
+        if(bot!="smart")
+        {
+            foreach(int uid in e.Hand.ToList())FlipCoin(g,uid);
+            Game.EndRound(g);return;
+        }
         bool Use(string id){int slot=g.Items.IndexOf(id);return slot>=0&&Game.UseItem(g,slot);}
-        if(v<mean*.5&&Use("swap"))return;
-        double pts=Content.Coins[coin.Id].Heads.Where(e=>e.Type==EffectType.Score).Sum(e=>e.Amount);
-        if(behind){if(pts>=3)Use("double_down");if(pts>=2)Use("force_heads");if(g.Dealt!=null&&g.Dealt.Probability<.75)Use("weighted");}
-        if(Game.CoinsLeft(g)<=2&&g.Encounter.Quota>0&&g.Encounter.Quota<=2*mean)Use("extra_draw");
-        FinishFlip(g);
+        double Points(int uid)=>Content.Coins[Game.GetCoin(g,uid).Id].Heads.Where(x=>x.Type==EffectType.Score).Sum(x=>x.Amount);
+        bool Setup(int uid){var d=Content.Coins[Game.GetCoin(g,uid).Id];return d.Buffs.Count>0||d.Heads.Concat(d.Tails).Any(x=>x.Type==EffectType.NextMult||x.Type==EffectType.NextOdds||x.Type==EffectType.ComboShield||x.Type==EffectType.Amplify||x.Type==EffectType.NextHeads);}
+        while(g.Phase==Phase.Encounter&&!e.Cleared)
+        {
+            var playable=e.Hand.Where(u=>Game.CanFlip(g,u)).OrderBy(u=>Setup(u)?0:1).ThenByDescending(Points).ToList();
+            if(playable.Count==0)break;
+            int next=playable[0];
+            bool behind=e.Round>=3&&e.Scored<e.EnemyScore;
+            if(behind){if(Points(next)>=3)Use("double_down");if(Points(next)>=2)Use("force_heads");Use("weighted");}
+            if(e.Hand.Count<=2&&behind)Use("extra_draw");
+            FlipCoin(g,next,true);
+        }
+        if(g.Phase==Phase.Encounter&&!e.Cleared)Game.EndRound(g);
     }
     static void Shop(GameState g,string bot,Dictionary<string,double> values)
     {
         if(bot=="random"){for(int n=0;n<8;n++)if(!Game.Buy(g,(int)(g.RngState%4)))break;return;}
-        while(true)
+        while(g.Coins.Count<Game.DeckMax)
         {
-            if(bot=="greedy"&&g.Coins.Count>=g.Slots&&!Game.BuySlot(g))break;
             int best=-1;double bestValue=double.NegativeInfinity;
             for(int i=0;i<g.ShopOffers.Count;i++)
             {
@@ -88,42 +103,51 @@ static class Simulator
                 double v=bot=="smart"?values[id]:(Content.Coins[id].Cost);
                 if(v>bestValue){best=i;bestValue=v;}
             }
-            if(best<0)break;
-            if(g.Coins.Count>=g.Slots)
-            {
-                int price=Game.CoinOfferCost(g,best);
-                if(g.Slots<Game.DeckMax&&g.Player.Gold>=Game.SlotPrice(g)+price&&bestValue>.5){if(!Game.BuySlot(g))break;}
-                else
-                {
-                    var worst=g.Coins.OrderBy(c=>values[c.Id]).First();
-                    if(bestValue<=values[worst.Id]*1.3+.1||g.Player.Gold<8+price||!Game.Remove(g,worst.Uid))break;
-                }
-            }
+            if(best<0||(bot=="smart"&&bestValue<=values["normal"]))break;
             if(!Game.Buy(g,best))break;
         }
         if(bot!="smart")return;
+        // thin the pouch: melt the weakest coin while it is clearly below average
+        for(int n=0;n<2&&g.Player.Gold>=14;n++)
+        {
+            double mean=g.Coins.Average(c=>values[c.Id]);var worst=g.Coins.OrderBy(c=>values[c.Id]).First();
+            if(values[worst.Id]>=mean*.5||!Game.Remove(g,worst.Uid))break;
+        }
         if(g.ShopRelic!=null&&g.Player.Gold>=25)Game.BuyRelic(g);
         for(int i=0;i<g.ShopItems.Count;i++)if(new[]{"force_heads","double_down","weighted","extra_draw"}.Contains(g.ShopItems[i]))Game.BuyItem(g,i);
+    }
+    // Pick the next map node (smart: shop with gold, mint when poor, elites only with a full deck) or answer a Mint / Back Room.
+    static void MapStep(GameState g,string bot)
+    {
+        if(g.MapPrompt!=null){var normal=g.MapPrompt=="mint"?g.Coins.Find(c=>c.Id=="normal"):null;if(normal!=null&&Game.MapChoose(g,"stamp",normal.Uid))return;if(!Game.MapChoose(g,g.MapPrompt=="mint"?"energy":"gold")&&!Game.MapChoose(g,"gold"))throw new InvalidOperationException("map prompt stuck");return;}
+        var options=Enumerable.Range(0,g.Map.Count).Where(i=>Game.MapReachable(g,i)).ToList();
+        int Priority(NodeKind k)=>k switch{
+            NodeKind.Boss=>9,NodeKind.Shop=>g.Player.Gold>=15?5:0,NodeKind.Mint=>g.Player.Gold<15?4:1,
+            NodeKind.Elite=>g.Cleared>=2?4:-1,NodeKind.Altar=>3,NodeKind.Event=>3,_=>2};
+        int pick=bot=="smart"?options.OrderByDescending(i=>Priority(g.Map[i].Kind)).First():options[(int)(g.RngState%options.Count)];
+        if(!Game.ChooseNode(g,pick))throw new InvalidOperationException("map node refused");
+    }
+    // Per-fight results of every simulated run, for tuning: stage index -> (fights, wins, your points, enemy points).
+    static readonly Dictionary<string,(int fights,int wins,double you,double enemy,double youSq)> fights=new();
+    static bool bossSeen;
+    static void Record(GameState g,bool won)
+    {
+        var e=g.Encounter;var d=Game.EnemyOf(g);string key=(e.Boss?"boss":(e.Name.StartsWith("Elite ")?"elite ":"fight ")+g.EncounterIndex)+(d!=null?" "+d.Id:"");
+        fights.TryGetValue(key,out var t);fights[key]=(t.fights+1,t.wins+(won?1:0),t.you+e.Scored,t.enemy+e.EnemyScore,t.youSq+e.Scored*e.Scored);
     }
     static GameState Play(int seed,string character,string bot,bool all,bool defaults,int stake,List<string> fixedLoadout=null)
     {
         // Measure before constructing the run: Game.New rebinds global rule hooks.
         var values=bot=="smart"||!defaults ? Content.CoinOrder.ToDictionary(c=>c.Id,c=>Value(c.Id)) : null;
         var loadout=fixedLoadout??(defaults?null:BestSet(character,all));
-        var g=Game.New(seed,character,Unlocks(character,all),loadout?.Select(id=>Content.Coins[id]).ToList(),true,stake);
-        for(int guard=0;guard<2000;guard++)
+        var g=Game.New(seed,character,Unlocks(character,all),loadout?.Select(id=>Content.Coins[id]).ToList(),stake,map:true);
+        bossSeen=false;Encounter recorded=null;
+        for(int guard=0;guard<4000;guard++)
         {
-            if(g.Phase==Phase.Victory||g.Phase==Phase.GameOver)return g;
-            if(g.Phase==Phase.Contract){Game.SkipContract(g);continue;}
-            if(g.Mulligan!=null)
+            if(g.Phase==Phase.Victory||g.Phase==Phase.GameOver)
             {
-                if(bot=="smart")
-                {
-                    var hand=g.Mulligan.Hand;var marked=new List<int>();
-                    foreach(int uid in hand)if(hand.Count-marked.Count>3&&values[Game.GetCoin(g,uid).Id]<0)marked.Add(uid);
-                    Game.MulliganDiscard(g,marked);
-                }
-                Game.MulliganDone(g);continue;
+                if(g.Encounter!=null&&recorded!=g.Encounter&&!(g.Phase==Phase.Victory&&false)){recorded=g.Encounter;Record(g,g.Phase==Phase.Victory);}
+                return g;
             }
             if(g.Phase==Phase.Augment)
             {
@@ -131,12 +155,11 @@ static class Simulator
                 else Game.ChooseAugment(g,g.AugmentOptions[0]);
                 continue;
             }
+            if(g.Phase==Phase.Map){MapStep(g,bot);continue;}
             if(g.Phase==Phase.Shop){Shop(g,bot,values);Game.LeaveShop(g);continue;}
-            if(g.Dealt!=null)PlayCoin(g,bot,values);
-            else if(g.Encounter.Cleared)Game.EndLevel(g);
-            else if(Game.CanExchange(g))Game.Exchange(g);
-            else Game.GiveUp(g);
-            if(g.Phase==Phase.Encounter&&g.Encounter.Cleared&&bot!="smart")Game.EndLevel(g);
+            if(g.Encounter.Boss)bossSeen=true;
+            if(g.Encounter.Cleared){if(recorded!=g.Encounter){recorded=g.Encounter;Record(g,true);}Game.EndLevel(g);}
+            else PlayRound(g,bot,values);
         }
         throw new InvalidOperationException($"simulator stalled: seed {seed}, {character}/{bot}, {g.Phase}");
     }
@@ -226,10 +249,10 @@ static class Simulator
                 case "--runs":runs=int.Parse(Next());break;case "--stake":stake=int.Parse(Next());break;case "--trace":trace=int.Parse(Next());break;
                 case "--bot":bot=Next();break;case "--char":character=Next();break;case "--set":set=Next();break;case "--unlock":unlock=Next();break;case "--coins":coins=true;break;
                 case "--optimize":optimize=true;break;case "--search-runs":searchRuns=int.Parse(Next());break;
-                case "--quota":case "--payout":
-                    bool quota=args[i]=="--quota";var numbers=Next().Split(',').Select(double.Parse).ToArray();
+                case "--payout":
+                    var numbers=Next().Split(',').Select(double.Parse).ToArray();
                     if(numbers.Length>Game.Route.Count||numbers.Any(n=>!double.IsFinite(n)||n<0))throw new ArgumentException("invalid route overrides");
-                    for(int n=0;n<numbers.Length;n++)if(quota)Game.Route[n].PerCoin=numbers[n];else Game.Route[n].Payout=numbers[n];break;
+                    for(int n=0;n<numbers.Length;n++)Game.Route[n].Payout=numbers[n];break;
                 default:throw new ArgumentException("unknown argument: "+args[i]);
             }
         }
@@ -254,13 +277,18 @@ static class Simulator
             foreach(string line in g.Log)Console.WriteLine(line);
             Console.WriteLine($"END: {g.Phase}, cleared {g.Cleared}, deck {string.Join(", ",g.Coins.Select(c=>c.Id))}");return;
         }
-        Console.WriteLine("route (quota per coin/payout): "+string.Join("  ",Game.Route.Select(s=>$"{s.PerCoin}/{s.Payout}"))+"   runs per row: "+runs+(unlock=="all"?"   all locked coins unlocked":""));
+        Console.WriteLine("route payouts: "+string.Join("  ",Game.Route.Select(s=>s.Payout?.ToString()??"-"))+"   runs per row: "+runs+(unlock=="all"?"   all locked coins unlocked":""));
         foreach(string c in Content.CharacterOrder.Where(c=>character=="all"||c==character))foreach(string b in bots.Where(b=>bot=="all"||b==bot))
         {
-            var reached=new int[Game.Route.Count+1];int wins=0;double gold=0,tokens=0;
-            for(int seed=1;seed<=runs;seed++){var g=Play(seed,c,b,unlock=="all",set=="default",stake);for(int level=0;level<=g.Cleared&&level<reached.Length;level++)reached[level]++;if(g.Phase==Phase.Victory)wins++;gold+=g.Player.Gold;tokens+=Game.RunTokens(g);}
+            var reached=new int[Game.Route.Count+1];int wins=0,bosses=0;double gold=0,tokens=0;
+            for(int seed=1;seed<=runs;seed++){var g=Play(seed,c,b,unlock=="all",set=="default",stake);for(int level=0;level<=g.Cleared&&level<reached.Length;level++)reached[level]++;if(g.Phase==Phase.Victory)wins++;if(bossSeen)bosses++;gold+=g.Player.Gold;tokens+=Game.RunTokens(g);}
             string Pct(int n)=>(100.0*n/runs).ToString("F1").PadLeft(5)+"%";
-            Console.WriteLine($"{c,-8} {b,-7} clear L1 {Pct(reached[1])}  L3 {Pct(reached[3])}  L5 {Pct(reached[5])}  L7 {Pct(reached[7])}  boss {Pct(wins)}   avg gold {gold/runs,5:F1}  avg tokens {tokens/runs,4:F2}");
+            Console.WriteLine($"{c,-9} {b,-7} first fight {Pct(reached[1])}  3 fights {Pct(reached[3])}  5 fights {Pct(reached[5])}  reach boss {Pct(bosses)}  beat boss {Pct(wins)}   avg gold {gold/runs,5:F1}  avg tokens {tokens/runs,4:F2}");
+        }
+        if(fights.Count>0)
+        {
+            Console.WriteLine("fight                   n   win%   you  (sd)  enemy");
+            foreach(var k in fights.Keys.OrderBy(k=>k,StringComparer.Ordinal)){var t=fights[k];Console.WriteLine($"{k,-22}{t.fights,5} {100.0*t.wins/t.fights,5:F0}% {t.you/t.fights,6:F1} ({Math.Sqrt(Math.Max(0,t.youSq/t.fights-Math.Pow(t.you/t.fights,2))),4:F0}) {t.enemy/t.fights,6:F1}");}
         }
     }
 }

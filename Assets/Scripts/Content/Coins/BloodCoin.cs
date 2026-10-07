@@ -7,7 +7,7 @@ namespace Tossup.Coins
     {
         public override string Id => "blood";
         public override string Name => "Blood";
-        public override string Description => "Heads: 10 points. Tails: quota +6. Edge: half of both.";
+        public override string Description => "Heads: 10 points. Tails: enemy +6. Edge: half of both.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 22;
         public override int EnergyCost => 1;
@@ -15,11 +15,11 @@ namespace Tossup.Coins
         public override double TieProbability => 0.09;
         public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Blood };
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(10) };
-        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Quota(6) };
+        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Penalty(6) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Blood Heads landed", 12, 45, 130,
-            "Heads scores +1 point.", "Tails adds 1 less quota.", "Heads chance +2%.",
+            "Heads scores +1 point.", "Tails gives the enemy 1 less.", "Heads chance +2%.",
             MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
 
         public BloodCoin()

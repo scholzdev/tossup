@@ -7,7 +7,7 @@ namespace Tossup.Coins
     {
         public override string Id => "loan_note";
         public override string Name => "Loan Note";
-        public override string Description => "Heads: gain 7 gold. Tails: lose 1 gold and add 1 to the quota. Edge: gain 1 gold.";
+        public override string Description => "Heads: gain 7 gold. Tails: lose 1 gold and the enemy gains 1. Edge: gain 1 gold.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 14;
         public override int EnergyCost => 0;
@@ -15,11 +15,11 @@ namespace Tossup.Coins
         public override double TieProbability => 0.1;
         public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Greed };
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Gold(7) };
-        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.GoldLoss(1), Effect.Quota(1) };
+        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.GoldLoss(1), Effect.Penalty(1) };
         public override IReadOnlyList<Effect> Edge { get; } = new[] { Effect.Gold(1) };
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Gold repaid on Loan Note Tails", 10, 35, 100,
-            "Heads gains +3 gold.", "Tails no longer adds quota.", "Heads gains another +4 gold.",
+            "Heads gains +3 gold.", "Tails no longer gives the enemy points.", "Heads gains another +4 gold.",
             MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
 
         public LoanNoteCoin()

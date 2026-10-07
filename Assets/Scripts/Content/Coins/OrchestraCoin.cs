@@ -44,13 +44,6 @@ namespace Tossup.Coins
             };
         }
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails)
-        {
-            var definitions = new HashSet<CoinDef>();
-            foreach (var coin in game.Coins) definitions.Add(coin.Definition);
-            return heads * 2 * definitions.Count;
-        }
-
         public override void OnResolve(GameState game, CoinInst inst, Res res)
         {
             if (res.Result != Side.Heads) return;

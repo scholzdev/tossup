@@ -7,7 +7,7 @@ namespace Tossup.Coins
     {
         public override string Id => "sunder";
         public override string Name => "Sunder";
-        public override string Description => "Heads: 7 points. Tails: add 1 to the quota.";
+        public override string Description => "Heads: 7 points. Tails: the enemy gains 1.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 21;
         public override int EnergyCost => 1;
@@ -15,7 +15,7 @@ namespace Tossup.Coins
         public override double TieProbability => 0;
         public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Steel };
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(7) };
-        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Quota(1) };
+        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Penalty(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Sunder Heads landed", 20, 80, 240,

@@ -68,7 +68,7 @@ namespace Tossup.UI
             if (e != null && game.Phase == Phase.Encounter)
             {
                 if (e.Cleared && lastCleared == false) Play("levelup");
-                if (lastDiscards.HasValue && e.Discards > lastDiscards.Value && game.Mulligan == null) Play("discard");
+                if (lastDiscards.HasValue && e.Discards > lastDiscards.Value) Play("discard");
                 lastCleared = e.Cleared;
                 lastDiscards = e.Discards;
             }

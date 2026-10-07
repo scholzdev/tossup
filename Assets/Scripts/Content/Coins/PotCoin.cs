@@ -19,8 +19,6 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Score(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * Math.Min(8, (game.Coins.Count + 1) / 2.0);
-
         public override void OnResolve(GameState g, CoinInst i, Res r)
         {if(r.Result==Side.Heads)r.Effects.Add(Effect.Score(Math.Min(8,g.Encounter.Flips)));}
         public override CoinMastery Mastery { get; } = new CoinMastery(

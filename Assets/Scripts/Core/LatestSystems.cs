@@ -7,19 +7,14 @@ namespace Tossup
     {
         RunStart,
         EncounterStart,
-        Discard,
     }
-
-    public sealed class SideBetQuote { public string Side; public int Stake, Payout; }
 
     public static partial class Game
     {
         public static readonly List<string> ModifierOrder = new List<string>
-            { "lucky_day", "cold_snap", "power_surge", "blackout", "gold_rush", "high_stakes", "good_rhythm", "bonus_exchange" };
+            { "lucky_day", "cold_snap", "power_surge", "blackout", "gold_rush", "high_stakes", "good_rhythm", "wide_hand" };
         public static readonly Dictionary<string, ModifierDef> Modifiers = BuildModifiers();
         public static readonly List<StakeDef> Stakes = BuildStakes();
-        public static readonly Dictionary<string, ContractDef> Contracts = BuildContracts();
-        public static readonly List<string> ContractOrder = new List<string> { "quick_clear", "clean_run", "hot_streak", "bank_once", "amazon_prime" };
         public static readonly List<RunEncounterDef> Encounters = EncounterCatalog.Ordered;
         public static readonly Dictionary<string, RunEncounterDef> EncounterById = BuildEncounterIndex();
         public static readonly Dictionary<string, AugmentDef> AugmentDefs = AugmentCatalog.ById;
@@ -38,8 +33,7 @@ namespace Tossup
 
         static void ApplyCharacterEncounterPerks(GameState game, Encounter encounter)
         {
-            game.Player.Energy += CharacterPerkValue(game, CharacterPerkType.StartEnergy);
-            encounter.ExtraExchanges += (int)CharacterPerkValue(game, CharacterPerkType.ExtraExchange);
+            encounter.EnergyBonus += (int)CharacterPerkValue(game, CharacterPerkType.StartEnergy);
             encounter.ComboStep += CharacterPerkValue(game, CharacterPerkType.ComboStep);
             encounter.Shield += CharacterPerkValue(game, CharacterPerkType.ComboShield);
         }
@@ -50,30 +44,19 @@ namespace Tossup
             void Add(string id, string name, string text, Action<GameState,Encounter> apply) => d[id]=new ModifierDef{Id=id,Name=name,Description=text,Apply=apply};
             Add("lucky_day","Lucky Day","All coins +10% Heads.",(g,e)=>e.Magnet+=.10);
             Add("cold_snap","Cold Snap","All coins -10% Heads, payout +40%.",(g,e)=>{e.Magnet-=.10;e.Payout=Math.Floor((e.Payout??0)*1.4+.5);});
-            Add("power_surge","Power Surge","Start with 5 energy.",(g,e)=>g.Player.Energy=5);
-            Add("blackout","Blackout","Start with 1 energy, payout +40%.",(g,e)=>{g.Player.Energy=1;e.Payout=Math.Floor((e.Payout??0)*1.4+.5);});
+            Add("power_surge","Power Surge","+2 energy every round.",(g,e)=>e.EnergyBonus+=2);
+            Add("blackout","Blackout","-2 energy every round, payout +40%.",(g,e)=>{e.EnergyBonus-=2;e.Payout=Math.Floor((e.Payout??0)*1.4+.5);});
             Add("gold_rush","Gold Rush","Gold effects pay double.",(g,e)=>e.GoldMult=2);
-            Add("high_stakes","High Stakes","Quota +25%, payout +50%.",(g,e)=>{e.Quota=Math.Floor(e.Quota*1.25+.5);e.MaxQuota=e.Quota;e.Payout=Math.Floor((e.Payout??0)*1.5+.5);});
+            Add("high_stakes","High Stakes","The enemy flips 1 more coin a round, payout +50%.",(g,e)=>{if(e.EnemyId!=null)e.EnemyDraw++;e.Payout=Math.Floor((e.Payout??0)*1.5+.5);});
             Add("good_rhythm","Good Rhythm","Combo grows +0.4 per step.",(g,e)=>e.ComboStep=.4);
-            Add("bonus_exchange","Bonus Exchange","One extra exchange this level.",(g,e)=>e.ExtraExchanges++);
+            Add("wide_hand","Wide Hand","Your hand holds 1 more coin.",(g,e)=>e.HandSize++);
             return d;
         }
 
         static List<StakeDef> BuildStakes()
         {
             StakeDef S(string text,string info,string key=null,double value=0){var s=new StakeDef{Text=text,Info=info};if(key!=null)s.Rules[key]=value;return s;}
-            return new List<StakeDef>{S("NO CHANGES","No changes"),S("QUOTAS +15%","Quotas +15%","quota_mult",1.15),S("START WITH 15 GOLD","Start with 15 gold","start_gold",15),S("THE HOUSE INVERTS EVERY 4TH FLIP","The House inverts every 4th flip","boss_every",4),S("SHOP PRICES +20%","Shop prices +20%","price_mult",1.2),S("ONLY 2 EXCHANGES PER LEVEL","Only 2 exchanges per level","exchange_max",2),S("LEVEL 1 HAS A MODIFIER TOO","Level 1 has a modifier too","modifiers_from",1),S("QUOTAS +80% IN TOTAL","Quotas +80% in total","quota_mult",1.8)};
-        }
-
-        static Dictionary<string, ContractDef> BuildContracts()
-        {
-            return new Dictionary<string, ContractDef>{
-                ["quick_clear"]=new ContractDef{Id="quick_clear",Name="QUICK CLEAR",Description="Clear the quota within 6 flips.",Drawback="Heads odds are reduced by 5 percentage points.",Reward=5,HeadsPenalty=.05,Complete=(g,e)=>e.Flips<=6},
-                ["clean_run"]=new ContractDef{Id="clean_run",Name="CLEAN RUN",Description="Clear the quota without discarding a coin.",Drawback="Each Tails increases the quota by 2.",Reward=4,Complete=(g,e)=>e.Discards==0},
-                ["hot_streak"]=new ContractDef{Id="hot_streak",Name="HOT STREAK",Description="Reach a combo of 4 before clearing the quota.",Drawback="A Tie breaks your combo and loses its unbanked pot.",Reward=5,Complete=(g,e)=>e.BestComboLen>=4},
-                ["bank_once"]=new ContractDef{Id="bank_once",Name="LOCK IT IN",Description="Bank a combo before clearing the quota.",Drawback="Your combo multiplier is capped at x2.",Reward=3,Complete=(g,e)=>e.ComboBanked},
-                ["amazon_prime"]=new ContractDef{Id="amazon_prime",Name="AMAZON PRIME",Description="Clear with at least 3 unplayed coins remaining.",Drawback="Miss it and lose up to 2 coins from your stack.",RewardText="HALF PRICE REROLLS",Complete=(g,e)=>e.Queue.Count+e.Pile.Count>=3,RewardAction=(g,e)=>{g.RerollCost=Math.Max(1,g.RerollCost/2);g.RerollStep=Math.Max(1,g.RerollStep/2);}}
-            };
+            return new List<StakeDef>{S("NO CHANGES","No changes"),S("ENEMIES +1 POINT PER ROUND","Enemies +1 point per round","enemy_round",1),S("START WITH 3 GOLD","Start with 3 gold","start_gold",3),S("THE HOUSE INVERTS EVERY 4TH FLIP","The House inverts every 4th flip","boss_every",4),S("SHOP PRICES +20%","Shop prices +20%","price_mult",1.2),S("HAND HOLDS 4 COINS","Your hand holds 4 coins","hand_size",4),S("LEVEL 1 HAS A MODIFIER TOO","Level 1 has a modifier too","modifiers_from",1),S("ENEMIES +3 POINTS PER ROUND IN TOTAL","Enemies +3 points per round in total","enemy_round",3)};
         }
 
         static Dictionary<string, RunEncounterDef> BuildEncounterIndex()
@@ -110,15 +93,6 @@ namespace Tossup
             }
         }
 
-        public static bool PushCombo(GameState g)
-        {
-            if(g==null||g.Phase!=Phase.Encounter||g.Pending!=null||g.Dealt==null||g.Encounter.ComboSide==null)return false;
-            g.Encounter.PushUsed=true;
-            if(Flip(g))return true;
-            g.Encounter.PushUsed=false;
-            return false;
-        }
-
         public static double Rule(GameState game, string key, double fallback)
         {
             double value=fallback;
@@ -129,15 +103,6 @@ namespace Tossup
         public static int Price(GameState game, double value) => (int)Math.Floor(value*Rule(game,"price_mult",1)+.5);
 
         static double PrintedNet(IReadOnlyList<Effect> effects){double n=0;foreach(var e in effects){if(e.Type==EffectType.Score)n+=e.Amount;else if(e.Type==EffectType.Penalty)n-=e.Amount;}return n;}
-
-        static double DeckQuota(GameState game)
-        {
-            double power=0;
-            foreach(var coin in game.Coins){var d=coin.Definition;SandboxOdds odds=null;game.Sandbox?.Odds.TryGetValue(coin.Id,out odds);double tie=odds?.Tie??d.TieProbability;double heads=Math.Max(0,Math.Min(1-tie,(odds?.Heads??d.Probability)+(HasType(coin,"fortune")?game.FortuneBonus:0)));double tails=1-heads-tie;double expected=heads*PrintedNet(d.EffectsFor(OutcomeSide.Heads))+tails*PrintedNet(d.EffectsFor(OutcomeSide.Tails))+tie*PrintedNet(d.EffectsFor(OutcomeSide.Edge));
-                expected+=d.EstimateExtraScore(game,coin,heads,tails);power+=Math.Max(0,expected);}
-            double mult=Rule(game,"quota_mult",1), basis=QuotaFor(game.EncounterIndex,game.Coins.Count,mult), excess=Math.Max(0,power-1.5*game.Coins.Count);
-            return basis+Math.Floor(excess*1.3*mult+.5);
-        }
 
         static void ApplyModifier(GameState game)
         {
@@ -159,30 +124,17 @@ namespace Tossup
             foreach (var augment in ActiveAugments(g)) augment.OnRunHook(g, evt);
         }
 
-        public static bool OfferContract(GameState g)
+        static List<string> AugmentPool(GameState g)
         {
-            if(!g.ContractsEnabled||g.Phase!=Phase.Encounter||g.Encounter==null||g.Encounter.Flips>0)return false;
-            var pool=new List<string>(ContractOrder);if(g.Encounter.Boss)pool.Remove("amazon_prime");g.Encounter.ContractOptions=Offers(g,pool,3);g.Phase=Phase.Contract;return true;
-        }
-        public static bool ChooseContract(GameState g,string id){if(g.Phase!=Phase.Contract||g.Encounter.ContractOptions==null||!g.Encounter.ContractOptions.Contains(id))return false;g.Encounter.Contract=new ContractState{Id=id,StartGold=g.Player.Gold,StartDiscards=g.Encounter.Discards};g.Encounter.ContractOptions=null;g.Phase=Phase.Encounter;Log(g,"Accepted contract: "+Contracts[id].Name+".");return true;}
-        public static bool SkipContract(GameState g){if(g.Phase!=Phase.Contract)return false;g.Encounter.ContractOptions=null;g.Phase=Phase.Encounter;Log(g,"Contract skipped.");return true;}
-        static void SettleContract(GameState g)
-        {
-            var c = g.Encounter.Contract;
-            if (c == null || c.Result != null) return;
-            var d = Contracts[c.Id];
-            bool ok = d.Complete == null || d.Complete(g, g.Encounter);
-            c.Result = ok ? "COMPLETE" : "MISSED";
-            if (ok) { g.Player.Gold += d.Reward; Log(g, "Contract complete: +" + d.Reward + " gold."); }
-            else Log(g, "Contract missed: " + d.Name + ".");
-        }
-
-        public static bool OfferAugment(GameState g,int level)
-        {
-            if (g.Phase != Phase.Shop || g.Sandbox != null || (level != 3 && level != 6)) return false;
             var pool = new List<string>();
             foreach (var augment in AugmentCatalog.Ordered)
                 if (!g.Augments.Contains(augment.Id) && augment.Available(g)) pool.Add(augment.Id);
+            return pool;
+        }
+        public static bool OfferAugment(GameState g,int level)
+        {
+            if (g.Phase != Phase.Shop || g.Sandbox != null || (level != 3 && level != 6)) return false;
+            var pool = AugmentPool(g);
             if (pool.Count < 3) return false;
             g.AugmentLevel = level;
             g.AugmentOptions = Offers(g, pool, 3);
@@ -201,7 +153,7 @@ namespace Tossup
             if (g.AugmentPending == null) FinishAugment(g);
             return true;
         }
-        static void FinishAugment(GameState g){int level=g.AugmentLevel??g.EncounterIndex+1;g.AugmentLevel=null;g.AugmentOptions=null;g.AugmentPending=null;g.EncounterIndex=level;StartEncounter(g);}
+        static void FinishAugment(GameState g){if(g.Map!=null&&!g.Endless){g.AugmentLevel=null;g.AugmentOptions=null;g.AugmentPending=null;g.Phase=Phase.Map;return;}int level=g.AugmentLevel??g.EncounterIndex+1;g.AugmentLevel=null;g.AugmentOptions=null;g.AugmentPending=null;g.EncounterIndex=level;StartEncounter(g);}
         public static List<AugmentChoice> AugmentChoices(GameState g)
         {
             var pending = g.AugmentPending;
@@ -220,17 +172,11 @@ namespace Tossup
             return true;
         }
 
-        public static SideBetQuote SideBetQuote(GameState g,string side){if(g.Dealt==null||(side!=Side.Heads&&side!=Side.Tails))return null;double odds=side==Side.Heads?g.Dealt.Probability:1-g.Dealt.Probability-g.Dealt.TieProbability;if(odds<=0)return null;int multiplier=g.RunEncounter?.SideBetMultiplier??1;int stake=5*multiplier,payout=Math.Max(stake,(int)Math.Floor(stake/odds+.5))*multiplier;foreach(var augment in ActiveAugments(g))payout=augment.SideBetPayout(g,payout);return new SideBetQuote{Side=side,Stake=stake,Payout=payout};}
-        public static bool PlaceSideBet(GameState g,string side){var e=g.Encounter;if(g.Phase!=Phase.Encounter||e==null||e.Flips!=0||g.Dealt==null||e.SideBetSide!=null)return false;var q=SideBetQuote(g,side);if(q==null||g.Player.Gold<q.Stake)return false;g.Player.Gold-=q.Stake;e.SideBetSide=side;e.SideBetOutcome=null;e.SideBetCost=q.Stake;e.SideBetPayout=q.Payout;Log(g,"Bet "+q.Stake+" gold on "+side+" ("+q.Payout+" gold payout).");return true;}
-
         static double ComboPot(double len)=>Math.Max(0,(len-1)*len/2);
-        public static bool CanBankCombo(GameState g)=>g!=null&&g.Phase==Phase.Encounter&&g.Encounter!=null&&g.Pending==null&&g.Mulligan==null&&g.Encounter.ComboPot>0;
+        public static bool CanBankCombo(GameState g)=>g!=null&&g.Phase==Phase.Encounter&&g.Encounter!=null&&g.Pending==null&&g.Encounter.ComboPot>0;
         static int BankComboPot(GameState g,bool counts=true){var e=g.Encounter;int amount=(int)Math.Floor(e.ComboPot);if(amount<=0)return 0;amount+=g.RunEncounter?.ComboBankBonus??0;foreach(var augment in ActiveAugments(g))amount+=augment.BankBonus(g);g.Player.Gold+=amount;if(counts)e.ComboBanked=true;e.ComboPot=0;e.ComboSide=null;e.ComboLen=0;Log(g,"Banked "+amount+" combo gold.");return amount;}
         public static int BankCombo(GameState g)=>CanBankCombo(g)?BankComboPot(g):0;
-        public static bool DiscardBank(GameState g,int uid){var e=g.Encounter;if(e==null||e.BankDiscards<1)return false;int i=e.Queue.IndexOf(uid);if(i<0||i>=Visible||Discard(g,new[]{uid})==0)return false;e.BankDiscards--;return true;}
-        public static int ExchangesLeft(GameState g)=>(int)Rule(g,"exchange_max",ExchangeMax)+g.Encounter.ExtraExchanges-g.Encounter.Exchanges;
-        public static int SlotPrice(GameState g)=>SlotCost+SlotStep*(g.Slots-StartMax);
-        public static bool BuySlot(GameState g){int cost=SlotPrice(g);if(g.Phase!=Phase.Shop||g.Slots>=DeckMax||g.Player.Gold<cost)return false;g.Player.Gold-=cost;g.Slots++;Log(g,"Bought deck slot "+g.Slots+" for "+cost+" gold.");return true;}
+        public static bool DiscardBank(GameState g,int uid){var e=g.Encounter;if(e==null||e.BankDiscards<1||!e.Hand.Contains(uid)||Discard(g,new[]{uid})==0)return false;e.BankDiscards--;return true;}
         public static int CoinOfferCost(GameState g,int index){if(index<0||index>=g.ShopOffers.Count||g.ShopOffers[index]==null)return -1;var coin=g.ShopOffers[index];int discount=g.RunEncounter?.CoinDiscount?.Invoke(g,coin)??0;return Math.Max(0,Price(g,coin.Cost)-(int)g.Shop.CoinPriceDiscount-(int)CharacterPerkValue(g,CharacterPerkType.CoinDiscount)-discount);}
 
         static void SetShopStock(GameState g)

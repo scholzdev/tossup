@@ -29,7 +29,7 @@ namespace Tossup
         public Res Res;
         public Effect Effect;
         public Buff Buff;
-        public double ScoreDelta, GoldDelta, EnergyDelta, QuotaDelta;
+        public double ScoreDelta, GoldDelta, EnergyDelta, PenaltyDelta;
         public int ReturnedDelta;
         public int BuffsAffected;
         public string Text;

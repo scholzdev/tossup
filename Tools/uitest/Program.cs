@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Tossup;
 using Tossup.UI;
 
@@ -130,6 +131,7 @@ static class Program
         var backend = new HeadlessBackend();
         Gfx.Backend = backend;
         AppCore.Load(platform);
+        if (Environment.GetEnvironmentVariable("UITEST_SVG") is string svgFolder) { SvgShots.Run(platform, svgFolder, root); return 0; }
         LatestTests.Run();
         AuditRegressionTests.Run();
         LayoutProof(platform, backend);
@@ -274,11 +276,15 @@ static class Program
         Check(Ui.SetsCatalogPage == 2 && secondPageCoins.Count == Math.Min(32, traderCoins - 32),
             "the remaining character coins are reachable on the second page");
         Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> {"dagger","normal"}, Seed = 6, Energy = 99 });
-        Ui.Game.Encounter.Quota = Ui.Game.Encounter.MaxQuota = 999;
-        Ui.Holding = false; Ui.FlipAnimation = null; Ui.ResolveTimer = 0;
-        A.FlipNextCoin(); Ui.Game.Pending.Result = Side.Tails; Ui.FlipAnimation.Outcome = Side.Tails;
+        Ui.FlipAnimation = null; Ui.ResolveTimer = 0;
+        A.FlipCoin(Ui.Game.Encounter.Hand[0]); Ui.Game.Pending.Result = Side.Tails; Ui.FlipAnimation.Outcome = Side.Tails;
         string flippedId = Game.GetCoin(Ui.Game, Ui.Game.Pending.Uid).Id;
         A.Update(Ui.FlipAnimation.Duration); Capture();
+        Check(Ui.Deciding && backend.Texts.Exists(t => t.Value == "RE-FLIP (1 ENERGY)") && backend.Texts.Exists(t => t.Value == "KEEP"), "an affordable re-flip pauses on the landed result");
+        A.Update(2); Check(Ui.Game.Pending != null, "the result does not auto-resolve while a re-flip is offered");
+        A.Reflip(); Check(Ui.FlipAnimation != null && Ui.Game.Pending.Rerolled && !Ui.Deciding, "Re-flip replays the landing once");
+        Ui.Game.Pending.Result = Side.Tails; Ui.FlipAnimation.Outcome = Side.Tails;
+        A.Update(Ui.FlipAnimation.Duration); Capture(); // the one re-flip is spent, so it resolves by itself again
         var applying = backend.Texts.Find(t => t.Value == "APPLYING...");
         var landed = backend.Texts.FindLast(t => t.Value == "TAILS");
         var coinQuad = backend.Images["coins/" + flippedId];
@@ -286,50 +292,66 @@ static class Program
             "applying feedback is centered under the landed coin");
         Check(landed.Y+landed.Height <= applying.Y, "the outcome and applying feedback do not overlap");
         A.Update(.91); Capture();
-        Check(Ui.Game.Pending == null && Ui.Holding && !backend.Texts.Exists(t => t.Value == "APPLYING..."),
+        Check(Ui.Game.Pending == null && !backend.Texts.Exists(t => t.Value == "APPLYING..."),
             "applying feedback gives way to the resolved result");
-        Ui.Holding = false; Ui.Shake = 0;
-        Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> {"normal","dagger","sword"}, Seed = 6 });
-        Game.Select(Ui.Game, Ui.Game.Coins[0].Uid); Capture();
-        var bankTarget = Ui.Regions.Find(r => r.Coin?.Id == "dagger" && r.X < 400);
-        var bankIcon = backend.Images["coins/dagger"];
-        Check(bankTarget != null && bankTarget.H >= 44 && bankIcon[4]-bankIcon[0] >= 36,
-            "starting decks have larger bank rows and coin icons");
-        float previousBankHeight = 0;
-        for (int count = 1; count <= Game.DeckMax; count++)
+        Ui.Shake = 0;
+        // the hand: one clickable card per coin, inside the hand panel, for any hand size
+        Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> {"normal","dagger","sword"}, Seed = 6 }); Capture();
+        const float cardsY = EncounterView.CardsY - 1;
+        var handTarget = Ui.Regions.Find(r => r.Coin?.Id == "dagger" && r.Y >= cardsY);
+        var handIcon = backend.Images["coins/dagger"];
+        Check(handTarget != null && handTarget.H >= 150 && handTarget.W >= 200 && handIcon[4]-handIcon[0] >= 48, "hand cards are large with readable coin icons");
+        for (int count = 1; count <= 12; count++)
         {
-            var deck = new List<string>(); for (int i=0;i<count;i++) deck.Add("normal");
-            Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = deck, Seed = 6 }); Capture();
-            var bankRegions = Ui.Regions.FindAll(r => r.Coin != null && r.X < 400);
-            var footer = backend.Texts.Find(t => t.Value.StartsWith("BANK ") && t.X < 400);
-            Check(bankRegions.Count == count && bankRegions.TrueForAll(r => r.Y+r.H < footer.Y && r.H >= Ui.F20.Height+4),
-                "every remaining coin fits above the footer for bank size " + count);
-            Check(EncounterView.BankPanelHeight >= previousBankHeight && EncounterView.BankPanelHeight <= 480,
-                "the bank panel grows with its contents within the sidebar");
-            Check(footer.Y+footer.Height <= 170+EncounterView.BankPanelHeight,
-                "the bank summary stays inside the dynamically sized panel");
-            previousBankHeight = EncounterView.BankPanelHeight;
+            var deck = new List<string>(); for (int i=0;i<12;i++) deck.Add("normal");
+            Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = deck, Seed = 6 });
+            var e = Ui.Game.Encounter;
+            if (e.Hand.Count > count) { e.Pouch.InsertRange(0, e.Hand.GetRange(count, e.Hand.Count - count)); e.Hand.RemoveRange(count, e.Hand.Count - count); }
+            else Game.DrawCoins(Ui.Game, count - e.Hand.Count);
+            Capture();
+            var cards = Ui.Regions.FindAll(r => r.Coin != null && r.Y >= cardsY);
+            Check(cards.Count == count && cards.TrueForAll(r => r.X >= EncounterView.InnerX && r.X + r.W <= EncounterView.InnerRight + .5f && r.W >= 60 && r.H >= Ui.F20.Height + 4 &&
+                r.Y + r.H <= EncounterView.FooterY),
+                "every hand coin fits its panel for hand size " + count);
+            cards.Sort((a, b) => a.X.CompareTo(b.X));
+            for (int i = 1; i < cards.Count; i++) Check(cards[i].X >= cards[i-1].X + cards[i-1].W, "hand cards do not overlap for hand size " + count);
+            Check(Ui.Buttons.FindAll(b => b.Label == "HAND COIN").Count == count && Ui.Buttons.Exists(b => b.Label == "END ROUND"), "each hand coin and the round button can be clicked");
         }
-        Ui.Game.Encounter.BankDiscards = 1; Ui.BankDiscardMode = true;
-        for (int i=0;i<4;i++) Game.AddBuff(Ui.Game,"mult",2,2,true);
+        Ui.Game.Encounter.BankDiscards = 1; Ui.DiscardMode = true;
+        for (int i=0;i<6;i++) Game.AddBuff(Ui.Game,"mult",2,2,true);
         Capture();
-        var compactRegions = Ui.Regions.FindAll(r => r.Coin != null && r.X < 400);
-        Check(compactRegions.Count == Game.DeckMax && compactRegions.TrueForAll(r => r.H >= Ui.F20.Height+4),
-            "a full bank fits readable rows with discard controls and buffs");
-        foreach (var text in backend.Texts.FindAll(t => t.X >= 105 && t.X < 400 && t.Y >= 226))
-            Check(text.Y+text.Height <= 170+EncounterView.BankPanelHeight,
-                "bank footer, buffs and discard hint stay inside the panel");
-        Ui.BankDiscardMode = false;
+        var discardToggle = Ui.Buttons.Find(b => b.Label == "DISCARD MODE: ON");
+        Check(discardToggle != null, "the discard toggle shows while a discard is armed");
+        foreach (var text in backend.Texts.FindAll(t => t.Y >= EncounterView.StatusY - 2 && t.Y < EncounterView.StatusY + 26 && t.X < discardToggle.X))
+            Check(text.X >= EncounterView.InnerX && text.X + text.Width <= discardToggle.X, "buffs stay on their line, left of the discard toggle");
+        Check(backend.Texts.Exists(t => t.Value.StartsWith("BUFF x2")), "active buffs are listed");
+        Ui.DiscardMode = false;
         Ui.Game = Game.NewSandbox(new SandboxConfig { Coins = new List<string>{"normal","normal","normal"}, Seed = 6 });
-        Ui.Game.Encounter.Quota = Ui.Game.Encounter.MaxQuota = 999; Capture();
-        float openingBankHeight = EncounterView.BankPanelHeight;
-        Game.Flip(Ui.Game); Capture();
-        Check(EncounterView.BankPanelHeight < openingBankHeight,
-            "the bank shrinks when a coin leaves to flip");
-        Game.Resolve(Ui.Game); Game.Discard(Ui.Game); Game.Discard(Ui.Game); Capture();
-        Check(Ui.Regions.FindAll(r => r.Coin != null && r.X < 400).Count == 0 &&
-            backend.Texts.Exists(t => t.Value == "NO COINS LEFT" && t.X < 400),
-            "an exhausted bank shows a compact empty state without phantom slots");
+        Capture();
+        foreach (int uid in new List<int>(Ui.Game.Encounter.Hand)) { Game.Flip(Ui.Game, uid); Game.Resolve(Ui.Game); }
+        Capture();
+        Check(Ui.Regions.FindAll(r => r.Coin != null && r.Y >= cardsY).Count == 0 && Ui.Buttons.FindAll(b => b.Label == "HAND COIN").Count == 0 &&
+            backend.Texts.Exists(t => t.Value == "NO COINS IN HAND  -  END THE ROUND") && Ui.Buttons.Exists(b => b.Label == "END ROUND"),
+            "an empty hand shows a compact empty state and the round can still end");
+        Check(Ui.Game.Encounter.RoundLog.Count == 3 && backend.Texts.FindAll(t => t.Value == "HEADS" || t.Value == "TAILS").Count == 3,
+            "flipped coins keep their cards, showing the side they landed on");
+        // the scoreboard: played rounds show their points, the current round is marked, totals follow
+        var board = Game.NewSandbox(new SandboxConfig { Coins = new List<string>{"normal","normal","normal","normal","normal","normal"}, Seed = 6 });
+        Ui.Game = board;
+        var be = board.Encounter;
+        be.EnemyId = "pickpocket"; be.EnemyDraw = 4; be.EnemyRoundPoints = 1; be.EnemyPouch = new List<string>(EnemyCatalog.ById["pickpocket"].Pouch);
+        A.FlipCoin(be.Hand[0]); A.Update(5); if (Ui.Deciding) A.Keep(); A.Update(5); A.EndRound();
+        Capture();
+        Check(be.Round == 2 && be.RoundScores.Count == 1 && be.EnemyRoundScores.Count == 1 &&
+            Math.Abs(be.RoundScores[0] - be.Scored) < 1e-9 && Math.Abs(be.EnemyRoundScores[0] - be.EnemyScore) < 1e-9 &&
+            Math.Abs(be.EnemyScore - (be.EnemyFlips.Sum(f => f.Points) + be.EnemyRoundPoints)) < 1e-9,
+            "the model keeps per-round points that add up to the totals");
+        Check(backend.Texts.Exists(t => t.Value == GameText.Num(be.EnemyRoundScores[0])) && backend.Texts.Exists(t => t.Value == "R5") &&
+            backend.Texts.Exists(t => t.Value == "ROUND 2 / 5") && backend.Texts.Exists(t => t.Value == "TOTAL") && backend.Texts.Exists(t => t.Value == "LAST FLIPS  -  ROUND 1"),
+            "the scoreboard lists the finished round and the enemy's revealed flips");
+        Check(RunSave.Decode(RunSave.Encode(board)) is GameState saved && saved.Encounter.RoundScores.Count == 1 &&
+            saved.Encounter.EnemyRoundScores[0] == be.EnemyRoundScores[0] && saved.Encounter.RoundStartScored == be.RoundStartScored, "per-round points survive a save");
+        Ui.Game = null;
         backend.Capture = false;
         foreach (var shot in Shots.Script())
         {
@@ -339,7 +361,7 @@ static class Program
                     shot.Name + " has a clickable outside the canvas: " + button.Label);
         }
         Ui.Game = null; Ui.Confirm = null; Ui.EncounterReveal = null; Ui.FlipAnimation = null;
-        Ui.Holding = false; Ui.ResolveTimer = 0; PadNavigation.MouseUsed(); Lang.Set("en");
+        Ui.ResolveTimer = 0; PadNavigation.MouseUsed(); Lang.Set("en");
         Console.WriteLine("layout: full-width art, Lua-sized menu, resized input, result feedback and tour bounds passed");
     }
 
@@ -351,6 +373,9 @@ static class Program
     }
 
     static List<Button> All(string label) => Ui.Buttons.FindAll(b => b.Label != null && b.Label.StartsWith(label));
+
+    static readonly string[] MapLabels = { "TABLE", "ELITE", "SHOP", "MINT", "ALTAR", "BACK ROOM", "THE HOUSE", "REMOVE SELECTED COIN",
+        "+1 MAX ENERGY", "+8 GOLD", "+15 GOLD", "A RANDOM CHIP", "NEXT ENEMY -5 POINTS" };
 
     static bool Click(HeadlessPlatform platform, Button b)
     {
@@ -372,7 +397,7 @@ static class Program
         Ui.Confirm = null;
         Ui.SelectedCharacter = Content.Characters["blade"];
         A.Go(UiScreen.Title);
-        int runs = 0, shops = 0, wins = 0, losses = 0, endless = 0, items = 0, bought = 0, exchanges = 0, maxLevel = 0;
+        int runs = 0, shops = 0, wins = 0, losses = 0, endless = 0, items = 0, bought = 0, rounds = 0, maxLevel = 0;
         Phase? lastPhase = null;
         for (int frame = 0; frame < frames; frame++)
         {
@@ -392,10 +417,10 @@ static class Program
                 }
                 if (g != null) maxLevel = Math.Max(maxLevel, g.EncounterIndex);
                 if (Environment.GetEnvironmentVariable("UITEST_TRACE") != null && frame % 5000 == 0)
-                    Console.WriteLine($"[{frame}] screen={Ui.Screen} phase={g?.Phase} paused={g?.Paused} level={g?.EncounterIndex} flips={g?.Encounter?.Flips} left={(g?.Encounter!=null?Game.CoinsLeft(g):-1)} quota={g?.Encounter?.Quota} cleared={g?.Encounter?.Cleared} mull={g?.Mulligan != null} dealt={g?.Dealt != null} " +
-                        $"pending={g?.Pending != null} hold={Ui.Holding} anim={Ui.FlipAnimation != null} timer={Ui.ResolveTimer:F2} buttons=" +
+                    Console.WriteLine($"[{frame}] screen={Ui.Screen} phase={g?.Phase} paused={g?.Paused} level={g?.EncounterIndex} flips={g?.Encounter?.Flips} round={g?.Encounter?.Round} hand={g?.Encounter?.Hand.Count} score={g?.Encounter?.Scored}:{g?.Encounter?.EnemyScore} cleared={g?.Encounter?.Cleared} " +
+                        $"pending={g?.Pending != null} anim={Ui.FlipAnimation != null} timer={Ui.ResolveTimer:F2} buttons=" +
                         string.Join("|", Ui.Buttons.ConvertAll(b => b.Label ?? "?")));
-                if (Ui.Confirm != null) { Click(platform, Find("CANCEL")); continue; }
+                if (Ui.Confirm != null) { Click(platform, Find("CANCEL") ?? Find("OK")); continue; }
                 if (g == null || g.Paused)
                 {
                     if (Ui.Screen == UiScreen.Help) Click(platform, Find("GOT IT") ?? Find("BACK"));
@@ -406,27 +431,27 @@ static class Program
                 }
                 if (g.Phase == Phase.Encounter)
                 {
-                    if (g.Mulligan != null)
+                    if (g.Encounter.Cleared || rng.Next(40) == 0 && g.Encounter.Cleared)
                     {
-                        if (rng.Next(4) == 0) Click(platform, All("CARD").Count > 0 ? All("CARD")[rng.Next(All("CARD").Count)] : null);
-                        else if (rng.Next(3) == 0 && Click(platform, Find("DISCARD"))) { }
-                        else Click(platform, Find("START LEVEL"));
+                        Click(platform, Find("OPEN SHOP") ?? Find("CONTINUE"));
                         continue;
                     }
-                    if (rng.Next(6) == 0 && Click(platform, Find("OPEN SHOP"))) continue;
                     if (rng.Next(12) == 0 && Click(platform, Find("ITEM"))) { items++; continue; }
-                    Button bankCombo=All("BANK ").Find(b=>b.Label!="BANK COIN");
-                    if (bankCombo != null || Find("PUSH") != null)
-                    {
-                        if (rng.Next(3) == 0) Click(platform, bankCombo); else Click(platform, Find("PUSH"));
-                        continue;
-                    }
-                    if (Click(platform, Find("FLIP")) || Click(platform, Find("NEXT COIN"))) continue;
-                    if (rng.Next(3) == 0 && Click(platform, Find("DISCARD"))) continue;
-                    var pay = Find("PAY") ?? Find("BUY MORE COINS");
-                    if (pay != null && rng.Next(4) > 0) { Click(platform, pay); exchanges++; continue; }
+                    Button bankCombo = All("BANK ").Find(b => b.Label != "BANK COIN");
+                    if (bankCombo != null && rng.Next(4) == 0) { Click(platform, bankCombo); continue; }
+                    if (Find("RE-FLIP") != null) { Click(platform, rng.Next(3) == 0 ? Find("RE-FLIP") : Find("KEEP")); continue; }
+                    if (Find("DISCARD MODE") != null && rng.Next(4) == 0) { Click(platform, Find("DISCARD MODE")); continue; }
+                    var cards = All("HAND COIN");
+                    if (cards.Count > 0 && rng.Next(8) > 0) { Click(platform, cards[rng.Next(cards.Count)]); continue; }
+                    if (Click(platform, Find("END ROUND"))) { rounds++; continue; }
                     if (Find("START AGAIN") != null) { Click(platform, Find("START AGAIN")); runs++; lastPhase = null; continue; }
-                    Click(platform, Find("DISCARD"));
+                    continue;
+                }
+                if (g.Phase == Phase.Map)
+                {
+                    var choices = Ui.Buttons.FindAll(b => !b.Disabled && b.Label != null && Array.IndexOf(MapLabels, b.Label) >= 0);
+                    if (choices.Count == 0) throw new InvalidOperationException("the map offers nothing to click (prompt=" + g.MapPrompt + ")");
+                    Click(platform, choices[rng.Next(choices.Count)]);
                     continue;
                 }
                 if (g.Phase == Phase.Shop)
@@ -436,12 +461,7 @@ static class Program
                     else if (r == 3) Click(platform, Find("REROLL"));
                     else if (r == 4) { var coins = All("COIN"); if (coins.Count > 0) Click(platform, coins[rng.Next(coins.Count)]); }
                     else if (r == 5 && rng.Next(3) == 0) { var coins = All("COIN"); if (coins.Count > 0) Click(platform, coins[rng.Next(coins.Count)]); Click(platform, Find("REMOVE")); }
-                    else if (r >= 7) Click(platform, Find("NEXT ROUND"));
-                    continue;
-                }
-                if (g.Phase == Phase.Contract)
-                {
-                    Click(platform, All("TAKE CONTRACT").Count > 0 ? All("TAKE CONTRACT")[rng.Next(All("TAKE CONTRACT").Count)] : Find("SKIP CONTRACT"));
+                    else if (r >= 7) Click(platform, Find("NEXT ROUND") ?? Find("BACK TO MAP"));
                     continue;
                 }
                 if (g.Phase == Phase.Augment)
@@ -450,7 +470,8 @@ static class Program
                         Click(platform, All("CHOOSE").Count > 0 ? All("CHOOSE")[rng.Next(All("CHOOSE").Count)] : null);
                     continue;
                 }
-                // finish screen
+                // finish screen (a GAME OVER notice over the round comes first)
+                if (Click(platform, Find("OK"))) continue;
                 if (g.Phase == Phase.Victory && Find("ENDLESS MODE") != null && rng.Next(2) == 0) { Click(platform, Find("ENDLESS MODE")); endless++; }
                 else { Click(platform, Find("NEW RUN")); runs++; lastPhase = null; }
             }
@@ -462,7 +483,7 @@ static class Program
             }
         }
         Console.WriteLine($"player: {frames} frames, {runs} runs, {shops} shop visits, {wins} boss wins, {endless} into endless, " +
-            $"{losses} losses, deepest level {maxLevel}, {items} chips used, {bought} shop buys, {exchanges} exchanges");
+            $"{losses} losses, deepest level {maxLevel}, {items} chips used, {bought} shop buys, {rounds} rounds ended");
         return true;
     }
 }

@@ -36,15 +36,7 @@ namespace Tossup
                 var root = new Parser(text).Read() as Table;
                 if (root == null || !(Get(root,"version") is double version) || version != 1 || !(Get(root,"game") is Table data)) return null;
                 var game = (GameState)ConvertData(data,typeof(GameState));
-                // Lua stores the bet in one nested record; Unity's model keeps these fields on Encounter.
-                if (Get(data,"encounter") is Table encounter && Get(encounter,"side_bet") is Table bet)
-                {
-                    game.Encounter.SideBetSide = Get(bet,"side") as string;
-                    game.Encounter.SideBetCost = Convert.ToInt32(Get(bet,"stake"),CultureInfo.InvariantCulture);
-                    game.Encounter.SideBetPayout = Convert.ToDouble(Get(bet,"payout"),CultureInfo.InvariantCulture);
-                    game.Encounter.SideBetOutcome = Get(bet,"outcome") as string;
-                }
-                if (!RunSave.IsSafePoint(game)) return null;
+                if (game.Phase == Phase.Encounter || !RunSave.IsSafePoint(game)) return null; // a fight in progress cannot resume across the pouch rework
                 // Use exactly the current validation/binding path, including catalog checks.
                 return RunSave.Decode(RunSave.Encode(game));
             }

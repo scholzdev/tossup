@@ -247,7 +247,6 @@ namespace Tossup.UI
         {
             var game = Ui.Game;
             string next = Ui.Screen + ":" + (game != null && !game.Paused ? game.Phase.ToString() : "-") + ":" +
-                (game != null && game.Mulligan != null ? "m" : "-") + ":" +
                 (Ui.Confirm != null ? "c" : "-") + ":" + (Ui.Tutorial != null ? Ui.Tutorial.Step.ToString() : "-");
             if (next != context)
             {
@@ -273,7 +272,7 @@ namespace Tossup.UI
             if (Ui.Tutorial != null) { x = 810; y = 400; return; }
             if (game != null && !game.Paused)
             {
-                if (game.Phase == Phase.Encounter) { x = 861; y = 708; return; }
+                if (game.Phase == Phase.Encounter) { x = EncounterView.EndRoundX + EncounterView.EndRoundW / 2; y = EncounterView.EndRoundY + EncounterView.EndRoundH / 2; return; }
                 if (game.Phase == Phase.Shop) { x = 1110; y = 658; return; }
                 x = 810; y = 614;
                 return;

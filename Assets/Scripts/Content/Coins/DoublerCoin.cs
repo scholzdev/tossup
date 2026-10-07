@@ -28,13 +28,6 @@ namespace Tossup.Coins
             On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin && e.Res?.Result == Side.Heads) ctx.Mastery.Add(1); };
         }
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails)
-        {
-            int copies = 0;
-            foreach (var coin in game.Coins) if (coin.Definition == this) copies++;
-            return heads * 3 * Math.Pow(2, Math.Min(copies - 1, 3));
-        }
-
         public override void OnResolve(GameState game, CoinInst inst, Res res)
         {
             var e = game.Encounter;

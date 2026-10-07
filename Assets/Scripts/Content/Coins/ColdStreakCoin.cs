@@ -34,8 +34,6 @@ namespace Tossup.Coins
             };
         }
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => tails * 4;
-
         public override void OnResolve(GameState game, CoinInst inst, Res res)
         {
             if (res.Result != Side.Tails) return;

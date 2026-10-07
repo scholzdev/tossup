@@ -46,13 +46,6 @@ namespace Tossup.Coins
             { if (ctx.Mastery.Level >= 2) odds.Heads += .08; };
         }
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails)
-        {
-            int copies = 0;
-            foreach (var coin in game.Coins) if (coin.Definition == this) copies++;
-            return heads * 2 * copies * copies;
-        }
-
         public override void OnResolve(GameState g, CoinInst i, Res r)
         { if(r.Result==Side.Heads){ int n=0; foreach(var c in g.Coins) if(c.Id==i.Id)n++; r.Effects.Add(Effect.Score(2*n*n)); } }
     }

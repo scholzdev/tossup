@@ -51,10 +51,6 @@ namespace Tossup
             return buffs;
         }
 
-        // Quota estimation adds this to the expected printed effects. Stateful
-        // coins own their Lua balance estimates alongside their resolving rules.
-        public virtual double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => 0;
-
         public virtual void OnDeal(GameState game, CoinInst inst) { }
         public virtual void OnDiscard(GameState game, CoinInst inst) { }
         public virtual void OnFlip(GameState game, CoinInst inst, FlipState flip) { }

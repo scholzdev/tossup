@@ -13,11 +13,8 @@ namespace Tossup
         public virtual List<AugmentChoice> Choices(GameState game, AugmentPending pending) => new List<AugmentChoice>();
         public virtual void ApplyChoice(GameState game, AugmentPending pending, AugmentChoice choice) { }
         public virtual void OnRunHook(GameState game, RunHookEvent evt) { }
-        public virtual int SideBetPayout(GameState game, int payout) => payout;
-        public virtual void OnSideBetLost(GameState game) { }
         public virtual int BankBonus(GameState game) => 0;
         public virtual void OnResolve(GameState game, CoinInst coin, string result, Res resolution) { }
-        public virtual string OnPush(GameState game, string result, string previousSide, ref double combo) => null;
 
         protected static void ReplaceCoin(GameState game, CoinInst old, string id)
         {

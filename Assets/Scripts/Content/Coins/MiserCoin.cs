@@ -39,8 +39,6 @@ namespace Tossup.Coins
             };
         }
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * Math.Floor(game.Player.Gold / 10);
-
         public override void OnResolve(GameState game, CoinInst inst, Res res)
         {
             if (res.Result != Side.Heads) return;

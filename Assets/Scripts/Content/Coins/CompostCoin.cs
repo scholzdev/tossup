@@ -7,7 +7,7 @@ namespace Tossup.Coins
     {
         public override string Id => "compost";
         public override string Name => "Compost";
-        public override string Description => "Tails: quota +2; once per level, Fortune coins gain +11% Heads for the run (max +55%).";
+        public override string Description => "Tails: enemy +2; once per level, Fortune coins gain +11% Heads for the run (max +55%).";
         public override Rarity Rarity => Rarity.Common;
         public override int Cost => 10;
         public override int EnergyCost => 0;
@@ -15,11 +15,11 @@ namespace Tossup.Coins
         public override double TieProbability => 0;
         public override IReadOnlyList<CoinType> Types { get; } = Array.Empty<CoinType>();
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2) };
-        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Quota(2), Effect.FortuneOdds(0.11) };
+        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Penalty(2), Effect.FortuneOdds(0.11) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Compost Tails landed", 12, 45, 135,
-            "Tails adds 1 less quota.", "Its Fortune odds bonus grows by 2%.", "Heads scores +1 point.",
+            "Tails gives the enemy 1 less.", "Its Fortune odds bonus grows by 2%.", "Heads scores +1 point.",
             MasterySides.Tails, MasterySides.None, MasterySides.Heads);
 
         public CompostCoin()

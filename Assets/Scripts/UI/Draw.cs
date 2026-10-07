@@ -121,7 +121,7 @@ namespace Tossup.UI
                     case EffectType.FortuneOdds: parts.Add(L("FORTUNE +%d%%", Math.Floor(e.Amount*100+.5))); continue;
                     case EffectType.TypeBuff: parts.Add(L("NEXT %d %s", e.Coins??1, (e.Kind.HasValue?e.Kind.Value.ToString().ToUpperInvariant():""))); continue;
                     case EffectType.BankDiscard: parts.Add(L("DISCARD ONE")); continue;
-                    case EffectType.ExtraExchange: parts.Add(L("+%d EXCHANGE", e.Amount)); continue;
+                    case EffectType.DrawCoin: parts.Add(L("DRAW %d", e.Amount)); continue;
                     case EffectType.FetchBest: parts.Add(L("FETCH BEST")); continue;
                 }
                 double amount = e.Type == EffectType.Probability ? Math.Floor(e.Amount * 100 + .5) : e.Amount;
@@ -131,7 +131,7 @@ namespace Tossup.UI
                     case EffectType.Score: label = L("PTS"); break;
                     case EffectType.Gold: label = L("GOLD"); break;
                     case EffectType.Energy: label = L("NRG"); break;
-                    case EffectType.Penalty: label = L("QUOTA"); break;
+                    case EffectType.Penalty: label = L("ENEMY"); break;
                     case EffectType.ExtraDraw: label = L("REPLAY"); break;
                     case EffectType.Probability: label = L("% HEADS"); break;
                     default: label = DefinitionKeys.Key(e.Type); break;
@@ -154,9 +154,9 @@ namespace Tossup.UI
                     case EffectType.Score: parts.Add(L("Score %d points", amount)); break;
                     case EffectType.Gold: parts.Add(L("Gain %d gold", amount)); break;
                     case EffectType.Energy: parts.Add(L("Gain %d energy", amount)); break;
-                    case EffectType.Penalty: parts.Add(L("Quota +%d", amount)); break;
-                    case EffectType.ExtraDraw: parts.Add(L("Goes back into the pile")); break;
-                    case EffectType.Probability: parts.Add(L("Gain %d%% Heads this level", Math.Floor(amount * 100 + .5))); break;
+                    case EffectType.Penalty: parts.Add(L("Enemy +%d points", amount)); break;
+                    case EffectType.ExtraDraw: parts.Add(L("Goes back into the pouch")); break;
+                    case EffectType.Probability: parts.Add(L("Gain %d%% Heads this fight", Math.Floor(amount * 100 + .5))); break;
                     case EffectType.NextMult: parts.Add(L("Next %d coins pay x%d", effect.Coins ?? 1, amount)); break;
                     case EffectType.NextOdds:
                         {
@@ -170,12 +170,12 @@ namespace Tossup.UI
                     case EffectType.NextSwap: parts.Add(L("Next coin uses its other side")); break;
                     case EffectType.NextHeads: parts.Add(L("Next coin lands Heads")); break;
                     case EffectType.GoldLoss: parts.Add(L("Lose up to %d gold", amount)); break;
-                    case EffectType.AllOdds: parts.Add(L("All coins gain %d%% Heads this level", Math.Floor(amount*100+.5))); break;
+                    case EffectType.AllOdds: parts.Add(L("All coins gain %d%% Heads this fight", Math.Floor(amount*100+.5))); break;
                     case EffectType.FortuneOdds: parts.Add(L("Fortune coins gain %d%% Heads for the run", Math.Floor(amount*100+.5))); break;
                     case EffectType.TypeBuff: parts.Add(L("Buff the next %d %s coins", effect.Coins??1, DefinitionKeys.Key(effect.Kind.Value))); break;
-                    case EffectType.BankDiscard: parts.Add(L("Discard one bank coin")); break;
-                    case EffectType.ExtraExchange: parts.Add(L("Gain one exchange this level")); break;
-                    case EffectType.FetchBest: parts.Add(L("Return the best played coin")); break;
+                    case EffectType.BankDiscard: parts.Add(L("Discard one hand coin")); break;
+                    case EffectType.DrawCoin: parts.Add(L("Draw %d more coins into your hand", amount)); break;
+                    case EffectType.FetchBest: parts.Add(L("Return the best flipped coin")); break;
                 }
             }
             return string.Join("; ", parts);
@@ -231,11 +231,11 @@ namespace Tossup.UI
         {
             switch (type)
             {
-                case CoinType.Steel: return L("Heads score +3; Tails add +2 quota");
-                case CoinType.Blood: return L("Heads score +8; Tails add +4 quota; Edge gets half of both");
+                case CoinType.Steel: return L("Heads score +3; Tails give the enemy +2");
+                case CoinType.Blood: return L("Heads score +8; Tails give the enemy +4; Edge gets half of both");
                 case CoinType.Greed: return L("Gold gains are doubled");
                 case CoinType.Chaos: return L("Resolved effects are applied twice");
-                case CoinType.Rhythm: return L("Combo steps add points; a broken combo adds quota");
+                case CoinType.Rhythm: return L("Combo steps add points; a broken combo gives the enemy points");
                 default: return L("gain a type buff");
             }
         }
@@ -441,7 +441,7 @@ namespace Tossup.UI
                 masteryDetail = string.Join("\n", masteryLines);
                 h += 42 + Ui.F16.GetWrap(masteryDetail, w - 52).Count * 18;
             }
-            if (hovered.Locked) h += 14 + Ui.F16.GetWrap(L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"), w - 48).Count * 18;
+            if (hovered.Locked) h += 14 + Ui.F16.GetWrap(L("LOCKED  -  BUY IT IN THE SHOP OR UNLOCK IT WITH TOKENS"), w - 48).Count * 18;
             h += 8;
             float x = mx > Ui.Width / 2 ? mx - w - 18 : mx + 18;
             float y = my > 400 ? my - h - 18 : my + 18;
@@ -537,7 +537,36 @@ namespace Tossup.UI
                 Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(masteryDetail, x + 26, rowY + 28, w - 52);
                 rowY += sectionHeight;
             }
-            if (hovered.Locked) { Gfx.SetFont(Ui.F16); Color(C.Orange); Gfx.Printf(L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"), x + 24, rowY + 8, w - 48); }
+            if (hovered.Locked) { Gfx.SetFont(Ui.F16); Color(C.Orange); Gfx.Printf(L("LOCKED  -  BUY IT IN THE SHOP OR UNLOCK IT WITH TOKENS"), x + 24, rowY + 8, w - 48); }
+        }
+
+        // The pouch grouped by kind of coin (most frequent first): one cell per kind with its count. Clicking a cell
+        // selects a coin of that kind (again: the next one of that kind). Used by the shop and the Mint.
+        public static void PouchStrip(GameState g, float x0, float y0, int cells, int rows, Rgba fill)
+        {
+            var groups = new List<List<CoinInst>>();
+            foreach (var coin in g.Coins)
+            {
+                var group = groups.Find(x => x[0].Id == coin.Id);
+                if (group == null) groups.Add(group = new List<CoinInst>());
+                group.Add(coin);
+            }
+            groups.Sort((x, y) => y.Count - x.Count);
+            for (int i = 0; i < Math.Min(cells * rows, groups.Count); i++)
+            {
+                float x = x0 + (i % cells) * 54, y = y0 + (i / cells) * 84;
+                var group = groups[i];
+                var item = group[0];
+                bool chosen = group.Exists(c => c.Uid == g.SelectedUid);
+                Box(x, y, 52, 76, fill);
+                Outline(x, y, 52, 76, chosen ? C.Orange : C.PanelLight);
+                CoinImage(item, x + 6, y + 4, 40);
+                Centered("x" + group.Count, x, y + 50, 52, Ui.F16, C.Gold);
+                CoinHover(item.Id, x, y, 52, 76, Game.Probability(g, item));
+                var pick = chosen ? group.Find(c => c.Uid != g.SelectedUid) ?? item : item;
+                AddButton(x, y, 52, 76, () => A.SelectCoin(pick), "COIN");
+            }
+            if (groups.Count > cells * rows) Text("+" + (groups.Count - cells * rows), x0 + cells * 54, y0 + 30, Ui.F16, C.Muted);
         }
 
         public static void CoinFace(float cx, float cy, float radius, string outcome, bool selected, string id)

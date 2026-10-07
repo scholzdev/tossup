@@ -19,23 +19,6 @@ static class Program
         effect = Effects(new[] { buff.Effect })
     };
 
-    static object UpgradeData(Upgrade upgrade) => new
-    {
-        name = upgrade.Name,
-        description = upgrade.Description,
-        cost = upgrade.Cost,
-        heads_score = upgrade.Type == UpgradeType.ScoreBonus ? upgrade.Value : 0,
-        heads_probability = upgrade.Type == UpgradeType.Probability ? upgrade.Value : 0,
-        changes = upgrade.Changes.Select(change => new
-        {
-            kind = DefinitionKeys.Key(change.Kind),
-            side = DefinitionKeys.Key(change.Side),
-            amount = change.Amount,
-            effect = change.Effect == null ? null : Effects(new[] { change.Effect }),
-            buff = change.Buff == null ? null : Buff(change.Buff)
-        })
-    };
-
     static object CoinData(CoinDef coin) => new
     {
         id = coin.Id,
@@ -55,7 +38,6 @@ static class Program
         tails = Effects(coin.Tails),
         edge = Effects(coin.Edge),
         buffs = coin.Buffs.Select(Buff),
-        upgrades = coin.Upgrades.ToDictionary(upgrade => upgrade.Id, UpgradeData),
         hooks = new[]
         {
             ("on_deal", nameof(CoinDef.OnDeal)),
@@ -94,13 +76,13 @@ static class Program
             items=Content.Items.Values.OrderBy(x=>x.Id,StringComparer.Ordinal).Select(c=>new { id=c.Id,name=c.Name,description=c.Description,cost=c.Cost,@short=c.Short }).ToArray(),
             relics=Content.Relics.Values.OrderBy(x=>x.Id,StringComparer.Ordinal).Select(c=>new {id=c.Id,name=c.Name,description=c.Description,hooks=new[]{"register"}}).ToArray(),
             characters=Content.CharacterOrder.Select(id=> {var c=Content.Characters[id];return new {id,name=c.Name,description=c.Description,deck=c.Deck.Select(x=>x.Id),pool=c.Pool.Select(x=>x.Id),locked=c.Locked.Select(x=>x.Id).ToArray()};}).ToArray(),
-            route=Game.Route.Select(c=>new{name=c.Name,per_coin=c.PerCoin,payout=c.Payout,boss=c.Boss}).ToArray(),
+            route=Game.Route.Select(c=>new{name=c.Name,payout=c.Payout,boss=c.Boss}).ToArray(),
+            enemies=EnemyCatalog.Ordered.Select(d=>new{id=d.Id,name=d.Name,description=d.Description,pouch=d.Pouch,draw=d.Draw,round_points=d.RoundPoints,heads_bonus=d.HeadsBonus,min_level=d.MinLevel,max_level=d.MaxLevel,elite=d.Elite,boss=d.Boss}).ToArray(),
             stakes=Game.Stakes.Select(c=>new{info=c.Info,rules=c.Rules}).ToArray(),
             modifiers=Game.ModifierOrder.Select(id=>{var c=Game.Modifiers[id];return new{id,name=c.Name,description=c.Description};}).ToArray(),
-            contracts=Game.ContractOrder.Select(id=>{var c=Game.Contracts[id];return new{id,name=c.Name,description=c.Description,drawback=c.Drawback,reward=c.Reward,reward_text=c.RewardText,heads_penalty=c.HeadsPenalty};}).ToArray(),
             encounters=Game.Encounters.Select(c=>new{id=c.Id,name=c.Name,description=c.Description}).ToArray(),
             augments=Game.AugmentOrder.Select(id=>{var c=Game.AugmentDefs[id];return new{id,name=c.Name,description=c.Description,tier=c.Tier};}).ToArray(),
-            constants=new Dictionary<string,object>{{"START_GOLD",Game.StartGold},{"START_MAX",Game.StartMax},{"DECK_MAX",Game.DeckMax},{"SLOT_COST",Game.SlotCost},{"SLOT_STEP",Game.SlotStep},{"EXCHANGE_BASE",Game.ExchangeBase},{"EXCHANGE_STEP",Game.ExchangeStep},{"EXCHANGE_GAIN",Game.ExchangeGain},{"EXCHANGE_MAX",Game.ExchangeMax},{"SURPLUS_RATE",Game.SurplusRate},{"COMBO_STEP",Game.ComboStep},{"COMBO_CAP",Game.ComboCap},{"RETURN_CAP",Game.ReturnCap},{"MAX_COPIES",3},{"VISIBLE",Game.Visible},{"MULLIGAN",Game.MulliganSize}},
+            constants=new Dictionary<string,object>{{"START_GOLD",Game.StartGold},{"START_MAX",Game.StartMax},{"DECK_MAX",Game.DeckMax},{"ROUNDS",Game.Rounds},{"HAND_SIZE",Game.HandSize},{"POUCH_SIZE",Game.PouchSize},{"SET_COPIES",Game.SetCopies},{"SURPLUS_RATE",Game.SurplusRate},{"COMBO_STEP",Game.ComboStep},{"COMBO_CAP",Game.ComboCap},{"RETURN_CAP",Game.ReturnCap},{"MAX_COPIES",Game.MaxCopies}},
             de, de_strings=flat
         };
         Console.WriteLine(JsonSerializer.Serialize(data,new JsonSerializerOptions { DefaultIgnoreCondition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull }));

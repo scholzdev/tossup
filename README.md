@@ -46,18 +46,17 @@ The URP assets in `Assets/Settings` are assigned in Graphics and every Quality l
 
 ## Coin definitions
 
-Each coin overrides its data properties, typed side-effect lists, and any special rule methods in one class. `Rarity`, `CoinType`, `EffectType` and `UpgradeType` are enums. `Heads`, `Tails` and `Edge` can each contain several effects, authored with factories such as `Effect.Score(10)` and `Effect.Quota(6)`. `Effect.HalfOf` is a helper for the current Edge rules; each coin can override Edge with any effect list. Override `OnResolve`, `OnFlip`, `OnOdds`, `OnDeal`, `OnDiscard`, `Grow` or `Register` for coin-specific rules; stateful quota estimates belong in `EstimateExtraScore`, and per-run counters remain on `CoinInst`.
+Each coin overrides its data properties, typed side-effect lists, and any special rule methods in one class. `Rarity`, `CoinType`, `EffectType` and `UpgradeType` are enums. `Heads`, `Tails` and `Edge` can each contain several effects, authored with factories such as `Effect.Score(10)` and `Effect.Penalty(6)` (points for the enemy). `Effect.HalfOf` is a helper for the current Edge rules; each coin can override Edge with any effect list. Override `OnResolve`, `OnFlip`, `OnOdds`, `OnDeal`, `OnDiscard`, `Grow` or `Register` for coin-specific rules; per-run counters remain on `CoinInst`.
 
 Add a class in `Content/Coins/` and its object in `CoinCatalog`. Character decks/pools, shop offers and owned coins carry these objects. Upgrades follow the same pattern: each has a concrete class in `Content/Upgrades/`, and coin definitions reference `UpgradeCatalog` objects. Owned and shop upgrades carry those objects too. Stable string IDs are retained at save, localization and asset boundaries. Add a new effect operation to `EffectType`, its factory in `Effect`, its behavior in `Game.ApplyEffect`, and its text in `D.Effects` / `D.EffectDescription`; saving and content export derive the stable effect key from the enum. New enum values without implemented behavior fail explicitly.
 
 ## Verification tools (`Tools/`)
 
-The three standalone projects target **.NET 10**, with SDK selection in `global.json`. Unity 6000.6 uses its own Mono/.NET Standard-compatible runtime; installing .NET 10 does not change the Unity player runtime.
+The standalone projects target **.NET 10**, with SDK selection in `global.json`. Unity 6000.6 uses its own Mono/.NET Standard-compatible runtime; installing .NET 10 does not change the Unity player runtime.
 
 - `game_tools.sh content`: exports the live C# catalog for docs/wiki generation.
-- `game_tools.sh sim`: balance bots, per-coin reports (`--coins`), seeded logs (`--trace 7`), stake, unlock, set, quota and payout overrides.
+- `game_tools.sh sim`: balance bots, per-coin reports (`--coins`), seeded logs (`--trace 7`), stake, unlock, set and payout overrides; the bots play the pouch loop (flip the hand, end the round) against the enemies.
 - `build_docs.sh --check`: verifies generated documentation; `build_wiki.sh` generates English/German Pages and GitHub Wiki outputs.
-- `parity/csharp/`: runs deterministic seeded simulations directly against the C# rules.
 - `uitest/`: checks the current gameplay catalogs and systems, draws every UI flow, runs random input stress, and plays deep runs (`dotnet run -c Release -- 300000 11`). Set `TOSSUP_SEED_SWEEP=100000` to simulate that many deterministic full runs across all characters and stakes.
 - `.ecc/benchmarks/unity-vs-lua-rules.json`: the recorded five-sample rules benchmark used during conversion.
 

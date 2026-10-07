@@ -46,7 +46,7 @@ namespace Tossup.UI
             var logo = Ui.UiImages["logo"];
             Color(C.White);
             Gfx.Draw(logo, 120, 96, 300f / logo.Width, 300f / logo.Width);
-            Centered("BEAT THE QUOTA", 70, 190, 400, Ui.F20, C.Muted);
+            Centered("BEAT THE ENEMY", 70, 190, 400, Ui.F20, C.Muted);
 
             var entries = new List<(string, Rgba, Action)>();
             Action newRun = () =>
@@ -157,7 +157,7 @@ namespace Tossup.UI
                     CoinHover(coins[i], x, y, SlotSize, SlotSize);
                 }
             }
-            if (set.Coins.Count == 0) Centered("THIS SET IS EMPTY  -  THE DEFAULT DECK IS USED", 484, 490, 736, Ui.F16, C.Orange);
+            if (set.Coins.Count == 0) Centered("THIS SET IS EMPTY  -  THE DEFAULT SET IS USED", 484, 490, 736, Ui.F16, C.Orange);
             int stake=A.Stake(),top=Profile.MaxStake(Ui.Profile,characterId);
             Button("<",510,486,50,52,C.PanelLight,()=>A.CycleStake(-1),stake>1&&!locked);
             Centered("STAGE "+stake+" / "+Game.Stakes.Count,570,490,504,Ui.F20,stake==top?C.Gold:C.Face);
@@ -238,13 +238,15 @@ namespace Tossup.UI
             Centered(dirty ? "UNSAVED CHANGES" : "CLICK A COIN HERE TO REMOVE IT", 70, 505, 430, Ui.F16, dirty ? C.Orange : C.Muted);
             Button(dirty ? "SAVE SET" : "SAVED", 100, 530, 370, 48, dirty ? C.Blue : C.PanelLight, A.SaveSet, dirty);
             Button("CLEAR SET", 100, 592, 370, 44, C.Red, A.ClearSet, coins.Count > 0);
+            Centered(L("EACH SET COIN GOES INTO YOUR POUCH TWICE."), 70, 656, 430, Ui.F16, C.Muted);
+            Centered(L("NORMAL COINS FILL THE POUCH UP TO %d.", Game.PouchSize), 70, 678, 430, Ui.F16, C.Muted);
             Centered("MAX COPIES OF EACH COIN", 70, 680, 430, Ui.F16, C.Muted);
             Centered("COMMON 3  -  UNCOMMON 2  -  RARE/EPIC 1", 70, 704, 430, Ui.F16, C.Muted);
 
             // right: all of this character's coins
             Box(520, 212, 700, 528, C.PanelDk);
             Outline(520, 212, 700, 528, C.Line);
-            Centered(L("%s  -  CLICK A COIN TO ADD IT  -  LOCKED COINS COME FROM THE SHOP", Lang.Upper(Lang.CharacterName(characterId))),
+            Centered(L("%s  -  CLICK A COIN TO ADD IT  -  LOCKED COINS: SHOP OR TOKENS", Lang.Upper(Lang.CharacterName(characterId))),
                 520, 226, 700, Ui.F16, C.Gold);
             var entries = new List<(string id, bool locked, int order)>();
             foreach (var coin in def.Pool) entries.Add((coin.Id, false, entries.Count));
@@ -286,6 +288,7 @@ namespace Tossup.UI
                 }
                 CoinHover(id, x - 4, y - 4, CatalogIcon + 8, CatalogIcon + 28, null, locked);
             }
+            Text(L("TOKENS: %d", (int)Ui.Profile.Tokens), 1010, 698, Ui.F16, C.Gold);
             Button("<", 540, 690, 52, 34, C.Green, () => A.ChangeSetsCatalogPage(-1), Ui.SetsCatalogPage > 1);
             Centered(Ui.SetsCatalogPage + " / " + pages, 760, 694, 220, Ui.F20, C.Gold);
             Button(">", 1148, 690, 52, 34, C.Green, () => A.ChangeSetsCatalogPage(1), Ui.SetsCatalogPage < pages);
@@ -545,7 +548,7 @@ namespace Tossup.UI
             }
 
             // paging inside the frame
-            string count = Ui.CollectionCategory == "coins" ? L("COLLECTED %d / %d", Ui.Profile.Collected.Count, Content.CoinOrder.Count) :
+            string count = Ui.CollectionCategory == "coins" ? L("COLLECTED %d / %d  -  TOKENS: %d", Ui.Profile.Collected.Count, Content.CoinOrder.Count, (int)Ui.Profile.Tokens) :
                 Ui.CollectionCategory == "characters" ? L("UNLOCKED %d / %d", CountAvailable(entries), entries.Count) :
                 L("%d %s", entries.Count, Categories[Array.FindIndex(Categories, category => category.key == Ui.CollectionCategory)].label);
             if (pages > 1)
@@ -589,11 +592,11 @@ namespace Tossup.UI
             ("Back, close, menu", new[] { "ESC" }),
             ("Previous / next page, tab, character", new[] { "Q", "E" }),
             ("Choose a character (play screen)", new[] { "1", "2", "3" }),
-            ("IN A LEVEL", Array.Empty<string>()),
-            ("Flip / next coin", new[] { "SPACE" }),
+            ("IN A FIGHT", Array.Empty<string>()),
+            ("Flip the first coin of your hand", new[] { "SPACE" }),
             ("Inspect: show the details of the focused item", new[] { "I", "Q", "E" }),
             ("Use chip 1 / 2 / 3", new[] { "1", "2", "3" }),
-            ("Open the shop (quota met)", new[] { "O" }),
+            ("Move on after a won fight", new[] { "O" }),
             ("Debug info", new[] { "F3" }),
         };
         static readonly (string label, string[] keys)[] ControllerControls =
@@ -603,10 +606,10 @@ namespace Tossup.UI
             ("Press the focused button", new[] { "A" }),
             ("Back, close, menu", new[] { "B", "START" }),
             ("Previous / next page, tab, character", new[] { "LB", "RB", "LT", "RT" }),
-            ("IN A LEVEL", Array.Empty<string>()),
-            ("Flip / next coin", new[] { "X" }),
+            ("IN A FIGHT", Array.Empty<string>()),
+            ("Flip the first coin of your hand", new[] { "X" }),
             ("Inspect: show the details of the focused item", new[] { "LB", "RB", "LT", "RT" }),
-            ("Use a chip or open the shop", new[] { "D-PAD", "A" }),
+            ("Flip a coin, end the round, use a chip", new[] { "D-PAD", "A" }),
             ("Menu", new[] { "START" }),
         };
 
@@ -727,13 +730,13 @@ namespace Tossup.UI
     {
         static readonly (string title, string body)[] Sections =
         {
-            ("THE GOAL", "Beat the quota before your coins run out. Bad flips can raise it. A run has eight levels: one Encounter changes the run, and Augments appear before levels 3 and 6. The House is the final level."),
-            ("YOUR COINS", "You play with a small stack of coins. Each coin has a Heads chance and a Heads and a Tails effect. Every coin is played once per level; nothing is reshuffled."),
-            ("EACH LEVEL", "The entire remaining coin bank stays visible. Click any coin to choose what to play next; choosing is free. Coins with an energy cost spend it when flipped."),
-            ("ENERGY", "Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Flux Capacitor give more. If you cannot pay, choose a different coin. Your last coin can still flip for up to 2 gold."),
-            ("QUOTA MET", "You are paid gold at once and the level stays open: every 2 extra points pay 1 more gold. Press OPEN SHOP (top right) when you want to move on."),
-            ("OUT OF COINS", "If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back (only a limited number of times per level). If you cannot, the run is over."),
-            ("THE SHOP", "Buy COINS (larger and stronger decks raise the next quota), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Coin Removal drops a weak coin."),
+            ("THE GOAL", "A run has eight fights, ending with The House. Every fight lasts 5 rounds against an enemy with its own fixed pouch of coins. Score more points than the enemy by the end of round 5 to win; a tie goes to the House."),
+            ("YOUR POUCH", "You start with a pouch of 30 coins: your set, two of each, and Normal coins to fill it. Every fight starts with a fresh shuffle. Each coin has a Heads chance and a Heads and a Tails effect."),
+            ("EACH ROUND", "You hold 5 coins. Click any of them to flip it: as many as you like, in any order. Then press END ROUND. Unflipped coins stay in your hand, the hand refills from the pouch, and when the pouch is empty the flipped coins are shuffled back in."),
+            ("THE ENEMY", "The enemy's pouch is shown on the left. After every round it flips a few coins from it and scores their printed points. Some of your coins say Enemy +n: that gives the enemy points."),
+            ("ENERGY", "Strong coins cost ENERGY to flip (shown as E1, E2). Your energy refills every round; Spark, Copper and Flux Capacitor give more. A coin you cannot pay for stays in your hand."),
+            ("WINNING", "A win pays gold, plus 1 gold for every 2 points of winning margin. Press CONTINUE to move on. Lose or tie and the run is over."),
+            ("THE SHOP", "Buy COINS (they join your pouch), CHIPS (one-use helpers, used between flips), and a PRIZE (lasts the run). Coin Removal drops a weak coin."),
         };
 
         public static void Draw()
@@ -756,7 +759,7 @@ namespace Tossup.UI
             Text("CONTROLS", 666, 554, Ui.F20, C.Gold);
             Gfx.SetFont(Ui.F16);
             Color(C.Face);
-            Gfx.Printf(L("Space = Flip / Next Coin.  Click = select a coin.  Esc = menu (your run waits).  Hover a coin for details. The run is saved at each level start and in the shop; Continue resumes it, a level in progress restarts."),
+            Gfx.Printf(L("Space = flip the first coin.  Click = flip a coin of your hand.  Esc = menu (your run waits).  Hover a coin for details. The run is saved between flips and in the shop; Continue resumes it."),
                 666, 582, 528);
             if (Ui.HelpNext != null)
             {
@@ -798,15 +801,27 @@ namespace Tossup.UI
             Outline(650, 206, 250, 300, C.Line);
             Centered(g.Endless ? "ENDLESS MODE" : won ? "YOU WON THE RUN" : "TRY A NEW SET", 650, 222, 250, Ui.F20, C.Face);
             Centered((g.Endless ? g.Cleared - Game.Route.Count : g.Cleared).ToString(), 650, 276, 250, Ui.F48, won ? C.Green : C.Gold);
-            Centered(g.Endless ? "ENDLESS LEVELS CLEARED" : "LEVELS CLEARED OF " + Game.Route.Count, 650, 336, 250, Ui.F16, C.Muted);
+            Centered(g.Endless ? "ENDLESS FIGHTS WON" : "FIGHTS WON OF " + Game.Route.Count, 650, 336, 250, Ui.F16, C.Muted);
             ImageAt(Ui.UiImages["gold"], 690, 386, 44);
             Text(GameText.Num(g.Player.Gold), 746, 392, Ui.F32, C.Gold);
             Text("GOLD LEFT", 690, 440, Ui.F16, C.Muted);
             Text(L("SEED %s", g.Seed), 690, 468, Ui.F16, C.Muted);
-            if (g.EndlessRecord) Centered("NEW RECORD!", 380, 514, 520, Ui.F20, C.Gold);
+            if (g.TokensPaid > 0) Text(L("+%d TOKENS", g.TokensPaid.Value), 690, 490, Ui.F16, C.Gold);
+            // luck report: one line right under the boxes, the rest of the text moves down by it
+            float top = 514;
+            if (g.RunFlips > 0)
+            {
+                double diff = g.RunHeads - g.RunExpectedHeads;
+                string verdict = Math.Abs(diff) <= 1 ? L("ABOUT AS EXPECTED") : diff < 0 ? L("UNLUCKY: %s HEADS BELOW EXPECTED", GameText.Num(Math.Round(-diff, 1))) :
+                    L("LUCKY: %s HEADS ABOVE EXPECTED", GameText.Num(Math.Round(diff, 1)));
+                Centered(L("HEADS %d / %d (EXPECTED %s)", g.RunHeads, g.RunFlips, GameText.Num(Math.Round(g.RunExpectedHeads, 1))) + "  -  " + verdict,
+                    140, 512, 1000, Ui.F16, Math.Abs(diff) <= 1 ? C.Muted : diff < 0 ? C.Red : C.Green);
+                top = 534;
+            }
+            if (g.EndlessRecord) Centered("NEW RECORD!", 380, top, 520, Ui.F20, C.Gold);
             if (won && !g.Endless)
             {
-                float y = 514;
+                float y = top;
                 if (g.UnlockedCharacter != null)
                 {
                     Centered(L("NEW CHARACTER UNLOCKED: %s", Lang.Upper(Lang.CharacterName(g.UnlockedCharacter))), 380, y, 520, Ui.F20, C.Gold);
@@ -820,15 +835,15 @@ namespace Tossup.UI
                 Color(C.Red);
                 string why = L(g.LostWhy);
                 string capitalized = why.Length == 0 ? why : Lang.Upper(why.Substring(0, 1)) + why.Substring(1);
-                Gfx.Printf(capitalized, 380, g.EndlessRecord ? 546 : 520, 520, Align.Center);
+                Gfx.Printf(capitalized, 380, top + (g.EndlessRecord ? 32 : 6), 520, Align.Center);
             }
 
             if (won && !g.Endless)
             {
-                // the boss fell: keep going through endless levels or leave for the menu
-                IconButton("ENDLESS MODE", Ui.UiImages["next_coin"], 470, 584, 340, 60, C.Gold, A.ContinueEndless);
-                IconButton("BACK TO MENU", Ui.UiImages["give_up"], 470, 652, 340, 56, C.Blue, A.OpenMenu);
-                Button("NEW RUN", 520, 718, 240, 36, C.Green, () => A.Start());
+                // the boss fell: keep going through endless levels or leave for the menu (10 lower: room for two unlock lines)
+                IconButton("ENDLESS MODE", Ui.UiImages["next_coin"], 470, 594, 340, 60, C.Gold, A.ContinueEndless);
+                IconButton("BACK TO MENU", Ui.UiImages["give_up"], 470, 662, 340, 56, C.Blue, A.OpenMenu);
+                Button("NEW RUN", 520, 728, 240, 36, C.Green, () => A.Start());
             }
             else
             {

@@ -17,48 +17,13 @@ namespace Tossup.UI
         }
     }
 
-    public static class ContractView
-    {
-        public static void Draw()
-        {
-            var g = Ui.Game;
-            var e = g.Encounter;
-            Frame(null);
-            Centered(L("LEVEL %d CONTRACT", g.EncounterIndex), 70, 84, 1140, Ui.F32, C.Gold);
-            Centered(L("Choose a challenge for a bonus, or skip it."), 70, 132, 1140, Ui.F20, C.Muted);
-            string stageName = e.Endless.HasValue ? L("ENDLESS %d", e.Endless.Value) : L(e.Name);
-            Centered(Lang.Upper(stageName), 70, 166, 1140, Ui.F16, C.Face);
-
-            var options = e.ContractOptions ?? new System.Collections.Generic.List<string>();
-            for (int i = 0; i < options.Count; i++)
-            {
-                string id = options[i];
-                var d = Game.Contracts[id];
-                float x = 160 + i * 330;
-                Box(x, 220, 300, 360, C.PanelDk);
-                Outline(x, 220, 300, 360, C.Line);
-                Centered(L(d.Name), x + 16, 254, 268, Ui.F20, C.Gold);
-                Centered(d.RewardText != null ? L(d.RewardText) : L("BONUS +%dG", d.Reward), x + 16, 304, 268,
-                    d.RewardText != null ? Ui.F20 : Ui.F32, C.Green);
-                Gfx.SetFont(Ui.F16);
-                Color(C.Muted);
-                Gfx.Printf(L(d.Description), x + 28, 358, 244, Align.Center);
-                Centered(L("DRAWBACK"), x + 16, 438, 268, Ui.F16, C.Red);
-                Color(C.Red);
-                Gfx.Printf(L(d.Drawback), x + 28, 466, 244, Align.Center);
-                Button(L("TAKE CONTRACT"), x + 24, 516, 252, 52, C.Blue, () => A.ChooseContract(id));
-            }
-            Button(L("SKIP CONTRACT"), 500, 638, 280, 54, C.PanelLight, A.SkipContract);
-        }
-    }
-
     public static class AugmentView
     {
         public static void Draw()
         {
             var g = Ui.Game;
             Frame(null);
-            Centered(L("LEVEL %d AUGMENT", g.AugmentLevel ?? g.EncounterIndex), 70, 82, 1140, Ui.F32, C.Gold);
+            Centered(g.AugmentLevel == null && g.Map != null ? L("ALTAR") : L("LEVEL %d AUGMENT", g.AugmentLevel ?? g.EncounterIndex), 70, 82, 1140, Ui.F32, C.Gold);
             if (g.AugmentPending != null) { DrawPending(g); return; }
             Centered(L("Choose a run upgrade or change a coin before this level."), 70, 128, 1140, Ui.F20, C.Muted);
             var options = g.AugmentOptions ?? new System.Collections.Generic.List<string>();

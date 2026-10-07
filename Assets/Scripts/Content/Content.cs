@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Tossup.Coins;
 
 namespace Tossup
 {
@@ -37,6 +38,10 @@ namespace Tossup
         {
             var map = Index(BuildCharacters(), c => c.Id);
             ApplyLatestCharacters(map);
+            // Colorless coins are glue for every character (Gilded is stamp-only, never in a pool).
+            foreach (var character in map.Values)
+                foreach (var id in ColorlessCoin.Ids)
+                    if (id != "gilded" && !character.Pool.Contains(Coins[id])) character.Pool.Add(Coins[id]);
             return map;
         }
 
@@ -64,21 +69,12 @@ namespace Tossup
             },
             new ItemDef
             {
-                Id = "extra_draw", Name = "Extra Draw", Short = "+DRAW", Cost = 10, Description = "A played coin returns to the pile",
-                Use = game =>
-                {
-                    var e = game.Encounter;
-                    if (e.Returned >= Game.ReturnCap) return false;
-                    bool any = false;
-                    foreach (int uid in e.Played) if (!e.Discarded.Contains(uid)) any = true;
-                    if (!any) return false;
-                    Game.ApplyEffect(game, null, Effect.ExtraDraw( 1));
-                    return true;
-                },
+                Id = "extra_draw", Name = "Extra Draw", Short = "+DRAW", Cost = 10, Description = "Draw 2 coins into your hand",
+                Use = game => Game.DrawCoins(game, 2) > 0,
             },
             new ItemDef
             {
-                Id = "force_heads", Name = "Force Heads", Short = "FORCE H", Cost = 12, Description = "Dealt coin lands Heads",
+                Id = "force_heads", Name = "Force Heads", Short = "FORCE H", Cost = 12, Description = "The next coin you flip lands Heads",
                 Use = game =>
                 {
                     global::Tossup.Items.Arm(GameSignal.CoinFlip, e => { e.Flip.Result = Side.Heads; e.Flip.Forced = true; });
@@ -87,7 +83,7 @@ namespace Tossup
             },
             new ItemDef
             {
-                Id = "force_tails", Name = "Force Tails", Short = "FORCE T", Cost = 12, Description = "Dealt coin lands Tails",
+                Id = "force_tails", Name = "Force Tails", Short = "FORCE T", Cost = 12, Description = "The next coin you flip lands Tails",
                 Use = game =>
                 {
                     global::Tossup.Items.Arm(GameSignal.CoinFlip, e => { e.Flip.Result = Side.Tails; e.Flip.Forced = true; });
@@ -96,11 +92,11 @@ namespace Tossup
             },
             new ItemDef
             {
-                Id = "peek", Name = "Peek", Short = "PEEK", Cost = 6, Description = "See the next two coins",
+                Id = "peek", Name = "Peek", Short = "PEEK", Cost = 6, Description = "See the next two coins of the pouch",
                 Use = game =>
                 {
                     var peek = new List<int>();
-                    for (int i = 0; i < 2 && i < game.Encounter.Pile.Count; i++) peek.Add(game.Encounter.Pile[i]);
+                    for (int i = 0; i < 2 && i < game.Encounter.Pouch.Count; i++) peek.Add(game.Encounter.Pouch[i]);
                     if (peek.Count == 0) return false;
                     game.Peek = peek;
                     return true;
@@ -108,15 +104,22 @@ namespace Tossup
             },
             new ItemDef
             {
-                Id = "swap", Name = "Swap", Short = "SWAP", Cost = 8, Description = "Free discard, new coin",
-                Use = game => Game.Discard(game) > 0,
+                Id = "swap", Name = "Swap", Short = "SWAP", Cost = 8, Description = "Discard your first hand coin and draw a new one",
+                Use = game =>
+                {
+                    var e = game.Encounter;
+                    if (e.Hand.Count == 0 || e.Pouch.Count + e.Discard.Count == 0) return false;
+                    if (Game.Discard(game, new[] { e.Hand[0] }) == 0) return false;
+                    Game.DrawCoins(game, 1);
+                    return true;
+                },
             },
             new ItemDef
             {
-                Id = "weighted", Name = "Weighted", Short = "WEIGHT", Cost = 8, Description = "+25% Heads, one flip",
+                Id = "weighted", Name = "Weighted", Short = "WEIGHT", Cost = 8, Description = "The next coin you flip: +25% Heads",
                 Use = game =>
                 {
-                    game.Dealt.Probability = Math.Min(1 - game.Dealt.TieProbability, game.Dealt.Probability + .25);
+                    Game.AddBuff(game, "odds", .25, 1, true);
                     return true;
                 },
             },

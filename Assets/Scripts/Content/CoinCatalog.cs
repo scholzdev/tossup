@@ -6,6 +6,12 @@ namespace Tossup
     public static class CoinCatalog
     {
         public static readonly NormalCoin Normal = new NormalCoin();
+        public static readonly SlugCoin Slug = new SlugCoin();
+        public static readonly SpareChangeCoin SpareChange = new SpareChangeCoin();
+        public static readonly SteadyHandCoin SteadyHand = new SteadyHandCoin();
+        public static readonly BallastCoin Ballast = new BallastCoin();
+        public static readonly ClippedCoin Clipped = new ClippedCoin();
+        public static readonly GildedCoin Gilded = new GildedCoin();
         public static readonly CopperCoin Copper = new CopperCoin();
         public static readonly SwordCoin Sword = new SwordCoin();
         public static readonly LuckyCoin Lucky = new LuckyCoin();
@@ -110,6 +116,7 @@ namespace Tossup
         public static readonly List<CoinDef> Ordered = new List<CoinDef>
         {
             Normal,
+            Slug, SpareChange, SteadyHand, Ballast, Clipped, Gilded,
             Copper,
             Sword,
             Lucky,

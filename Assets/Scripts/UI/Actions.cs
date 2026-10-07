@@ -54,19 +54,15 @@ namespace Tossup.UI
             var game = RunSave.Decode(text);
             if (game == null) { DeleteRun(); return false; }
             game.Paused = false;
-            game.ContractsEnabled = false;
-            if (game.Phase == Phase.Contract) { game.Phase = Phase.Encounter; game.Encounter.ContractOptions = null; }
-            if (game.Mulligan != null) Game.MulliganDone(game);
             Ui.Game = game;
             game.MasteryProfile = !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox == null ? Ui.Profile : null;
-            Ui.BankDiscardMode = false;
+            Ui.DiscardMode = false;
             Ui.SelectedCharacter = Content.Characters[game.CharacterId];
             Ui.EncounterReveal = null;
             Ui.FlipAnimation = null;
-            Ui.Holding = false;
+            Ui.Deciding = false;
             Ui.ResolveTimer = 0;
             Ui.Tutorial = null;
-            Ui.Marked.Clear();
             savedKey = null;
             return true;
         }
@@ -117,7 +113,7 @@ namespace Tossup.UI
                 Ui.Confirm = new Confirm
                 {
                     Title = enable ? "DEVELOPER MODE" : "EXIT DEVELOPER MODE",
-                    Text = "THIS LEVEL STARTS OVER WHEN YOU CONTINUE.",
+                    Text = "THE FLIP IN PROGRESS IS LOST. YOU CONTINUE FROM YOUR LAST FLIP.",
                     Ok = changeMode,
                 };
                 return;
@@ -131,7 +127,7 @@ namespace Tossup.UI
             Ui.Profile.Options.SeenHelp = true;
             SaveProfile();
             if(Ui.Game!=null&&Ui.Game.Phase!=Phase.GameOver&&Ui.Game.Phase!=Phase.Victory)
-                Ui.Confirm=new Confirm{Title="TUTORIAL",Text="THIS LEVEL STARTS OVER WHEN YOU CONTINUE.",Ok=Tutorial.Start};
+                Ui.Confirm=new Confirm{Title="TUTORIAL",Text="THE FLIP IN PROGRESS IS LOST. YOU CONTINUE FROM YOUR LAST FLIP.",Ok=Tutorial.Start};
             else Tutorial.Start();
         }
 
@@ -142,7 +138,7 @@ namespace Tossup.UI
             bool running = g != null && !RuntimeMode.Sandbox && !g.Tutorial && g.Sandbox == null && g.Phase != Phase.GameOver && g.Phase != Phase.Victory;
             if (running)
             {
-                Ui.Confirm = new Confirm { Title = "QUIT", Text = "THIS LEVEL STARTS OVER WHEN YOU CONTINUE.", Ok = Ui.Platform.Quit };
+                Ui.Confirm = new Confirm { Title = "QUIT", Text = "THE FLIP IN PROGRESS IS LOST. YOU CONTINUE FROM YOUR LAST FLIP.", Ok = Ui.Platform.Quit };
                 return;
             }
             Ui.Platform.Quit();
@@ -156,7 +152,7 @@ namespace Tossup.UI
             string result = game.Endless ? "ENDLESS" : game.Phase == Phase.Victory ? "WIN" : "LOSS";
             Ui.Platform.AppendSave("runs.log", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " v" + BuildInfo.Number + "-" + BuildInfo.Build + " seed=" + game.Seed +
                 " char=" + game.CharacterId + " stake=" + game.Stake + " result=" + result + " cleared=" + game.Cleared + " gold=" + (long)game.Player.Gold +
-                " why=" + (game.LostWhy ?? "-") + " coins=" + string.Join(",", coins) + "\n");
+                " why=" + (game.LostWhy ?? "-") + " heads=" + game.RunHeads + "/" + game.RunFlips + " expected=" + GameText.Num(Math.Round(game.RunExpectedHeads, 1)) + " coins=" + string.Join(",", coins) + "\n");
         }
 
         // Pause the run (if any) and show the title screen.
@@ -205,6 +201,15 @@ namespace Tossup.UI
             SaveProfile();
         }
 
+        // Spend tokens to unlock a locked coin for one character (same unlock as buying it in the shop).
+        public static void UnlockWithTokens(string characterId, CoinDef coin)
+        {
+            int price = Game.TokenPrice(coin);
+            if (RuntimeMode.Sandbox || Ui.Profile.Tokens < price || !Tossup.Profile.Grant(Ui.Profile, characterId, coin.Id)) return;
+            Ui.Profile.Tokens -= price;
+            SaveProfile();
+        }
+
         public static void ContinueEndless() => Game.ContinueEndless(Ui.Game);
 
         // Delete unlocks, collection, coin sets and tokens (options stay); also ends a run in progress. Asks first.
@@ -219,13 +224,12 @@ namespace Tossup.UI
             Ui.Profile = Tossup.Profile.New();
             Ui.Profile.Options = options;
             Ui.Game = null;
-            Ui.BankDiscardMode = false;
+            Ui.DiscardMode = false;
             Ui.SandboxConfig = null;
             DeleteRun();
             Ui.SetDraft = null;
-            Ui.Marked = new HashSet<int>();
             Ui.FlipAnimation = null;
-            Ui.Holding = false;
+            Ui.Deciding = false;
             SaveProfile();
         }
 
@@ -333,57 +337,20 @@ namespace Tossup.UI
             SaveProfile();
         }
 
-        // ---- marking coins to discard (opening hand)
-        public static void ToggleMark(int uid)
-        {
-            if (!Ui.Marked.Remove(uid)) Ui.Marked.Add(uid);
-        }
-
-        static List<int> MarkedList(List<int> allowed)
-        {
-            var list = new List<int>();
-            foreach (int uid in allowed) if (Ui.Marked.Contains(uid)) list.Add(uid);
-            return list;
-        }
-
-        public static int MarkedCount()
-        {
-            var game = Ui.Game;
-            return MarkedList(game.Mulligan != null ? game.Mulligan.Hand : game.Encounter.Queue).Count;
-        }
-
-        // Discard every marked coin in one go (does nothing when none are marked).
-        public static void DiscardMarked()
-        {
-            var game = Ui.Game;
-            if (game.Mulligan != null) Game.MulliganDiscard(game, MarkedList(game.Mulligan.Hand));
-            else Game.Discard(game, MarkedList(game.Encounter.Queue));
-            Ui.Marked = new HashSet<int>();
-        }
-
-        // After the opening hand only the coin in play can be discarded (the bank cards are not clickable).
-        public static void DiscardCurrent()
-        {
-            Game.Discard(Ui.Game);
-            Ui.Marked = new HashSet<int>();
-        }
-
         public static void Start(double? seed = null)
         {
             if(RuntimeMode.Sandbox&&Ui.SandboxConfig!=null){StartSandbox(Ui.SandboxConfig);return;}
             var p = Ui.Platform;
             if(!Tossup.Profile.CharacterUnlocked(Ui.Profile,Ui.SelectedCharacter.Id))return;
             Ui.Game = Game.New(seed ?? p.UnixTime + Math.Floor(p.Time * 1000000), Ui.SelectedCharacter.Id,
-                Tossup.Profile.UnlockedList(Ui.Profile, Ui.SelectedCharacter.Id), Loadout(), true, Stake());
-            Ui.BankDiscardMode = false;
+                Tossup.Profile.UnlockedList(Ui.Profile, Ui.SelectedCharacter.Id), Loadout(), Stake(), map: true);
+            Ui.DiscardMode = false;
             Ui.FlipAnimation = null;
+            Ui.Deciding = false;
             Ui.ResolveTimer = 0;
-            Ui.Holding = false;
-            Ui.Marked = new HashSet<int>();
             Ui.Notice = "";
             Ui.EncounterReveal = Ui.Game.RunEncounter == null ? null : new EncounterReveal { Elapsed = 0 };
             Ui.Game.Tutorial = false;
-            Ui.Game.ContractsEnabled = false;
             Ui.Game.MasteryProfile = Ui.Profile;
             savedKey = null;
         }
@@ -395,13 +362,13 @@ namespace Tossup.UI
             var game = Game.NewSandbox(config);
             Ui.SandboxConfig = config;
             Ui.Game = game;
-            Ui.BankDiscardMode = false;
+            Ui.DiscardMode = false;
             Ui.SelectedCharacter = Content.Characters[game.CharacterId];
             Ui.SetsCharacter = game.CharacterId;
             Ui.Tutorial = null;
             Ui.EncounterReveal = null;
             Ui.FlipAnimation = null;
-            Ui.Holding = false;
+            Ui.Deciding = false;
             Ui.ResolveTimer = 0;
             Ui.Screen = Enum.Parse<UiScreen>(config.Screen, true);
             game.Paused = Ui.Screen != UiScreen.Encounter && Ui.Screen != UiScreen.Shop;
@@ -420,46 +387,8 @@ namespace Tossup.UI
             SelectCharacter(order[((i + delta) % order.Count + order.Count) % order.Count]);
         }
 
-        public static void CoinAction(CoinInst item)
-        {
-            Ui.Notice = "";
-            Ui.BankDiscardMode = false;
-            Game.Select(Ui.Game, item.Uid);
-        }
-
-        public static void DiscardBank(int uid)
-        {
-            Game.DiscardBank(Ui.Game, uid);
-            Ui.BankDiscardMode = false;
-        }
-
-        public static bool ToggleBankDiscardMode()
-        {
-            var game = Ui.Game;
-            if (game == null || game.Encounter == null || game.Encounter.BankDiscards < 1) return false;
-            Ui.BankDiscardMode = !Ui.BankDiscardMode;
-            return true;
-        }
-
-        // Leave the level for the shop; only possible once the quota is met.
-        public static void OpenShop()
-        {
-            if (Ui.FlipAnimation == null) Game.EndLevel(Ui.Game);
-        }
-
-        public static void Exchange() => Game.Exchange(Ui.Game);
-        public static void GiveUp() => Game.GiveUp(Ui.Game);
-        public static void SideBet(string side) => Game.PlaceSideBet(Ui.Game, side);
-        public static void BankCombo() { if (Game.BankCombo(Ui.Game) > 0) Ui.Holding = false; }
-        public static void PushCombo()
-        {
-            if (!Ui.Holding || Ui.FlipAnimation != null) return;
-            Ui.Holding = false;
-            if (!Game.PushCombo(Ui.Game)) return;
-            Ui.FlipAnimation = new FlipAnimation { Id = Game.GetCoin(Ui.Game, Ui.Game.Pending.Uid).Id, Outcome = Ui.Game.Pending.Result, Elapsed = 0, Duration = Ui.Profile.Options.FastFlip ? .8 : 1.6 };
-        }
-        public static void ChooseContract(string id) { if (Game.ChooseContract(Ui.Game, id) && Ui.Game.Mulligan != null) Game.MulliganDone(Ui.Game); }
-        public static void SkipContract() { if (Game.SkipContract(Ui.Game) && Ui.Game.Mulligan != null) Game.MulliganDone(Ui.Game); }
+        public static void ChooseNode(int index) => Game.ChooseNode(Ui.Game, index);
+        public static void MapChoose(string option, int uid = 0) => Game.MapChoose(Ui.Game, option, uid);
         public static void ChooseAugment(string id) => Game.ChooseAugment(Ui.Game, id);
         public static void ChooseAugmentOption(string key) => Game.ChooseAugmentOption(Ui.Game, key);
 
@@ -468,10 +397,9 @@ namespace Tossup.UI
             if (Ui.FlipAnimation == null) Game.UseItem(Ui.Game, slot);
         }
 
-        public static void FlipNextCoin()
+        static void Land()
         {
             var game = Ui.Game;
-            if (!Game.Flip(game)) return;
             Ui.FlipAnimation = new FlipAnimation
             {
                 Id = Game.GetCoin(game, game.Pending.Uid).Id, Outcome = game.Pending.Result, Elapsed = 0,
@@ -479,20 +407,83 @@ namespace Tossup.UI
             };
         }
 
-        public static void NextOrFlip()
+        // The previous flip is kept as it landed (the player moved on): apply it now.
+        static bool SettlePending()
         {
-            if (Ui.Game.Mulligan != null)
+            var game = Ui.Game;
+            if (Ui.FlipAnimation != null) return false;
+            if (game.Pending != null)
             {
-                if (!Game.OfferContract(Ui.Game)) Game.MulliganDone(Ui.Game);
-                return;
+                Ui.Deciding = false;
+                Ui.ResolveTimer = 0;
+                Game.Resolve(game);
             }
-            if (Ui.Holding)
-            {
-                if (Ui.Game.Pending != null || Ui.FlipAnimation != null) return;
-                Ui.Holding = false;
-            }
-            else FlipNextCoin();
+            return true;
         }
+
+        // Flip a coin of your hand. Clicking the next coin while the last one is still showing keeps its result.
+        public static void FlipCoin(int uid)
+        {
+            Ui.Notice = "";
+            if (!SettlePending()) return;
+            if (Game.Flip(Ui.Game, uid)) Land();
+        }
+
+        // Keyboard shortcut: flip the first coin in the hand that you can pay for.
+        public static void FlipFirst()
+        {
+            var game = Ui.Game;
+            if (game?.Encounter == null) return;
+            foreach (int uid in game.Encounter.Hand)
+                if (Game.FlipCost(game, uid) <= game.Player.Energy) { FlipCoin(uid); return; }
+        }
+
+        // Spend 1 energy to re-roll the pending result and replay the landing.
+        public static void Reflip()
+        {
+            var game = Ui.Game;
+            if (!Ui.Deciding || Ui.FlipAnimation != null || !Game.Reroll(game)) return;
+            Ui.Deciding = false; // one re-flip per coin
+            Land();
+        }
+
+        public static void SelectCoin(CoinInst item)
+        {
+            Ui.Notice = "";
+            Game.Select(Ui.Game, item.Uid);
+        }
+
+        // Keep the landed result (instead of re-flipping it) and apply it.
+        public static void Keep() { if (Ui.Deciding) SettlePending(); }
+
+        // The round is over: the enemy flips, your hand refills.
+        public static void EndRound()
+        {
+            if (!SettlePending()) return;
+            Ui.DiscardMode = false;
+            Game.EndRound(Ui.Game);
+        }
+
+        public static void DiscardCoin(int uid)
+        {
+            if (Game.DiscardBank(Ui.Game, uid) && Ui.Game.Encounter.BankDiscards < 1) Ui.DiscardMode = false;
+        }
+
+        public static bool ToggleDiscardMode()
+        {
+            var game = Ui.Game;
+            if (game == null || game.Encounter == null || game.Encounter.BankDiscards < 1) return false;
+            Ui.DiscardMode = !Ui.DiscardMode;
+            return true;
+        }
+
+        // Leave the fight you won: to the map (or the shop).
+        public static void OpenShop()
+        {
+            if (Ui.FlipAnimation == null) Game.EndLevel(Ui.Game);
+        }
+
+        public static void BankCombo() => Game.BankCombo(Ui.Game);
 
         public static void Update(double dt)
         {
@@ -503,12 +494,8 @@ namespace Tossup.UI
             if (game != null && Ui.EncounterReveal == null)
                 Game.AdvanceClock(game, dt);
             Tutorial.Update();
-            if (game != null && game.Phase != Phase.Encounter) Ui.Holding = false;
-            if (game != null && Ui.Marked.Count > 0) // marks only make sense while the coin is still in the bank or hand
-            {
-                var live = new HashSet<int>(game.Mulligan != null ? game.Mulligan.Hand : game.Encounter != null ? game.Encounter.Queue : new List<int>());
-                Ui.Marked.RemoveWhere(uid => !live.Contains(uid));
-            }
+            if (game?.Pending == null) Ui.Deciding = false;
+            if (game == null || game.Phase != Phase.Encounter || game.Encounter == null || game.Encounter.BankDiscards < 1) Ui.DiscardMode = false;
             if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox==null && game.Purchased.Count > 0) // buying a locked coin in the shop unlocks it for good
             {
                 bool unlockedNow = false;
@@ -546,21 +533,19 @@ namespace Tossup.UI
                 if (safe)
                 {
                     string key = game.Phase + ":" + game.EncounterIndex + ":" + game.Player.Gold + ":" + game.Coins.Count + ":" +
-                        game.Slots + ":" + game.Items.Count + ":" + game.Relics.Count + ":" + game.RerollCost + ":" + game.RngState + ":" + game.Augments.Count;
+                        game.MapAt + game.MapPrompt + ":" + game.Items.Count + ":" + game.Relics.Count + ":" + game.RerollCost + ":" + game.RngState + ":" + game.Augments.Count;
+                    if (game.Encounter != null && game.Phase == Phase.Encounter) key += ":" + game.Encounter.Round + ":" + game.Encounter.RoundFlips + ":" + game.Encounter.Cleared;
                     if (game.AugmentPending != null) key += ":" + game.AugmentPending.Id + ":" + game.AugmentPending.RewardId;
                     if (key != savedKey) { savedKey = key; SaveRun(); }
                 }
                 else if ((game.Phase == Phase.GameOver || game.Phase == Phase.Victory) && savedKey != "over") DeleteRun();
             }
-            if (game != null && game.Phase == Phase.Encounter && game.Mulligan != null && !game.Tutorial && !game.Paused)
-                Game.MulliganDone(game);
             if (Ui.ResolveTimer > 0 && game != null && !game.Paused)
             {
                 Ui.ResolveTimer -= dt;
                 if (Ui.ResolveTimer <= 0)
                 {
                     Game.Resolve(game);
-                    Ui.Holding = true;
                 }
             }
             if (Ui.FlipAnimation != null && game != null && !game.Paused)
@@ -570,7 +555,8 @@ namespace Tossup.UI
                 {
                     Ui.FlipAnimation = null;
                     Ui.Shake = Ui.Profile.Options.ScreenShake ? .3 : 0;
-                    Ui.ResolveTimer = .9;
+                    if (Game.CanReroll(game)) Ui.Deciding = true; // wait for the player; no auto-resolve
+                    else Ui.ResolveTimer = .5;
                 }
             }
         }

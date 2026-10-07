@@ -81,7 +81,6 @@ namespace Tossup.UI
         public static int SetsIndex = 1;
         public static int SetsCatalogPage = 1;
         public static SetDraft SetDraft; // unsaved edits of the open coin set
-        public static HashSet<int> Marked = new HashSet<int>(); // coins marked for discarding in the opening hand
         public static int CollectionPage = 1;
         public static string CollectionCategory = "coins";
         public static readonly Dictionary<string,int> StakePick = new Dictionary<string,int>();
@@ -112,8 +111,8 @@ namespace Tossup.UI
         public static string CursorCurrent;
         public static FlipAnimation FlipAnimation;
         public static double Shake;
-        public static bool Holding; // landed coin stays in view until the player asks for the next one
-        public static bool BankDiscardMode;
+        public static bool Deciding; // landed, waiting for RE-FLIP or KEEP (or the next coin) before the result resolves
+        public static bool DiscardMode; // Crystal Ball: clicking a hand coin discards it
         public static double ResolveTimer; // hold on the flipped result before effects apply
         public static TutorialState Tutorial;
         public static EncounterReveal EncounterReveal;

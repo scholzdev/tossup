@@ -15,11 +15,11 @@ namespace Tossup.Coins
         public override double TieProbability => 0;
         public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Chaos };
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(15) };
-        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Quota(2) };
+        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Penalty(2) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Cursed Tails endured", 10, 35, 100,
-            "Tails adds 1 less quota.", "Heads scores +2 points.", "Heads chance +8%.",
+            "Tails gives the enemy 1 less.", "Heads scores +2 points.", "Heads chance +8%.",
             MasterySides.Tails, MasterySides.Heads, MasterySides.Heads);
 
         public CursedCoin()

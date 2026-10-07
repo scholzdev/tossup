@@ -18,24 +18,18 @@ namespace Tossup.UI
 
         static readonly List<TutorialStep> Steps = new List<TutorialStep>
         {
-            S("THE GOAL",330,40,580,120,"Each level has a QUOTA: points you must score before your coins run out. The bar fills as you score."),
-            S("YOUR RESOURCES",930,96,290,46,"Coins left in your stack, your gold, and your energy. Strong coins cost energy to flip."),
-            S("THE COIN BANK",70,170,240,480,"Your remaining coins stay visible in the bank. Click any coin to choose what to play next."),
-            S("THE COIN IN PLAY",330,170,880,480,"The coin shows its Heads and Tails effects and its odds. Read them before you flip."),
-            S("FLIP",550,676,260,64,"Press FLIP or Space to toss the coin.",g=>g.LastResult!=null,"PRESS FLIP"),
-            S("THE RESULT",330,450,880,300,"The banner shows the side and points. Press NEXT COIN to continue.",g=>g.LastResult!=null&&!Ui.Holding,"PRESS NEXT COIN"),
-            S("CHIPS",330,650,280,110,"CHIPS are one-use helpers from the shop. Click one while a coin is ready to flip."),
-            S("FLIP AGAIN",550,676,260,64,"Flip this one too. Two Heads in a row start a COMBO.",g=>g.Encounter!=null&&g.Encounter.Cleared,"PRESS FLIP"),
-            S("COMBO POT",990,176,205,145,"Repeated results raise the multiplier and build an unbanked pot. BANK locks it in."),
-            S("PUSH",510,676,260,92,"PUSH flips the next coin to build your combo. A broken streak loses the unbanked pot."),
-            S("OPEN THE SHOP",930,54,170,38,"Keep flipping for extra gold, or open the shop.",g=>g.Phase==Phase.Shop,"PRESS OPEN SHOP"),
-            S("THE SHOP",70,160,920,440,"Between levels you buy coins, chips, a prize, and reroll the offers."),
-            S("DECK TOOL",1000,238,220,220,"Select a coin below to remove it from the deck for gold."),
-            S("YOUR DECK",70,600,920,150,"Your coins are shown here. Dark slots on the right are extra deck slots."),
-            S("NEXT ROUND",1000,586,220,170,"Press the red button when you are ready for the next level.",g=>g.Phase==Phase.Encounter,"PRESS NEXT ROUND"),
-            S("A NEW MODIFIER",330,540,300,110,"From level 2 on, every level has a modifier. Read it before you flip."),
-            S("RUNNING OUT OF COINS",930,96,100,46,"If the stack empties, bank the combo or buy an exchange to return played coins."),
-            S("THAT'S IT",330,280,620,200,"Beat eight levels ending with The House. Encounters and Augments shape the run."),
+            S("THE GOAL",EncounterView.Left,EncounterView.BoardY,EncounterView.Width,EncounterView.BoardH,"Every fight lasts 5 rounds. Score more points than the enemy by the end of round 5. A tie goes to the House."),
+            S("YOUR RESOURCES",880,EncounterView.BarY-4,EncounterView.Right-880,EncounterView.BarH+8,"Your gold and your energy. Strong coins cost energy to flip."),
+            S("THE ENEMY",EncounterView.Left,EncounterView.EnemyY,EncounterView.Width,EncounterView.EnemyH,"The enemy flips coins from its own fixed pouch after every round. They stay hidden until you end the round. Hover its name to see the pouch."),
+            S("YOUR HAND",EncounterView.Left,EncounterView.CardsY-6,EncounterView.Width,EncounterView.CardsH+12,"These coins are in your hand. Each card shows the coin's odds and what Heads and Tails do."),
+            S("FLIP",EncounterView.Left,EncounterView.CardsY-6,EncounterView.Width,EncounterView.CardsH+12,"Click a coin to flip it. You may flip any number of them, in any order.",g=>g.LastResult!=null,"CLICK A COIN"),
+            S("THE RESULT",EncounterView.Left,EncounterView.StripY-8,EncounterView.Width,EncounterView.CardsH+EncounterView.CardsY-EncounterView.StripY+14,"The card shows the side and points. The line above lists everything you flipped this round. Click the next coin when you are ready."),
+            S("CHIPS",EncounterView.InnerX+320,EncounterView.FooterY-4,270,EncounterView.FooterH+8,"CHIPS are one-use helpers from the shop. Click one between flips."),
+            S("FLIP MORE",EncounterView.Left,EncounterView.CardsY-6,EncounterView.Width,EncounterView.CardsH+12,"Flip two more coins. Two Heads in a row start a COMBO.",g=>g.Encounter!=null&&g.Encounter.Flips>=3,"FLIP TWO MORE"),
+            S("COMBO POT",EncounterView.InnerRight-330,EncounterView.StripY-8,344,EncounterView.StatusY-EncounterView.StripY+36,"Repeated results raise the multiplier and build an unbanked pot. BANK locks it in as gold."),
+            S("END THE ROUND",EncounterView.EndRoundX-6,EncounterView.EndRoundY-6,EncounterView.EndRoundW+12,EncounterView.EndRoundH+12,"Coins you did not flip stay in your hand. When you are done, end the round: the enemy flips and your hand refills.",g=>g.Encounter!=null&&g.Encounter.Round>=2,"PRESS END ROUND"),
+            S("THE POUCH",EncounterView.InnerX-6,EncounterView.FooterY-2,270,30,"Flipped coins wait in the discard pile. When the pouch runs out they are shuffled back in."),
+            S("THAT'S IT",330,280,620,200,"Win eight fights, ending with The House. Between fights you buy coins, chips and prizes."),
         };
 
         public static int Count => Steps.Count;
@@ -44,21 +38,17 @@ namespace Tossup.UI
 
         public static void Start()
         {
-            var game = Game.New(7, "blade", new List<string>(), new List<CoinDef>{CoinCatalog.Normal,CoinCatalog.Normal,CoinCatalog.Normal}, true, 1, false);
+            var game = Game.New(7, "blade", new List<string>(), new List<CoinDef>{CoinCatalog.Normal}, 1, false);
             game.SetRunEncounter(null);
-            game.ContractsEnabled = false;
             game.Tutorial = true;
             game.TutorialHeads = 3;
             game.Items = new List<string>{"energy_drink"};
-            game.Encounter.Quota = game.Encounter.MaxQuota = 2;
-            game.Encounter.Payout = Game.Stage(1).Payout;
-            Game.MulliganDone(game);
+            game.Encounter.EnemyDraw = 1; // a gentle first enemy
             game.Paused = false;
             Ui.Game = game;
             Ui.Tutorial = new TutorialState();
             Ui.EncounterReveal = null;
             Ui.FlipAnimation = null;
-            Ui.Holding = false;
             Ui.ResolveTimer = 0;
         }
 
@@ -67,7 +57,6 @@ namespace Tossup.UI
             Ui.Tutorial = null;
             Ui.Game = null;
             Ui.FlipAnimation = null;
-            Ui.Holding = false;
             Ui.Screen = UiScreen.Title;
         }
 
@@ -89,7 +78,7 @@ namespace Tossup.UI
         {
             if (Ui.Tutorial == null) return;
             var step = Steps[Ui.Tutorial.Step-1];
-            float spotHeight = step.Title == "THE COIN BANK" ? EncounterView.BankPanelHeight : step.H;
+            float spotHeight = step.H;
             Color(C.Ink,.72f);
             Gfx.Rectangle(true,0,0,Ui.Width,step.Y);
             Gfx.Rectangle(true,0,step.Y+spotHeight,Ui.Width,800-step.Y-spotHeight);

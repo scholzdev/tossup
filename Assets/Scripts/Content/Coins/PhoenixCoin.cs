@@ -17,12 +17,12 @@ namespace Tossup.Coins
         public override double TieProbability => 0;
         public override IReadOnlyList<CoinType> Types { get; } = Array.Empty<CoinType>();
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(3) };
-        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Quota(2) };
+        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Penalty(2) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Anger released by Phoenix", 15, 50, 150,
             "Anger cap rises to 6.", "Each anger scores +1 more point.",
-            "Tails adds 1 less quota.",
+            "Tails gives the enemy 1 less.",
             MasterySides.None, MasterySides.Heads | MasterySides.Edge, MasterySides.Tails);
 
         public PhoenixCoin()

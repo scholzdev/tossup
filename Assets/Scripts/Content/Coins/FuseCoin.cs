@@ -27,8 +27,6 @@ namespace Tossup.Coins
             "Fuse retains 20% of spent charge.",
             MasterySides.None, MasterySides.Heads, MasterySides.Heads);
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * inst.Charge;
-
         public FuseCoin()
         {
             On.Coins.Discard += ctx => ctx.Coin.Charge += ctx.Mastery.Level >= 1 ? 7 : 6;

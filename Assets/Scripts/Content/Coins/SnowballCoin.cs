@@ -41,8 +41,6 @@ namespace Tossup.Coins
             };
         }
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * inst.Stack;
-
         public override void OnResolve(GameState g, CoinInst inst, Res res)
         {if(res.Result==Side.Heads)foreach(var effect in res.Effects)if(effect.Type==EffectType.Score)effect.Amount+=inst.Stack;}
 

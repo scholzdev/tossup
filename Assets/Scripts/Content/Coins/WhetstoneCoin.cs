@@ -7,7 +7,7 @@ namespace Tossup.Coins
     {
         public override string Id => "whetstone";
         public override string Name => "Whetstone";
-        public override string Description => "Heads: next 2 Steel coins gain 3 points on Heads, but add 2 quota on Tails.";
+        public override string Description => "Heads: next 2 Steel coins gain 3 points on Heads, but give the enemy 2 on Tails.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 22;
         public override int EnergyCost => 0;
@@ -25,7 +25,7 @@ namespace Tossup.Coins
         public override CoinMastery Mastery { get; } = new CoinMastery(
             "Steel coins affected by Whetstone", 10, 40, 120,
             "Its buff grants +4 points on Heads.",
-            "Buffed Tails adds 1 less quota.",
+            "Buffed Tails gives the enemy 1 less.",
             "Its buff reaches a third Steel coin.");
 
         public WhetstoneCoin()

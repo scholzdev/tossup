@@ -7,7 +7,7 @@ namespace Tossup.Coins
     {
         public override string Id => "conductor";
         public override string Name => "Conductor";
-        public override string Description => "Heads: next 3 Rhythm coins gain 2 points per combo step (max 8); a broken combo adds 5 quota.";
+        public override string Description => "Heads: next 3 Rhythm coins gain 2 points per combo step (max 8); a broken combo gives the enemy 5.";
         public override Rarity Rarity => Rarity.Uncommon;
         public override int Cost => 24;
         public override int EnergyCost => 0;

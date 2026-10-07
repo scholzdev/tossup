@@ -43,7 +43,7 @@ namespace Tossup.UI
             Button("REROLL", 90, 322, 150, 36, C.Orange, () => Game.RerollShop(g), g.Player.Gold >= rerollCost);
 
             // COIN row
-            bool full = g.Coins.Count >= g.Slots;
+            bool full = g.Coins.Count >= Game.DeckMax;
             RowLabel("Coin", 270, 240);
             for (int i = 0; i < 4; i++)
             {
@@ -107,36 +107,17 @@ namespace Tossup.UI
             Button("REMOVE", 1102, tuneY + 34, 100, 26, C.Red, () => { if (g.SelectedUid.HasValue) Game.Remove(g, g.SelectedUid.Value); },
                 g.Player.Gold >= 8 && selected != null && g.Coins.Count > 1, face: Ui.F16);
 
-            // your deck
-            Text(L("YOUR DECK  %d / %d", g.Coins.Count, g.Slots), 70, 612, Ui.F20, C.Gold);
-            Text(full ? "DECK FULL  -  BUY A SLOT OR REMOVE A COIN" : "CLICK A COIN TO SELECT IT", 340, 618, Ui.F16, full ? C.Orange : C.Muted);
+            // your pouch, grouped: one cell per kind of coin with its count
+            Text(L("YOUR POUCH  %d / %d", g.Coins.Count, Game.DeckMax), 70, 612, Ui.F20, C.Gold);
+            Text(full ? "POUCH FULL  -  REMOVE A COIN" : "CLICK A COIN TO SELECT IT", 340, 618, Ui.F16, full ? C.Orange : C.Muted);
             var held = new List<string>();
             foreach (var id in g.Items) held.Add(Lang.ItemShort(id));
             foreach (var id in g.Relics) held.Add(Lang.Upper(Lang.RelicName(id)));
             if (held.Count > 0) Text(L("HELD  %s", string.Join(", ", held)), 340, 638, Ui.F16, C.Orange);
-            for (int i = 0; i < Game.DeckMax; i++)
-            {
-                float x = 70 + i * 92;
-                var item = i < g.Coins.Count ? g.Coins[i] : null;
-                bool chosen = item != null && item.Uid == g.SelectedUid;
-                if (i >= g.Slots)
-                {
-                    bool next=i==g.Slots;Box(x,664,84,76,C.SlotDk);Outline(x,664,84,76,next?C.Gold:C.Line);
-                    if(next){int slotCost=Game.SlotPrice(g);Centered("+"+slotCost+" GOLD",x,710,84,Ui.F16,g.Player.Gold>=slotCost?C.Gold:C.Red);AddButton(x,664,84,76,()=>Game.BuySlot(g),"BUY SLOT");}
-                    continue;
-                }
-                Box(x, 664, 84, 76, item != null ? PanelColor : C.Slot);
-                Outline(x, 664, 84, 76, chosen ? C.Orange : C.PanelLight);
-                if (item == null) continue;
-                CoinImage(item, x + 18, 668, 48);
-                double p = Game.Probability(g, item);
-                Centered(L("%d%% H", Math.Floor(p * 100 + .5)), x, 718, 84, Ui.F16, C.Gold);
-                CoinHover(item.Id, x, 664, 84, 76, p);
-                AddButton(x, 664, 84, 76, () => A.CoinAction(item), "COIN");
-            }
+            PouchStrip(g, 70, 664, 17, 1, PanelColor);
 
             // A large cabinet button closes the shop and starts the next round.
-            Button("NEXT ROUND", 1000, 602, 220, 88, C.Red, () => Game.LeaveShop(g));
+            Button(g.Map != null && !g.Endless ? "BACK TO MAP" : "NEXT ROUND", 1000, 602, 220, 88, C.Red, () => Game.LeaveShop(g));
         }
     }
 }

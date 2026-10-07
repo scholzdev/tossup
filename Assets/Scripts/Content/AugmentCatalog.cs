@@ -6,9 +6,8 @@ namespace Tossup
     public static class AugmentCatalog
     {
         public static readonly BankersCutAugment BankersCut = new BankersCutAugment();
-        public static readonly AllInAugment AllIn = new AllInAugment();
-        public static readonly HedgeFundAugment HedgeFund = new HedgeFundAugment();
-        public static readonly ScrapDealerAugment ScrapDealer = new ScrapDealerAugment();
+        public static readonly DeepPocketsAugment DeepPockets = new DeepPocketsAugment();
+        public static readonly BountyHunterAugment BountyHunter = new BountyHunterAugment();
         public static readonly EpicWindfallAugment EpicWindfall = new EpicWindfallAugment();
         public static readonly ReforgerAugment Reforger = new ReforgerAugment();
         public static readonly TypeSpecialistAugment TypeSpecialist = new TypeSpecialistAugment();
@@ -16,7 +15,7 @@ namespace Tossup
 
         public static readonly List<AugmentDef> Ordered = new List<AugmentDef>
         {
-            BankersCut, AllIn, HedgeFund, ScrapDealer, EpicWindfall, Reforger, TypeSpecialist,
+            BankersCut, DeepPockets, BountyHunter, EpicWindfall, Reforger, TypeSpecialist,
         };
 
         public static readonly Dictionary<string, AugmentDef> ById = Index();

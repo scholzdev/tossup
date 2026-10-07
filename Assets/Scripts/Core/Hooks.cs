@@ -145,8 +145,8 @@ namespace Tossup
         }
     }
 
-    // Consumable items: bought in the shop, used in the middle of a level while a coin is dealt.
-    // Use returns false to refuse (the item is then not consumed). To change the coming flip, arm a
+    // Consumable items: bought in the shop, used between flips during a fight.
+    // Use returns false to refuse (the item is then not consumed). To change the next flip, arm a
     // one-shot listener: Items.Arm(GameSignal.CoinFlip, e => e.Flip.Result = Side.Heads). Armed listeners are
     // dropped at encounter end and when a new game starts.
     public static class Items
@@ -175,7 +175,7 @@ namespace Tossup
         }
 
         public static bool CanUse(GameState game) =>
-            game.Phase == Phase.Encounter && game.Dealt != null && game.Pending == null;
+            game.Phase == Phase.Encounter && game.Encounter != null && !game.Encounter.Cleared && game.Pending == null;
 
         public static bool Use(GameState game, int slot)
         {

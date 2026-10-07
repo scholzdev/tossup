@@ -33,9 +33,8 @@ TIERS = {
 
 AUGMENTS = {
     "bankers_cut": "bank",
-    "all_in": "all_in",
-    "hedge_fund": "shield",
-    "scrap_dealer": "scrap",
+    "deep_pockets": "all_in",
+    "bounty_hunter": "shield",
     "epic_windfall": "epic",
     "reforger": "reforge",
     "type_specialist": "types",

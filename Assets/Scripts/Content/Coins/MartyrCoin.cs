@@ -7,7 +7,7 @@ namespace Tossup.Coins
     {
         public override string Id => "martyr";
         public override string Name => "Martyr";
-        public override string Description => "Tails: quota +3. Heads: 4 points, +1 per Tails so far this level.";
+        public override string Description => "Tails: enemy +3. Heads: 4 points, +1 per Tails so far this level.";
         public override string HeadsDescription => "Score 4 points, plus 1 for every Tails this level.";
         public override Rarity Rarity => Rarity.Rare;
         public override int Cost => 15;
@@ -16,7 +16,7 @@ namespace Tossup.Coins
         public override double TieProbability => 0;
         public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Blood };
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(4) };
-        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Quota(3) };
+        public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Penalty(3) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
 
         public override void OnResolve(GameState g, CoinInst i, Res r)

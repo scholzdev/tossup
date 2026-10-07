@@ -53,9 +53,9 @@ namespace Tossup.UI
         {
             var game = Ui.Game;
             if (game.Phase == Phase.Encounter) EncounterView.Draw();
-            else if (game.Phase == Phase.Contract) ContractView.Draw();
             else if (game.Phase == Phase.Augment) AugmentView.Draw();
             else if (game.Phase == Phase.Shop) ShopView.Draw();
+            else if (game.Phase == Phase.Map) MapView.Draw();
             else if (game.Phase == Phase.GameOver && !game.OverSeen)
             {
                 EncounterView.Draw();
@@ -63,7 +63,7 @@ namespace Tossup.UI
                     Ui.Confirm = new Confirm
                     {
                         Title = "GAME OVER",
-                        Text = "NO COINS LEFT AND NO EXCHANGE POSSIBLE. THE RUN IS OVER.",
+                        Text = game.LostWhy != null ? L("THE ENEMY OUTSCORED YOU. THE RUN IS OVER.") : "THE RUN IS OVER.",
                         Single = true,
                         Ok = () => game.OverSeen = true,
                     };
@@ -75,7 +75,7 @@ namespace Tossup.UI
                 Box(944, 177, 300, 101, C.Ink);
                 Text("DEBUG / F3", 955, 184, Ui.F16, C.Gold);
                 Text("RNG " + game.RngState, 955, 207, Ui.F16);
-                Text("FLIPS " + game.Encounter.Flips, 955, 231, Ui.F16);
+                Text("FLIPS " + game.Encounter?.Flips, 955, 231, Ui.F16);
                 Text("LAST " + (game.LastRng.HasValue ? GameText.Format("%.5f", game.LastRng.Value) : "-"), 955, 255, Ui.F16);
             }
         }
@@ -235,9 +235,9 @@ namespace Tossup.UI
 
             var currentGame = Ui.Game;
             if (currentGame != null && !currentGame.Paused && currentGame.Phase == Phase.Encounter &&
-                Ui.Tutorial == null && currentGame.Mulligan == null && Ui.FlipAnimation == null)
+                Ui.Tutorial == null && Ui.FlipAnimation == null)
             {
-                if (int.TryParse(key, out int slot) && slot >= 1 && slot <= 3 && !Ui.Holding && currentGame.Items.Count >= slot)
+                if (int.TryParse(key, out int slot) && slot >= 1 && slot <= 3 && currentGame.Items.Count >= slot)
                 {
                     A.UseItem(slot - 1);
                     return;
@@ -256,8 +256,8 @@ namespace Tossup.UI
                 return;
             }
             if (key == "space" && currentGame != null && !currentGame.Paused &&
-                currentGame.Phase == Phase.Encounter && Ui.FlipAnimation == null)
-                A.NextOrFlip();
+                currentGame.Phase == Phase.Encounter && Ui.FlipAnimation == null && !currentGame.Encounter.Cleared)
+                A.FlipFirst();
         }
 
         public static bool DismissEncounterReveal()

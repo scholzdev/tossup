@@ -37,8 +37,6 @@ namespace Tossup.Coins
             { if (ctx.Mastery.Level >= 2) odds.Heads += .08; };
         }
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * 3.5;
-
         public override void OnResolve(GameState game, CoinInst inst, Res res)
         {
             if (res.Result != Side.Heads) return;

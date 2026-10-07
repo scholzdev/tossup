@@ -15,7 +15,7 @@ static class FeatureParityTests
         SavedRunRoundTrip();
         TutorialFlow();
         RuntimeModesAndSandbox();
-        CanSelectNextCoinWhileHolding();
+        HandCoinsFlipInAnyOrder();
         ImpossibleOddsHideUnavailableSide();
         CollectionCatalogCategories();
         ShopCoinServices();
@@ -48,67 +48,85 @@ static class FeatureParityTests
             var coin = game.Coins[0];
             Check(coin.Definition.HasHook(nameof(CoinDef.OnResolve)), "Pot of Greed registers its resolve hook");
             coin.Definition.OnResolve(game, coin, new Res { Result = side });
-            Check(game.Coins.Count == 8 && game.Slots == 8, "Pot of Greed grants two deck slots and coins");
+            Check(game.Coins.Count == 8, "Pot of Greed grants two coins");
             Check(game.Coins[6].Definition.Rarity == rarity && game.Coins[7].Definition.Rarity == rarity &&
                 game.Coins[6].Id != coin.Id && game.Coins[7].Id != coin.Id,
                 "Pot of Greed grants the rarity shown for " + side);
-            Game.MulliganDone(game);
-            var bank = new List<int>(game.Encounter.Queue);
-            bank.AddRange(game.Encounter.Pile);
-            Check(Game.Discard(game, bank) == 0, "new deck rewards do not allow discarding the entire current bank");
-            coin.Definition.OnResolve(game, coin, new Res { Result = side });
-            coin.Definition.OnResolve(game, coin, new Res { Result = side });
-            Check(game.Coins.Count == Game.DeckMax && game.Slots == Game.DeckMax,
-                "Pot of Greed respects the deck limit");
+            Check(game.Encounter.Hand.Count + game.Encounter.Pouch.Count == 6, "new coins join the pouch only from the next fight");
         }
+        var nearlyFull = new List<string> { "potofgreed" };
+        for (int i = 1; i < Game.DeckMax - 2; i++) nearlyFull.Add("normal");
+        var full = Game.NewSandbox(new SandboxConfig { Coins = nearlyFull, Seed = 802 });
+        var pot = full.Coins[0];
+        pot.Definition.OnResolve(full, pot, new Res { Result = Side.Heads });
+        pot.Definition.OnResolve(full, pot, new Res { Result = Side.Heads });
+        Check(full.Coins.Count == Game.DeckMax, "Pot of Greed respects the pouch limit");
     }
 
     static void DiscardParity()
     {
         RuntimeMode.Configure(false, false);
-        var opening = Game.New(77101, "trader", null, new List<CoinDef> { CoinCatalog.Loaded, CoinCatalog.Normal, CoinCatalog.Normal }, true);
-        int fuseUid = opening.Mulligan.Hand[0];
-        var fuse = Game.GetCoin(opening, fuseUid);
+        var game = Game.New(77101, "trader", null, new List<CoinDef> { CoinCatalog.Loaded, CoinCatalog.Normal, CoinCatalog.Normal });
+        var hand = game.Encounter.Hand;
+        Check(hand.Count == Game.HandSize, "a fight starts with a full hand");
+        int fuseUid = hand[0];
+        var fuse = Game.GetCoin(game, fuseUid);
         fuse.Definition = CoinCatalog.Fuse;
-        Check(Game.MulliganDiscard(opening, new List<int> { fuseUid }) == 1, "opening-hand discard removes a marked coin");
-        Check(fuse.Charge == 6, "opening-hand discard fires the coin discard hook and growth");
+        Check(Game.Discard(game, new List<int> { fuseUid }) == 1 && game.Encounter.Discard.Contains(fuseUid) && !hand.Contains(fuseUid),
+            "discarding sends a hand coin to the discard pile");
+        Check(fuse.Charge == 6, "discarding fires the coin discard hook and growth");
 
-        for (int i = 0; i < 2; i++)
-        {
-            int uid = opening.NextUid++;
-            opening.Coins.Add(new CoinInst { Uid = uid, Definition = CoinCatalog.Normal });
-            opening.Encounter.Pile.Add(uid);
-        }
-        Game.MulliganDone(opening);
-        Ui.Game = opening;
+        Ui.Game = game;
         Ui.FlipAnimation = null;
-        Ui.Holding = false;
-        opening.Encounter.BankDiscards = 1;
+        Ui.EncounterReveal = null;
+        game.Encounter.BankDiscards = 1;
         AppCore.Draw();
         Check(Ui.Buttons.Exists(b => b.Label == "DISCARD MODE: OFF"), "Crystal Ball exposes an explicit discard-mode toggle");
-        Check(Ui.Buttons.Exists(b => b.Label == "BANK COIN"), "bank coins remain selectable while a discard is armed");
+        Check(Ui.Buttons.Exists(b => b.Label == "HAND COIN"), "hand coins remain flippable while a discard is armed");
         var toggle = Ui.Buttons.Find(b => b.Label == "DISCARD MODE: OFF");
         toggle.Action();
         AppCore.Draw();
         Check(Ui.Buttons.Exists(b => b.Label == "DISCARD MODE: ON"), "discard mode can be enabled");
-        Check(Ui.Buttons.Exists(b => b.Label == "BANK DISCARD"), "discard mode exposes a bank coin action");
-        var discardTargets = Ui.Buttons.FindAll(b => b.Label == "BANK DISCARD");
-        Check(discardTargets.Count > 1, "discard mode includes a non-front bank coin");
-        var discard = discardTargets[1];
-        int discardUid = opening.Encounter.Queue[1];
-        discard.Action();
-        Check(opening.Encounter.BankDiscards == 0 && opening.Encounter.Discards == 2,
-            "bank discard spends the Crystal Ball charge (charges=" + opening.Encounter.BankDiscards + ", discards=" + opening.Encounter.Discards + ", phase=" + opening.Phase + ", target=" + discardUid + ")");
-        Check(opening.Encounter.Queue.Count == Game.Visible, "discarding a non-front coin refills the visible bank");
-        Check(opening.Dealt != null && opening.Dealt.Uid == opening.Encounter.Queue[0] && !opening.Encounter.Queue.Contains(discardUid),
-            "discarding a later bank coin keeps the dealt coin active");
-        Check(!Ui.BankDiscardMode, "bank discard exits discard mode");
+        var targets = Ui.Buttons.FindAll(b => b.Label == "HAND COIN");
+        Check(targets.Count == hand.Count && targets.Count > 1, "discard mode makes every hand coin a target");
+        int discardUid = hand[1];
+        targets[1].Action();
+        Check(game.Encounter.BankDiscards == 0 && game.Encounter.Discards == 2 && !hand.Contains(discardUid) && game.Encounter.Discard.Contains(discardUid),
+            "a hand discard spends the Crystal Ball charge");
+        Check(!Ui.DiscardMode, "discarding leaves discard mode");
+        Ui.Game = null;
+    }
+
+    // A fight lasts five rounds; the hand refills after each; the pouch reshuffles the discards when it runs dry.
+    static void HandCoinsFlipInAnyOrder()
+    {
+        RuntimeMode.Configure(false, false);
+        var game = Game.New(6610, "blade", null, null);
+        Ui.Game = game;
+        Ui.FlipAnimation = null;
+        Ui.EncounterReveal = null;
+        Ui.Deciding = false;
+        Ui.ResolveTimer = 0;
+        AppCore.Draw();
+        var cards = Ui.Buttons.FindAll(b => b.Label == "HAND COIN");
+        Check(cards.Count == Game.HandSize && Ui.Buttons.Exists(b => b.Label == "END ROUND"), "every hand coin and the round button are clickable");
+        var hand = new List<int>(game.Encounter.Hand);
+        cards[2].Action();
+        Check(game.Pending != null && game.Pending.Uid == hand[2] && Ui.FlipAnimation != null, "clicking a hand coin flips that coin");
+        Ui.FlipAnimation = null;
+        A.FlipCoin(hand[0]);
+        Check(game.Encounter.Flips == 1 && game.LastResult.Uid == hand[2] && game.Pending != null && game.Pending.Uid == hand[0],
+            "clicking the next coin keeps the last result and flips the next one, in the order chosen");
+        Ui.FlipAnimation = null;
+        A.EndRound();
+        Check(game.Pending == null && game.Encounter.Round == 2 && game.Encounter.Hand.Count == Game.HandSize &&
+            game.Encounter.Hand.Contains(hand[1]) && game.Encounter.Flips == 2, "ending the round keeps unflipped coins and refills the hand");
         Ui.Game = null;
     }
 
     static void SavedRunRoundTrip()
     {
-        var game = Game.New(4401, "trader", new List<string> { "loaded" }, new List<CoinDef> { CoinCatalog.Loaded, CoinCatalog.Normal }, true, 3);
+        var game = Game.New(4401, "trader", new List<string> { "loaded" }, new List<CoinDef> { CoinCatalog.Loaded, CoinCatalog.Normal }, 3);
         game.Player.Gold = 37;
         game.Augments.Add("bankers_cut");
         game.Augments.Add("type_specialist");
@@ -119,12 +137,12 @@ static class FeatureParityTests
         Check(restored != null, "valid saved run restores");
         Check(restored.Seed == game.Seed && restored.RngState == game.RngState, "RNG state survives restoration");
         Check(restored.CharacterId == "trader" && restored.Stake == 3 && restored.Player.Gold == 37, "run identity survives restoration");
-        Check(restored.Coins.Count == 2 && restored.Coins[0].Id == "loaded", "owned coin state survives restoration");
+        Check(restored.Coins.Count == Game.PouchSize && restored.Coins[0].Id == "loaded", "owned coin state survives restoration");
         Check(restored.Augments.Contains("bankers_cut") && restored.AugmentData["type_specialist"] == "fortune", "augment state survives restoration");
-        Check(restored.Encounter.ComboPot == 6 && restored.Mulligan != null && restored.Dealt == null, "safe-point encounter state survives restoration");
+        Check(restored.Encounter.ComboPot == 6 && restored.Encounter.Hand.Count == Game.HandSize && restored.Pending == null, "safe-point encounter state survives restoration");
         Check(RunSave.Decode("{\"version\":999}") == null && RunSave.Decode("broken") == null, "damaged or incompatible saves are rejected");
-        var unsafeGame=Game.New(4402,"blade",null,null,false);
-        Game.Flip(unsafeGame);
+        var unsafeGame=Game.New(4402,"blade");
+        Game.Flip(unsafeGame,unsafeGame.Encounter.Hand[0]);
         bool rejected=false;try{RunSave.Encode(unsafeGame);}catch(InvalidOperationException){rejected=true;}
         Check(rejected,"mid-level progress is never written as a resume point");
 
@@ -142,8 +160,8 @@ static class FeatureParityTests
     {
         Tutorial.Start();
         Check(Ui.Game != null && Ui.Game.Tutorial && Ui.Tutorial != null, "tutorial starts a throwaway deterministic run");
-        Check(Ui.Game.Seed == 7 && Ui.Game.Coins.Count == 3 && Ui.Game.Items.Contains("energy_drink"), "tutorial scene is deterministic");
-        Check(Tutorial.Count == 18 && Tutorial.StepIndex == 1, "tutorial exposes every guided step");
+        Check(Ui.Game.Seed == 7 && Ui.Game.Coins.Count == Game.PouchSize && Ui.Game.Items.Contains("energy_drink"), "tutorial scene is deterministic");
+        Check(Tutorial.Count == 12 && Tutorial.StepIndex == 1, "tutorial exposes every guided step");
         AppCore.Draw();
         Check(Ui.Buttons.Exists(b => b.Label == "SKIP"), "tutorial overlay draws a skip control");
         Tutorial.Next();
@@ -151,6 +169,9 @@ static class FeatureParityTests
         Tutorial.Finish();
         Check(Ui.Game == null && Ui.Tutorial == null && Ui.Screen == UiScreen.Title, "tutorial exits without retaining its run");
     }
+
+    // A UI run starts on the map; step onto the first table to reach the encounter.
+    static void FirstFight() { var g = Ui.Game; Check(g.Phase == Phase.Map && Game.ChooseNode(g, g.Map.FindIndex(n => n.Row == 0)), "a new run starts on the map"); }
 
     static void RuntimeModesAndSandbox()
     {
@@ -161,11 +182,7 @@ static class FeatureParityTests
         clockGame.Paused = true;
         Game.AdvanceClock(clockGame, 2);
         Check(Math.Abs(clockGame.Encounter.ElapsedSeconds - 1.5) < 1e-9, "paused encounter time stops");
-        clockGame.Paused = false;
-        clockGame.Mulligan = new Mulligan();
-        Game.AdvanceClock(clockGame, 2);
-        Check(Math.Abs(clockGame.Encounter.ElapsedSeconds - 1.5) < 1e-9, "the encounter clock waits until mulligan ends");
-        var dev = Game.New(5501, "blade", null, null, false);
+        var dev = Game.New(5501, "blade", null, null);
         Check(RuntimeMode.Dev && dev.Player.Gold == 5000, "developer mode grants test gold");
         var profile = Profile.New();
         RuntimeMode.ApplyProfile(profile);
@@ -246,7 +263,7 @@ static class FeatureParityTests
         {
             RuntimeMode.Configure(dev,false);
             Ui.SelectedCharacter=Content.Characters["blade"];Ui.Tutorial=null;Ui.Confirm=null;
-            A.Start(6601);
+            A.Start(6601);FirstFight();
             Check(Ui.Game.RunEncounter!=null && Ui.EncounterReveal!=null, "normal and developer Start show the assigned encounter");
             AppCore.Draw();
             Check(Ui.Buttons.Count == 0, "encounter reveal blocks game controls while animating");
@@ -261,30 +278,6 @@ static class FeatureParityTests
         Ui.Game = null;
     }
 
-    static void CanSelectNextCoinWhileHolding()
-    {
-        RuntimeMode.Configure(false, false);
-        var game = Game.New(6610, "blade", null, null, false);
-        var last = game.Dealt;
-        Check(last != null, "selection test starts with a dealt coin");
-        game.Dealt = null;
-        game.Encounter.Queue.Remove(last.Uid);
-        game.Encounter.Played.Add(last.Uid);
-        game.LastResult = new FlipState { Uid = last.Uid, CoinId = Game.GetCoin(game, last.Uid).Id, Result = Side.Heads };
-        Ui.Game = game;
-        Ui.Holding = true;
-        Ui.FlipAnimation = null;
-        Ui.EncounterReveal = null;
-        AppCore.Draw();
-        var select = Ui.Buttons.Find(b => b.Label == "BANK COIN");
-        Check(select != null, "the bank stays selectable while the last result is held");
-        select.Action();
-        Check(game.Dealt != null && game.Dealt.Uid != last.Uid, "selecting a bank coin deals it for the next flip");
-        Ui.Holding = false;
-        Ui.Game = null;
-        Hooks.Unbind();
-    }
-
     static void ImpossibleOddsHideUnavailableSide()
     {
         RuntimeMode.Configure(false, false);
@@ -293,42 +286,28 @@ static class FeatureParityTests
         try
         {
             var game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> { "normal", "safeport" }, Seed = 6611 });
-            var last = game.Dealt;
-            var lastCoin = Game.GetCoin(game, last.Uid);
+            var lastCoin = game.Coins[0];
             game.Coins.Remove(lastCoin);
-            game.Encounter.Queue.Remove(last.Uid);
-            game.Encounter.Played.Add(last.Uid);
-            game.Dealt = null;
-            game.LastResult = new FlipState
-            {
-                Uid = last.Uid, CoinId = lastCoin.Id, Probability = 1, Result = Side.Heads, Gained = 2,
-            };
+            game.Encounter.Hand.Remove(lastCoin.Uid);
+            game.Encounter.RoundLog.Add(new RoundFlip { Uid = lastCoin.Uid, CoinId = lastCoin.Id, Result = Side.Heads, Points = 2 });
             Ui.Game = game;
-            Ui.Holding = true;
             Ui.FlipAnimation = null;
             var backend = (HeadlessBackend)Gfx.Backend;
             backend.Capture = true;
             backend.Texts.Clear();
             backend.Images.Clear();
             AppCore.Draw();
-            Check(backend.Images.ContainsKey("coins/normal"), "last-result coin art remains visible after the coin leaves play");
-            Check(backend.Texts.Exists(t => t.Value == "HEADS"), "possible outcome details remain visible");
+            Check(backend.Images.ContainsKey("coins/normal"), "a flipped coin keeps its card (and art) after the coin leaves play");
+            Check(backend.Texts.Exists(t => t.Value == "HEADS"), "the flipped card still shows the side it landed on");
             Check(!backend.Texts.Exists(t => t.Value == "TAILS" || t.Value.StartsWith("TAILS ")),
                 "zero-probability Tails details and banner are hidden");
 
             var handGame = Game.NewSandbox(new SandboxConfig { Coins = new List<string> { "normal", "safeport" }, Seed = 6612 });
-            handGame.Mulligan = new Mulligan { Hand = new List<int>() };
-            foreach (var coin in handGame.Coins) handGame.Mulligan.Hand.Add(coin.Uid);
-            handGame.Encounter.Queue.Clear();
-            handGame.Encounter.Pile.Clear();
-            handGame.Dealt = null;
-            handGame.Pending = null;
             Ui.Game = handGame;
-            Ui.Holding = false;
             backend.Texts.Clear();
             AppCore.Draw();
             Check(!backend.Texts.Exists(t => t.Value.StartsWith("T ")),
-                "opening-hand cards omit the effect line for an impossible Tails result");
+                "hand cards omit the effect line for an impossible Tails result");
 
             Ui.Game = null;
             Ui.Screen = UiScreen.Collection;
@@ -378,7 +357,6 @@ static class FeatureParityTests
             CoinCatalog.Normal.On.Coins.Odds -= forceHeads;
             Hooks.Unbind();
             Ui.Game = null;
-            Ui.Holding = false;
             RuntimeMode.Configure(false, false);
             ((HeadlessBackend)Gfx.Backend).Capture = false;
         }
@@ -396,7 +374,6 @@ static class FeatureParityTests
             Ui.CollectionPage = 1;
             Ui.CollectionFilter = CollectionRarityFilter.All;
             Ui.CollectionSort = CollectionSortMode.Order;
-            Ui.Holding = false;
             backend.Capture = true;
 
             Ui.CollectionCategory = "coins";
@@ -537,7 +514,7 @@ static class FeatureParityTests
         A.DeleteRun();
 
         Ui.SelectedCharacter = Content.Characters["blade"];
-        A.Start(6602);
+        A.Start(6602);FirstFight();
         Ui.EncounterReveal = null; // inspect the title after its separate run-encounter reveal
         A.OpenMenu();
         AppCore.Draw();
@@ -549,15 +526,14 @@ static class FeatureParityTests
         Ui.Confirm = null;
         Ui.Game.Paused = false;
         A.Update(.1);
-        Check(Ui.Game.Mulligan == null && Ui.Game.Phase == Phase.Encounter, "normal play automatically opens the bank without a contract");
-        Check(A.HasSavedRun(), "the untouched opening bank is saved before setup finishes");
+        Check(Ui.Game.Phase == Phase.Encounter && Ui.Game.Encounter.Hand.Count == Game.HandSize, "normal play starts with a full hand");
+        Check(A.HasSavedRun(), "the untouched opening hand is saved before the first flip");
         AppCore.Draw();
-        Check(Ui.Buttons.Exists(b => b.Label == "CENTRAL COIN"), "the central coin exposes flip/advance");
-        A.NextOrFlip();
+        Check(Ui.Buttons.Exists(b => b.Label == "HAND COIN") && Ui.Buttons.Exists(b => b.Label == "END ROUND"), "the hand and the round button are drawn");
+        A.FlipFirst();
         A.Update(.1);
-        Check(Ui.Game.Pending != null && A.LoadRun() && Ui.Game.Pending == null && Ui.Game.Mulligan == null,
-            "continuing during a flip restores the untouched level and a playable bank");
-        Check(!Ui.Game.ContractsEnabled, "continued normal runs disable contract offers");
+        Check(Ui.Game.Pending != null && A.LoadRun() && Ui.Game.Pending == null && Ui.Game.Encounter.Hand.Count == Game.HandSize && Ui.Game.Encounter.Flips == 0,
+            "continuing during a flip restores the last saved point with the whole hand");
         A.DeleteRun();
         Ui.Game = null;
         Ui.EncounterReveal = null;
@@ -568,23 +544,23 @@ static class FeatureParityTests
         string[] characters = { "blade", "trader", "seer", "tinkerer", "naturalist", "conductor" };
         for (int seed = first; seed < first + count; seed++)
         {
-            var game = Game.New(seed, characters[seed % characters.Length], null, null, false, 1 + seed % Game.Stakes.Count);
+            var game = Game.New(seed, characters[seed % characters.Length], null, null, 1 + seed % Game.Stakes.Count);
             int guard = 0;
             while (game.Phase != Phase.GameOver && game.Phase != Phase.Victory && guard++ < 2000)
             {
                 if (game.Phase == Phase.Encounter)
                 {
-                    if (game.Mulligan != null) Game.MulliganDone(game);
-                    else if (game.Pending != null) Game.Resolve(game);
+                    if (game.Pending != null) Game.Resolve(game);
                     else if (game.Encounter.Cleared) Game.EndLevel(game);
-                    else if (game.Dealt != null && Game.CanFlip(game)) Game.Flip(game);
-                    else if (game.Dealt != null) Game.Discard(game);
-                    else if (Game.CanExchange(game)) Game.Exchange(game);
-                    else Game.GiveUp(game);
+                    else
+                    {
+                        int uid = game.Encounter.Hand.Find(u => Game.CanFlip(game, u));
+                        if (uid != 0) Game.Flip(game, uid);
+                        else Game.EndRound(game);
+                    }
                 }
                 else if (game.Phase == Phase.Shop)
                 {
-                    if (game.Coins.Count >= game.Slots && game.Slots < Game.DeckMax && game.Player.Gold >= Game.SlotPrice(game)) Game.BuySlot(game);
                     for (int i = 0; i < game.ShopOffers.Count; i++) Game.Buy(game, i);
                     if (game.ShopRelic != null) Game.BuyRelic(game);
                     for (int i = 0; i < game.ShopItems.Count; i++) Game.BuyItem(game, i);
@@ -600,14 +576,13 @@ static class FeatureParityTests
                         Check(choices.Count > 0 && Game.ChooseAugmentOption(game, choices[0].Key), "augment option works for seed " + seed);
                     }
                 }
-                else if (game.Phase == Phase.Contract) Game.SkipContract(game);
                 Check(double.IsFinite(game.Player.Gold) && double.IsFinite(game.Player.Energy), "finite resources for seed " + seed);
                 Check(game.Coins.Count > 0 && game.Coins.Count <= Game.DeckMax, "valid deck size for seed " + seed);
-                if (game.Encounter != null) Check(double.IsFinite(game.Encounter.Quota) && game.Encounter.Queue.Count + game.Encounter.Pile.Count <= game.Coins.Count, "valid encounter state for seed " + seed);
+                if (game.Encounter != null) Check(double.IsFinite(game.Encounter.Scored) && double.IsFinite(game.Encounter.EnemyScore) &&
+                    game.Encounter.Hand.Count + game.Encounter.Pouch.Count + game.Encounter.Discard.Count <= game.Coins.Count, "valid encounter state for seed " + seed);
             }
             Check(guard < 2000, "seed terminates without a rules loop: " + seed + " phase="+game.Phase+" level="+game.EncounterIndex+
-                " clear="+game.Encounter?.Cleared+" dealt="+(game.Dealt!=null)+" pending="+(game.Pending!=null)+" left="+(game.Encounter==null?-1:Game.CoinsLeft(game))+
-                " exchanges="+game.Encounter?.Exchanges+" canExchange="+(game.Encounter!=null&&Game.CanExchange(game)));
+                " clear="+game.Encounter?.Cleared+" pending="+(game.Pending!=null)+" round="+game.Encounter?.Round);
         }
     }
 }

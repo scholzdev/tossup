@@ -28,12 +28,15 @@ namespace Tossup
             }
             if (Dev)
                 foreach (var coin in Content.CoinOrder)
+                {
+                    profile.Collected.Add(coin.Id); // includes stamp-only coins that no pool lists
                     if (coin.Mastery != null)
                     {
                         int level = masteryRandom.Next(coin.Mastery.Thresholds.Length + 1);
                         // profile.CoinMastery[coin.Id] = coin.Mastery.Thresholds[coin.Mastery.Thresholds.Length - 1];
                         profile.CoinMastery[coin.Id] = level == 0 ? 0 : coin.Mastery.Thresholds[level - 1];
                     }
+                }
             profile.Options.SeenHelp = true;
         }
     }

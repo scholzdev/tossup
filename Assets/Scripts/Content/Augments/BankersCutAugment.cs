@@ -6,13 +6,13 @@ namespace Tossup.Augments
         {
             Id = "bankers_cut";
             Name = "Banker's Cut";
-            Description = "Banked combo pots grant 2 extra gold. Each bank adds 2 quota to the next level.";
+            Description = "Banked combo pots grant 2 extra gold. Each bank gives the next enemy a 2 point head start.";
             Tier = "silver";
         }
 
         public override int BankBonus(GameState game)
         {
-            game.NextLevelQuotaBonus += 2;
+            game.NextFightEdge += 2;
             return 2;
         }
     }

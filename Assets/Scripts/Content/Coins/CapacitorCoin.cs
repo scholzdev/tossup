@@ -19,8 +19,6 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Energy(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
 
-        public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * 2 * Math.Max(0, game.Player.MaxEnergy - 1);
-
         public override void OnResolve(GameState game, CoinInst inst, Res res)
         {
             if (res.Result != Side.Heads) return;

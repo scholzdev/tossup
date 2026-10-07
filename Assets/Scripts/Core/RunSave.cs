@@ -11,7 +11,7 @@ namespace Tossup
     // model's public data fields, keeping the format independent of Unity and free of executable data.
     public static class RunSave
     {
-        public const int Version = 1;
+        public const int Version = 2;
 
         public static string Encode(GameState game)
         {
@@ -20,8 +20,9 @@ namespace Tossup
             return "{\"version\":" + Version + ",\"game\":" + StateJson.Encode(game) + "}";
         }
 
-        public static bool IsSafePoint(GameState game) => game != null && game.Pending == null && (game.Phase == Phase.Shop || game.Phase == Phase.Augment ||
-            (game.Phase == Phase.Contract || game.Phase == Phase.Encounter) && game.Mulligan != null && game.Encounter != null && game.Encounter.Flips == 0);
+        // Anywhere between two flips: the hand, pouch, discard pile and both scores are all in the saved fight.
+        public static bool IsSafePoint(GameState game) => game != null && game.Pending == null && (game.Phase == Phase.Shop || game.Phase == Phase.Augment || game.Phase == Phase.Map ||
+            game.Phase == Phase.Encounter && game.Encounter != null);
 
         public static GameState Decode(string text)
         {
@@ -36,13 +37,6 @@ namespace Tossup
                 Hooks.Unbind();
                 Items.Clear();
                 Relics.Bind(game);
-                var flip = game.Pending ?? game.Dealt;
-                if (flip != null)
-                {
-                    var coin = Game.GetCoin(game, flip.Uid);
-                    if (coin == null) return null;
-                    Hooks.Bind(game, coin);
-                }
                 return game;
             }
             catch { return null; }
@@ -56,9 +50,10 @@ namespace Tossup
                 g.Stake < 1 || g.Stake > Game.Stakes.Count || g.RngState < 1 || g.RngState >= 2147483647 ||
                 g.Coins == null || g.Coins.Count < 1 || g.Coins.Count > Game.DeckMax ||
                 g.Player == null || !Finite(g.Player.Gold) || g.Player.Gold < 0 || !Finite(g.Player.Energy) || !Finite(g.Player.MaxEnergy) ||
-                !IsSafePoint(g) || g.EncounterIndex < 1 || g.Cleared < 0 || g.Slots < 1 || g.Slots > Game.DeckMax ||
+                !IsSafePoint(g) || g.EncounterIndex < 1 || g.Cleared < 0 ||
                 !Finite(g.FortuneBonus) || g.FortuneBonus < 0 || g.FortuneBonus > .55 ||
-                !Finite(g.NextLevelQuotaBonus) || g.NextLevelQuotaBonus < 0 || g.RerollStep < 1 || g.RerollStep > 2 || g.RerollCost < 0) return false;
+                !Finite(g.NextFightEdge) || g.NextFightEdge < -999 || g.RerollStep < 1 || g.RerollStep > 2 || g.RerollCost < 0 ||
+                g.RunFlips < 0 || g.RunHeads < 0 || g.RunHeads > g.RunFlips || !Finite(g.RunExpectedHeads) || g.RunExpectedHeads < 0) return false;
             var uids = new HashSet<int>();
             if (g.LastResult != null && g.LastResult.CoinId != null && !Content.Coins.ContainsKey(g.LastResult.CoinId)) return false;
             foreach (var c in g.Coins)
@@ -79,7 +74,8 @@ namespace Tossup
             if (g.AugmentData.TryGetValue("type_specialist", out var kind) && (kind == null || !g.Augments.Contains("type_specialist") || !KnownType(kind))) return false;
             if (g.Phase == Phase.Augment)
             {
-                if (!g.AugmentLevel.HasValue || g.AugmentLevel != g.EncounterIndex + 1 || (g.AugmentLevel != 3 && g.AugmentLevel != 6)) return false;
+                if (g.Map != null ? g.AugmentLevel != null :
+                    !g.AugmentLevel.HasValue || g.AugmentLevel != g.EncounterIndex + 1 || (g.AugmentLevel != 3 && g.AugmentLevel != 6)) return false;
                 if (g.AugmentPending != null)
                 {
                     var pending = g.AugmentPending;
@@ -92,30 +88,47 @@ namespace Tossup
                     new HashSet<string>(g.AugmentOptions).Count != 3 || g.AugmentOptions.Exists(g.Augments.Contains)) return false;
             }
             else if (g.AugmentLevel != null || g.AugmentOptions != null || g.AugmentPending != null) return false;
-            // The completed level is display-only in the shop; removed coins may still appear in its history.
-            if (g.Phase == Phase.Shop) return g.Dealt == null && g.Pending == null;
+            if (!ValidMap(g)) return false;
+            if (g.Phase != Phase.Encounter) return g.Pending == null; // a finished fight is display-only: its coins may be gone
             var e = g.Encounter;
             if (e == null || e.Name == null || !Finite(e.ElapsedSeconds) || e.ElapsedSeconds < 0 ||
-                !Finite(e.Quota) || !Finite(e.MaxQuota) || !Finite(e.Scored) || !Finite(e.SurplusPaid) ||
+                !Finite(e.Scored) || !Finite(e.EnemyScore) || !Finite(e.SurplusPaid) || !Finite(e.EnemyRoundPoints) || !Finite(e.EnemyHeadsBonus) ||
                 !Finite(e.Magnet) || !Finite(e.ComboLen) || !Finite(e.Shield) || !Finite(e.ComboStep) || !Finite(e.ComboCap) ||
                 !Finite(e.ComboPot) || e.ComboPot < 0 || !Finite(e.BestComboLen) || e.BestComboLen < 0 || !Finite(e.GoldMult) ||
-                (e.Payout.HasValue && !Finite(e.Payout.Value)) || e.Flips < 0 || e.Discards < 0 || e.Returned < 0 || e.BankDiscards < 0 ||
+                (e.Payout.HasValue && !Finite(e.Payout.Value)) || e.Flips < 0 || e.RoundFlips < 0 || e.Discards < 0 || e.Returned < 0 || e.BankDiscards < 0 ||
+                e.Round < 1 || e.Round > Game.Rounds || e.HandSize < 1 || e.HandSize > Game.DeckMax || e.EnemyDraw < 0 || e.EnemyDraw > 20 ||
                 e.Modifier != null && !Game.Modifiers.ContainsKey(e.Modifier) || !ValidSide(e.ComboSide)) return false;
-            if (e.Contract != null && (e.Contract.Id == null || !Game.Contracts.ContainsKey(e.Contract.Id) ||
-                (e.Contract.Result != null && e.Contract.Result != "COMPLETE" && e.Contract.Result != "MISSED") || !Finite(e.Contract.StartGold))) return false;
-            if (e.ContractOptions != null && (g.Phase != Phase.Contract || e.Contract != null || !Ids(e.ContractOptions, Game.Contracts.ContainsKey) ||
-                e.ContractOptions.Count != 3 || new HashSet<string>(e.ContractOptions).Count != 3)) return false;
-            if (g.Phase == Phase.Contract && (!g.ContractsEnabled || e.ContractOptions == null || g.Mulligan == null)) return false;
-            if (!UidList(e.Queue, uids) || !UidList(e.Pile, uids) || !UidList(e.Played, uids) || !UidList(e.Discarded, uids) ||
-                !UidList(e.DealHooksFired, uids) || !UidList(e.TypeSpecialistPaid, uids) || !UidMap(e.Bonus, uids) || !UidMap(e.BestScores, uids) ||
+            if (!UidList(e.Hand, uids) || !UidList(e.Pouch, uids) || !UidList(e.Discard, uids) ||
+                !UidList(e.TypeSpecialistPaid, uids) || !UidMap(e.Bonus, uids) || !UidMap(e.BestScores, uids) ||
                 e.Buffs == null || e.Buffs.Exists(x => x == null || x.Kind == null || !Finite(x.Amount) || x.Left < 1)) return false;
             var live = new HashSet<int>();
-            foreach (var uid in e.Queue) if (!live.Add(uid)) return false;
-            foreach (var uid in e.Pile) if (!live.Add(uid)) return false;
-            foreach (var uid in e.Played) if (!live.Add(uid)) return false;
-            if (g.Mulligan != null && (!UidList(g.Mulligan.Hand, uids) || new HashSet<int>(g.Mulligan.Hand).Count != g.Mulligan.Hand.Count)) return false;
-            if (g.Dealt != null && (!uids.Contains(g.Dealt.Uid) || !Finite(g.Dealt.Probability) || !Finite(g.Dealt.TieProbability) ||
-                g.Dealt.Probability < 0 || g.Dealt.TieProbability < 0 || g.Dealt.Probability + g.Dealt.TieProbability > 1)) return false;
+            foreach (var uid in e.Hand) if (!live.Add(uid)) return false;
+            foreach (var uid in e.Pouch) if (!live.Add(uid)) return false;
+            foreach (var uid in e.Discard) if (!live.Add(uid)) return false;
+            if (e.EnemyId != null && !EnemyCatalog.ById.ContainsKey(e.EnemyId)) return false;
+            if (e.RoundScores == null || e.EnemyRoundScores == null || e.RoundLog == null || e.RoundScores.Count != e.EnemyRoundScores.Count ||
+                e.RoundScores.Count > Game.Rounds || !Finite(e.RoundStartScored) || !Finite(e.RoundStartEnemy) ||
+                !e.RoundScores.TrueForAll(Finite) || !e.EnemyRoundScores.TrueForAll(Finite) ||
+                e.RoundLog.Exists(f => f == null || f.CoinId == null || !Content.Coins.ContainsKey(f.CoinId) || !ValidSide(f.Result) || !Finite(f.Points) || !Finite(f.Penalty))) return false;
+            if (e.EnemyPouch == null || e.EnemyDiscard == null || e.EnemyFlips == null || e.Results == null ||
+                !Ids(e.EnemyPouch, Content.Coins.ContainsKey) || !Ids(e.EnemyDiscard, Content.Coins.ContainsKey) ||
+                e.EnemyFlips.Exists(f => f == null || f.CoinId == null || !Content.Coins.ContainsKey(f.CoinId) || !ValidSide(f.Result) || !Finite(f.Points))) return false;
+            return true;
+        }
+
+        // Rows climb by one, edges stay inside the next row, and the boss row holds exactly the boss.
+        static bool ValidMap(GameState g)
+        {
+            if (g.Map == null) return g.Phase != Phase.Map && g.MapAt == null && g.MapPrompt == null;
+            if (g.Map.Count < 2 || g.MapAt.HasValue && (g.MapAt < 0 || g.MapAt >= g.Map.Count) ||
+                g.MapPrompt != null && (g.Phase != Phase.Map || g.MapPrompt != "mint" && g.MapPrompt != "backroom")) return false;
+            for (int i = 0; i < g.Map.Count; i++)
+            {
+                var n = g.Map[i];
+                if (n == null || n.Next == null || n.Row < 0 || n.Row > Game.MapRows || n.Lane < 0 || n.Lane >= Game.MapLanes ||
+                    (n.Kind == NodeKind.Boss) != (i == g.Map.Count - 1 && n.Row == Game.MapRows)) return false;
+                foreach (int next in n.Next) if (next < 0 || next >= g.Map.Count || g.Map[next].Row != n.Row + 1) return false;
+            }
             return true;
         }
 

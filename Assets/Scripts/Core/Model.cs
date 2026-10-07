@@ -3,7 +3,17 @@ using System.Collections.Generic;
 
 namespace Tossup
 {
-    public enum Phase { Encounter, Contract, Augment, Shop, Victory, GameOver }
+    public enum Phase { Encounter, Augment, Shop, Victory, GameOver, Map }
+
+    public enum NodeKind { Table, Elite, Shop, Mint, Altar, Event, Boss }
+
+    // One stop on the Act 1 map. Next holds indexes into GameState.Map (always the following row).
+    public sealed class MapNode
+    {
+        public int Row, Lane;
+        public NodeKind Kind;
+        public List<int> Next = new List<int>();
+    }
 
     public static class Side
     {
@@ -36,7 +46,7 @@ namespace Tossup
         public static Effect ComboShield(double amount = 0, int? coins = null) => new Effect(EffectType.ComboShield, amount, coins);
         public static Effect Energy(double amount = 0, int? coins = null) => new Effect(EffectType.Energy, amount, coins);
         public static Effect ExtraDraw(double amount = 0, int? coins = null) => new Effect(EffectType.ExtraDraw, amount, coins);
-        public static Effect ExtraExchange(double amount = 0, int? coins = null) => new Effect(EffectType.ExtraExchange, amount, coins);
+        public static Effect DrawCoin(double amount = 0, int? coins = null) => new Effect(EffectType.DrawCoin, amount, coins);
         public static Effect FetchBest(double amount = 0, int? coins = null) => new Effect(EffectType.FetchBest, amount, coins);
         public static Effect FortuneOdds(double amount = 0, int? coins = null) => new Effect(EffectType.FortuneOdds, amount, coins);
         public static Effect Gold(double amount = 0, int? coins = null) => new Effect(EffectType.Gold, amount, coins);
@@ -45,7 +55,8 @@ namespace Tossup
         public static Effect NextMult(double amount = 0, int? coins = null) => new Effect(EffectType.NextMult, amount, coins);
         public static Effect NextOdds(double amount = 0, int? coins = null) => new Effect(EffectType.NextOdds, amount, coins);
         public static Effect NextSwap(double amount = 0, int? coins = null) => new Effect(EffectType.NextSwap, amount, coins);
-        public static Effect Quota(double amount = 0, int? coins = null) => new Effect(EffectType.Penalty, amount, coins);
+        // Penalty: points for the enemy (shown to the player as "Enemy +n").
+        public static Effect Penalty(double amount = 0, int? coins = null) => new Effect(EffectType.Penalty, amount, coins);
         public static Effect Probability(double amount = 0, int? coins = null) => new Effect(EffectType.Probability, amount, coins);
         public static Effect Score(double amount = 0, int? coins = null) => new Effect(EffectType.Score, amount, coins);
         public static Effect TypeBuff(double amount = 0, int? coins = null, CoinType? kind = null) => new Effect(EffectType.TypeBuff, amount, coins) { Kind = kind };
@@ -114,11 +125,12 @@ namespace Tossup
         public double OddsSampleTime;
         public string Raw, Result, Final;
         public bool Forced;
+        public bool Rerolled; // the one paid re-flip is used
         public string Altered; // "BUFF", "RELIC", "THE HOUSE": shown so a changed side is never a mystery
         public List<Effect> BaseEffects;
         public List<BuffSpec> BaseBuffs;
         public Combo Combo;
-        public double? Gained, Penalty;
+        public double? Gained, Penalty; // Gained: your points from this flip; Penalty: points it gave the enemy
     }
 
     // What a resolving coin is about to do; hooks may edit, add to or replace Effects.
@@ -185,68 +197,76 @@ namespace Tossup
         public double Gold, Energy, MaxEnergy;
     }
 
-    public sealed class Mulligan
+    // One coin the enemy flipped in its round: what it was, how it landed and what it scored.
+    public sealed class EnemyFlip
     {
-        public List<int> Hand = new List<int>();
+        public string CoinId, Result;
+        public double Points;
     }
 
+    // One of your coins, flipped and resolved this round (the "THIS ROUND" strip of the fight screen).
+    public sealed class RoundFlip
+    {
+        public int Uid;
+        public string CoinId, Result;
+        public double Points, Penalty; // your points, and the points it gave the enemy
+    }
+
+    // One fight: five rounds against an enemy with a fixed pouch of its own. Each round you flip any of your
+    // hand coins, then end the round; the enemy flips its hand; the hand refills. More points after round 5 wins.
     public sealed class Encounter
     {
         public string Name;
         public double ElapsedSeconds;
-        public double Quota, MaxQuota; // Quota is what is still missing; MaxQuota grows with penalties
         public bool Boss, Inverts;
         public int? Endless;
         public double? Payout;
-        public int Flips;
-        public double Scored;
-        public bool Cleared;
-        public double SurplusPaid;
-        public HashSet<int> Discarded = new HashSet<int>();
+        public int Round = 1; // 1..Game.Rounds
+        public int HandSize = Game.HandSize;
+        public int RoundFlips; // coins you flipped this round
+        public int Flips; // coins you flipped this fight
+        public double Scored; // your points
+        public double EnemyScore;
+        // Points per finished round (index 0 = round 1), for the scoreboard; the Round*Start values are the totals when the current round began.
+        public List<double> RoundScores = new List<double>(), EnemyRoundScores = new List<double>();
+        public double RoundStartScored, RoundStartEnemy;
+        public List<RoundFlip> RoundLog = new List<RoundFlip>(); // your coins resolved this round, in order
+        public bool Cleared; // the fight is over and you won
+        public double SurplusPaid; // gold paid for the winning margin
+        public List<int> Hand = new List<int>(); // coins you may flip now
+        public List<int> Pouch = new List<int>(); // the draw pile, in draw order
+        public List<int> Discard = new List<int>(); // flipped (or discarded) coins; shuffled back in when the pouch runs dry
         public int Discards;
         public Dictionary<int, double> Bonus = new Dictionary<int, double>();
         public double Magnet;
         public int Streak;
+        public int TailsRun; // Tails in a row this fight (Edge holds it); drives the visible pity bonus
         public List<Buff> Buffs = new List<Buff>();
         public string ComboSide;
         public double ComboLen;
         public double Shield;
         public double ComboStep, ComboCap;
         public int Returned;
-        public List<int> Played = new List<int>();
-        public List<int> Pile = new List<int>();
-        public List<int> Queue = new List<int>();
-        public int Exchanges;
-        public int Doubler; // Doubler flips this level
+        public int Doubler; // Doubler flips this fight
         public int Tails;
         public string Modifier;
         public double GoldMult = 1;
-        public int ExtraExchanges;
+        public int EnergyBonus; // energy above (or below) the maximum at the start of every round
         public int BankDiscards;
         public double ComboPot;
         public bool ComboBanked;
         public double BestComboLen;
         public Dictionary<int, double> BestScores = new Dictionary<int, double>();
-        public HashSet<int> DealHooksFired = new HashSet<int>();
-        public ContractState Contract;
-        public List<string> ContractOptions;
-        public int SideBets;
-        public string SideBetSide, SideBetOutcome;
-        public int SideBetCost;
-        public double SideBetPayout;
-        public bool PushAvailable;
-        public bool PushUsed;
-        public double PushScore;
-        public bool AllInPaid;
         public HashSet<int> TypeSpecialistPaid = new HashSet<int>();
-    }
-
-    public sealed class ContractState
-    {
-        public string Id;
-        public string Result;
-        public double StartGold;
-        public int StartDiscards;
+        public List<string> Results = new List<string>(); // final result of every flip this fight
+        // The enemy: a fixed pouch of coin ids it draws EnemyDraw coins from each round (see Core/Enemies.cs).
+        public string EnemyId;
+        public int EnemyDraw;
+        public double EnemyRoundPoints; // points it gains every round on top of its coins
+        public double EnemyHeadsBonus; // added to the Heads chance of every enemy coin
+        public List<string> EnemyPouch = new List<string>();
+        public List<string> EnemyDiscard = new List<string>();
+        public List<EnemyFlip> EnemyFlips = new List<EnemyFlip>(); // what it flipped in the last round
     }
 
     public sealed class ShopState
@@ -287,31 +307,31 @@ namespace Tossup
         public int NextUid;
         public int EncounterIndex = 1;
         public Encounter Encounter;
-        public FlipState Pending, Dealt, LastResult;
-        public Mulligan Mulligan;
+        public FlipState Pending, LastResult;
         public List<int> Peek;
         public List<string> Log = new List<string>();
         public int? SelectedUid;
-        public bool ManualMulligan;
-        public bool Reshuffle; // tests / coin simulator only: refill the pile when it runs dry
         public int RerollCost = 4;
-        public bool ExchangeOpen;
         public string LostWhy;
+        public int RunFlips, RunHeads; // luck report: final results, Heads only (ties are not Heads)
+        public double RunExpectedHeads; // sum of each coin's Heads chance at flip time
         public bool Endless;
-        public int Slots;
         public int Stake = 1;
         public double FortuneBonus;
         public int RerollStep = 2;
-        public bool ContractsEnabled = true;
         public string RunEncounterId;
+        public string PendingEnemyId; // the next fight's enemy (set by the map); otherwise picked by level
         [NonSerialized] public RunEncounterDef RunEncounter;
         public List<string> Augments = new List<string>();
         public Dictionary<string, string> AugmentData = new Dictionary<string, string>();
         public int? AugmentLevel;
         public List<string> AugmentOptions;
         public AugmentPending AugmentPending;
-        public double NextLevelQuotaBonus;
+        public double NextFightEdge; // points the next enemy starts with; negative: you start ahead
         public ShopState Shop = new ShopState();
+        public List<MapNode> Map; // null: the old linear run (tests, tutorial, endless levels)
+        public int? MapAt; // node last chosen; null before the first choice
+        public string MapPrompt; // "mint" | "backroom": a node waiting for the player's choice (Phase.Map)
         // presentation flags kept on the run, as the original did
         public bool Paused;
 

@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="SvgShots.cs" />
     <Compile Include="LatestTests.cs" />
     <Compile Include="AuditRegressionTests.cs" />
     <Compile Include="FeatureParityTests.cs" />
