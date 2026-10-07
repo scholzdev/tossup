@@ -14,6 +14,7 @@ namespace Tossup
         EffectApplied,
         CoinResolved,
         CoinDiscard,
+        BuffApplied,
     }
 
     // One payload shape for every bus signal; each signal fills only the fields it needs.
@@ -27,6 +28,10 @@ namespace Tossup
         public FlipState Flip;
         public Res Res;
         public Effect Effect;
+        public Buff Buff;
+        public double ScoreDelta, GoldDelta, EnergyDelta, QuotaDelta;
+        public int ReturnedDelta;
+        public int BuffsAffected;
         public string Text;
         public Encounter Encounter;
         public bool Won;

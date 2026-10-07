@@ -17,5 +17,31 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Gold(7) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.GoldLoss(1), Effect.Quota(1) };
         public override IReadOnlyList<Effect> Edge { get; } = new[] { Effect.Gold(1) };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Gold repaid on Loan Note Tails", 10, 35, 100,
+            "Heads gains +1 gold.", "Tails no longer adds quota.", "Heads gains another +2 gold.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
+
+        public LoanNoteCoin()
+        {
+            On.Game.Effects.Applied += (ctx, e) =>
+            {
+                if (e.Inst == ctx.Coin && e.Effect?.Type == EffectType.GoldLoss) ctx.Mastery.Add(Math.Max(0, -e.GoldDelta));
+            };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                int level = ctx.Mastery.Level;
+                if (res.Result == Side.Heads)
+                {
+                    if (level >= 1) res.Effects.Add(Effect.Gold(1));
+                    if (level >= 3) res.Effects.Add(Effect.Gold(2));
+                }
+                else if (res.Result == Side.Tails && level >= 2)
+                {
+                    var ownPenalty = res.Effects.Find(effect => effect.Type == EffectType.Penalty && effect.Amount == 1);
+                    if (ownPenalty != null) res.Effects.Remove(ownPenalty);
+                }
+            };
+        }
     }
 }

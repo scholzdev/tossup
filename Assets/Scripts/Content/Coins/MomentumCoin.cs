@@ -18,14 +18,27 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(6) };
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Momentum Heads at a streak of three or more", 10, 35, 100,
+            "Streak odds rise to +6% per step.", "Heads scores +1 point.",
+            "Streak odds rise to +7% per step.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
 
         public MomentumCoin()
         {
             On.Coins.Odds += (ctx, odds) =>
             {
                 var encounter = ctx.Game.Encounter;
-                if (encounter != null) odds.Heads += .05 * encounter.Streak;
+                if (encounter != null)
+                    odds.Heads += (ctx.Mastery.Level >= 3 ? .07 : ctx.Mastery.Level >= 1 ? .06 : .05) * encounter.Streak;
             };
+            On.Game.Coins.Resolved += (ctx, e) =>
+            {
+                if (e.Inst == ctx.Coin && e.Res.Result == Side.Heads && e.Flip?.Combo?.Len >= 3)
+                    ctx.Mastery.Add(1);
+            };
+            On.Coins.Resolve += (ctx, res) =>
+            { if (res.Result == Side.Heads && ctx.Mastery.Level >= 2) res.Effects.Add(Effect.Score(1)); };
         }
     }
 }

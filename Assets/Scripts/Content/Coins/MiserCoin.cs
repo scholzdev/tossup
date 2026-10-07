@@ -18,6 +18,26 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Gold(2) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Miser Heads with at least 30 gold", 12, 45, 135,
+            "Heads scores per 9 gold instead of 10.", "Tails grants +1 gold.",
+            "Heads scores +1 per 20 gold held.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
+
+        public MiserCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) =>
+            { if (e.Inst == ctx.Coin && e.Res.Result == Side.Heads && ctx.Game.Player.Gold >= 30) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (res.Result == Side.Tails && ctx.Mastery.Level >= 2) res.Effects.Add(Effect.Gold(1));
+                if (res.Result != Side.Heads) return;
+                double gold = ctx.Game.Player.Gold;
+                if (ctx.Mastery.Level >= 1)
+                    res.Effects.Add(Effect.Score(Math.Floor(gold / 9) - Math.Floor(gold / 10)));
+                if (ctx.Mastery.Level >= 3) res.Effects.Add(Effect.Score(Math.Floor(gold / 20)));
+            };
+        }
 
         public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * Math.Floor(game.Player.Gold / 10);
 

@@ -22,5 +22,27 @@ namespace Tossup.Coins
         {
             new BuffSpec("fateweaver", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Fortune), Effect.Score(2), OutcomeSide.Heads)
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Fortune coins buffed by Fateweaver", 10, 40, 120,
+            "Its buff scores +3 on Heads.", "Tails scores +1 point.", "Its buff reaches two Fortune coins.",
+            MasterySides.None, MasterySides.Tails, MasterySides.None);
+
+        public FateweaverCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) =>
+            {
+                if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "fateweaver") ctx.Mastery.Add(1);
+            };
+            On.Coins.BuffCreated += (ctx, buff) =>
+            {
+                if (buff.SpecId != "fateweaver") return;
+                if (ctx.Mastery.Level >= 1) buff.AppliedEffect.Amount = 3;
+                if (ctx.Mastery.Level >= 3) buff.Left = 2;
+            };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (res.Result == Side.Tails && ctx.Mastery.Level >= 2) res.Effects.Add(Effect.Score(1));
+            };
+        }
     }
 }

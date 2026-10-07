@@ -22,5 +22,14 @@ namespace Tossup.Coins
             new BuffSpec("cheerleader_heads_odds", OutcomeSide.Heads, BuffTarget.NextCoins(2), Effect.NextOdds(.2)),
             new BuffSpec("cheerleader_tails_odds", OutcomeSide.Tails, BuffTarget.NextCoins(), Effect.NextOdds(.2)),
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Coins affected by Cheerleader odds", 30, 120, 360,
+            "Its odds buff improves by 2%.", "Its odds buff improves by 4% total.", "Its odds buff improves by 6% total.");
+
+        public CheerleaderCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) => { if (e.Buff?.SourceUid == ctx.Coin.Uid && (e.Buff.SpecId == "cheerleader_heads_odds" || e.Buff.SpecId == "cheerleader_tails_odds")) ctx.Mastery.Add(1); };
+            On.Coins.BuffCreated += (ctx, buff) => { if (buff.SpecId == "cheerleader_heads_odds" || buff.SpecId == "cheerleader_tails_odds") buff.Amount += .02 * ctx.Mastery.Level; };
+        }
     }
 }

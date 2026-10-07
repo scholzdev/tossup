@@ -181,29 +181,31 @@ namespace Tossup.UI
             return string.Join("; ", parts);
         }
 
-        public static string CoinOutcomeDescription(CoinDef coin, string outcome, Upgrade upgrade = null)
+        public static string CoinOutcomeDescription(CoinDef coin, string outcome)
         {
             OutcomeSide side = outcome == Side.Heads ? OutcomeSide.Heads : outcome == Side.Tails ? OutcomeSide.Tails : OutcomeSide.Edge;
-            IReadOnlyList<Effect> effects = coin.EffectsFor(side, upgrade);
+            IReadOnlyList<Effect> effects = coin.EffectsFor(side);
             if (outcome == Side.Heads)
-                return string.IsNullOrEmpty(coin.HeadsDescription) ? EffectDescription(effects) : Lang.CoinHeadsDescription(coin.Id) + UpgradeEffectDescription(coin, upgrade, side);
+                return string.IsNullOrEmpty(coin.HeadsDescription) ? EffectDescription(effects) : Lang.CoinHeadsDescription(coin.Id);
             if (outcome == Side.Tails)
-                return string.IsNullOrEmpty(coin.TailsDescription) ? EffectDescription(effects) : Lang.CoinTailsDescription(coin.Id) + UpgradeEffectDescription(coin, upgrade, side);
+                return string.IsNullOrEmpty(coin.TailsDescription) ? EffectDescription(effects) : Lang.CoinTailsDescription(coin.Id);
             if (outcome == Side.Tie)
-                return string.IsNullOrEmpty(coin.EdgeDescription) ? EffectDescription(effects) : Lang.CoinEdgeDescription(coin.Id) + UpgradeEffectDescription(coin, upgrade, side);
+                return string.IsNullOrEmpty(coin.EdgeDescription) ? EffectDescription(effects) : Lang.CoinEdgeDescription(coin.Id);
             return L("No effect");
         }
 
-        static string UpgradeEffectDescription(CoinDef coin, Upgrade upgrade, OutcomeSide side)
+        public static string CoinMasteryOutcomeDescription(CoinDef coin, string outcome)
         {
-            if (upgrade == null || !coin.TryGetUpgrade(upgrade.Id, out var owned)) return "";
-            var added = new List<Effect>();
-            foreach (var change in owned.Changes)
-                if (change.Kind == UpgradeChangeKind.AddOutcomeEffect && change.Side == side) added.Add(change.Effect);
-            return added.Count == 0 ? "" : "; " + EffectDescription(added);
+            if (coin.Mastery == null) return null;
+            var side = outcome == Side.Heads ? OutcomeSide.Heads : outcome == Side.Tails ? OutcomeSide.Tails : OutcomeSide.Edge;
+            int level = Profile.MasteryLevel(Ui.Profile, coin);
+            var lines = new List<string>();
+            foreach (int index in coin.Mastery.OutcomeRewardLevels(side, level))
+                lines.Add(L("LV %d: %s", index + 1, coin.Mastery.Rewards[index]));
+            return lines.Count == 0 ? null : string.Join("\n", lines);
         }
 
-        static string BuffDescription(BuffSpec buff)
+        public static string BuffDescription(BuffSpec buff)
         {
             string type = buff.Target.Type.HasValue ? L(buff.Target.Type.Value.ToString().ToUpperInvariant()) + " " : "";
             string target = buff.Target.Count == 1 ? L("the next %scoin", type) : L("the next %d %scoins", buff.Target.Count, type);
@@ -238,79 +240,32 @@ namespace Tossup.UI
             }
         }
 
-        static string UpgradeChangesDescription(Upgrade upgrade)
-        {
-            var parts = new List<string>();
-            foreach (var change in upgrade.Changes)
-            {
-                switch (change.Kind)
-                {
-                    case UpgradeChangeKind.AddOutcomeEffect:
-                        parts.Add(L("%s: %s", L(change.Side.ToString().ToUpperInvariant()), EffectDescription(new[] { change.Effect })));
-                        break;
-                    case UpgradeChangeKind.HeadsProbability:
-                        parts.Add(L("+%d%% Heads chance", Math.Floor(change.Amount * 100 + .5)));
-                        break;
-                    case UpgradeChangeKind.AddBuff:
-                        parts.Add(BuffDescription(change.Buff));
-                        break;
-                }
-            }
-            return string.Join("; ", parts);
-        }
-
         public static void CoinHover(CoinDef def, float x, float y, float w, float h, double? probability = null, bool locked = false,
-            Upgrade upgrade = null, double? tieProbability = null, bool oddsTuned = false)
+            double? tieProbability = null)
         {
             double heads = probability ?? def.Probability;
-            if (!probability.HasValue) heads += def.UpgradeHeadsProbability(upgrade);
             double tie = tieProbability ?? def.TieProbability;
             var hovered = new HoveredCoin { Definition = def, Probability = Math.Max(0, Math.Min(1 - tie, heads)), TieProbability = tie,
-                Upgrade = upgrade, Locked = locked, OddsTuned = oddsTuned };
+                Locked = locked };
             Ui.Regions.Add(new HoverRegion { X = x, Y = y, W = w, H = h, Coin = hovered });
             if (Over(x, y, w, h)) Ui.HoveredCoin = hovered;
         }
 
         public static void CoinImage(CoinDef coin, float x, float y, float size) => CoinImage(coin.Id, x, y, size);
         public static void CoinHover(string id, float x, float y, float w, float h, double? probability = null, bool locked = false,
-            Upgrade upgrade = null, double? tieProbability = null, bool oddsTuned = false) =>
-            CoinHover(Content.Coins[id],x,y,w,h,probability,locked,upgrade,tieProbability,oddsTuned);
-
-        static Rgba UpgradeBorderColor(Upgrade upgrade)
-        {
-            if (upgrade == null) return C.Gold;
-            foreach (var change in upgrade.Changes)
-            {
-                if (change.Kind == UpgradeChangeKind.HeadsProbability) return C.Blue;
-                if (change.Kind == UpgradeChangeKind.AddBuff) return C.Purple;
-                if (change.Kind == UpgradeChangeKind.AddOutcomeEffect) return C.Orange;
-            }
-            return C.Gold;
-        }
+            double? tieProbability = null) =>
+            CoinHover(Content.Coins[id],x,y,w,h,probability,locked,tieProbability);
 
         public static void CoinImage(CoinInst coin, float x, float y, float size)
         {
-            CoinImage(coin.Id, x, y, size, coin.Upgrade, coin.Bonus > 0);
+            CoinImage(coin.Id, x, y, size);
         }
 
-        public static void CoinImage(string id, float x, float y, float size, Upgrade upgrade = null) =>
-            CoinImage(id, x, y, size, upgrade, false);
-
-        static void CoinImage(string id, float x, float y, float size, Upgrade upgrade, bool oddsTuned)
+        public static void CoinImage(string id, float x, float y, float size)
         {
             Color(C.White);
             var image = Ui.CoinImages[id];
             Gfx.Draw(image, x, y, size / image.Width, size / image.Height);
-            if (upgrade == null && !oddsTuned) return;
-
-            // Keep the coin's own face; the colored double rim marks its installed upgrade.
-            float cx = x + size / 2, cy = y + size / 2;
-            Color(oddsTuned ? C.Blue : UpgradeBorderColor(upgrade));
-            Gfx.SetLineWidth(Math.Max(2, size / 24));
-            Gfx.Circle(false, cx, cy, size * .485f);
-            Color(C.Ink);
-            Gfx.Circle(false, cx, cy, size * .46f);
-            Gfx.SetLineWidth(1);
         }
 
         // Draw any loaded image scaled to a square size.
@@ -426,13 +381,8 @@ namespace Tossup.UI
             var game = Ui.Game;
             if (hovered == null || game != null && !game.Paused && (game.Phase == Phase.Encounter || game.Phase == Phase.GameOver && !game.OverSeen)) return;
             var coin = hovered.Definition;
-            Upgrade upgrade = null;
-            if (hovered.Upgrade != null) coin.TryGetUpgrade(hovered.Upgrade.Id, out upgrade);
-            string upgradeDescription = upgrade == null ? null : UpgradeChangesDescription(upgrade);
-            IReadOnlyList<Upgrade> collectionUpgrades = Ui.Screen == "collection" && Ui.CollectionCategory == "coins" && upgrade == null
-                ? coin.Upgrades : Array.Empty<Upgrade>();
             string characterAvailability = null;
-            if (Ui.Screen == "collection" && Ui.CollectionCategory == "coins")
+            if (Ui.Screen == UiScreen.Collection && Ui.CollectionCategory == "coins")
             {
                 var characters = new List<string>();
                 foreach (var characterId in Content.CharacterOrder)
@@ -451,17 +401,19 @@ namespace Tossup.UI
             int characterAvailabilityLines = characterAvailability == null ? 0 : Ui.F16.GetWrap(characterAvailability, w - 114).Count;
             if (characterAvailabilityLines > 0) header += Math.Max(22, characterAvailabilityLines * 18 + 4);
             h = header;
-            var rows = new List<(string Label, double Chance, string Detail, Rgba Tint, float Height)>();
+            var rows = new List<(string Label, double Chance, string Detail, string Mastery, Rgba Tint, float Height)>();
             void Row(string label, double chance, string detail, Rgba tint)
             {
+                string mastery = CoinMasteryOutcomeDescription(coin, label == "EDGE" ? Side.Tie : label == "HEADS" ? Side.Heads : Side.Tails);
                 float height = 50 + Ui.F16.GetWrap(detail, w - 52).Count * 18;
-                rows.Add((L(label), Math.Floor(chance * 100 + .5), detail, tint, height)); h += height + 7;
+                if (mastery != null) height += 9 + Ui.F16.GetWrap(mastery, w - 52).Count * 18;
+                rows.Add((L(label), Math.Floor(chance * 100 + .5), detail, mastery, tint, height)); h += height + 7;
             }
-            if (hovered.Probability > 0) Row("HEADS", hovered.Probability, CoinOutcomeDescription(coin, Side.Heads, upgrade), C.Blue);
-            if (hovered.TieProbability > 0) Row("EDGE", hovered.TieProbability, CoinOutcomeDescription(coin, Side.Tie, upgrade), C.Purple);
+            if (hovered.Probability > 0) Row("HEADS", hovered.Probability, CoinOutcomeDescription(coin, Side.Heads), C.Blue);
+            if (hovered.TieProbability > 0) Row("EDGE", hovered.TieProbability, CoinOutcomeDescription(coin, Side.Tie), C.Purple);
             double tailsChance = 1 - hovered.Probability - hovered.TieProbability;
-            if (tailsChance > 0) Row("TAILS", tailsChance, CoinOutcomeDescription(coin, Side.Tails, upgrade), C.Red);
-            var buffs = coin.BuffsFor(upgrade);
+            if (tailsChance > 0) Row("TAILS", tailsChance, CoinOutcomeDescription(coin, Side.Tails), C.Red);
+            var buffs = coin.BuffsFor();
             var buffDescriptions = new List<string>();
             foreach (var buff in buffs) buffDescriptions.Add(BuffDescription(buff));
             string specialRule = Lang.CoinSpecialRule(hovered.Id);
@@ -470,19 +422,32 @@ namespace Tossup.UI
             foreach (var detail in buffDescriptions) buffLines += Ui.F16.GetWrap(detail, w - 62).Count;
             if (buffDescriptions.Count > 0) h += 40 + buffLines * 18 + (buffDescriptions.Count - 1) * 3;
             if (specialRule != null) h += 40 + Ui.F16.GetWrap(specialRule, w - 52).Count * 18;
-            int upgradeDescriptionLines = 0;
-            foreach (var collectionUpgrade in collectionUpgrades)
-                upgradeDescriptionLines += Ui.F16.GetWrap(L(collectionUpgrade.Description), w - 52).Count;
-            if (collectionUpgrades.Count > 0)
-                h += 40 + collectionUpgrades.Count * 18 + upgradeDescriptionLines * 18 + collectionUpgrades.Count * 3;
-            if (!string.IsNullOrWhiteSpace(upgradeDescription)) h += 42 + Ui.F16.GetWrap(upgradeDescription, w - 48).Count * 18;
+            int masteryLevel = Tossup.Profile.MasteryLevel(Ui.Profile, coin);
+            string masteryDetail = null;
+            if (coin.Mastery != null)
+            {
+                var masteryLines = new List<string>();
+                for (int level = 0; level < masteryLevel; level++)
+                    if (coin.Mastery.RewardSides[level] == MasterySides.None)
+                        masteryLines.Add(L("LV %d: %s", level + 1, coin.Mastery.Rewards[level]));
+                if (masteryLevel < 3)
+                {
+                    masteryLines.Add(L("%s: %s / %s", coin.Mastery.ProgressDescription,
+                        GameText.Num(Tossup.Profile.MasteryProgress(Ui.Profile, coin)),
+                        GameText.Num(coin.Mastery.Thresholds[masteryLevel])));
+                    masteryLines.Add(L("NEXT: %s", coin.Mastery.Rewards[masteryLevel]));
+                }
+                else masteryLines.Add(L("MAX LEVEL"));
+                masteryDetail = string.Join("\n", masteryLines);
+                h += 42 + Ui.F16.GetWrap(masteryDetail, w - 52).Count * 18;
+            }
             if (hovered.Locked) h += 14 + Ui.F16.GetWrap(L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"), w - 48).Count * 18;
             h += 8;
-            float x = Ui.Screen == "sets" && (game == null || game.Paused) ? 24 : mx > Ui.Width / 2 ? mx - w - 18 : mx + 18;
+            float x = mx > Ui.Width / 2 ? mx - w - 18 : mx + 18;
             float y = my > 400 ? my - h - 18 : my + 18;
             x = Math.Max(12, Math.Min(x, Ui.Width - w - 12)); y = Math.Max(12, Math.Min(y, 788 - h - 12));
             Box(x, y, w, h, C.Ink); Outline(x, y, w, h, C.Gold);
-            CoinImage(hovered.Id, x + 14, y + 13, 66, upgrade, hovered.OddsTuned);
+            CoinImage(hovered.Id, x + 14, y + 13, 66);
             Text(Lang.Upper(Lang.CoinName(hovered.Id)), x + 94, y + 16, Ui.F20, C.Face);
             string rarity = coin.Rarity == Rarity.Common ? "Common" : coin.Rarity == Rarity.Uncommon ? "Uncommon" : coin.Rarity == Rarity.Rare ? "Rare" : "Epic";
             Text(Lang.Upper(L(rarity)), x + 94, y + 47, Ui.F16, RarityColor(coin.Rarity));
@@ -522,7 +487,14 @@ namespace Tossup.UI
                 Text(row.Label, x + 26, rowY + 8, Ui.F20, row.Tint);
                 string chanceText = row.Chance + "%";
                 Text(chanceText, x + w - 26 - Ui.F32.GetWidth(chanceText), rowY + 3, Ui.F32, row.Tint);
-                Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(row.Detail, x + 26, rowY + 42, w - 52); rowY += row.Height + 7;
+                Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(row.Detail, x + 26, rowY + 42, w - 52);
+                if (row.Mastery != null)
+                {
+                    float bonusY = rowY + 47 + Ui.F16.GetWrap(row.Detail, w - 52).Count * 18;
+                    Color(C.Purple); Gfx.Rectangle(true, x + 26, bonusY, 3, row.Height - (bonusY - rowY) - 6);
+                    Gfx.SetFont(Ui.F16); Color(C.Purple); Gfx.Printf(row.Mastery, x + 36, bonusY, w - 62);
+                }
+                rowY += row.Height + 7;
             }
             if (buffDescriptions.Count > 0)
             {
@@ -556,33 +528,19 @@ namespace Tossup.UI
                 Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(specialRule, x + 26, rowY + 28, w - 52);
                 rowY += ruleHeight;
             }
-            if (collectionUpgrades.Count > 0)
+            if (masteryDetail != null)
             {
-                float sectionHeight = 40 + collectionUpgrades.Count * 18 + upgradeDescriptionLines * 18 + collectionUpgrades.Count * 3;
+                float sectionHeight = 42 + Ui.F16.GetWrap(masteryDetail, w - 52).Count * 18;
                 Box(x + 12, rowY, w - 24, sectionHeight, C.Slot); Outline(x + 12, rowY, w - 24, sectionHeight, C.Line);
-                Color(C.Gold); Gfx.Rectangle(true, x + 12, rowY, 4, sectionHeight);
-                Text("UPGRADES", x + 26, rowY + 7, Ui.F16, C.Gold);
-                float detailY = rowY + 28;
-                foreach (var collectionUpgrade in collectionUpgrades)
-                {
-                    Text(Lang.Upper(L(collectionUpgrade.Name)), x + 26, detailY, Ui.F16, C.Gold);
-                    detailY += 18;
-                    int descriptionLines = Ui.F16.GetWrap(L(collectionUpgrade.Description), w - 52).Count;
-                    Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(L(collectionUpgrade.Description), x + 26, detailY, w - 52);
-                    detailY += descriptionLines * 18 + 3;
-                }
+                Color(C.Purple); Gfx.Rectangle(true, x + 12, rowY, 4, sectionHeight);
+                Text(L("MASTERY LEVEL %d / 3", masteryLevel), x + 26, rowY + 7, Ui.F16, C.Purple);
+                Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(masteryDetail, x + 26, rowY + 28, w - 52);
                 rowY += sectionHeight;
-            }
-            if (!string.IsNullOrWhiteSpace(upgradeDescription))
-            {
-                Text(L("UPGRADE: %s", Lang.Upper(L(upgrade.Name))), x + 24, rowY + 4, Ui.F16, C.Gold);
-                Gfx.SetFont(Ui.F16); Color(C.Face); Gfx.Printf(upgradeDescription, x + 24, rowY + 25, w - 48);
-                rowY += 42 + Ui.F16.GetWrap(upgradeDescription, w - 48).Count * 18;
             }
             if (hovered.Locked) { Gfx.SetFont(Ui.F16); Color(C.Orange); Gfx.Printf(L("LOCKED  -  BUY IT IN THE SHOP TO UNLOCK"), x + 24, rowY + 8, w - 48); }
         }
 
-        public static void CoinFace(float cx, float cy, float radius, string outcome, bool selected, string id, Upgrade upgrade = null, bool oddsTuned = false)
+        public static void CoinFace(float cx, float cy, float radius, string outcome, bool selected, string id)
         {
             float size = radius * 2.6f;
             if (selected)
@@ -590,7 +548,7 @@ namespace Tossup.UI
                 Color(C.Orange, .35f);
                 Gfx.Circle(true, cx, cy, radius + 4);
             }
-            CoinImage(id ?? "copper", cx - size / 2, cy - size / 2, size, upgrade, oddsTuned);
+            CoinImage(id ?? "copper", cx - size / 2, cy - size / 2, size);
             if (outcome != null)
             {
                 var tint = outcome == Side.Heads ? C.Blue : C.Red;

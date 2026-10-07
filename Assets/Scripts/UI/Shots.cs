@@ -49,7 +49,7 @@ namespace Tossup.UI
             // Screenshot saves are isolated; unlock the requested fixture character explicitly.
             int characterIndex = Content.CharacterOrder.IndexOf(character);
             if (characterIndex > 0) Ui.Profile.Wins.Add(Content.CharacterOrder[characterIndex - 1]);
-            Ui.SelectedCharacter = character;
+            Ui.SelectedCharacter = Content.Characters[character];
             A.Start(seed);
             Ui.EncounterReveal = null; // ordinary gameplay shots should show the screen behind the reveal
             Ui.Shake = 0;
@@ -57,17 +57,17 @@ namespace Tossup.UI
 
         public static List<Shot> Script() => new List<Shot>
         {
-            new Shot { Name = "01_title", Setup = () => { Lang.Set("en"); Ui.Game = null; A.Go("title"); } },
-            new Shot { Name = "02_help", Setup = () => { Ui.HelpNext = "select"; A.Go("help"); } },
-            new Shot { Name = "03_select", Setup = () => { Ui.SelectedCharacter = "seer"; A.Go("select"); } },
+            new Shot { Name = "01_title", Setup = () => { Lang.Set("en"); Ui.Game = null; A.Go(UiScreen.Title); } },
+            new Shot { Name = "02_help", Setup = () => { Ui.HelpNext = UiScreen.Select; A.Go(UiScreen.Help); } },
+            new Shot { Name = "03_select", Setup = () => { Ui.SelectedCharacter = Content.Characters["seer"]; A.Go(UiScreen.Select); } },
             new Shot { Name = "04_sets", Setup = () => A.OpenSets("trader") },
             new Shot { Name = "05_sets_tooltip", Setup = () => { }, MouseX = 740, MouseY = 294 },
             new Shot { Name = "05b_sets_page_2", Setup = () => A.ChangeSetsCatalogPage(1) },
-            new Shot { Name = "06_collection", Setup = () => A.Go("collection") },
-            new Shot { Name = "06b_collection_chips", Setup = () => { Ui.CollectionCategory = "items"; Ui.CollectionPage = 1; Ui.CollectionSort = "order"; } },
+            new Shot { Name = "06_collection", Setup = () => A.Go(UiScreen.Collection) },
+            new Shot { Name = "06b_collection_chips", Setup = () => { Ui.CollectionCategory = "items"; Ui.CollectionPage = 1; Ui.CollectionSort = CollectionSortMode.Order; } },
             new Shot { Name = "06c_collection_relics", Setup = () => { Ui.CollectionCategory = "relics"; Ui.CollectionPage = 1; } },
             new Shot { Name = "06d_collection_characters", Setup = () => { Ui.CollectionCategory = "characters"; Ui.CollectionPage = 1; } },
-            new Shot { Name = "07_options", Setup = () => { Ui.OptionsTab = "game"; A.Go("options"); } },
+            new Shot { Name = "07_options", Setup = () => { Ui.OptionsTab = "game"; A.Go(UiScreen.Options); } },
             new Shot { Name = "08_options_sound", Setup = () => Ui.OptionsTab = "sound" },
             new Shot { Name = "09_confirm", Setup = A.ClearProgress, MouseX = 658, MouseY = 480 },
             new Shot
@@ -113,7 +113,7 @@ namespace Tossup.UI
                 },
             },
             new Shot { Name = "18_victory", Setup = () => Ui.Game.Phase = Phase.Victory },
-            new Shot { Name = "19_german_title", Setup = () => { Lang.Set("de"); Ui.Game = null; A.Go("title"); } },
+            new Shot { Name = "19_german_title", Setup = () => { Lang.Set("de"); Ui.Game = null; A.Go(UiScreen.Title); } },
             new Shot
             {
                 Name = "20_german_round",
@@ -129,16 +129,16 @@ namespace Tossup.UI
                 },
             },
             new Shot { Name = "21_german_shop", Setup = () => { Ui.DebugVisible = false; PlayToShop(); } },
-            new Shot { Name = "22_run_encounter_reveal", Setup = () => { Ui.SelectedCharacter="blade";A.Start(6601);AppCore.Update(.9); } },
+            new Shot { Name = "22_run_encounter_reveal", Setup = () => { Ui.SelectedCharacter=Content.Characters["blade"];A.Start(6601);AppCore.Update(.9); } },
             new Shot { Name = "23_contract", Setup = () => { NewRun("blade", 6602); Ui.EncounterReveal = null; Ui.Game.ContractsEnabled=true; Game.OfferContract(Ui.Game); } },
             new Shot { Name="24_edge", Setup=()=> {
                 Lang.Set("en"); NewRun("blade",6); Game.MulliganDone(Ui.Game);
                 Game.Flip(Ui.Game);Ui.Game.Pending.Result=Side.Tie;
                 Ui.FlipAnimation=new FlipAnimation {Id=Game.GetCoin(Ui.Game,Ui.Game.Pending.Uid).Id,Outcome=Side.Tie,Duration=1.0,Elapsed=.995};
             } },
-            new Shot { Name="25_upgraded_shop", Setup=()=> {
+            new Shot { Name="25_shop_coin", Setup=()=> {
                 NewRun("blade",12345);PlayToShop();
-                Ui.Game.ShopOffers[0]=CoinCatalog.Normal;Ui.Game.ShopUpgrades[0]=UpgradeCatalog.LuckyDay;
+                Ui.Game.ShopOffers[0]=CoinCatalog.Normal;
                 Ui.Game.Items.AddRange(new[]{"energy_drink","shortcut","safety_net"});Game.AddRelic(Ui.Game,"clock");
             }, MouseX=500,MouseY=270 },
             new Shot { Name="26_controller_inspect", Setup=()=> {
@@ -147,15 +147,15 @@ namespace Tossup.UI
             } },
             new Shot { Name="27_german_augment", Setup=()=> {
                 PadNavigation.Connected=false;PadNavigation.MouseUsed();Lang.Set("de");NewRun("seer",6);
-                Ui.Game.Phase=Phase.Augment;Ui.Game.AugmentLevel=3;Ui.Game.AugmentOptions=new List<string>{"upgrade_press","type_specialist","hedge_fund"};
+                Ui.Game.Phase=Phase.Augment;Ui.Game.AugmentLevel=3;Ui.Game.AugmentOptions=new List<string>{"bankers_cut","type_specialist","hedge_fund"};
             } },
-            new Shot { Name="28_german_upgrade_choices", Setup=()=>Game.ChooseAugment(Ui.Game,"upgrade_press") },
+            new Shot { Name="28_german_augment_choices", Setup=()=>Game.ChooseAugment(Ui.Game,"bankers_cut") },
             new Shot { Name="29_square_dance_tooltip", Setup=()=> {
-                Ui.Game=null;Lang.Set("en");A.Go("collection");Ui.CollectionCategory="coins";Ui.CollectionPage=1;Ui.CollectionSort="order";Ui.CollectionFilter="ALL";
+                Ui.Game=null;Lang.Set("en");A.Go(UiScreen.Collection);Ui.CollectionCategory="coins";Ui.CollectionPage=1;Ui.CollectionSort=CollectionSortMode.Order;Ui.CollectionFilter=CollectionRarityFilter.All;
                 Ui.Profile.Collected.Add(CoinCatalog.SquareDance.Id);
             }, MouseX=1034,MouseY=422 },
             new Shot {Name="30_developer_reveal_start",Setup=()=> {
-                RuntimeMode.Configure(true,false);Ui.SelectedCharacter="blade";A.Start(6601);AppCore.Update(.12);
+                RuntimeMode.Configure(true,false);Ui.SelectedCharacter=Content.Characters["blade"];A.Start(6601);AppCore.Update(.12);
             }},
             new Shot {Name="31_developer_reveal_later",Setup=()=> {
                 AppCore.Update(.8);RuntimeMode.Configure(false,false);

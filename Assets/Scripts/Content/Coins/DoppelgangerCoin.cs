@@ -21,5 +21,16 @@ namespace Tossup.Coins
         {
             new BuffSpec("doppelganger_chaos", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Chaos), Effect.TypeBuff(kind: CoinType.Chaos)),
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Chaos coins affected by Doppelganger", 15, 60, 180,
+            "Doppelganger Heads scores +1.", "Its buff reaches a second Chaos coin.", "Doppelganger Heads scores +3 total.",
+            MasterySides.Heads, MasterySides.None, MasterySides.Heads);
+
+        public DoppelgangerCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) => { if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "doppelganger_chaos") ctx.Mastery.Add(1); };
+            On.Coins.BuffCreated += (ctx, buff) => { if (buff.SpecId == "doppelganger_chaos" && ctx.Mastery.Level >= 2) buff.Left = 2; };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(ctx.Mastery.Level >= 3 ? 3 : 1)); };
+        }
     }
 }

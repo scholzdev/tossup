@@ -24,5 +24,15 @@ namespace Tossup.Coins
 
         public override void Grow(CoinInst inst, CoinGrowthEvent evt)
         { if (evt == CoinGrowthEvent.Level) inst.Debt = 0; }
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Heads landed after Tails this level", 20, 80, 240,
+            "Those Heads score +1.", "Those Heads score +2 total.", "Those Heads score +3 total.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
+
+        public MartyrCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin && e.Flip.Final == Side.Heads && ctx.Game.Encounter.Tails > 0) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Game.Encounter.Tails > 0 && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(ctx.Mastery.Level)); };
+        }
     }
 }

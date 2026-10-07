@@ -23,5 +23,14 @@ namespace Tossup.Coins
         {
             new BuffSpec("symbiosis", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Fortune), Effect.Score(2), OutcomeSide.Heads)
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Fortune coins affected by Symbiosis", 20, 80, 240,
+            "Its Fortune buff scores +3.", "Its Fortune buff scores +4.", "Its Fortune buff scores +5.");
+
+        public SymbiosisCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) => { if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "symbiosis") ctx.Mastery.Add(1); };
+            On.Coins.BuffCreated += (ctx, buff) => { if (buff.SpecId == "symbiosis") buff.AppliedEffect.Amount += ctx.Mastery.Level; };
+        }
     }
 }

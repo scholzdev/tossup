@@ -18,6 +18,10 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Score(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Previous sides repeated by Syncopation", 10, 40, 120,
+            "A repeat scores +1 point.", "A repeat adds a second combo step.", "A repeat scores another +2 points.",
+            MasterySides.Heads | MasterySides.Tails, MasterySides.Heads | MasterySides.Tails, MasterySides.Heads | MasterySides.Tails);
 
         public SyncopationCoin()
         {
@@ -25,7 +29,13 @@ namespace Tossup.Coins
             {
                 var previous = context.Game.LastResult;
                 if (previous != null && result.Result != Side.Tie && previous.Final == result.Result)
+                {
+                    context.Mastery.Add(1);
                     result.Effects.Add(Effect.ComboBonus(1));
+                    if (context.Mastery.Level >= 1) result.Effects.Add(Effect.Score(1));
+                    if (context.Mastery.Level >= 2) result.Effects.Add(Effect.ComboBonus(1));
+                    if (context.Mastery.Level >= 3) result.Effects.Add(Effect.Score(2));
+                }
             };
         }
     }

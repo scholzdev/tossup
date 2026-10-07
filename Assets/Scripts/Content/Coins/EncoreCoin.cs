@@ -18,13 +18,26 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Score(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "First Encore plays landing Tails", 10, 35, 100,
+            "Those Tails score +1 point.", "Heads scores +1 point.", "Heads scores another +2 points.",
+            MasterySides.Tails, MasterySides.Heads, MasterySides.Heads);
 
         public EncoreCoin()
         {
             On.Coins.Resolve += (context, result) =>
             {
                 if (result.Result == Side.Tails && !context.Game.Encounter.BestScores.ContainsKey(context.Coin.Uid))
+                {
+                    context.Mastery.Add(1);
                     result.Effects.Add(Effect.ExtraDraw(1));
+                    if (context.Mastery.Level >= 1) result.Effects.Add(Effect.Score(1));
+                }
+                if (result.Result == Side.Heads)
+                {
+                    if (context.Mastery.Level >= 2) result.Effects.Add(Effect.Score(1));
+                    if (context.Mastery.Level >= 3) result.Effects.Add(Effect.Score(2));
+                }
             };
         }
     }

@@ -19,10 +19,19 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Edge { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Heads { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Points won on All-In Heads", 100, 400, 1200,
+            "Heads adds 1 point before doubling.", "Heads gains 1 gold.", "Heads adds another 2 points before doubling.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
 
         public AllInCoin()
         {
             On.Coins.Resolve += Resolve;
+            On.Game.Coins.Resolved += (ctx, e) =>
+            {
+                if (e.Inst == ctx.Coin && e.Res?.Result == Side.Heads)
+                    ctx.Mastery.Add(Math.Max(0, e.Flip?.Gained ?? 0));
+            };
         }
 
         static void Resolve(HookContext context, Res res)
@@ -34,6 +43,10 @@ namespace Tossup.Coins
             }
 
             res.Effects.Add(Effect.Score(5));
+            int level = context.Mastery.Level;
+            if (level >= 1) res.Effects.Add(Effect.Score(1));
+            if (level >= 2) res.Effects.Add(Effect.Gold(1));
+            if (level >= 3) res.Effects.Add(Effect.Score(2));
             foreach (var effect in res.Effects)
                 if (effect.Type == EffectType.Score) effect.Amount *= 2;
         }

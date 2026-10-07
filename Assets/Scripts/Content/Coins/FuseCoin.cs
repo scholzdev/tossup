@@ -20,16 +20,28 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
 
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Charge spent on Fuse Heads", 30, 100, 300,
+            "Discarding Fuse stores 7 charge instead of 6.",
+            "Spending at least 10 charge also grants 1 energy.",
+            "Fuse retains 20% of spent charge.",
+            MasterySides.None, MasterySides.Heads, MasterySides.Heads);
+
         public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => heads * inst.Charge;
 
-        public override void OnDiscard(GameState game, CoinInst inst)
-        { inst.Charge += 6; }
-
-        public override void OnResolve(GameState game, CoinInst inst, Res res)
+        public FuseCoin()
         {
-            if (res.Result != Side.Heads || inst.Charge == 0) return;
-            res.Effects.Add(Effect.Score( inst.Charge));
-            inst.Charge = 0;
+            On.Coins.Discard += ctx => ctx.Coin.Charge += ctx.Mastery.Level >= 1 ? 7 : 6;
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (res.Result != Side.Heads || ctx.Coin.Charge <= 0) return;
+                double spent = ctx.Coin.Charge;
+                int level = ctx.Mastery.Level;
+                res.Effects.Add(Effect.Score(spent));
+                if (level >= 2 && spent >= 10) res.Effects.Add(Effect.Energy(1));
+                ctx.Coin.Charge = level >= 3 ? Math.Floor(spent * .2) : 0;
+                ctx.Mastery.Add(spent);
+            };
         }
     }
 }

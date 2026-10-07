@@ -28,5 +28,15 @@ namespace Tossup.Coins
             var pick = Results[Rng.Int(game, 1, Results.Length) - 1];
             res.Effects = new List<Effect> { new Effect(pick.Type, pick.Amount) };
         }
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Random Jester effects resolved", 25, 100, 300,
+            "Every result also scores 1 point.", "Every result also scores 2 points total.", "Every result also scores 3 points total.",
+            MasterySides.All, MasterySides.All, MasterySides.All);
+
+        public JesterCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) => { if (ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(ctx.Mastery.Level)); };
+        }
     }
 }

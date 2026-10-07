@@ -131,18 +131,18 @@ namespace Tossup.UI
 
             switch (Ui.Screen)
             {
-                case "select":
+                case UiScreen.Select:
                     A.CycleCharacter(direction);
                     break;
-                case "collection":
+                case UiScreen.Collection:
                     A.ChangeCollectionPage(direction);
                     break;
-                case "options":
+                case UiScreen.Options:
                     string[] tabs = { "game", "sound", "controls" };
                     int tab = Array.IndexOf(tabs, Ui.OptionsTab);
                     Ui.OptionsTab = tabs[((tab < 0 ? 0 : tab) + direction + tabs.Length) % tabs.Length];
                     break;
-                case "sets":
+                case UiScreen.Sets:
                     var order = Content.CharacterOrder;
                     int index = order.IndexOf(Ui.SetsCharacter);
                     if (index >= 0 && order.Count > 0)
@@ -278,7 +278,7 @@ namespace Tossup.UI
                 x = 810; y = 614;
                 return;
             }
-            if (Ui.Screen == "select") { x = 810; y = 694; return; }
+            if (Ui.Screen == UiScreen.Select) { x = 810; y = 694; return; }
             Center(Ui.Buttons[0], out x, out y);
         }
 

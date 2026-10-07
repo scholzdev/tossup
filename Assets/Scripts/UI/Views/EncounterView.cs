@@ -74,7 +74,7 @@ namespace Tossup.UI
                 if (marked) Tab(x + (w - 76) / 2, y - 9, C.Red, "DISCARD");
                 else if (uid == first) Tab(x + (w - 76) / 2, y - 9, C.Gold, "PLAYS FIRST");
                 if (def.EnergyCost > 0) Text("E" + def.EnergyCost, x + w - 30, y + 10, Ui.F16, C.Orange);
-                CoinHover(owned.Id, x, y, w, h, Game.Probability(G, owned), upgrade: owned.Upgrade, oddsTuned: owned.Bonus > 0);
+                CoinHover(owned.Id, x, y, w, h, Game.Probability(G, owned));
                 AddButton(x, y, w, h, () => A.ToggleMark(uid), "CARD");
             }
             Centered("CLICK COINS TO MARK THEM, THEN PRESS DISCARD", 0, 560, 1280, Ui.F16, C.Muted);
@@ -234,8 +234,8 @@ namespace Tossup.UI
                 Text(Lang.Upper(Lang.CoinName(owned.Id)), nameX, y + (rowHeight - Ui.F20.Height) / 2, Ui.F20,
                     picking && !discardable ? C.Muted : current ? C.Gold : C.Face);
                 Gfx.ClearScissor();
-                CoinHover(owned.Id, x, y, 214, rowHeight, Game.Probability(g, owned), upgrade: owned.Upgrade,
-                    tieProbability: Game.TieProbability(g, owned), oddsTuned: owned.Bonus > 0);
+                CoinHover(owned.Id, x, y, 214, rowHeight, Game.Probability(g, owned),
+                    tieProbability: Game.TieProbability(g, owned));
                 Text(L("%d%% H", Pct(Game.Probability(g, owned))), x + 120, y + (rowHeight - Ui.F16.Height) / 2, Ui.F16, C.Gold);
                 int cost = Content.Coins[owned.Id].EnergyCost;
                 if (cost > 0) Text("E" + cost, x + 181, y + (rowHeight - Ui.F16.Height) / 2, Ui.F16, C.Orange);
@@ -305,8 +305,8 @@ namespace Tossup.UI
                     330, 214, 880, Ui.F16, C.Orange);
             Color(C.PanelDk);
             Gfx.Circle(true, SX, 385, 160);
-            if (item != null) CoinFace(SX, 385, 135, null, true, coinId, item.Upgrade, item.Bonus > 0);
-            else if (Ui.FlipAnimation == null && coinId != null) CoinFace(SX, 385, 135, null, false, coinId, item?.Upgrade, item != null && item.Bonus > 0);
+            if (item != null) CoinFace(SX, 385, 135, null, true, coinId);
+            else if (Ui.FlipAnimation == null && coinId != null) CoinFace(SX, 385, 135, null, false, coinId);
             if (Ui.FlipAnimation == null && g.Pending == null && (Ui.Holding || Game.CanFlip(g)))
                 AddButton(SX - 150, 235, 300, 300, A.NextOrFlip, "CENTRAL COIN");
             else if (Ui.FlipAnimation == null && coinId == null) CoinImage("back", SX - 150, 235, 300);

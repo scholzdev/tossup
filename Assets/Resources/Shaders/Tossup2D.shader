@@ -58,7 +58,9 @@ Shader "Hidden/Tossup2D"
                 clip(i.canvas - _ClipRect.xy);
                 clip(_ClipRect.zw - i.canvas);
                 half4 t = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
-                half4 font = half4(i.color.rgb, i.color.a * t.a);
+                // Font atlases carry antialiased coverage. Cut it at a fixed threshold so
+                // the small pixel glyphs stay crisp when the canvas is scaled.
+                half4 font = half4(i.color.rgb, i.color.a * step(0.5h, t.a));
                 return lerp(t * i.color, font, step(0.5, _AlphaOnly));
             }
             ENDHLSL

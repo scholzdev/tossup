@@ -112,8 +112,6 @@ namespace Tossup
             if (value == null || value is bool off && !off && type != typeof(bool)) return null;
             var underlying = Nullable.GetUnderlyingType(type);
             if (underlying != null) return ConvertData(value,underlying);
-            if (type == typeof(Upgrade))
-                return value is string upgradeId && UpgradeCatalog.ById.TryGetValue(upgradeId,out var upgrade) ? upgrade : throw new FormatException("unknown upgrade definition");
             if (type == typeof(CoinDef))
                 return value is string id && Content.Coins.TryGetValue(id,out var coin) ? coin : throw new FormatException("unknown coin definition");
             if (type == typeof(string)) return value is string ? value : throw new FormatException("expected string");

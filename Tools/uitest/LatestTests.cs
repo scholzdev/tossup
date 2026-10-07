@@ -47,6 +47,18 @@ static class LatestTests
         Check(Game.Route.Count==8&&Game.Route[7].Boss,"eight-stage route ends at The House");
         Check(Game.Stakes.Count==8&&Game.Modifiers.Count==8,"stakes and modifiers are complete");
         Check(Game.Contracts.Count==5&&Game.Encounters.Count==7&&Game.AugmentDefs.Count==8,"run systems are complete");
+        for (int i = 0; i < EncounterCatalog.Ordered.Count; i++)
+        {
+            var definition = EncounterCatalog.Ordered[i];
+            Check(Game.Encounters[i] == definition && Game.EncounterById[definition.Id] == definition &&
+                definition.GetType() != typeof(RunEncounterDef), "encounter registry uses its own definition for " + definition.Id);
+        }
+        for (int i = 0; i < AugmentCatalog.Ordered.Count; i++)
+        {
+            var definition = AugmentCatalog.Ordered[i];
+            Check(Game.AugmentOrder[i] == definition.Id && Game.AugmentDefs[definition.Id] == definition &&
+                definition.GetType() != typeof(AugmentDef), "augment registry uses its own definition for " + definition.Id);
+        }
 
         var slots=Game.New(101,"blade",null,null,false);
         slots.Phase=Phase.Shop;slots.Player.Gold=100;
@@ -62,8 +74,7 @@ static class LatestTests
 
         var upgraded=Game.New(104,"blade",null,null,false);
         var normal=upgraded.Coins.Find(c=>c.Id=="normal");
-        normal.Upgrade=UpgradeCatalog.Mathematician;
-        Check(Near(Game.Probability(upgraded,normal),.75),"coin upgrade changes Heads odds");
+        Check(Near(Game.Probability(upgraded,normal),.65),"base Heads odds are unchanged by removed upgrades");
 
         var contract=Game.New(105,"blade",null,null,true);
         Check(Game.OfferContract(contract)&&contract.Phase==Phase.Contract,"contract offer phase");
@@ -73,6 +84,9 @@ static class LatestTests
         var bet=Game.New(106,"blade",null,null,false);bet.Player.Gold=50;
         var quote=Game.SideBetQuote(bet,Side.Heads);
         Check(quote!=null&&Game.PlaceSideBet(bet,Side.Heads)&&bet.Player.Gold==50-quote.Stake,"side bet placement");
+        bet.Augments.Add(AugmentCatalog.HedgeFund.Id);
+        Check(Game.SideBetQuote(bet,Side.Heads).Payout==(int)Math.Floor(quote.Payout*1.25+.5),
+            "Hedge Fund definition adjusts a side bet quote");
 
         var augment=Game.New(107,"blade",null,null,false);augment.Phase=Phase.Shop;augment.EncounterIndex=2;
         Check(Game.OfferAugment(augment,3)&&augment.Phase==Phase.Augment&&augment.AugmentOptions.Count==3,"augment offer phase");
@@ -97,9 +111,114 @@ static class LatestTests
         Check(Profile.RecordStakeWin(profile,"blade",1)==2&&Profile.MaxStake(profile,"blade")==2,"winning unlocks next stake");
         string json=Profile.Encode(profile);var restored=Profile.Decode(json);
         Check(Profile.MaxStake(restored,"blade")==2,"stake progression survives JSON");
+        CheckCoinMastery();
+        CheckMasteryCoverage();
         CheckSettingsPersistence();
         FeatureParityTests.Run();
         Console.WriteLine("latest: focused gameplay checks passed");
+    }
+
+    static void CheckCoinMastery()
+    {
+        var profile = Profile.New();
+        var normal = CoinCatalog.Normal;
+        Profile.AddMastery(profile, normal, 12);
+        Profile.AddMastery(profile, normal, 8);
+        Check(Profile.MasteryLevel(profile, normal) == 1 && profile.MasteryDirty,
+            "coin-specific progress accumulates across sessions");
+        Ui.Profile = profile;
+        Check(D.CoinMasteryOutcomeDescription(normal, Side.Heads)?.Contains("Heads scores +1") == true &&
+            D.CoinMasteryOutcomeDescription(normal, Side.Tails) == null,
+            "outcome cards show earned side rewards only");
+        var restored = Profile.Decode(Profile.Encode(profile));
+        Check(Profile.MasteryProgress(restored, normal) == 20 && Profile.MasteryLevel(restored, normal) == 1,
+            "mastery survives profile save and load");
+        Profile.AddMastery(restored, normal, 1000);
+        Check(Profile.MasteryLevel(restored, normal) == 3 && Profile.MasteryProgress(restored, normal) == 300,
+            "mastery caps at level three");
+        Ui.Profile = restored;
+        Check(D.CoinMasteryOutcomeDescription(normal, Side.Heads)?.Contains("first Heads") == true &&
+            D.CoinMasteryOutcomeDescription(normal, Side.Tails)?.Contains("Tails scores 1") == true,
+            "conditional and Tails mastery rewards appear on their own outcome cards");
+
+        var run = Game.New(1201, "blade", null, new List<CoinDef> { normal }, false);
+        run.MasteryProfile = restored;
+        var coin = run.Coins.Find(c => c.Id == normal.Id);
+        Hooks.Bind(run, coin);
+        run.Pending = new FlipState { Uid = coin.Uid, CoinId = coin.Id, Raw = Side.Heads, Result = Side.Heads };
+        Check(Game.Resolve(run) && run.LastResult.Gained >= 5,
+            "unlocked Normal rewards apply through its Resolve hook");
+        int firstLevel = coin.MasteryFirstHeadsLevel;
+        Check(firstLevel == run.EncounterIndex, "first-Heads reward is marked once per level");
+
+        var steelProfile = Profile.New();
+        var steelRun = Game.New(1202, "blade", new List<string> { "whetstone", "sword" },
+            new List<CoinDef> { CoinCatalog.Whetstone, CoinCatalog.Sword }, false);
+        steelRun.MasteryProfile = steelProfile;
+        var stone = steelRun.Coins.Find(c => c.Id == "whetstone");
+        var sword = steelRun.Coins.Find(c => c.Id == "sword");
+        Hooks.Bind(steelRun, stone);
+        steelRun.Pending = new FlipState { Uid = stone.Uid, CoinId = stone.Id, Raw = Side.Heads, Result = Side.Heads };
+        Check(Game.Resolve(steelRun), "Whetstone creates its Steel buff");
+        Hooks.Bind(steelRun, sword);
+        steelRun.Pending = new FlipState { Uid = sword.Uid, CoinId = sword.Id, Raw = Side.Heads, Result = Side.Heads };
+        Check(Game.Resolve(steelRun) && Profile.MasteryProgress(steelProfile, CoinCatalog.Whetstone) == 1,
+            "Steel buff usage credits its source coin");
+        Profile.AddMastery(steelProfile, CoinCatalog.Whetstone, 120);
+        var masteredSteel = Game.New(1204, "blade", new List<string> { "whetstone", "sword" },
+            new List<CoinDef> { CoinCatalog.Whetstone, CoinCatalog.Sword }, false);
+        masteredSteel.MasteryProfile = steelProfile;
+        var masteredStone = masteredSteel.Coins.Find(c => c.Id == "whetstone");
+        Hooks.Bind(masteredSteel, masteredStone);
+        masteredSteel.Pending = new FlipState { Uid = masteredStone.Uid, CoinId = masteredStone.Id, Raw = Side.Heads, Result = Side.Heads };
+        Check(Game.Resolve(masteredSteel), "mastered Whetstone creates a buff");
+        var masteredBuff = masteredSteel.Encounter.Buffs.Find(b => b.SpecId == "whetstone_steel");
+        Check(masteredBuff != null && masteredBuff.Amount == 4 && masteredBuff.PenaltyAmount == 1 && masteredBuff.Left == 3,
+            "all Whetstone mastery rewards modify its sourced buff");
+
+        var fuseProfile = Profile.New();
+        Profile.AddMastery(fuseProfile, CoinCatalog.Fuse, 100);
+        var fuseRun = Game.New(1203, "blade", new List<string> { "fuse" }, new List<CoinDef> { CoinCatalog.Fuse }, false);
+        fuseRun.MasteryProfile = fuseProfile;
+        var fuse = fuseRun.Coins.Find(c => c.Id == "fuse");
+        fuse.Charge = 10;
+        Hooks.Bind(fuseRun, fuse);
+        fuseRun.Pending = new FlipState { Uid = fuse.Uid, CoinId = fuse.Id, Raw = Side.Heads, Result = Side.Heads };
+        double energy = fuseRun.Player.Energy;
+        Check(Game.Resolve(fuseRun) && fuseRun.Player.Energy == energy + 1 && fuse.Charge == 0,
+            "Fuse level two adds energy when ten charge is spent");
+        Profile.AddMastery(fuseProfile, CoinCatalog.Fuse, 200);
+        var masteredFuseRun = Game.New(1205, "blade", new List<string> { "fuse" }, new List<CoinDef> { CoinCatalog.Fuse }, false);
+        masteredFuseRun.MasteryProfile = fuseProfile;
+        var masteredFuse = masteredFuseRun.Coins.Find(c => c.Id == "fuse");
+        masteredFuse.Charge = 10;
+        Hooks.Bind(masteredFuseRun, masteredFuse);
+        masteredFuseRun.Pending = new FlipState { Uid = masteredFuse.Uid, CoinId = masteredFuse.Id, Raw = Side.Heads, Result = Side.Heads };
+        Check(Game.Resolve(masteredFuseRun) && masteredFuse.Charge == 2,
+            "Fuse level three retains a fifth of spent charge");
+    }
+
+    static void CheckMasteryCoverage()
+    {
+        int seed = 1300;
+        foreach (var definition in Content.CoinOrder)
+        {
+            Check(definition.Mastery != null && definition.Mastery.Thresholds.Length == 3 &&
+                definition.Mastery.Rewards.Length == 3 && definition.Mastery.RewardSides.Length == 3,
+                "three mastery levels exist for " + definition.Id);
+            foreach (var side in new[] { Side.Heads, Side.Tails, Side.Tie })
+            {
+                var sandbox = new SandboxConfig { Coins = new List<string> { definition.Id } };
+                var game = Game.New(seed++, "blade", null, null, false, sandbox: sandbox);
+                var profile = Profile.New();
+                Profile.AddMastery(profile, definition, definition.Mastery.Thresholds[2]);
+                game.MasteryProfile = profile;
+                var coin = game.Coins[0];
+                Hooks.Bind(game, coin);
+                game.Pending = new FlipState { Uid = coin.Uid, CoinId = coin.Id, Raw = side, Result = side };
+                Check(Game.Resolve(game), "mastered " + definition.Id + " resolves " + side);
+            }
+        }
     }
 
     static void CheckSettingsPersistence()

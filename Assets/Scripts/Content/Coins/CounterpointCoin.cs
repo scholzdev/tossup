@@ -30,6 +30,18 @@ namespace Tossup.Coins
                 if (previous != null && result.Result != Side.Tie && previous.Final != result.Result)
                     result.Effects.Add(Effect.Score(5));
             };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                var previous = ctx.Game.LastResult;
+                if (previous == null || res.Result == Side.Tie || previous.Final == res.Result) return;
+                ctx.Mastery.Add(1);
+                if (ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(ctx.Mastery.Level));
+            };
         }
+
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Alternating results scored by Counterpoint", 20, 80, 240,
+            "Alternating results score +1.", "Alternating results score +2 total.", "Alternating results score +3 total.",
+            MasterySides.Heads | MasterySides.Tails, MasterySides.Heads | MasterySides.Tails, MasterySides.Heads | MasterySides.Tails);
     }
 }

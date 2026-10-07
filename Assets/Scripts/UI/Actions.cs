@@ -32,6 +32,7 @@ namespace Tossup.UI
         {
             if (RuntimeMode.Dev || RuntimeMode.Sandbox) return;
             Ui.Platform.WriteSave(ProfileFile, Tossup.Profile.Encode(Ui.Profile));
+            Ui.Profile.MasteryDirty = false;
         }
 
         public static bool HasSavedRun()
@@ -57,8 +58,9 @@ namespace Tossup.UI
             if (game.Phase == Phase.Contract) { game.Phase = Phase.Encounter; game.Encounter.ContractOptions = null; }
             if (game.Mulligan != null) Game.MulliganDone(game);
             Ui.Game = game;
+            game.MasteryProfile = !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox == null ? Ui.Profile : null;
             Ui.BankDiscardMode = false;
-            Ui.SelectedCharacter = game.CharacterId;
+            Ui.SelectedCharacter = Content.Characters[game.CharacterId];
             Ui.EncounterReveal = null;
             Ui.FlipAnimation = null;
             Ui.Holding = false;
@@ -69,7 +71,7 @@ namespace Tossup.UI
             return true;
         }
 
-        public static void Go(string screen)
+        public static void Go(UiScreen screen)
         {
             Ui.Screen = screen;
             Ui.Confirm = null;
@@ -82,12 +84,12 @@ namespace Tossup.UI
             if (RuntimeMode.Sandbox && Ui.SandboxConfig != null) { StartSandbox(Ui.SandboxConfig); return; }
             if (HasSavedRun())
             {
-                Ui.Confirm = new Confirm { Title = "NEW RUN", Text = "YOUR SAVED RUN WILL BE REPLACED.", Ok = () => { DeleteRun(); Go("select"); } };
+                Ui.Confirm = new Confirm { Title = "NEW RUN", Text = "YOUR SAVED RUN WILL BE REPLACED.", Ok = () => { DeleteRun(); Go(UiScreen.Select); } };
                 return;
             }
             if (Ui.Profile.Options.SeenHelp)
             {
-                Go("select");
+                Go(UiScreen.Select);
                 return;
             }
             Ui.Profile.Options.SeenHelp = true;
@@ -107,7 +109,7 @@ namespace Tossup.UI
                 savedKey = null;
                 LoadProfile();
                 if (enable) Play();
-                else Go("title");
+                else Go(UiScreen.Title);
             };
 
             if (Ui.Game != null && Ui.Game.Phase != Phase.GameOver && Ui.Game.Phase != Phase.Victory)
@@ -161,7 +163,7 @@ namespace Tossup.UI
         public static void OpenMenu()
         {
             if (Ui.Game != null) Ui.Game.Paused = true;
-            Go("title");
+            Go(UiScreen.Title);
         }
 
         public static void ToggleOption(string key)
@@ -227,7 +229,7 @@ namespace Tossup.UI
             SaveProfile();
         }
 
-        public static void SetFilter(string rarity)
+        public static void SetFilter(CollectionRarityFilter rarity)
         {
             Ui.CollectionFilter = rarity;
             Ui.CollectionPage = 1;
@@ -237,12 +239,12 @@ namespace Tossup.UI
 
         // The coins the selected character starts a run with (its active coin set).
         public static List<CoinDef> Loadout() =>
-            Tossup.Profile.Loadout(Ui.Profile, Ui.SelectedCharacter, Game.StartMax, Game.MaxCopies).ConvertAll(id=>Content.Coins[id]);
+            Tossup.Profile.Loadout(Ui.Profile, Ui.SelectedCharacter.Id, Game.StartMax, Game.MaxCopies).ConvertAll(id=>Content.Coins[id]);
         public static int Stake()
         {
-            int top=Tossup.Profile.MaxStake(Ui.Profile,Ui.SelectedCharacter);return Math.Max(1,Math.Min(top,Ui.StakePick.TryGetValue(Ui.SelectedCharacter,out var n)?n:top));
+            int top=Tossup.Profile.MaxStake(Ui.Profile,Ui.SelectedCharacter.Id);return Math.Max(1,Math.Min(top,Ui.StakePick.TryGetValue(Ui.SelectedCharacter.Id,out var n)?n:top));
         }
-        public static void CycleStake(int delta){Ui.StakePick[Ui.SelectedCharacter]=Math.Max(1,Math.Min(Tossup.Profile.MaxStake(Ui.Profile,Ui.SelectedCharacter),Stake()+delta));}
+        public static void CycleStake(int delta){Ui.StakePick[Ui.SelectedCharacter.Id]=Math.Max(1,Math.Min(Tossup.Profile.MaxStake(Ui.Profile,Ui.SelectedCharacter.Id),Stake()+delta));}
 
         // ---- coin set editor: edits go to a draft and only reach the profile when Save is pressed
 
@@ -271,15 +273,15 @@ namespace Tossup.UI
 
         public static void OpenSets(string characterId)
         {
-            Ui.SetsReturn = Ui.Screen == "select" ? "select" : "title";
-            Ui.SetsCharacter = characterId ?? Ui.SelectedCharacter;
+            Ui.SetsReturn = Ui.Screen == UiScreen.Select ? UiScreen.Select : UiScreen.Title;
+            Ui.SetsCharacter = characterId ?? Ui.SelectedCharacter.Id;
             Ui.SetsIndex = Tossup.Profile.Active(Ui.Profile, Ui.SetsCharacter);
             Ui.SetsCatalogPage = 1;
             Ui.SetDraft = null;
-            Go("sets");
+            Go(UiScreen.Sets);
         }
 
-        public static void BackFromSets() => Go(Ui.SetsReturn == "select" ? "select" : "title");
+        public static void BackFromSets() => Go(Ui.SetsReturn);
 
         public static void SetsPickCharacter(string id)
         {
@@ -326,8 +328,8 @@ namespace Tossup.UI
         public static void CycleActiveSet(int delta)
         {
             int count = Tossup.Profile.SetCount;
-            int index = ((Tossup.Profile.Active(Ui.Profile, Ui.SelectedCharacter) - 1 + delta) % count + count) % count + 1;
-            Tossup.Profile.SetActive(Ui.Profile, Ui.SelectedCharacter, index);
+            int index = ((Tossup.Profile.Active(Ui.Profile, Ui.SelectedCharacter.Id) - 1 + delta) % count + count) % count + 1;
+            Tossup.Profile.SetActive(Ui.Profile, Ui.SelectedCharacter.Id, index);
             SaveProfile();
         }
 
@@ -370,9 +372,9 @@ namespace Tossup.UI
         {
             if(RuntimeMode.Sandbox&&Ui.SandboxConfig!=null){StartSandbox(Ui.SandboxConfig);return;}
             var p = Ui.Platform;
-            if(!Tossup.Profile.CharacterUnlocked(Ui.Profile,Ui.SelectedCharacter))return;
-            Ui.Game = Game.New(seed ?? p.UnixTime + Math.Floor(p.Time * 1000000), Ui.SelectedCharacter,
-                Tossup.Profile.UnlockedList(Ui.Profile, Ui.SelectedCharacter), Loadout(), true, Stake());
+            if(!Tossup.Profile.CharacterUnlocked(Ui.Profile,Ui.SelectedCharacter.Id))return;
+            Ui.Game = Game.New(seed ?? p.UnixTime + Math.Floor(p.Time * 1000000), Ui.SelectedCharacter.Id,
+                Tossup.Profile.UnlockedList(Ui.Profile, Ui.SelectedCharacter.Id), Loadout(), true, Stake());
             Ui.BankDiscardMode = false;
             Ui.FlipAnimation = null;
             Ui.ResolveTimer = 0;
@@ -382,6 +384,7 @@ namespace Tossup.UI
             Ui.EncounterReveal = Ui.Game.RunEncounter == null ? null : new EncounterReveal { Elapsed = 0 };
             Ui.Game.Tutorial = false;
             Ui.Game.ContractsEnabled = false;
+            Ui.Game.MasteryProfile = Ui.Profile;
             savedKey = null;
         }
 
@@ -393,25 +396,26 @@ namespace Tossup.UI
             Ui.SandboxConfig = config;
             Ui.Game = game;
             Ui.BankDiscardMode = false;
-            Ui.SelectedCharacter = Ui.SetsCharacter = game.CharacterId;
+            Ui.SelectedCharacter = Content.Characters[game.CharacterId];
+            Ui.SetsCharacter = game.CharacterId;
             Ui.Tutorial = null;
             Ui.EncounterReveal = null;
             Ui.FlipAnimation = null;
             Ui.Holding = false;
             Ui.ResolveTimer = 0;
-            Ui.Screen = config.Screen;
-            game.Paused = config.Screen != "encounter" && config.Screen != "shop";
-            if (config.Screen == "shop") Game.OpenSandboxShop(game);
+            Ui.Screen = Enum.Parse<UiScreen>(config.Screen, true);
+            game.Paused = Ui.Screen != UiScreen.Encounter && Ui.Screen != UiScreen.Shop;
+            if (Ui.Screen == UiScreen.Shop) Game.OpenSandboxShop(game);
             savedKey = null;
         }
 
-        public static void SelectCharacter(string id) => Ui.SelectedCharacter = id;
+        public static void SelectCharacter(string id) => Ui.SelectedCharacter = Content.Characters[id];
 
         // Step to the previous/next character (wraps around).
         public static void CycleCharacter(int delta)
         {
             var order = Content.CharacterOrder;
-            int i = order.IndexOf(Ui.SelectedCharacter);
+            int i = order.IndexOf(Ui.SelectedCharacter.Id);
             if (i < 0) return;
             SelectCharacter(order[((i + delta) % order.Count + order.Count) % order.Count]);
         }
@@ -518,6 +522,7 @@ namespace Tossup.UI
                 foreach (var owned in game.Coins) fresh = Tossup.Profile.Collect(Ui.Profile, owned.Id) || fresh;
                 if (fresh) SaveProfile();
             }
+            if (Ui.Profile?.MasteryDirty == true) SaveProfile();
             if (game != null && !RuntimeMode.Sandbox && !game.Tutorial && game.Sandbox == null && (game.Phase == Phase.GameOver || game.Phase == Phase.Victory) && game.TokensPaid == null)
             {
                 game.TokensPaid = Game.RunTokens(game);

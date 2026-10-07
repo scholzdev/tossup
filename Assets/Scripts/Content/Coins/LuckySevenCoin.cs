@@ -31,5 +31,15 @@ namespace Tossup.Coins
             inst.Jackpot = Rng.Int(game, 1, 7) == 7;
             if (inst.Jackpot) flip.Result = Side.Heads;
         }
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Lucky Seven jackpots triggered", 7, 28, 84,
+            "Jackpots score +1.", "Jackpots score +2 total.", "Jackpots score +3 total.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
+
+        public LuckySevenCoin()
+        {
+            On.Coins.Flip += (ctx, flip) => { if (ctx.Coin.Jackpot) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && res.Effects.Count > 0 && res.Effects[0].Type == EffectType.Score && res.Effects[0].Amount >= 9 && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(ctx.Mastery.Level)); };
+        }
     }
 }

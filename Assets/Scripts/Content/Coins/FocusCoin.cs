@@ -21,10 +21,16 @@ namespace Tossup.Coins
         {
             new BuffSpec("focus_next_odds", OutcomeSide.Heads, BuffTarget.NextCoins(), Effect.NextOdds(.35)),
         };
-        public override IReadOnlyList<Upgrade> Upgrades { get; } = new Upgrade[]
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Coins affected by Focus", 15, 50, 150,
+            "Tails scores +1 point.", "Its Heads odds buff grows to +40%.", "Its buff reaches the next two coins.",
+            MasterySides.Tails, MasterySides.None, MasterySides.None);
+
+        public FocusCoin()
         {
-            UpgradeCatalog.ClearMind,
-            UpgradeCatalog.FollowThrough,
-        };
+            On.Game.Buffs.Applied += (ctx,e) => { if(e.Buff?.SourceUid==ctx.Coin.Uid && e.Buff.SpecId=="focus_next_odds") ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx,res) => { if(res.Result==Side.Tails && ctx.Mastery.Level>=1) res.Effects.Add(Effect.Score(1)); };
+            On.Coins.BuffCreated += (ctx,buff) => { if(buff.SpecId!="focus_next_odds") return; if(ctx.Mastery.Level>=2) buff.Amount=.40; if(ctx.Mastery.Level>=3) buff.Left=2; };
+        }
     }
 }

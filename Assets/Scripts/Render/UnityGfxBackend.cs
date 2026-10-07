@@ -163,7 +163,7 @@ namespace Tossup.UI
             if (font.Glyphs != null && font.Atlas?.Native is Texture atlas)
             {
                 // baked glyphs: the bitmaps LÖVE itself rasterized, placed exactly as LÖVE places them
-                Use(atlas, false);
+                Use(atlas, true);
                 vertexColor = ToColor(color);
                 float w = font.Atlas.Width, h = font.Atlas.Height;
                 float penX = x, top = y + font.Ascent * sy;

@@ -8,6 +8,7 @@ namespace Tossup
         public const string DeveloperModePreference = "developer-mode.json";
         public static bool Dev { get; private set; }
         public static bool Sandbox { get; private set; }
+        static readonly Random masteryRandom = new Random();
 
         public static void Configure(bool dev, bool sandbox) { Dev = dev; Sandbox = sandbox; }
         public static void ConfigureFromEnvironment() => Configure(
@@ -25,6 +26,14 @@ namespace Tossup
                 foreach (var coin in Content.Characters[characterId].Pool) profile.Collected.Add(coin.Id);
                 foreach (var entry in Content.Characters[characterId].Locked) profile.Collected.Add(entry.Id);
             }
+            if (Dev)
+                foreach (var coin in Content.CoinOrder)
+                    if (coin.Mastery != null)
+                    {
+                        int level = masteryRandom.Next(coin.Mastery.Thresholds.Length + 1);
+                        // profile.CoinMastery[coin.Id] = coin.Mastery.Thresholds[coin.Mastery.Thresholds.Length - 1];
+                        profile.CoinMastery[coin.Id] = level == 0 ? 0 : coin.Mastery.Thresholds[level - 1];
+                    }
             profile.Options.SeenHelp = true;
         }
     }

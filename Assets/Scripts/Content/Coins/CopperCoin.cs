@@ -17,10 +17,30 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Gold(2) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Energy(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
-        public override IReadOnlyList<Upgrade> Upgrades { get; } = new Upgrade[]
+
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Gold earned by Copper", 20, 80, 240,
+            "Heads grants +1 gold.",
+            "Tails grants +1 energy.",
+            "Heads also scores 2 points.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
+
+        public CopperCoin()
         {
-            UpgradeCatalog.CopperLining,
-            UpgradeCatalog.BrightSide,
-        };
+            On.Game.Effects.Applied += (ctx, e) =>
+            {
+                if (e.Inst == ctx.Coin && e.GoldDelta > 0) ctx.Mastery.Add(e.GoldDelta);
+            };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                int level = ctx.Mastery.Level;
+                if (res.Result == Side.Heads)
+                {
+                    if (level >= 1) res.Effects.Add(Effect.Gold(1));
+                    if (level >= 3) res.Effects.Add(Effect.Score(2));
+                }
+                else if (res.Result == Side.Tails && level >= 2) res.Effects.Add(Effect.Energy(1));
+            };
+        }
     }
 }

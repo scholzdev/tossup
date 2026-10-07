@@ -18,6 +18,31 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Gold(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Orchestra Heads with at least four distinct coins", 10, 35, 100,
+            "Heads scores +2 points.", "Tails gains +1 gold.", "Heads scores another +3 points.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
+
+        public OrchestraCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) =>
+            {
+                if (e.Inst != ctx.Coin || e.Res?.Result != Side.Heads) return;
+                var ids = new HashSet<string>();
+                foreach (var coin in ctx.Game.Coins) ids.Add(coin.Id);
+                if (ids.Count >= 4) ctx.Mastery.Add(1);
+            };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                int level = ctx.Mastery.Level;
+                if (res.Result == Side.Heads)
+                {
+                    if (level >= 1) res.Effects.Add(Effect.Score(2));
+                    if (level >= 3) res.Effects.Add(Effect.Score(3));
+                }
+                else if (res.Result == Side.Tails && level >= 2) res.Effects.Add(Effect.Gold(1));
+            };
+        }
 
         public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails)
         {

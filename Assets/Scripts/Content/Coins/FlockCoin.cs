@@ -26,6 +26,13 @@ namespace Tossup.Coins
                 foreach (var other in ctx.Game.Coins)
                     if (other != ctx.Coin && other.Id == ctx.Coin.Id) odds.Heads += .1;
             };
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst != ctx.Coin || e.Flip.Final != Side.Heads) return; foreach (var other in ctx.Game.Coins) if (other != ctx.Coin && other.Id == ctx.Coin.Id) { ctx.Mastery.Add(1); break; } };
+            On.Coins.Odds += (ctx, odds) => { foreach (var other in ctx.Game.Coins) if (other != ctx.Coin && other.Id == ctx.Coin.Id) odds.Heads += .02 * ctx.Mastery.Level; };
         }
+
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Heads landed with another Flock in the deck", 20, 80, 240,
+            "Each other Flock adds +12% Heads instead of +10%.", "Each other Flock adds +14% Heads.", "Each other Flock adds +16% Heads.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
     }
 }

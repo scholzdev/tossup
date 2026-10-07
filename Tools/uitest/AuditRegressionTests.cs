@@ -57,8 +57,8 @@ static class AuditRegressionTests
         g = Scene("normal", "hammer"); Play(g, "normal", Side.Tails); g.Player.Energy = 0; Game.Select(g, g.Coins[1].Uid);
         Check(Game.CoinsLeft(g) == 1 && Game.CanFlip(g), "last remaining coin can emergency flip");
         Game.Flip(g); Check(Near(g.Player.Gold, 48), "emergency energy costs at most two gold");
-        g = Scene("normal", "normal"); g.Coins[0].Upgrade = UpgradeCatalog.LuckyDay; Game.AddBuff(g, "swap", 0, 1, true); Play(g, "normal", Side.Tails);
-        Check(Near(g.LastResult.Gained.Value, 2), "upgrades follow swapped effect side");
+        g = Scene("normal", "normal"); Game.AddBuff(g, "swap", 0, 1, true); Play(g, "normal", Side.Tails);
+        Check(Near(g.LastResult.Gained.Value, 1), "swapped effect side uses the base coin outcome");
         g = Scene("whetstone", "echo", "normal"); Play(g, "whetstone", Side.Heads); Play(g, "echo", Side.Heads);
         Check(g.LastResult.BaseBuffs.Any(b => b.Id == "whetstone_steel" && b.Target.Type == CoinType.Steel && b.Target.Count == 2), "Echo retains typed coin target and duration");
         g = Scene("megaphone", "echo", "normal"); Play(g, "megaphone", Side.Heads); Play(g, "echo", Side.Heads);
@@ -169,10 +169,6 @@ static class AuditRegressionTests
         double beforeCounterpoint = counterpoint.Encounter.Scored;
         Play(counterpoint, "counterpoint", Side.Tails);
         Check(counterpoint.Encounter.Scored-beforeCounterpoint==5, "Counterpoint rewards a side change from the preceding result");
-        Check(UpgradeCatalog.Ordered.Count==18 && UpgradeCatalog.Ordered.Select(u=>u.Id).Distinct().Count()==18,"all upgrade definitions have unique IDs");
-        foreach(var coin in Content.CoinOrder)
-            foreach(var upgrade in coin.Upgrades)
-                Check(ReferenceEquals(upgrade,UpgradeCatalog.ById[upgrade.Id]),"coins reference the shared upgrade definitions");
         Check(D.CoinOutcomeDescription(CoinCatalog.AllIn, Side.Heads) == "Doubles the score." &&
               D.CoinOutcomeDescription(CoinCatalog.AllIn, Side.Tails) == "Scores nothing.",
             "custom coin outcome descriptions replace the empty-effect placeholder");
@@ -187,17 +183,17 @@ static class AuditRegressionTests
         }
         finally {effect.Amount=original;}
         Game.EndLevel(game);
-        game.Coins[0].Upgrade=UpgradeCatalog.LuckyDay;
-        game.ShopOffers[0]=CoinCatalog.Normal;game.ShopUpgrades[0]=UpgradeCatalog.Mathematician;
+        game.ShopOffers[0]=CoinCatalog.Normal;
         string encoded=RunSave.Encode(game);
         Check(encoded.Contains("\"Id\":\"normal\"")&&!encoded.Contains("\"Definition\""),"version-1 saves retain coin ID keys");
         var restored=RunSave.Decode(encoded);
         Check(restored!=null&&ReferenceEquals(restored.Coins[0].Definition,CoinCatalog.Normal)&&ReferenceEquals(restored.ShopOffers[0],CoinCatalog.Normal),"resume resolves saved IDs into shared definition objects");
-        Check(encoded.Contains("\"Upgrade\":\"lucky_day\"") && ReferenceEquals(restored.Coins[0].Upgrade,UpgradeCatalog.LuckyDay) && ReferenceEquals(restored.ShopUpgrades[0],UpgradeCatalog.Mathematician),"version-1 saves restore shared owned/shop upgrade objects");
-        Check(RunSave.Decode(encoded.Replace("\"lucky_day\"","\"safer_bet\""))==null,"restore rejects an upgrade belonging to another coin");
+        string legacy = encoded.Replace("\"Id\":\"normal\"", "\"Id\":\"normal\",\"Upgrade\":\"lucky_day\",\"Bonus\":0.1")
+            .Replace("\"ShopOffers\":", "\"ShopUpgrades\":[\"lucky_day\"],\"ShopOffers\":");
+        Check(legacy != encoded && RunSave.Decode(legacy) != null, "older saves ignore retired coin and shop upgrade fields");
         game.Player.Gold=100;
-        Check(Game.Buy(game,0) && game.ShopOffers[0]==null && game.ShopUpgrades[0]==null && ReferenceEquals(game.Coins[game.Coins.Count-1].Upgrade,UpgradeCatalog.Mathematician),"buying an upgraded offer transfers its definition and clears sold-slot metadata");
-        Check(RunSave.Decode(RunSave.Encode(game))!=null,"shop checkpoint remains resumable after buying an upgraded offer");
+        Check(Game.Buy(game,0) && game.ShopOffers[0]==null && game.Coins[game.Coins.Count-1].Id=="normal","buying a coin does not attach an upgrade");
+        Check(RunSave.Decode(RunSave.Encode(game))!=null,"shop checkpoint remains resumable after buying a coin");
 
         var allInHeads = Scene("allin");
         Play(allInHeads, "allin", Side.Heads);

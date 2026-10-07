@@ -25,5 +25,15 @@ namespace Tossup.Coins
             double interest = Math.Min(3, Math.Floor(game.Player.Gold / 10));
             if (interest > 0) res.Effects.Add(Effect.Gold( interest));
         }
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Heads landed while holding at least 20 gold", 20, 80, 240,
+            "Interest cap rises to +4 gold.", "Interest cap rises to +5 gold.", "Interest cap rises to +6 gold.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
+
+        public BankCoin()
+        {
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Game.Player.Gold >= 20) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Gold(Math.Max(0, Math.Min(3 + ctx.Mastery.Level, Math.Floor(ctx.Game.Player.Gold / 10)) - Math.Min(3, Math.Floor(ctx.Game.Player.Gold / 10))))); };
+        }
     }
 }

@@ -18,6 +18,23 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Score(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Other coins copied on Mimic Heads", 10, 35, 100,
+            "A successful copy scores +1 point.", "A successful copy gains 1 gold.", "A successful copy scores another +2 points.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
+
+        public MimicCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin && e.Res?.Result == Side.Heads && e.Flip?.BaseEffects?.Count > 0) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (res.Result != Side.Heads || res.Effects.Count == 0) return;
+                int level = ctx.Mastery.Level;
+                if (level >= 1) res.Effects.Add(Effect.Score(1));
+                if (level >= 2) res.Effects.Add(Effect.Gold(1));
+                if (level >= 3) res.Effects.Add(Effect.Score(2));
+            };
+        }
 
         public override void OnResolve(GameState game, CoinInst inst, Res res)
         {

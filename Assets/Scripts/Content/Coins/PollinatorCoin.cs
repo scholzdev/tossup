@@ -22,5 +22,27 @@ namespace Tossup.Coins
         {
             new BuffSpec("pollinator", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Fortune), Effect.Score(2), OutcomeSide.Heads)
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Fortune coins buffed by Pollinator", 10, 40, 120,
+            "Its buff scores +3 on Heads.", "Tails also scores 1 point.", "Its buff reaches two Fortune coins.",
+            MasterySides.None, MasterySides.Tails, MasterySides.None);
+
+        public PollinatorCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) =>
+            {
+                if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "pollinator") ctx.Mastery.Add(1);
+            };
+            On.Coins.BuffCreated += (ctx, buff) =>
+            {
+                if (buff.SpecId != "pollinator") return;
+                if (ctx.Mastery.Level >= 1) buff.AppliedEffect.Amount = 3;
+                if (ctx.Mastery.Level >= 3) buff.Left = 2;
+            };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (res.Result == Side.Tails && ctx.Mastery.Level >= 2) res.Effects.Add(Effect.Score(1));
+            };
+        }
     }
 }

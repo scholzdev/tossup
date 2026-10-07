@@ -17,5 +17,16 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2), Effect.ExtraDraw(1) };
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Lucky Heads landed", 15, 50, 150,
+            "Heads scores +1 point.", "Heads chance +3%.", "Heads draws one additional coin.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
+
+        public LuckyCoin()
+        {
+            On.Game.Coins.Resolved += (ctx,e) => { if(e.Inst==ctx.Coin && e.Res.Result==Side.Heads) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx,res) => { if(res.Result==Side.Heads) { if(ctx.Mastery.Level>=1) res.Effects.Add(Effect.Score(1)); if(ctx.Mastery.Level>=3) res.Effects.Add(Effect.ExtraDraw(1)); } };
+            On.Coins.Odds += (ctx,odds) => { if(ctx.Mastery.Level>=2) odds.Heads+=.03; };
+        }
     }
 }

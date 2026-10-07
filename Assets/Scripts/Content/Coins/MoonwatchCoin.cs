@@ -26,6 +26,13 @@ namespace Tossup.Coins
                 if ((int)(ctx.ElapsedSeconds / 2) % 2 == 0) odds.Heads += 0.12;
                 else odds.Edge += 0.12;
             };
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin && e.Flip.Final == Side.Tie) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Tie && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(ctx.Mastery.Level)); };
         }
+
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Edge results landed with Moonwatch", 20, 80, 240,
+            "Edge also scores 1 point.", "Edge also scores 2 points total.", "Edge also scores 3 points total.",
+            MasterySides.Edge, MasterySides.Edge, MasterySides.Edge);
     }
 }

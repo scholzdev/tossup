@@ -17,5 +17,15 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(3), Effect.ComboBonus(1) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Score(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Extra combo steps earned with Crescendo", 20, 80, 240,
+            "Heads scores +1.", "Heads scores +2 total.", "Heads grants a second extra combo step.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
+
+        public CrescendoCoin()
+        {
+            On.Game.Effects.Applied += (ctx, e) => { if (e.Inst == ctx.Coin && e.Effect?.Type == EffectType.ComboBonus) ctx.Mastery.Add(e.Effect.Amount); };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result != Side.Heads) return; if (ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(Math.Min(2, ctx.Mastery.Level))); if (ctx.Mastery.Level >= 3) res.Effects.Add(Effect.ComboBonus(1)); };
+        }
     }
 }

@@ -50,10 +50,10 @@ namespace Tossup
         static CoinInst NewCoin(GameState game, CoinDef definition)
         {
             game.NextUid++;
-            return new CoinInst { Uid = game.NextUid, Definition = definition, Bonus = 0 };
+            return new CoinInst { Uid = game.NextUid, Definition = definition };
         }
 
-        static CoinInst NewCoin(GameState game, string id) => NewCoin(game, Content.Coins[id]);
+        internal static CoinInst NewCoin(GameState game, string id) => NewCoin(game, Content.Coins[id]);
 
         public static CoinInst GetCoin(GameState game, int uid)
         {
@@ -64,7 +64,7 @@ namespace Tossup
 
         public static int ActiveCount(GameState game) => game.Coins.Count;
 
-        static CoinInst AddToDeck(GameState game, CoinDef definition)
+        internal static CoinInst AddToDeck(GameState game, CoinDef definition)
         {
             var item = NewCoin(game, definition);
             game.Coins.Add(item);
@@ -99,7 +99,7 @@ namespace Tossup
         }
 
         // Coins a coin set may contain: the character's starting pool plus coins already unlocked.
-        static List<CoinDef> UsablePool(GameState game)
+        internal static List<CoinDef> UsablePool(GameState game)
         {
             var pool = new List<CoinDef>();
             var seen = new HashSet<CoinDef>();
@@ -162,9 +162,8 @@ namespace Tossup
                     if (buff.Kind == "odds" && !buff.Fresh && BuffTargets(buff, item)) boost += buff.Amount;
             }
             var def = item.Definition;
-            double upgrade = def.UpgradeHeadsProbability(item.Upgrade);
             double fortune = HasType(item, "fortune") ? game.FortuneBonus : 0;
-            double p = (sandboxOdds?.Heads ?? def.Probability) + item.Bonus + bonus + magnet + boost + upgrade + fortune;
+            double p = (sandboxOdds?.Heads ?? def.Probability) + bonus + magnet + boost + fortune;
             double edge = Math.Max(0, Math.Min(1, sandboxOdds?.Tie ?? def.TieProbability));
             double heads = Math.Max(0, Math.Min(1 - edge, p));
             var odds = new Odds(heads, edge, 1 - heads - edge);
@@ -289,7 +288,7 @@ namespace Tossup
             }
             int uid = preferredUid.HasValue && e.Queue.Contains(preferredUid.Value) ? preferredUid.Value : e.Queue[0];
             var inst = GetCoin(game, uid);
-            game.Dealt = new FlipState { Uid = uid };
+            game.Dealt = new FlipState { Uid = uid, OddsSampleTime = e.ElapsedSeconds };
             game.SelectedUid = uid;
             Log(game, CoinName(inst) + " #" + uid + " dealt.");
             game.Peek = null;
@@ -453,12 +452,15 @@ namespace Tossup
         // Buffs: "the next N coins ..." effects. kind: "mult" (x amount on score and gold), "odds" (+amount
         // Heads), "swap" (use the other side's effects), "heads" (guaranteed Heads). A buff made while a coin
         // resolves is "fresh" and starts with the following coin; every resolved coin uses up one coin.
-        public static void AddBuff(GameState game, string kind, double amount, int? coins, bool immediate = false)
+        public static void AddBuff(GameState game, string kind, double amount, int? coins, bool immediate = false, CoinInst source = null)
         {
-            game.Encounter.Buffs.Add(new Buff { Kind = kind, Amount = amount, Left = coins ?? 1, Fresh = !immediate });
+            var buff = new Buff { Kind = kind, Amount = amount, Left = coins ?? 1,
+                Fresh = !immediate, SourceUid = source?.Uid ?? 0 };
+            if (source != null) source.Definition.On.Coins.RaiseBuffCreated(new HookContext(game, source), buff);
+            game.Encounter.Buffs.Add(buff);
         }
 
-        public static void AddBuff(GameState game, BuffSpec spec, bool immediate = false)
+        public static void AddBuff(GameState game, BuffSpec spec, bool immediate = false, CoinInst source = null)
         {
             if (game == null) throw new ArgumentNullException(nameof(game));
             if (spec == null) throw new ArgumentNullException(nameof(spec));
@@ -467,6 +469,7 @@ namespace Tossup
                 Kind = "effect", SpecId = spec.Id, TargetType = spec.Target.Type,
                 AppliesOn = spec.AppliesOn, AppliedEffect = spec.Effect.Copy(),
                 Left = spec.Target.Count, Fresh = !immediate,
+                SourceUid = source?.Uid ?? 0,
             };
             switch (spec.Effect.Type)
             {
@@ -478,8 +481,14 @@ namespace Tossup
                     if (!spec.Effect.Kind.HasValue) throw new ArgumentException("Type buffs require a coin type.", nameof(spec));
                     buff.Kind = DefinitionKeys.Key(spec.Effect.Kind.Value);
                     buff.TargetType = spec.Effect.Kind;
+                    if (spec.Effect.Kind.Value == CoinType.Steel)
+                    {
+                        buff.Amount = 3;
+                        buff.PenaltyAmount = 2;
+                    }
                     break;
             }
+            if (source != null) source.Definition.On.Coins.RaiseBuffCreated(new HookContext(game, source), buff);
             game.Encounter.Buffs.Add(buff);
         }
 
@@ -499,7 +508,12 @@ namespace Tossup
             {
                 if (buff.Fresh) buff.Fresh = false;
                 else if (buff.TargetType.HasValue ? HasType(item, buff.TargetType.Value) :
-                    !IsTypeBuff(buff.Kind) || HasType(item, buff.Kind)) buff.Left--;
+                    !IsTypeBuff(buff.Kind) || HasType(item, buff.Kind))
+                {
+                    buff.Left--;
+                    if (buff.Kind != "effect" && !IsTypeBuff(buff.Kind))
+                        Signal.Emit(GameSignal.BuffApplied, new GameEvent { Game = game, Inst = item, Buff = buff });
+                }
                 if (buff.Left > 0) kept.Add(buff);
             }
             game.Encounter.Buffs = kept;
@@ -540,7 +554,8 @@ namespace Tossup
                 game.Player.Gold -= lost;
                 Log(game, "EMERGENCY FLIP: -" + N(lost) + " GOLD FOR UNPAID ENERGY.");
             }
-            game.Pending = new FlipState { Uid = uid, CoinId = item.Id, Probability = probability, TieProbability = tieProbability };
+            game.Pending = new FlipState { Uid = uid, CoinId = item.Id, Probability = probability,
+                TieProbability = tieProbability, OddsSampleTime = game.Dealt.OddsSampleTime };
             game.Dealt = null;
             game.Encounter.Queue.Remove(uid); // the selected coin leaves the bank at once
             game.Encounter.Played.Add(uid);
@@ -653,7 +668,7 @@ namespace Tossup
                     return "Fortune +" + N(Math.Floor(game.FortuneBonus * 100 + .5)) + "% Heads for the run";
                 case EffectType.TypeBuff:
                     string type = DefinitionKeys.Key(effect.Kind.Value);
-                    AddBuff(game, type, 0, effect.Coins); return "next " + (effect.Coins ?? 1) + " " + type + " coins";
+                    AddBuff(game, type, 0, effect.Coins, source: item); return "next " + (effect.Coins ?? 1) + " " + type + " coins";
                 case EffectType.BankDiscard:
                     e.BankDiscards += (int)effect.Amount; return "discard one";
                 case EffectType.ExtraExchange:
@@ -674,16 +689,16 @@ namespace Tossup
                     e.Shield += effect.Amount;
                     return "combo shield";
                 case EffectType.NextMult:
-                    AddBuff(game, "mult", effect.Amount, effect.Coins);
+                    AddBuff(game, "mult", effect.Amount, effect.Coins, source: item);
                     return "next " + (effect.Coins ?? 1) + " coins x" + N(effect.Amount);
                 case EffectType.NextOdds:
-                    AddBuff(game, "odds", effect.Amount, effect.Coins);
+                    AddBuff(game, "odds", effect.Amount, effect.Coins, source: item);
                     return "next " + (effect.Coins ?? 1) + " coins +" + N(Math.Floor(effect.Amount * 100 + .5)) + "% Heads";
                 case EffectType.NextSwap:
-                    AddBuff(game, "swap", 0, effect.Coins);
+                    AddBuff(game, "swap", 0, effect.Coins, source: item);
                     return "next coin uses its other side";
                 case EffectType.NextHeads:
-                    AddBuff(game, "heads", 0, effect.Coins);
+                    AddBuff(game, "heads", 0, effect.Coins, source: item);
                     return "next coin lands Heads";
                 case EffectType.Penalty:
                     e.Quota += effect.Amount; // a penalty moves the goalposts
@@ -749,9 +764,9 @@ namespace Tossup
             Hooks.ShopOpened(game);
         }
 
-        static ShopPurchase PrepareShopPurchase(GameState game, ShopPurchaseKind kind, string id, int cost, string upgradeId = null)
+        static ShopPurchase PrepareShopPurchase(GameState game, ShopPurchaseKind kind, string id, int cost)
         {
-            var purchase = new ShopPurchase(game, kind, id, cost, upgradeId);
+            var purchase = new ShopPurchase(game, kind, id, cost);
             if (!Hooks.BeforePurchase(game, purchase) || game.Player.Gold < purchase.Cost) return null;
             return purchase;
         }
@@ -798,7 +813,7 @@ namespace Tossup
             {
                 if (final == Side.Tie && !(game.RunEncounter?.SideBetTieLoses ?? false)) { game.Player.Gold += e.SideBetCost; e.SideBetOutcome = "PUSH"; Log(game, "Side bet pushed; stake returned."); }
                 else if (final == e.SideBetSide) { game.Player.Gold += e.SideBetPayout; e.SideBetOutcome = "WON"; Log(game, "Side bet won: +" + N(e.SideBetPayout) + " gold."); }
-                else { e.SideBetOutcome = "LOST"; Log(game, "Side bet lost."); if (HasAugment(game, "hedge_fund")) game.NextLevelQuotaBonus += 2; }
+                else { e.SideBetOutcome = "LOST"; Log(game, "Side bet lost."); foreach (var augment in ActiveAugments(game)) augment.OnSideBetLost(game); }
             }
             if (final == Side.Heads) e.Streak++;
             else if (final == Side.Tails) e.Streak = 0; // a Tie holds the streak
@@ -820,20 +835,22 @@ namespace Tossup
             bool swap = BuffActive(game, "swap", item) != null;
             bool headsEffects = final != Side.Tie && (swap ? final != Side.Heads : final == Side.Heads);
             var outcome = final == Side.Tie ? OutcomeSide.Edge : headsEffects ? OutcomeSide.Heads : OutcomeSide.Tails;
-            foreach (var effect in def.EffectsFor(outcome, item.Upgrade)) res.Effects.Add(effect.Copy());
+            foreach (var effect in def.EffectsFor(outcome)) res.Effects.Add(effect.Copy());
             double tailsGold = final == Side.Tails ? CharacterPerkValue(game, CharacterPerkType.TailsGold) : 0;
             if (tailsGold > 0) res.Effects.Add(Effect.Gold(tailsGold));
             Signal.Emit(GameSignal.CoinResolve, new GameEvent { Game = game, Inst = item, Res = res });
-            foreach (var buff in def.BuffsFor(item.Upgrade))
+            foreach (var buff in def.BuffsFor())
                 if (buff.Trigger == outcome) res.Buffs.Add(buff.Copy());
-            foreach (var buff in res.Buffs) AddBuff(game, buff);
+            foreach (var buff in res.Buffs) AddBuff(game, buff, source: item);
             foreach (var buff in e.Buffs)
                 if (!buff.Fresh && buff.Kind == "effect" &&
                     (!buff.TargetType.HasValue || HasType(item, buff.TargetType.Value)) &&
                     (!buff.AppliesOn.HasValue || buff.AppliesOn == outcome) && buff.AppliedEffect != null)
+                {
                     res.Effects.Add(buff.AppliedEffect.Copy());
-            if (final == Side.Heads && game.AugmentData.TryGetValue("type_specialist", out var specialist) && HasType(item, specialist) && e.TypeSpecialistPaid.Add(item.Uid))
-                res.Effects.Add(new Effect(EffectType.Score, 1));
+                    Signal.Emit(GameSignal.BuffApplied, new GameEvent { Game = game, Inst = item, Buff = buff });
+                }
+            foreach (var augment in ActiveAugments(game)) augment.OnResolve(game, item, final, res);
             ApplyTypeBuffs(game, item, final, comboBroke, res.Effects);
             if(final==Side.Tails)e.Tails++;
             result.BaseEffects = new List<Effect>(); // what this coin did before multipliers (True Echo repeats it)
@@ -845,10 +862,10 @@ namespace Tossup
             foreach (var buff in e.Buffs)
                 if (buff.Kind == "mult" && !buff.Fresh && BuffTargets(buff, item)) multiplier *= buff.Amount;
             double combo = Math.Min(e.ComboCap, 1 + e.ComboStep * (Math.Max(e.ComboLen, 1) - 1));
-            if (e.PushUsed && HasAugment(game, "all_in"))
+            foreach (var augment in ActiveAugments(game))
             {
-                if (final == previousComboSide && !e.AllInPaid) { combo *= 2; e.AllInPaid = true; messagesAllIn = "All-In push succeeded: combo payout doubled."; }
-                else { double pushLoss=Math.Min(2,game.Player.Gold);game.Player.Gold-=pushLoss;messagesAllIn="All-In push failed: -"+N(pushLoss)+" gold."; }
+                string message = augment.OnPush(game, final, previousComboSide, ref combo);
+                if (message != null) messagesAllIn = message;
             }
             if (res.CashOut) combo *= combo; // Cash Out spends the combo twice (then resets it)
             if (e.Contract?.Id == "bank_once") combo = Math.Min(combo, 2);
@@ -867,9 +884,23 @@ namespace Tossup
             {
                 var effect = res.Effects[i];
                 double goldBefore = game.Player.Gold;
+                double energyBefore = game.Player.Energy;
+                double scoreEffectBefore = e.Scored;
+                double quotaEffectBefore = e.MaxQuota;
+                int returnedBefore = e.Returned;
+                int buffsAffected = effect.Type == EffectType.Amplify ? e.Buffs.Count : 0;
                 string text = ApplyEffect(game, item, effect);
-                messages.Add(text);
-                Signal.Emit(GameSignal.EffectApplied, new GameEvent { Game = game, Inst = item, Effect = effect, Text = text });
+                var applied = Signal.Emit(GameSignal.EffectApplied, new GameEvent
+                {
+                    Game = game, Inst = item, Effect = effect, Text = text,
+                    ScoreDelta = e.Scored - scoreEffectBefore,
+                    GoldDelta = game.Player.Gold - goldBefore,
+                    EnergyDelta = game.Player.Energy - energyBefore,
+                    QuotaDelta = e.MaxQuota - quotaEffectBefore,
+                    ReturnedDelta = e.Returned - returnedBefore,
+                    BuffsAffected = buffsAffected,
+                });
+                messages.Add(applied.Text);
                 double gainedGold = Math.Max(0, game.Player.Gold - goldBefore);
                 if (greed > 0 && gainedGold > 0) { double extra = gainedGold * (Math.Pow(2, greed) - 1); game.Player.Gold += extra; messages.Add("+" + N(extra) + " greed gold"); }
             }
@@ -887,7 +918,7 @@ namespace Tossup
             result.Gained = e.Scored - scoredBefore; // for the UI: what this flip was worth
             result.Penalty = e.MaxQuota - quotaTotalBefore;
             e.BestScores.TryGetValue(item.Uid, out var previousBest); e.BestScores[item.Uid] = Math.Max(previousBest, result.Gained.Value);
-            Signal.Emit(GameSignal.CoinResolved, new GameEvent { Game = game, Inst = item, Res = res });
+            Signal.Emit(GameSignal.CoinResolved, new GameEvent { Game = game, Inst = item, Res = res, Flip = result });
             Hooks.Unbind();
             Hooks.Grow(game, item, CoinGrowthEvent.Flip);
             Log(game, def.Name + " #" + item.Uid + ": " + final + (final != result.Raw ? " (raw " + result.Raw + ")" : "") +
@@ -1052,15 +1083,13 @@ namespace Tossup
         {
             var coin = game.Phase == Phase.Shop && index >= 0 && index < game.ShopOffers.Count ? game.ShopOffers[index] : null;
             if (coin == null || game.Coins.Count >= game.Slots) return false;
-            Upgrade upgrade = index < game.ShopUpgrades.Count ? game.ShopUpgrades[index] : null;
-            var purchase = PrepareShopPurchase(game, ShopPurchaseKind.Coin, coin.Id, CoinOfferCost(game, index), upgrade?.Id);
+            var purchase = PrepareShopPurchase(game, ShopPurchaseKind.Coin, coin.Id, CoinOfferCost(game, index));
             if (purchase == null) return false;
             game.ShopOffers[index] = null;
-            if (index < game.ShopUpgrades.Count) game.ShopUpgrades[index] = null;
             game.Purchased.Add(coin.Id); // the UI turns purchases of locked coins into permanent unlocks
             game.Player.Gold -= purchase.Cost;
-            var bought = AddToDeck(game, coin); bought.Upgrade = upgrade;
-            Log(game, "Bought " + coin.Name + (upgrade == null ? "" : " (" + upgrade.Name + ")") + " for " + purchase.Cost + " gold.");
+            AddToDeck(game, coin);
+            Log(game, "Bought " + coin.Name + " for " + purchase.Cost + " gold.");
             Hooks.AfterPurchase(game, purchase);
             return true;
         }
@@ -1110,21 +1139,6 @@ namespace Tossup
                 return true;
             }
             return false;
-        }
-
-        public static bool Upgrade(GameState game, int uid)
-        {
-            if (game.Phase != Phase.Shop) return false;
-            var item = GetCoin(game, uid);
-            if (item == null || Probability(game, item) >= 1) return false;
-            var purchase = PrepareShopPurchase(game, ShopPurchaseKind.CoinUpgrade, item.Id, 10);
-            if (purchase == null) return false;
-            game.Player.Gold -= purchase.Cost;
-            var def = item.Definition;
-            item.Bonus = Math.Min(1 - def.Probability, item.Bonus + .10);
-            Log(game, def.Name + " upgraded to " + N(Math.Floor((def.Probability + item.Bonus) * 100 + .5)) + "% Heads.");
-            Hooks.AfterPurchase(game, purchase);
-            return true;
         }
 
         public static bool LeaveShop(GameState game)

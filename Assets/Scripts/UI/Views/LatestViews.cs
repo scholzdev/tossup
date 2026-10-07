@@ -13,7 +13,7 @@ namespace Tossup.UI
                 float at=x+i++*(size+5);if(Ui.EncounterImages.TryGetValue(encounter.Id,out var image))ImageAt(image,at,y,size);else{Box(at,y,size,size,C.PanelDk);Centered("E",at,y+5,size,Ui.F20,C.Gold);}
                 TextHover(encounter.Name,encounter.Description,at,y,size,size);
             }
-            foreach(var id in g.Augments){float at=x+i++*(size+5);if(Ui.AugmentImages.TryGetValue(id,out var image))ImageAt(image,at,y,size);var d=Game.AugmentDefs[id];string detail=d.Description;if(id=="type_specialist"&&g.AugmentData.TryGetValue(id,out var selected))detail+=" ["+selected.ToUpper()+"]";TextHover(d.Name,detail,at,y,size,size);}
+            foreach(var id in g.Augments){float at=x+i++*(size+5);if(Ui.AugmentImages.TryGetValue(id,out var image))ImageAt(image,at,y,size);var d=Game.AugmentDefs[id];TextHover(d.Name,d.Detail(g),at,y,size,size);}
         }
     }
 
@@ -85,11 +85,7 @@ namespace Tossup.UI
         {
             var pending = g.AugmentPending;
             var def = Game.AugmentDefs[pending.Id];
-            string heading = pending.Id == "epic_windfall" ? "CHOOSE A COIN TO REPLACE" :
-                pending.Id == "reforger" ? "CHOOSE A COIN TO REFORGE" :
-                pending.Id == "type_specialist" ? "CHOOSE A COIN TYPE" :
-                pending.Id == "upgrade_press" ? "CHOOSE A COIN UPGRADE" : def.Name.ToUpper();
-            Centered(L(heading), 70, 126, 1140, Ui.F20, C.Gold);
+            Centered(L(def.ChoiceHeading), 70, 126, 1140, Ui.F20, C.Gold);
             string subtitle = pending.RewardId != null
                 ? L("NEW COIN: %s", Lang.CoinName(pending.RewardId))
                 : L(def.Description);
@@ -115,7 +111,7 @@ namespace Tossup.UI
                 float y = 210 + (i / cols) * (height + gap);
                 Rgba typeColor = C.Line;
                 CoinType choiceType = default;
-                bool typedChoice = pending.Id == "type_specialist" && Enum.TryParse(choice.Key, true, out choiceType);
+                bool typedChoice = def.ChoicesAreTypes && Enum.TryParse(choice.Key, true, out choiceType);
                 if (typedChoice) typeColor = CoinTypeColor(choiceType);
                 Box(x, y, width, height, C.PanelDk);
                 Outline(x, y, width, height, typeColor);
@@ -130,13 +126,10 @@ namespace Tossup.UI
                 string title = hasCoin ? Lang.CoinName(choice.CoinId) : L(choice.Title);
                 Text(title, textX, y + 8, Ui.F20, typedChoice ? typeColor : C.Gold);
                 bool compact = choices.Count > 12;
-                string detail = choice.UpgradeName != null
-                    ? L(choice.UpgradeName) + (compact ? "" : ": " + L(choice.Detail))
-                    : L(choice.Detail);
+                string detail = L(choice.Detail);
                 Gfx.SetFont(Ui.F16);
                 Color(C.Face);
                 Gfx.Printf(detail, textX, y + 35, textWidth);
-                if (compact && choice.UpgradeName != null) TextHover(L(choice.UpgradeName), L(choice.Detail), x, y, width, height);
                 float buttonHeight = Math.Min(28, Math.Max(18, height - 8));
                 Button(L("CHOOSE"), x + 12, y + height - buttonHeight - 6, width - 24, buttonHeight, C.Blue,
                     () => A.ChooseAugmentOption(choice.Key));

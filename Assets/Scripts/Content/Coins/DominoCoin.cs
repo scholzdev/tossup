@@ -21,5 +21,16 @@ namespace Tossup.Coins
         {
             new BuffSpec("domino_force_heads", OutcomeSide.Heads, BuffTarget.NextCoins(), Effect.NextHeads()),
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Coins given guaranteed Heads by Domino", 15, 60, 180,
+            "Domino Heads scores +1.", "Domino Heads scores +2 total.", "Its Heads buff reaches a second coin.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.None);
+
+        public DominoCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) => { if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "domino_force_heads") ctx.Mastery.Add(1); };
+            On.Coins.BuffCreated += (ctx, buff) => { if (buff.SpecId == "domino_force_heads" && ctx.Mastery.Level >= 3) buff.Left = 2; };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(Math.Min(2, ctx.Mastery.Level))); };
+        }
     }
 }

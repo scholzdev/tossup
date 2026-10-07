@@ -21,5 +21,15 @@ namespace Tossup.Coins
         {
             new BuffSpec("mirror_swap_next", OutcomeSide.Heads, BuffTarget.NextCoins(), Effect.NextSwap()),
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Coins affected by Mirror swaps", 15, 60, 180,
+            "Mirror Heads scores +1.", "Mirror Tails scores +1.", "Mirror Heads scores +2 total.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
+
+        public MirrorCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) => { if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "mirror_swap_next") ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Mastery.Level >= 1) res.Effects.Add(Effect.Score(ctx.Mastery.Level >= 3 ? 2 : 1)); else if (res.Result == Side.Tails && ctx.Mastery.Level >= 2) res.Effects.Add(Effect.Score(1)); };
+        }
     }
 }

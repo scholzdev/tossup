@@ -3,6 +3,10 @@ using System.Collections.Generic;
 
 namespace Tossup.UI
 {
+    public enum UiScreen { Title, Select, Sets, Collection, CoinDetail, Options, Help, Encounter, Shop }
+    public enum CollectionRarityFilter { All, Common, Uncommon, Rare, Epic }
+    public enum CollectionSortMode { Rarity, Name, Order }
+
     // A clickable area registered while drawing; clicks are matched against the last frame's list.
     public sealed class Button
     {
@@ -25,8 +29,6 @@ namespace Tossup.UI
         public double Probability;
         public bool Locked;
         public double TieProbability;
-        public Upgrade Upgrade;
-        public bool OddsTuned;
     }
 
     public sealed class HoverRegion
@@ -72,10 +74,10 @@ namespace Tossup.UI
 
         public static IPlatform Platform;
 
-        public static string SelectedCharacter = "blade";
-        public static string Screen = "title"; // title | select | sets | collection | options | help
+        public static CharacterDef SelectedCharacter = Content.Characters["blade"];
+        public static UiScreen Screen = UiScreen.Title;
         public static string SetsCharacter = "blade"; // coin set editor: which character and which of its sets is open
-        public static string SetsReturn = "title";
+        public static UiScreen SetsReturn = UiScreen.Title;
         public static int SetsIndex = 1;
         public static int SetsCatalogPage = 1;
         public static SetDraft SetDraft; // unsaved edits of the open coin set
@@ -83,8 +85,8 @@ namespace Tossup.UI
         public static int CollectionPage = 1;
         public static string CollectionCategory = "coins";
         public static readonly Dictionary<string,int> StakePick = new Dictionary<string,int>();
-        public static string CollectionFilter = "ALL";
-        public static string CollectionSort = "rarity";
+        public static CollectionRarityFilter CollectionFilter = CollectionRarityFilter.All;
+        public static CollectionSortMode CollectionSort = CollectionSortMode.Rarity;
         public static GameState Game;
         public static ProfileData Profile; // meta progression (tokens, unlocks), loaded in AppCore.Load
         public static List<Button> Buttons = new List<Button>();
@@ -106,7 +108,7 @@ namespace Tossup.UI
         public static string OptionsTab = "game"; // game | sound | controls
         public static string ControlsView; // keyboard | controller; null follows the last input device
         public static Confirm Confirm; // a modal popup: Clear Progress, Quit during a run
-        public static string HelpNext; // where the How To Play "continue" button goes on a first run
+        public static UiScreen? HelpNext; // where the How To Play "continue" button goes on a first run
         public static string CursorCurrent;
         public static FlipAnimation FlipAnimation;
         public static double Shake;

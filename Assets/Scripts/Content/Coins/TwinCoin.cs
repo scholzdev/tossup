@@ -24,5 +24,15 @@ namespace Tossup.Coins
             var previous = game.LastResult;
             if (previous != null) flip.Result = previous.Final;
         }
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Previous outcomes matched", 20, 80, 240,
+            "Matched Heads scores +1.", "Matched Tails scores +1.", "Both matched outcomes score +1 more.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Heads | MasterySides.Tails);
+
+        public TwinCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin && ctx.Game.LastResult != null && e.Flip.Final == ctx.Game.LastResult.Final) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) => { if (ctx.Game.LastResult == null || res.Result != ctx.Game.LastResult.Final) return; if (res.Result == Side.Heads && ctx.Mastery.Level >= 1) res.Effects.Add(Effect.Score(ctx.Mastery.Level >= 3 ? 2 : 1)); if (res.Result == Side.Tails && ctx.Mastery.Level >= 2) res.Effects.Add(Effect.Score(ctx.Mastery.Level >= 3 ? 2 : 1)); };
+        }
     }
 }

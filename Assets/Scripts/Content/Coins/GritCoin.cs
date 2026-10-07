@@ -17,5 +17,15 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(1) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Energy(1) };
         public override IReadOnlyList<Effect> Edge { get; } = new[] { Effect.Score(1), Effect.Energy(1) };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Energy earned from Grit", 20, 80, 240,
+            "Grit Heads scores +1.", "Grit Tails scores 1.", "Grit Edge scores +1.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Edge);
+
+        public GritCoin()
+        {
+            On.Game.Effects.Applied += (ctx, e) => { if (e.Inst == ctx.Coin && e.Effect?.Type == EffectType.Energy && e.EnergyDelta > 0) ctx.Mastery.Add(e.EnergyDelta); };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Mastery.Level >= 1) res.Effects.Add(Effect.Score(1)); if (res.Result == Side.Tails && ctx.Mastery.Level >= 2) res.Effects.Add(Effect.Score(1)); if (res.Result == Side.Tie && ctx.Mastery.Level >= 3) res.Effects.Add(Effect.Score(1)); };
+        }
     }
 }

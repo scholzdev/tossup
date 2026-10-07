@@ -19,16 +19,21 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Array.Empty<Effect>();
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Prototype random outputs triggered", 20, 65, 200,
+            "Score output rises to 4 points.", "Gold output rises to 3 gold.", "Energy output rises to 2 energy.",
+            MasterySides.All, MasterySides.All, MasterySides.All);
 
         public PrototypeCoin()
         {
             On.Coins.Resolve += (context, result) =>
             {
+                context.Mastery.Add(1);
                 switch (Rng.Int(context.Game, 1, 3))
                 {
-                    case 1: result.Effects.Add(Effect.Score(3)); break;
-                    case 2: result.Effects.Add(Effect.Gold(2)); break;
-                    default: result.Effects.Add(Effect.Energy(1)); break;
+                    case 1: result.Effects.Add(Effect.Score(context.Mastery.Level >= 1 ? 4 : 3)); break;
+                    case 2: result.Effects.Add(Effect.Gold(context.Mastery.Level >= 2 ? 3 : 2)); break;
+                    default: result.Effects.Add(Effect.Energy(context.Mastery.Level >= 3 ? 2 : 1)); break;
                 }
             };
         }

@@ -18,12 +18,23 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(1) };
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Array.Empty<Effect>();
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Drumroll third-flip bonuses triggered", 10, 35, 100,
+            "Each third flip scores +1 point.", "Heads scores +1 point.", "Each third flip scores another +2 points.",
+            MasterySides.All, MasterySides.Heads, MasterySides.All);
 
         public DrumrollCoin()
         {
             On.Coins.Resolve += (context, result) =>
             {
-                if (context.Game.Encounter.Flips % 3 == 0) result.Effects.Add(Effect.Score(3));
+                if (context.Game.Encounter.Flips % 3 == 0)
+                {
+                    context.Mastery.Add(1);
+                    result.Effects.Add(Effect.Score(3));
+                    if (context.Mastery.Level >= 1) result.Effects.Add(Effect.Score(1));
+                    if (context.Mastery.Level >= 3) result.Effects.Add(Effect.Score(2));
+                }
+                if (result.Result == Side.Heads && context.Mastery.Level >= 2) result.Effects.Add(Effect.Score(1));
             };
         }
     }

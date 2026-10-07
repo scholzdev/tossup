@@ -17,5 +17,15 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Quota(2), Effect.FortuneOdds(0.11) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Compost Tails landed", 12, 45, 135,
+            "Tails adds 1 less quota.", "Its Fortune odds bonus grows by 2%.", "Heads scores +1 point.",
+            MasterySides.Tails, MasterySides.None, MasterySides.Heads);
+
+        public CompostCoin()
+        {
+            On.Game.Coins.Resolved += (ctx,e) => { if(e.Inst==ctx.Coin && e.Res.Result==Side.Tails) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx,res) => { if(res.Result==Side.Tails) foreach(var effect in res.Effects) { if(effect.Type==EffectType.Penalty && ctx.Mastery.Level>=1) effect.Amount=Math.Max(0,effect.Amount-1); if(effect.Type==EffectType.FortuneOdds && ctx.Mastery.Level>=2) effect.Amount+=.02; } if(res.Result==Side.Heads && ctx.Mastery.Level>=3) res.Effects.Add(Effect.Score(1)); };
+        }
     }
 }

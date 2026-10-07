@@ -74,25 +74,4 @@ namespace Tossup
         public Action<GameState, Encounter> RewardAction;
     }
 
-    public sealed class RunEncounterDef
-    {
-        public string Id, Name, Description;
-        public Action<GameState> RunStart;
-        public Action<GameState, Encounter> EncounterStart;
-        public Func<int, bool> InvertsFlip;
-        public Func<GameState, CoinDef, int> CoinDiscount;
-        public int SideBetMultiplier = 1;
-        public bool SideBetTieLoses;
-        public bool BreaksComboOnTie;
-        public int ComboBankBonus;
-    }
-
-    public sealed class AugmentDef
-    {
-        public string Id, Name, Description, Tier;
-        public Action<GameState, string> Trigger;
-        public Func<GameState, AugmentPending> Choose;
-        public Func<GameState, AugmentPending, List<AugmentChoice>> Choices;
-        public Func<GameState, AugmentPending, string, bool> ApplyChoice;
-    }
 }

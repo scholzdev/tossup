@@ -18,12 +18,24 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(2) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Score(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Caliper Heads at 1 energy or less", 10, 35, 100,
+            "Those Heads score +1 point.", "Those Heads grant 1 energy.", "Low-energy Heads chance rises to +18%.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
 
         public CaliperCoin()
         {
             On.Coins.Odds += (context, odds) =>
             {
-                if (context.Game.Player.Energy <= 1) odds.Heads += 0.12;
+                if (context.Game.Player.Energy <= 1) odds.Heads += context.Mastery.Level >= 3 ? 0.18 : 0.12;
+            };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (res.Result != Side.Heads || ctx.Game.Player.Energy > 1) return;
+                ctx.Mastery.Add(1);
+                int level = ctx.Mastery.Level;
+                if (level >= 1) res.Effects.Add(Effect.Score(1));
+                if (level >= 2) res.Effects.Add(Effect.Energy(1));
             };
         }
     }

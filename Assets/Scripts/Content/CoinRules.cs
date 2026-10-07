@@ -5,7 +5,6 @@ namespace Tossup
 {
     public enum OutcomeSide { Heads, Tails, Edge }
     public enum BuffTargetKind { NextCoins, NextCoinsOfType }
-    public enum UpgradeChangeKind { AddOutcomeEffect, HeadsProbability, AddBuff }
 
     // A targeted effect granted when one outcome resolves. Type targets count matching coins,
     // so a buff waits through unrelated coins and is spent by the next matching ones.
@@ -51,23 +50,4 @@ namespace Tossup
         public BuffSpec Copy() => new BuffSpec(Id, Trigger, Target, Effect, AppliesOn);
     }
 
-    // Upgrade changes compose with a coin's base outcome and buff definitions without mutating them.
-    public sealed class UpgradeChange
-    {
-        public UpgradeChangeKind Kind { get; }
-        public OutcomeSide Side { get; }
-        public Effect Effect { get; }
-        public double Amount { get; }
-        public BuffSpec Buff { get; }
-
-        UpgradeChange(UpgradeChangeKind kind, OutcomeSide side, Effect effect, double amount, BuffSpec buff)
-        { Kind = kind; Side = side; Effect = effect?.Copy(); Amount = amount; Buff = buff?.Copy(); }
-
-        public static UpgradeChange AddEffect(OutcomeSide side, Effect effect)
-            => new UpgradeChange(UpgradeChangeKind.AddOutcomeEffect, side, effect ?? throw new ArgumentNullException(nameof(effect)), 0, null);
-        public static UpgradeChange AddHeadsProbability(double amount)
-            => new UpgradeChange(UpgradeChangeKind.HeadsProbability, OutcomeSide.Heads, null, amount, null);
-        public static UpgradeChange AddBuff(BuffSpec buff)
-            => new UpgradeChange(UpgradeChangeKind.AddBuff, OutcomeSide.Heads, null, 0, buff ?? throw new ArgumentNullException(nameof(buff)));
-    }
 }

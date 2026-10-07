@@ -14,8 +14,18 @@ namespace Tossup.Coins
         public override double Probability => 0.5;
         public override double TieProbability => 0.15;
         public override IReadOnlyList<CoinType> Types { get; } = new[] { CoinType.Fortune };
-        public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(3), Effect.NextOdds(0.1) };
+        public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(3) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Score(2) };
         public override IReadOnlyList<Effect> Edge { get; } = new[] { Effect.Energy(1) };
+        public override IReadOnlyList<BuffSpec> Buffs { get; } = new[] { new BuffSpec("omen_odds", OutcomeSide.Heads, BuffTarget.NextCoins(), Effect.NextOdds(.1)) };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Coins influenced by Omen odds", 20, 80, 240,
+            "Its odds buff grants +12% Heads.", "Its odds buff grants +14% Heads.", "Its odds buff grants +16% Heads.");
+
+        public OmenCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) => { if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "omen_odds") ctx.Mastery.Add(1); };
+            On.Coins.BuffCreated += (ctx, buff) => { if (buff.SpecId == "omen_odds") buff.Amount += .02 * ctx.Mastery.Level; };
+        }
     }
 }

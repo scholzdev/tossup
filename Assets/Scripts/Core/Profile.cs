@@ -77,6 +77,8 @@ namespace Tossup
         public HashSet<string> Wins = new HashSet<string>();
         public Dictionary<string, int> Stakes = new Dictionary<string, int>();
         public Dictionary<string, int> BestEndless = new Dictionary<string, int>();
+        public Dictionary<string, double> CoinMastery = new Dictionary<string, double>();
+        [NonSerialized] public bool MasteryDirty;
         public Options Options = new Options();
     }
 
@@ -90,6 +92,31 @@ namespace Tossup
         }
 
         public static ProfileData New() => new ProfileData();
+
+        public static double MasteryProgress(ProfileData profile, CoinDef coin) =>
+            profile != null && coin?.Mastery != null && profile.CoinMastery.TryGetValue(coin.Id, out var progress)
+                ? progress : 0;
+
+        public static int MasteryLevel(ProfileData profile, CoinDef coin)
+        {
+            if (coin?.Mastery == null) return 0;
+            double progress = MasteryProgress(profile, coin);
+            int level = 0;
+            foreach (var threshold in coin.Mastery.Thresholds)
+                if (progress >= threshold) level++;
+            return level;
+        }
+
+        public static void AddMastery(ProfileData profile, CoinDef coin, double amount)
+        {
+            if (profile == null || coin?.Mastery == null || amount <= 0 || double.IsNaN(amount) || double.IsInfinity(amount)) return;
+            double old = MasteryProgress(profile, coin);
+            double cap = coin.Mastery.Thresholds[2];
+            double updated = Math.Min(cap, old + amount);
+            if (updated <= old) return;
+            profile.CoinMastery[coin.Id] = updated;
+            profile.MasteryDirty = true;
+        }
 
         public static bool CharacterUnlocked(ProfileData profile, string id)
         {
@@ -257,6 +284,11 @@ namespace Tossup
             lines[lines.Count-1] += ",";
             WriteIntMap(lines,"bestEndless",profile.BestEndless);
             lines[lines.Count-1] += ",";
+            lines.Add("  \"coinMastery\": {");
+            var masteryKeys = SortedKeys(profile.CoinMastery);
+            for (int k = 0; k < masteryKeys.Count; k++)
+                lines.Add("    " + JsonData.Quote(masteryKeys[k]) + ": " + GameText.Num(profile.CoinMastery[masteryKeys[k]]) + (k + 1 < masteryKeys.Count ? "," : ""));
+            lines.Add("  },");
             lines.Add("  \"options\": {");
             lines.Add("    \"fastFlip\": " + Bool(o.FastFlip) + ",");
             lines.Add("    \"fullscreen\": " + Bool(o.Fullscreen) + ",");
@@ -290,6 +322,10 @@ namespace Tossup
             profile.Wins = new HashSet<string>(Strings(data["wins"]));
             ReadIntMap(data["stakes"],profile.Stakes);
             ReadIntMap(data["bestEndless"],profile.BestEndless);
+            var mastery = data["coinMastery"];
+            if (mastery?.Kind == JsonKind.Object)
+                foreach (var pair in mastery.Object)
+                    if (pair.Value.Kind == JsonKind.Number) profile.CoinMastery[pair.Key] = pair.Value.Number;
             var sets = data["sets"];
             if (sets?.Kind == JsonKind.Object)
             {
@@ -356,6 +392,16 @@ namespace Tossup
                 if (!Content.Characters.ContainsKey(id)) p.Unlocked.Remove(id);
                 else p.Unlocked[id].RemoveWhere(x => !Content.Coins.ContainsKey(x));
             p.Collected.RemoveWhere(x => !Content.Coins.ContainsKey(x));
+            foreach (var id in new List<string>(p.CoinMastery.Keys))
+            {
+                if (!Content.Coins.TryGetValue(id, out var coin) || coin.Mastery == null) p.CoinMastery.Remove(id);
+                else
+                {
+                    double value = p.CoinMastery[id];
+                    p.CoinMastery[id] = double.IsNaN(value) || double.IsInfinity(value) || value < 0
+                        ? 0 : Math.Min(value, coin.Mastery.Thresholds[2]);
+                }
+            }
             p.Wins.RemoveWhere(x => !Content.Characters.ContainsKey(x));
             foreach (var id in new List<string>(p.Stakes.Keys))
                 if (!Content.Characters.ContainsKey(id)) p.Stakes.Remove(id);

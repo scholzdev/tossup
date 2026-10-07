@@ -21,5 +21,28 @@ namespace Tossup.Coins
         {
             new BuffSpec("whetstone_steel", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Steel, 2), Effect.TypeBuff(kind: CoinType.Steel)),
         };
+
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Steel coins affected by Whetstone", 10, 40, 120,
+            "Its buff grants +4 points on Heads.",
+            "Buffed Tails adds 1 less quota.",
+            "Its buff reaches a third Steel coin.");
+
+        public WhetstoneCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) =>
+            {
+                if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "whetstone_steel")
+                    ctx.Mastery.Add(1);
+            };
+            On.Coins.BuffCreated += (ctx, buff) =>
+            {
+                if (buff.SpecId != "whetstone_steel") return;
+                int level = ctx.Mastery.Level;
+                if (level >= 1) buff.Amount = 4;
+                if (level >= 2) buff.PenaltyAmount = 1;
+                if (level >= 3) buff.Left = 3;
+            };
+        }
     }
 }

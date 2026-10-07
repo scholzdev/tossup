@@ -19,10 +19,26 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Score(2) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
 
-        public override void Register(CoinCtx ctx)
-        { ctx.On(GameSignal.EffectApplied, e =>
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Gold earned from Bounty scoring", 40, 160, 480,
+            "Scoring effects grant +1 extra gold.", "Scoring effects grant +2 extra gold total.", "Scoring effects grant +3 extra gold total.",
+            MasterySides.All, MasterySides.All, MasterySides.All);
+
+        public BountyCoin()
         {
-            if (e.Effect.Type == EffectType.Score) e.Game.Player.Gold += Math.Floor(e.Effect.Amount / 2);
-        }); }
+            On.Game.Effects.Applied += (ctx, e) =>
+            {
+                if (e.Inst != ctx.Coin || e.Effect?.Type != EffectType.Score) return;
+                double baseGold = Math.Floor(e.ScoreDelta / 2);
+                double paid = baseGold + ctx.Mastery.Level;
+                if (paid > 0)
+                {
+                    ctx.Game.Player.Gold += paid;
+                    e.GoldDelta += paid;
+                    e.Text += ", +" + GameText.Num(paid) + " bounty gold";
+                }
+                ctx.Mastery.Add(baseGold);
+            };
+        }
     }
 }

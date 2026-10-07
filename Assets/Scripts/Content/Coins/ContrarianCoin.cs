@@ -24,5 +24,21 @@ namespace Tossup.Coins
             var previous = game.LastResult;
             if (previous != null) flip.Result = previous.Final == Side.Heads ? Side.Tails : Side.Heads;
         }
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Previous flips reversed", 20, 80, 240,
+            "Opposite-side Heads scores +1.", "Opposite-side Tails scores +1.", "Both opposite-side results score +1 more.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Heads | MasterySides.Tails);
+
+        public ContrarianCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin && ctx.Game.LastResult != null) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (ctx.Game.LastResult == null) return;
+                int level = ctx.Mastery.Level;
+                if (res.Result == Side.Heads && level >= 1 || res.Result == Side.Tails && level >= 2)
+                    res.Effects.Add(Effect.Score(level >= 3 ? 2 : 1));
+            };
+        }
     }
 }

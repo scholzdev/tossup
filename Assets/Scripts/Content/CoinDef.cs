@@ -34,36 +34,20 @@ namespace Tossup
         public virtual string HeadsDescription => null;
         public virtual string TailsDescription => null;
         public virtual string EdgeDescription => null;
-        public virtual IReadOnlyList<Upgrade> Upgrades => Array.Empty<Upgrade>();
+        public virtual CoinMastery Mastery => null;
 
-        public IReadOnlyList<Effect> EffectsFor(OutcomeSide side, Upgrade upgrade = null)
+        public IReadOnlyList<Effect> EffectsFor(OutcomeSide side)
         {
             IReadOnlyList<Effect> source = side == OutcomeSide.Heads ? Heads : side == OutcomeSide.Tails ? Tails : Edge;
             var effects = new List<Effect>();
             foreach (var effect in source) effects.Add(effect.Copy());
-            if (upgrade != null && TryGetUpgrade(upgrade.Id, out var owned))
-                foreach (var change in owned.Changes)
-                    if (change.Kind == UpgradeChangeKind.AddOutcomeEffect && change.Side == side)
-                        effects.Add(change.Effect.Copy());
             return effects;
         }
 
-        public double UpgradeHeadsProbability(Upgrade upgrade)
-        {
-            double amount = 0;
-            if (upgrade != null && TryGetUpgrade(upgrade.Id, out var owned))
-                foreach (var change in owned.Changes)
-                    if (change.Kind == UpgradeChangeKind.HeadsProbability) amount += change.Amount;
-            return amount;
-        }
-
-        public IReadOnlyList<BuffSpec> BuffsFor(Upgrade upgrade = null)
+        public IReadOnlyList<BuffSpec> BuffsFor()
         {
             var buffs = new List<BuffSpec>();
             foreach (var buff in Buffs) buffs.Add(buff.Copy());
-            if (upgrade != null && TryGetUpgrade(upgrade.Id, out var owned))
-                foreach (var change in owned.Changes)
-                    if (change.Kind == UpgradeChangeKind.AddBuff) buffs.Add(change.Buff.Copy());
             return buffs;
         }
 
@@ -71,11 +55,6 @@ namespace Tossup
         // coins own their Lua balance estimates alongside their resolving rules.
         public virtual double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails) => 0;
 
-        public bool TryGetUpgrade(string id, out Upgrade upgrade)
-        {
-            foreach(var candidate in Upgrades)if(candidate.Id==id){upgrade=candidate;return true;}
-            upgrade=null;return false;
-        }
         public virtual void OnDeal(GameState game, CoinInst inst) { }
         public virtual void OnDiscard(GameState game, CoinInst inst) { }
         public virtual void OnFlip(GameState game, CoinInst inst, FlipState flip) { }

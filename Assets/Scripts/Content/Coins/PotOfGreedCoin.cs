@@ -39,5 +39,15 @@ namespace Tossup.Coins
             for (int n = 0; n < 2 && game.Coins.Count < Game.DeckMax; n++)
                 Game.TryGrantCoin(game, pool[Rng.Int(game, 1, pool.Count) - 1]);
         }
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Pot of Greed flips with room in the deck", 20, 80, 240,
+            "Its flip also scores 1 point.", "Its flip also scores 2 points total.", "Its flip also scores 3 points total.",
+            MasterySides.All, MasterySides.All, MasterySides.All);
+
+        public PotOfGreedCoin()
+        {
+            On.Coins.Flip += (ctx, flip) => { if (ctx.Game.Coins.Count < Game.DeckMax) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) => { if (ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(ctx.Mastery.Level)); };
+        }
     }
 }

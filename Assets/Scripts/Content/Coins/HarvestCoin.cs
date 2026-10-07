@@ -22,5 +22,14 @@ namespace Tossup.Coins
         {
             new BuffSpec("harvest_greed", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Greed), Effect.Gold(2), OutcomeSide.Heads)
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Greed coins affected by Harvest", 20, 80, 240,
+            "Its Greed buff grants +3 gold.", "Its Greed buff grants +4 gold.", "Its Greed buff grants +5 gold.");
+
+        public HarvestCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) => { if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "harvest_greed") ctx.Mastery.Add(1); };
+            On.Coins.BuffCreated += (ctx, buff) => { if (buff.SpecId == "harvest_greed") buff.AppliedEffect.Amount += ctx.Mastery.Level; };
+        }
     }
 }

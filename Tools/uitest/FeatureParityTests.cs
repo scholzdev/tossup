@@ -18,6 +18,7 @@ static class FeatureParityTests
         CanSelectNextCoinWhileHolding();
         ImpossibleOddsHideUnavailableSide();
         CollectionCatalogCategories();
+        ShopCoinServices();
         CoinTypeColorPalette();
         PotOfGreedRewards();
         TitleAndEncounterScreens();
@@ -109,7 +110,6 @@ static class FeatureParityTests
     {
         var game = Game.New(4401, "trader", new List<string> { "loaded" }, new List<CoinDef> { CoinCatalog.Loaded, CoinCatalog.Normal }, true, 3);
         game.Player.Gold = 37;
-        game.Coins[0].Upgrade = UpgradeCatalog.SaferBet;
         game.Augments.Add("bankers_cut");
         game.Augments.Add("type_specialist");
         game.AugmentData["type_specialist"] = "fortune";
@@ -119,7 +119,7 @@ static class FeatureParityTests
         Check(restored != null, "valid saved run restores");
         Check(restored.Seed == game.Seed && restored.RngState == game.RngState, "RNG state survives restoration");
         Check(restored.CharacterId == "trader" && restored.Stake == 3 && restored.Player.Gold == 37, "run identity survives restoration");
-        Check(restored.Coins.Count == 2 && restored.Coins[0].Upgrade == UpgradeCatalog.SaferBet, "owned coin state survives restoration");
+        Check(restored.Coins.Count == 2 && restored.Coins[0].Id == "loaded", "owned coin state survives restoration");
         Check(restored.Augments.Contains("bankers_cut") && restored.AugmentData["type_specialist"] == "fortune", "augment state survives restoration");
         Check(restored.Encounter.ComboPot == 6 && restored.Mulligan != null && restored.Dealt == null, "safe-point encounter state survives restoration");
         Check(RunSave.Decode("{\"version\":999}") == null && RunSave.Decode("broken") == null, "damaged or incompatible saves are rejected");
@@ -149,7 +149,7 @@ static class FeatureParityTests
         Tutorial.Next();
         Check(Tutorial.StepIndex == 2, "tutorial advances manually");
         Tutorial.Finish();
-        Check(Ui.Game == null && Ui.Tutorial == null && Ui.Screen == "title", "tutorial exits without retaining its run");
+        Check(Ui.Game == null && Ui.Tutorial == null && Ui.Screen == UiScreen.Title, "tutorial exits without retaining its run");
     }
 
     static void RuntimeModesAndSandbox()
@@ -171,6 +171,14 @@ static class FeatureParityTests
         RuntimeMode.ApplyProfile(profile);
         foreach (var id in Content.CharacterOrder)
             Check(Profile.CharacterUnlocked(profile, id), "developer mode unlocks character " + id);
+        foreach (var coin in Content.CoinOrder)
+        {
+            int level = Profile.MasteryLevel(profile, coin);
+            double progress = Profile.MasteryProgress(profile, coin);
+            Check(level >= 0 && level <= coin.Mastery.Thresholds.Length &&
+                progress == (level == 0 ? 0 : coin.Mastery.Thresholds[level - 1]),
+                "developer mode assigns a whole mastery level to " + coin.Id);
+        }
 
         const string scene = "{\"coins\":[\"loaded\",\"jackpot\"],\"character\":\"trader\",\"stake\":4,\"gold\":91,\"energy\":7,\"odds\":{\"loaded\":{\"heads\":0.2,\"tie\":0.3}}}";
         var sandbox = Game.NewSandbox(SandboxConfig.Decode(scene));
@@ -237,7 +245,7 @@ static class FeatureParityTests
         foreach(bool dev in new[] {false,true})
         {
             RuntimeMode.Configure(dev,false);
-            Ui.SelectedCharacter="blade";Ui.Tutorial=null;Ui.Confirm=null;
+            Ui.SelectedCharacter=Content.Characters["blade"];Ui.Tutorial=null;Ui.Confirm=null;
             A.Start(6601);
             Check(Ui.Game.RunEncounter!=null && Ui.EncounterReveal!=null, "normal and developer Start show the assigned encounter");
             AppCore.Draw();
@@ -323,59 +331,47 @@ static class FeatureParityTests
                 "opening-hand cards omit the effect line for an impossible Tails result");
 
             Ui.Game = null;
-            Ui.Screen = "collection";
+            Ui.Screen = UiScreen.Collection;
             Ui.CollectionCategory = "coins";
-            Ui.CollectionFilter = "ALL";
-            Ui.CollectionSort = "order";
+            Ui.CollectionFilter = CollectionRarityFilter.All;
+            Ui.CollectionSort = CollectionSortMode.Order;
             Ui.Profile.Collected.Add(CoinCatalog.SafePort.Id);
             int safePortIndex = Content.CoinOrder.FindIndex(coin => coin.Id == CoinCatalog.SafePort.Id);
             Check(safePortIndex >= 0, "Safe Port is present in the collection order");
-            Ui.CollectionPage = safePortIndex / 15 + 1;
-            var platform = (HeadlessPlatform)Ui.Platform;
-            platform.X = 215 + (safePortIndex % 5) * 170 + 80;
-            platform.Y = 260 + ((safePortIndex % 15) / 5) * 154 + 44;
+            CoinDetailView.Open(CoinCatalog.SafePort);
             backend.Texts.Clear();
             AppCore.Draw();
-            Check(Ui.HoveredCoin != null && Ui.HoveredCoin.Id == CoinCatalog.SafePort.Id,
-                "Safe Port can be hovered from the collection grid");
+            Check(ReferenceEquals(CoinDetailView.SelectedCoin, CoinCatalog.SafePort),
+                "Safe Port opens in the collection detail view");
             Check(!backend.Texts.Exists(t => t.Value == "TAILS" || t.Value.StartsWith("TAILS ")),
-                "collection tooltip omits Safe Port's impossible Tails outcome");
+                "coin details omit Safe Port's impossible Tails outcome");
             Check(!backend.Texts.Exists(t => t.Value == "ADDITIONAL EFFECT"),
-                "collection tooltip omits an empty additional-effect section");
+                "coin details omit an empty additional-effect section");
 
-            int doublerIndex = Content.CoinOrder.FindIndex(coin => coin.Id == CoinCatalog.Doubler.Id);
             Ui.Profile.Collected.Add(CoinCatalog.Doubler.Id);
-            Ui.CollectionPage = doublerIndex / 15 + 1;
-            platform.X = 215 + (doublerIndex % 5) * 170 + 80;
-            platform.Y = 260 + ((doublerIndex % 15) / 5) * 154 + 44;
+            CoinDetailView.Open(CoinCatalog.Doubler);
             backend.Texts.Clear();
             AppCore.Draw();
-            var headsLabel = backend.Texts.Find(t => t.Value == "HEADS");
+            var headsLabel = backend.Texts.Find(t => t.Value.StartsWith("HEADS"));
             Check(headsLabel.Value != null && backend.Texts.Exists(t => t.Value.Contains("doubled for every Doubler")),
-                "collection tooltip uses the custom Heads description for a stateful score");
+                "coin details use the custom Heads description for a stateful score");
 
-            int cheerleaderIndex = Content.CoinOrder.FindIndex(coin => coin.Id == CoinCatalog.Cheerleader.Id);
             Ui.Profile.Collected.Add(CoinCatalog.Cheerleader.Id);
-            Ui.CollectionPage = cheerleaderIndex / 15 + 1;
-            platform.X = 215 + (cheerleaderIndex % 5) * 170 + 80;
-            platform.Y = 260 + ((cheerleaderIndex % 15) / 5) * 154 + 44;
+            CoinDetailView.Open(CoinCatalog.Cheerleader);
             backend.Texts.Clear();
             AppCore.Draw();
-            headsLabel = backend.Texts.Find(t => t.Value == "HEADS");
+            headsLabel = backend.Texts.Find(t => t.Value.StartsWith("HEADS"));
             var buffsLabel = backend.Texts.Find(t => t.Value == "BUFFS");
             Check(headsLabel.Value != null && buffsLabel.Value != null && headsLabel.Y < buffsLabel.Y &&
                 backend.Texts.Exists(t => t.Value.Contains("20%")),
-                "collection tooltip generates a separate typed Buffs section after outcomes");
+                "coin details generate a separate typed Buffs section after outcomes");
 
-            int echoIndex = Content.CoinOrder.FindIndex(coin => coin.Id == CoinCatalog.TrueEcho.Id);
             Ui.Profile.Collected.Add(CoinCatalog.TrueEcho.Id);
-            Ui.CollectionPage = echoIndex / 15 + 1;
-            platform.X = 215 + (echoIndex % 5) * 170 + 80;
-            platform.Y = 260 + ((echoIndex % 15) / 5) * 154 + 44;
+            CoinDetailView.Open(CoinCatalog.TrueEcho);
             backend.Texts.Clear();
             AppCore.Draw();
             Check(backend.Texts.Exists(t => t.Value == "SPECIAL RULE"),
-                "collection tooltip shows an explicit description for hook-driven behavior");
+                "coin details show an explicit description for hook-driven behavior");
         }
         finally
         {
@@ -396,10 +392,10 @@ static class FeatureParityTests
         {
             Ui.Profile = Profile.New();
             Ui.Game = null;
-            Ui.Screen = "collection";
+            Ui.Screen = UiScreen.Collection;
             Ui.CollectionPage = 1;
-            Ui.CollectionFilter = "ALL";
-            Ui.CollectionSort = "order";
+            Ui.CollectionFilter = CollectionRarityFilter.All;
+            Ui.CollectionSort = CollectionSortMode.Order;
             Ui.Holding = false;
             backend.Capture = true;
 
@@ -430,17 +426,42 @@ static class FeatureParityTests
             Ui.CollectionCategory = "coins";
             Ui.Profile.Collected.Add(CoinCatalog.Normal.Id);
             Ui.CollectionPage = 1;
-            Ui.CollectionSort = "order";
+            Ui.CollectionSort = CollectionSortMode.Order;
             var platform = (HeadlessPlatform)Ui.Platform;
-            platform.X = 295;
-            platform.Y = 304;
+            platform.X = -50;
+            platform.Y = -50;
             backend.Texts.Clear();
             AppCore.Draw();
-            Check(Ui.HoveredCoin != null && Ui.HoveredCoin.Id == CoinCatalog.Normal.Id &&
-                backend.Texts.Exists(t => t.Value == "UPGRADES") &&
-                backend.Texts.Exists(t => t.Value == "LUCKY DAY") &&
-                backend.Texts.Exists(t => t.Value == "MATHEMATICIAN"),
-                "coin collection hover lists all its upgrades together in one section");
+            var detail = Ui.Buttons.Find(button => button.Label == "DETAIL");
+            Check(detail != null && Ui.HoveredCoin == null,
+                "collection cards open details instead of crowding the grid with a tooltip");
+            detail.Action();
+            backend.Images.Clear(); backend.Texts.Clear();
+            AppCore.Draw();
+            Check(Ui.Screen == UiScreen.CoinDetail && ReferenceEquals(CoinDetailView.SelectedCoin, CoinCatalog.Normal) &&
+                backend.Images.ContainsKey("coins/normal") &&
+                backend.Images.ContainsKey("characters/blade") &&
+                backend.Texts.Exists(t => t.Value == "MASTERY LEVEL 0 / 3") &&
+                !backend.Texts.Exists(t => t.Value == "MASTERY LEVEL 1") &&
+                backend.Texts.Exists(t => t.Value.StartsWith("HEADS")),
+                "coin details show the coin, odds, left-side mastery and character portraits");
+            var fullCoin = backend.Images["coins/normal"];
+            platform.Clock += 2.2;
+            backend.Images.Clear();
+            AppCore.Draw();
+            var idleCoin = backend.Images["coins/normal"];
+            Check(Math.Abs(idleCoin[2] - idleCoin[0]) == Math.Abs(fullCoin[2] - fullCoin[0]),
+                "coin detail preview remains static without a spin control");
+            Check(!Ui.Buttons.Exists(button => button.Label == "SPIN"),
+                "coin detail screen has no spin interaction");
+            Profile.AddMastery(Ui.Profile, CoinCatalog.Normal, CoinCatalog.Normal.Mastery.Thresholds[1]);
+            backend.Texts.Clear();
+            AppCore.Draw();
+            Check(backend.Texts.Exists(t => t.Value == "MASTERY LEVEL 2 / 3"),
+                "coin detail view follows permanent coin mastery");
+            AppCore.KeyPressed("escape");
+            Check(Ui.Screen == UiScreen.Collection && Ui.CollectionPage == 1,
+                "back from coin details returns to the same collection page");
         }
         finally
         {
@@ -449,6 +470,19 @@ static class FeatureParityTests
             backend.Capture = false;
             Ui.Game = null;
         }
+    }
+
+    static void ShopCoinServices()
+    {
+        var game = Game.NewSandbox(new SandboxConfig { Coins = new List<string> { "normal" }, Gold = 50, Seed = 19 });
+        Game.OpenSandboxShop(game);
+        Ui.Game = game;
+        Ui.Screen = UiScreen.Shop;
+        AppCore.Draw();
+        var tuneButtons = Ui.Buttons.FindAll(button => button.Label == "BUY" && button.X == 1102);
+        Check(tuneButtons.Count == 0 && Ui.Buttons.Exists(button => button.Label == "REMOVE"),
+            "shop only offers coin removal, without purchasable coin upgrades");
+        Ui.Game = null;
     }
 
     static void CoinTypeColorPalette()
@@ -472,7 +506,7 @@ static class FeatureParityTests
         Ui.Game = null;
         Ui.Tutorial = null;
         Ui.EncounterReveal = null;
-        Ui.Screen = "title";
+        Ui.Screen = UiScreen.Title;
         Check(Ui.UiImages.ContainsKey("title_scene"), "the original title scene with its three coins is loaded");
         Ui.Platform.WriteSave("run.json", "normal-run-checkpoint");
         AppCore.Draw();
@@ -482,20 +516,27 @@ static class FeatureParityTests
         AppCore.MousePressed(100, 630);
         AppCore.MousePressed(100, 630);
         AppCore.MousePressed(100, 630);
-        Check(RuntimeMode.Dev && Ui.Screen == "select" && Ui.Profile.Collected.Count == Content.CoinOrder.Count && !A.HasSavedRun(),
+        Check(RuntimeMode.Dev && Ui.Screen == UiScreen.Select && Ui.Profile.Collected.Count == Content.CoinOrder.Count && !A.HasSavedRun(),
             "triple-clicking the title version opens Developer Mode with the full collection");
+        Check(Ui.Profile.CoinMastery.ContainsKey(CoinCatalog.Normal.Id),
+            "developer mode assigns coin mastery when the profile loads");
+        Ui.SelectedCharacter = Content.Characters["blade"];
+        A.Start(6601);
+        Check(ReferenceEquals(Ui.Game.MasteryProfile, Ui.Profile), "developer runs use their assigned mastery rewards");
+        Ui.Game = null;
+        Ui.EncounterReveal = null;
         Check(Ui.Platform.ReadSave(RuntimeMode.DeveloperModePreference) == "1", "enabling Developer Mode persists the preference");
-        A.Go("options");
+        A.Go(UiScreen.Options);
         Ui.OptionsTab = "game";
         AppCore.Draw();
         Check(Ui.Buttons.Exists(b => b.Label == "EXIT DEVELOPER MODE"), "Options contains the relocated Developer Mode button");
         AppCore.MousePressed(640, 668);
-        Check(!RuntimeMode.Dev && Ui.Screen == "title" && A.HasSavedRun(),
+        Check(!RuntimeMode.Dev && Ui.Screen == UiScreen.Title && A.HasSavedRun(),
             "the Options button exits Developer Mode and preserves the normal saved run");
         Check(Ui.Platform.ReadSave(RuntimeMode.DeveloperModePreference) == "0", "exiting Developer Mode persists the preference");
         A.DeleteRun();
 
-        Ui.SelectedCharacter = "blade";
+        Ui.SelectedCharacter = Content.Characters["blade"];
         A.Start(6602);
         Ui.EncounterReveal = null; // inspect the title after its separate run-encounter reveal
         A.OpenMenu();

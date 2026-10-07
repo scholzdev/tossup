@@ -18,6 +18,15 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Doubler Heads landed", 12, 40, 120,
+            "Starting Heads payout rises to 4 points.", "Starting Heads payout rises to 5 points.", "Starting Heads payout rises to 6 points.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
+
+        public DoublerCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin && e.Res?.Result == Side.Heads) ctx.Mastery.Add(1); };
+        }
 
         public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails)
         {
@@ -31,7 +40,8 @@ namespace Tossup.Coins
             var e = game.Encounter;
             int flips = e.Doubler;
             e.Doubler = flips + 1;
-            if (res.Result == Side.Heads) res.Effects.Add(Effect.Score( 3 * Math.Pow(2, Math.Min(flips, 7))));
+            int baseScore = 3 + Profile.MasteryLevel(game.MasteryProfile, this);
+            if (res.Result == Side.Heads) res.Effects.Add(Effect.Score(baseScore * Math.Pow(2, Math.Min(flips, 7))));
         }
     }
 }

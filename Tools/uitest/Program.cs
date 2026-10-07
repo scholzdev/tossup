@@ -153,7 +153,7 @@ static class Program
         int runs = 0, shops = 0, wins = 0, losses = 0;
         Phase? lastPhase = null;
         GameState lastGame = null;
-        A.Go("title");
+        A.Go(UiScreen.Title);
         Ui.Game = null;
         for (int frame = 0; frame < frames; frame++)
         {
@@ -202,8 +202,8 @@ static class Program
                 }
                 // keep runs flowing: leave the title/help screens quickly, sometimes switch language
                 if (rng.Next(4000) == 0) A.CycleLanguage();
-                if (Ui.Game == null && Ui.Screen == "title" && rng.Next(3) == 0) A.Play();
-                if (Ui.Screen == "select" && (Ui.Game == null || Ui.Game.Paused) && rng.Next(3) == 0) A.Start();
+                if (Ui.Game == null && Ui.Screen == UiScreen.Title && rng.Next(3) == 0) A.Play();
+                if (Ui.Screen == UiScreen.Select && (Ui.Game == null || Ui.Game.Paused) && rng.Next(3) == 0) A.Start();
                 if (Ui.Game != null && Ui.Game.Paused && rng.Next(4) == 0) Ui.Game.Paused = false;
             }
             catch (Exception ex)
@@ -243,7 +243,7 @@ static class Program
         {
             platform.WindowWidth = size.Item1; platform.WindowHeight = size.Item2;
             Ui.Game = null; Ui.Confirm = null; Ui.Tutorial = null; Ui.EncounterReveal = null;
-            Lang.Set("en"); A.Go("title"); Capture();
+            Lang.Set("en"); A.Go(UiScreen.Title); Capture();
             Ui.Layout(out float scale, out float ox, out float oy);
             if (size == (1280,800)) Check(scale == 1 && ox == 0 && oy == 0, "the Lua-resolution view fills the full window");
             var quad = backend.Images["ui/title_scene"];
@@ -255,7 +255,7 @@ static class Program
             var menu = Ui.Buttons.Find(b => b.Label == "COLLECTION");
             Check(menu.X == 100 && menu.W == 340 && menu.H == 52,
                 "main menu controls match the Lua-sized layout");
-            ClickCanvas(menu); Check(Ui.Screen == "collection", "resized pointer activates the visible control");
+            ClickCanvas(menu); Check(Ui.Screen == UiScreen.Collection, "resized pointer activates the visible control");
             Ui.ToCanvas(platform.X, platform.Y, out float cx, out float cy);
             Check(menu.Contains(cx,cy), "drawing and pointer transforms agree after resizing");
         }
@@ -370,8 +370,8 @@ static class Program
         A.DeleteRun();
         Ui.Game = null;
         Ui.Confirm = null;
-        Ui.SelectedCharacter = "blade";
-        A.Go("title");
+        Ui.SelectedCharacter = Content.Characters["blade"];
+        A.Go(UiScreen.Title);
         int runs = 0, shops = 0, wins = 0, losses = 0, endless = 0, items = 0, bought = 0, exchanges = 0, maxLevel = 0;
         Phase? lastPhase = null;
         for (int frame = 0; frame < frames; frame++)
@@ -398,9 +398,9 @@ static class Program
                 if (Ui.Confirm != null) { Click(platform, Find("CANCEL")); continue; }
                 if (g == null || g.Paused)
                 {
-                    if (Ui.Screen == "help") Click(platform, Find("GOT IT") ?? Find("BACK"));
-                    else if (Ui.Screen == "select") { Click(platform, Find("START RUN")); runs++; lastPhase = null; }
-                    else if (Ui.Screen == "title") Click(platform, Find("NEW RUN") ?? Find("PLAY"));
+                    if (Ui.Screen == UiScreen.Help) Click(platform, Find("GOT IT") ?? Find("BACK"));
+                    else if (Ui.Screen == UiScreen.Select) { Click(platform, Find("START RUN")); runs++; lastPhase = null; }
+                    else if (Ui.Screen == UiScreen.Title) Click(platform, Find("NEW RUN") ?? Find("PLAY"));
                     else Click(platform, Find("BACK"));
                     continue;
                 }
@@ -434,7 +434,7 @@ static class Program
                     int r = rng.Next(10);
                     if (r < 3 && Click(platform, All("BUY").Count > 0 ? All("BUY")[rng.Next(All("BUY").Count)] : null)) bought++;
                     else if (r == 3) Click(platform, Find("REROLL"));
-                    else if (r == 4) { var coins = All("COIN"); if (coins.Count > 0) Click(platform, coins[rng.Next(coins.Count)]); Click(platform, Find("UPGRADE")); }
+                    else if (r == 4) { var coins = All("COIN"); if (coins.Count > 0) Click(platform, coins[rng.Next(coins.Count)]); }
                     else if (r == 5 && rng.Next(3) == 0) { var coins = All("COIN"); if (coins.Count > 0) Click(platform, coins[rng.Next(coins.Count)]); Click(platform, Find("REMOVE")); }
                     else if (r >= 7) Click(platform, Find("NEXT ROUND"));
                     continue;

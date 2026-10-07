@@ -26,5 +26,15 @@ namespace Tossup.Coins
             if (res.Result != Side.Heads) return;
             res.Effects.Add(Effect.Score( 2 * game.Encounter.Streak));
         }
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Heads landed in streaks of at least three", 15, 60, 180,
+            "Heads streaks score +1.", "Heads streaks score +2 total.", "Heads streaks score +3 total.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
+
+        public ChainCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin && e.Flip.Final == Side.Heads && ctx.Game.Encounter.Streak >= 3) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Game.Encounter.Streak >= 3 && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(ctx.Mastery.Level)); };
+        }
     }
 }

@@ -82,6 +82,9 @@ namespace Tossup
                     case GameSignal.EffectApplied:
                         on.Game.Effects.RaiseApplied(context, e);
                         break;
+                    case GameSignal.BuffApplied:
+                        on.Game.Buffs.RaiseApplied(context, e);
+                        break;
                     default:
                         on.Game.Coins.Raise(signal, context, e);
                         break;

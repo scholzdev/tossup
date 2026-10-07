@@ -22,5 +22,14 @@ namespace Tossup.Coins
         {
             new BuffSpec("broker_steel", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Steel), Effect.Score(2), OutcomeSide.Heads)
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Steel coins affected by Broker", 15, 60, 180,
+            "Its Steel buff scores +3.", "Its Steel buff scores +4.", "Its Steel buff scores +5.");
+
+        public BrokerCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) => { if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "broker_steel") ctx.Mastery.Add(1); };
+            On.Coins.BuffCreated += (ctx, buff) => { if (buff.SpecId == "broker_steel") buff.AppliedEffect.Amount += ctx.Mastery.Level; };
+        }
     }
 }

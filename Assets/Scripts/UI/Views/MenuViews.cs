@@ -12,7 +12,7 @@ namespace Tossup.UI
 
         public static bool HandleVersionClick(float x, float y)
         {
-            if (Ui.Screen != "title" || Ui.Confirm != null)
+            if (Ui.Screen != UiScreen.Title || Ui.Confirm != null)
             {
                 versionClicks = 0;
                 return false;
@@ -72,13 +72,13 @@ namespace Tossup.UI
                 entries.Add(("NEW RUN",C.Gold,newRun));
             }
             else entries.Add((RuntimeMode.Sandbox&&Ui.SandboxConfig!=null?"RELOAD SANDBOX":"PLAY", C.Blue, A.Play));
-            entries.Add(("COIN SETS", C.Gold, () => A.OpenSets(Ui.SelectedCharacter)));
-            entries.Add(("COLLECTION", C.Green, () => A.Go("collection")));
+            entries.Add(("COIN SETS", C.Gold, () => A.OpenSets(Ui.SelectedCharacter.Id)));
+            entries.Add(("COLLECTION", C.Green, () => A.Go(UiScreen.Collection)));
             var small = new List<(string, Rgba, Action)>
             {
                 ("TUTORIAL", C.Green, A.StartTutorial),
-                ("HELP", C.Green, () => { Ui.HelpNext = null; A.Go("help"); }),
-                ("OPTIONS", C.PanelLight, () => A.Go("options")),
+                ("HELP", C.Green, () => { Ui.HelpNext = null; A.Go(UiScreen.Help); }),
+                ("OPTIONS", C.PanelLight, () => A.Go(UiScreen.Options)),
             };
             Text("v" + BuildInfo.Number + (RuntimeMode.Dev ? ".dev" : "") + " (" + BuildInfo.Build + ")", 96, 626, Ui.F16, C.Muted);
             float y = 240;
@@ -101,9 +101,9 @@ namespace Tossup.UI
 
         public static void Draw()
         {
-            Frame(Title("play"), "BACK", () => A.Go("title"));
+            Frame(Title("play"), "BACK", () => A.Go(UiScreen.Title));
 
-            string characterId = Ui.SelectedCharacter;
+            string characterId = Ui.SelectedCharacter.Id;
             bool locked=!Profile.CharacterUnlocked(Ui.Profile,characterId);
             int active = Profile.Active(Ui.Profile, characterId);
             var set = Profile.Sets(Ui.Profile, characterId)[active - 1];
@@ -121,7 +121,7 @@ namespace Tossup.UI
             float width = portrait.Width * scale, height = portrait.Height * scale;
             Color(C.White, locked ? .22f : 1f);
             Gfx.Draw(portrait, 70 + (384 - width) / 2, 226 + (270 - height) / 2, scale, scale);
-            var perks = Content.Characters[characterId].Perks;
+            var perks = Ui.SelectedCharacter.Perks;
             for (int i = 0; i < Math.Min(2, perks.Count); i++)
             {
                 float perkY = 500 + i * 48;
@@ -163,7 +163,7 @@ namespace Tossup.UI
             Centered("STAGE "+stake+" / "+Game.Stakes.Count,570,490,504,Ui.F20,stake==top?C.Gold:C.Face);
             Centered(Game.Stakes[stake-1].Text,570,518,504,Ui.F16,C.Muted);
             Button(">",1084,486,50,52,C.PanelLight,()=>A.CycleStake(1),stake<top&&!locked);
-            Button("EDIT COIN SETS", 674, 555, 356, 52, C.Gold, () => A.OpenSets(Ui.SelectedCharacter),!locked);
+            Button("EDIT COIN SETS", 674, 555, 356, 52, C.Gold, () => A.OpenSets(Ui.SelectedCharacter.Id),!locked);
 
             IconButton("START RUN", Ui.UiImages["start_level"], 470, 660, 340, 68, C.Green, () => A.Start(),!locked);
         }
@@ -297,6 +297,33 @@ namespace Tossup.UI
         const int Columns = 5, Rows = 3, PerPage = Columns * Rows;
         const float CellW = 170, Icon = 84, CardH = 138;
 
+        static void MasteryEmblem(float x, float y, int level)
+        {
+            // The gem overlaps the coin's lower edge and rests against the nameplate.
+            var gem = level == 1 ? C.Blue : level == 2 ? C.Purple : C.Orange;
+            Color(C.Ink);
+            Gfx.Rectangle(true, x + 8, y, 10, 3);
+            Gfx.Rectangle(true, x + 5, y + 3, 16, 3);
+            Gfx.Rectangle(true, x + 2, y + 6, 22, 3);
+            Gfx.Rectangle(true, x, y + 9, 26, 6);
+            Gfx.Rectangle(true, x + 2, y + 15, 22, 3);
+            Gfx.Rectangle(true, x + 5, y + 18, 16, 3);
+            Gfx.Rectangle(true, x + 8, y + 21, 10, 3);
+            Color(C.Gold);
+            Gfx.Rectangle(true, x + 9, y + 2, 8, 3);
+            Gfx.Rectangle(true, x + 6, y + 5, 14, 3);
+            Gfx.Rectangle(true, x + 3, y + 8, 20, 8);
+            Gfx.Rectangle(true, x + 6, y + 16, 14, 3);
+            Gfx.Rectangle(true, x + 9, y + 19, 8, 3);
+            Color(gem);
+            Gfx.Rectangle(true, x + 10, y + 5, 6, 3);
+            Gfx.Rectangle(true, x + 7, y + 8, 12, 3);
+            Gfx.Rectangle(true, x + 5, y + 11, 16, 3);
+            Gfx.Rectangle(true, x + 7, y + 14, 12, 3);
+            Gfx.Rectangle(true, x + 10, y + 17, 6, 3);
+            Color(C.Face); Gfx.Rectangle(true, x + 9, y + 8, 3, 2);
+        }
+
         sealed class Entry
         {
             public string Id, Name, Description, ImageId;
@@ -311,16 +338,29 @@ namespace Tossup.UI
         };
 
         // Rarity filters use the same accent colours as coin details.
-        static readonly (string key, string label, Rgba fill)[] Tabs =
+        static readonly (CollectionRarityFilter key, string label, Rgba fill)[] Tabs =
         {
-            ("ALL", "All", C.Gold),
-            ("N", "Common", C.Muted),
-            ("R", "Uncommon", C.Green),
-            ("SR", "Rare", C.Blue),
-            ("UR", "Epic", C.Purple),
+            (CollectionRarityFilter.All, "All", C.Gold),
+            (CollectionRarityFilter.Common, "Common", C.Muted),
+            (CollectionRarityFilter.Uncommon, "Uncommon", C.Green),
+            (CollectionRarityFilter.Rare, "Rare", C.Blue),
+            (CollectionRarityFilter.Epic, "Epic", C.Purple),
         };
-        static readonly Dictionary<string, int> Rank = new Dictionary<string, int> { { "N", 1 }, { "R", 2 }, { "SR", 3 }, { "UR", 4 } };
-        static readonly (string key, string label)[] Sorts = { ("rarity", "Rarity"), ("name", "Name"), ("order", "Default") };
+        static readonly (CollectionSortMode key, string label)[] Sorts =
+            { (CollectionSortMode.Rarity, "Rarity"), (CollectionSortMode.Name, "Name"), (CollectionSortMode.Order, "Default") };
+
+        static bool MatchesFilter(Rarity rarity)
+        {
+            switch (Ui.CollectionFilter)
+            {
+                case CollectionRarityFilter.All: return true;
+                case CollectionRarityFilter.Common: return rarity == Rarity.Common;
+                case CollectionRarityFilter.Uncommon: return rarity == Rarity.Uncommon;
+                case CollectionRarityFilter.Rare: return rarity == Rarity.Rare;
+                case CollectionRarityFilter.Epic: return rarity == Rarity.Epic;
+                default: return false;
+            }
+        }
 
         static string SortLabel()
         {
@@ -330,7 +370,8 @@ namespace Tossup.UI
 
         static void CycleSort()
         {
-            (string key, string label)[] sorts = Ui.CollectionCategory == "coins" ? Sorts : new[] { ("name", "Name"), ("order", "Default") };
+            (CollectionSortMode key, string label)[] sorts = Ui.CollectionCategory == "coins" ? Sorts :
+                new[] { (CollectionSortMode.Name, "Name"), (CollectionSortMode.Order, "Default") };
             for (int i = 0; i < sorts.Length; i++)
             {
                 if (sorts[i].key != Ui.CollectionSort) continue;
@@ -349,10 +390,9 @@ namespace Tossup.UI
                 for (int index = 0; index < Content.CoinOrder.Count; index++)
                 {
                     var coin = Content.CoinOrder[index];
-                    string rarity = DefinitionKeys.RarityCode(coin.Rarity);
-                    if (Ui.CollectionFilter != "ALL" && rarity != Ui.CollectionFilter) continue;
+                    if (!MatchesFilter(coin.Rarity)) continue;
                     entries.Add(new Entry { Id = coin.Id, Name = Lang.CoinName(coin.Id), ImageId = coin.Id,
-                        Rank = Rank.TryGetValue(rarity, out int rank) ? rank : 9, Index = index,
+                        Rank = (int)coin.Rarity + 1, Index = index,
                         Available = Ui.Profile.Collected.Contains(coin.Id) });
                 }
             }
@@ -383,8 +423,8 @@ namespace Tossup.UI
             }
             entries.Sort((a, b) =>
             {
-                if (Ui.CollectionCategory == "coins" && Ui.CollectionSort == "rarity" && a.Rank != b.Rank) return a.Rank.CompareTo(b.Rank);
-                if (Ui.CollectionSort == "name")
+                if (Ui.CollectionCategory == "coins" && Ui.CollectionSort == CollectionSortMode.Rarity && a.Rank != b.Rank) return a.Rank.CompareTo(b.Rank);
+                if (Ui.CollectionSort == CollectionSortMode.Name)
                 {
                     int byName = string.CompareOrdinal(a.Name, b.Name);
                     if (byName != 0) return byName;
@@ -407,14 +447,14 @@ namespace Tossup.UI
 
         public static void Draw()
         {
-            Frame(Title("collection"), "BACK", () => A.Go("title"));
+            Frame(Title("collection"), "BACK", () => A.Go(UiScreen.Title));
 
             for (int i = 0; i < Categories.Length; i++)
             {
                 var category = Categories[i];
                 bool selected = Ui.CollectionCategory == category.key;
                 TabButton(L(category.label), 251 + i * 196, 146, 184, C.Gold,
-                    () => { Ui.CollectionCategory = category.key; Ui.CollectionPage = 1; Ui.CollectionFilter = "ALL"; Ui.CollectionSort = category.key == "coins" ? "rarity" : "order"; }, selected);
+                    () => { Ui.CollectionCategory = category.key; Ui.CollectionPage = 1; Ui.CollectionFilter = CollectionRarityFilter.All; Ui.CollectionSort = category.key == "coins" ? CollectionSortMode.Rarity : CollectionSortMode.Order; }, selected);
             }
 
             // sort + rarity filters
@@ -452,17 +492,26 @@ namespace Tossup.UI
                     Ui.CollectionCategory == "relics" ? Ui.RelicImages[entry.ImageId] :
                     Ui.CollectionCategory == "characters" ? Ui.CharacterImages[entry.ImageId] : Ui.CoinImages[entry.ImageId];
                 bool coinEntry = Ui.CollectionCategory == "coins";
-                var border = coinEntry && entry.Available ? RarityColor(Content.Coins[entry.Id].Rarity) : C.Line;
+                var border = coinEntry ? (entry.Available ? RarityColor(Content.Coins[entry.Id].Rarity) : C.Muted) : C.Line;
                 Box(x + 6, y, CellW - 12, CardH, C.PanelDk);
                 Outline(x + 6, y, CellW - 12, CardH, border);
                 float imageX = x + (CellW - Icon) / 2;
                 if (coinEntry && !entry.Available)
                 {
-                    Color(C.Slot);
-                    Gfx.Circle(true, x + CellW / 2, y + 48, Icon / 2);
-                    Color(C.Line);
-                    Gfx.Circle(false, x + CellW / 2, y + 48, Icon / 2);
-                    Centered("?", x, y + 20, CellW, Ui.F48, C.Muted);
+                    float iconY = y + 6;
+                    Color(C.White, .48f);
+                    Gfx.Draw(image, imageX, iconY, Icon / image.Width, Icon / image.Height);
+                    float lockX = imageX + Icon - 20;
+                    float lockY = iconY + 2;
+                    Color(C.Ink);
+                    Gfx.Rectangle(true, lockX - 3, lockY - 2, 26, 32);
+                    Color(C.Gold);
+                    Gfx.Rectangle(true, lockX + 4, lockY + 2, 12, 4);
+                    Gfx.Rectangle(true, lockX + 2, lockY + 6, 4, 10);
+                    Gfx.Rectangle(true, lockX + 14, lockY + 6, 4, 10);
+                    Gfx.Rectangle(true, lockX, lockY + 14, 20, 14);
+                    Color(C.Ink);
+                    Gfx.Rectangle(true, lockX + 9, lockY + 19, 3, 5);
                 }
                 else if (coinEntry) CoinImage(entry.Id, imageX, y + 6, Icon);
                 else
@@ -472,11 +521,24 @@ namespace Tossup.UI
                     Gfx.Draw(image, imageX, y + 6, Icon / image.Width, Icon / image.Height);
                 }
                 Box(x + 11, y + 98, CellW - 22, 32, C.Card);
+                if (coinEntry && entry.Available)
+                {
+                    int level = Profile.MasteryLevel(Ui.Profile, Content.Coins[entry.Id]);
+                    if (level > 0)
+                    {
+                        Gfx.Push();
+                        Gfx.Translate(x + (CellW - 32.5f) / 2, y + 70);
+                        Gfx.Scale(1.25f, 1.25f);
+                        MasteryEmblem(0, 0, level);
+                        Gfx.Pop();
+                    }
+                }
                 string cardName = entry.Available ? entry.Name : Ui.CollectionCategory == "coins" ? "Uncollected" : "Locked";
                 Centered(cardName, x + 11, y + 104, CellW - 22, Ui.F20, entry.Available ? C.Face : C.Muted);
                 if (coinEntry)
                 {
-                    if (entry.Available) CoinHover(entry.Id, x + 6, y, CellW - 12, CardH);
+                    string coinId = entry.Id;
+                    AddButton(x + 6, y, CellW - 12, CardH, () => CoinDetailView.Open(Content.Coins[coinId]), "DETAIL");
                 }
                 else
                     TextHover(entry.Name, entry.Description, x + 6, y, CellW - 12, CardH);
@@ -615,7 +677,7 @@ namespace Tossup.UI
 
         public static void Draw()
         {
-            Frame(Title("options"), "BACK", () => A.Go("title"));
+            Frame(Title("options"), "BACK", () => A.Go(UiScreen.Title));
             Button("GAME", 280, 146, 230, 44, Ui.OptionsTab == "game" ? C.Gold : C.PanelLight, () => Ui.OptionsTab = "game");
             Button("SOUND", 525, 146, 230, 44, Ui.OptionsTab == "sound" ? C.Gold : C.PanelLight, () => Ui.OptionsTab = "sound");
             Button("CONTROLS", 770, 146, 230, 44, Ui.OptionsTab == "controls" ? C.Gold : C.PanelLight, () => Ui.OptionsTab = "controls");
@@ -671,12 +733,12 @@ namespace Tossup.UI
             ("ENERGY", "Strong coins cost ENERGY to flip (shown as E1, E2). You get 3 per level; Spark, Copper and Flux Capacitor give more. If you cannot pay, choose a different coin. Your last coin can still flip for up to 2 gold."),
             ("QUOTA MET", "You are paid gold at once and the level stays open: every 2 extra points pay 1 more gold. Press OPEN SHOP (top right) when you want to move on."),
             ("OUT OF COINS", "If the quota is not met, pay gold to EXCHANGE: 3 of your played coins come back (only a limited number of times per level). If you cannot, the run is over."),
-            ("THE SHOP", "Buy COINS (larger and stronger decks raise the next quota), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Odds Tuner adds Heads chance; Coin Removal drops a weak coin."),
+            ("THE SHOP", "Buy COINS (larger and stronger decks raise the next quota), CHIPS (one-use helpers, used mid-level), and a PRIZE (lasts the run). Coin Removal drops a weak coin."),
         };
 
         public static void Draw()
         {
-            Frame(Title("help"), "BACK", () => A.Go("title"));
+            Frame(Title("help"), "BACK", () => A.Go(UiScreen.Title));
             for (int i = 0; i < Sections.Length; i++)
             {
                 int col = i % 2, row = i / 2;
@@ -698,7 +760,7 @@ namespace Tossup.UI
                 666, 582, 528);
             if (Ui.HelpNext != null)
             {
-                string next = Ui.HelpNext;
+                UiScreen next = Ui.HelpNext.Value;
                 IconButton("GOT IT", Ui.UiImages["start_level"], 470, 684, 340, 56, C.Green, () => A.Go(next));
             }
         }

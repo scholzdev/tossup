@@ -69,15 +69,14 @@ namespace Tossup
         public int Uid;
         public CoinDef Definition;
         public string Id => Definition?.Id;
-        public double Bonus; // odds tuner upgrades
         public double Charge; // Fuse
         public bool Jackpot; // Lucky Seven
         public double Debt; // Martyr
         public double Stack; // Snowball
         public double Anger; // Phoenix
-        public Upgrade Upgrade;
         public int CompostLevel;
         public int FetchedLevel;
+        public int MasteryFirstHeadsLevel;
     }
 
     // A "next N coins ..." buff. Kind: mult, odds, swap, heads. A buff made while a coin resolves is
@@ -93,6 +92,8 @@ namespace Tossup
         public CoinType? TargetType;
         public OutcomeSide? AppliesOn;
         public Effect AppliedEffect;
+        public int SourceUid;
+        public double PenaltyAmount;
     }
 
     public sealed class Combo
@@ -110,6 +111,7 @@ namespace Tossup
         public string CoinId;
         public double Probability;
         public double TieProbability;
+        public double OddsSampleTime;
         public string Raw, Result, Final;
         public bool Forced;
         public string Altered; // "BUFF", "RELIC", "THE HOUSE": shown so a changed side is never a mystery
@@ -262,8 +264,7 @@ namespace Tossup
 
     public sealed class AugmentChoice
     {
-        public string Key, Title, Detail, CoinId, UpgradeId, UpgradeName;
-        public Upgrade CurrentUpgrade;
+        public string Key, Title, Detail, CoinId;
     }
 
     public sealed class GameState
@@ -311,7 +312,6 @@ namespace Tossup
         public AugmentPending AugmentPending;
         public double NextLevelQuotaBonus;
         public ShopState Shop = new ShopState();
-        public List<Upgrade> ShopUpgrades = new List<Upgrade>();
         // presentation flags kept on the run, as the original did
         public bool Paused;
 
@@ -328,6 +328,7 @@ namespace Tossup
         public bool Tutorial;
         public int TutorialHeads;
         public SandboxConfig Sandbox;
+        [NonSerialized] public ProfileData MasteryProfile;
     }
 
     public sealed class GameRuleException : Exception

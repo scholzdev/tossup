@@ -17,10 +17,16 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(10) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Quota(6) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
-        public override IReadOnlyList<Upgrade> Upgrades { get; } = new Upgrade[]
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Blood Heads landed", 12, 45, 130,
+            "Heads scores +1 point.", "Tails adds 1 less quota.", "Heads chance +2%.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
+
+        public BloodCoin()
         {
-            UpgradeCatalog.Bloodletting,
-            UpgradeCatalog.SureStrike,
-        };
+            On.Game.Coins.Resolved += (ctx,e) => { if(e.Inst==ctx.Coin && e.Res.Result==Side.Heads) ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx,res) => { if(res.Result==Side.Heads && ctx.Mastery.Level>=1) res.Effects.Add(Effect.Score(1)); if(res.Result==Side.Tails && ctx.Mastery.Level>=2) foreach(var effect in res.Effects) if(effect.Type==EffectType.Penalty) effect.Amount=Math.Max(0,effect.Amount-1); };
+            On.Coins.Odds += (ctx,odds) => { if(ctx.Mastery.Level>=3) odds.Heads+=.02; };
+        }
     }
 }

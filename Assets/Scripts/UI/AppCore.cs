@@ -15,14 +15,15 @@ namespace Tossup.UI
             "title_help", "title_play_de", "title_sets_de", "title_collection_de", "title_options_de", "title_help_de",
         };
 
-        static readonly Dictionary<string, Action> Screens = new Dictionary<string, Action>
+        static readonly Dictionary<UiScreen, Action> Screens = new Dictionary<UiScreen, Action>
         {
-            { "title", TitleView.Draw },
-            { "select", SelectView.Draw },
-            { "collection", CollectionView.Draw },
-            { "sets", SetsView.Draw },
-            { "options", OptionsView.Draw },
-            { "help", HelpView.Draw },
+            { UiScreen.Title, TitleView.Draw },
+            { UiScreen.Select, SelectView.Draw },
+            { UiScreen.Collection, CollectionView.Draw },
+            { UiScreen.CoinDetail, CoinDetailView.Draw },
+            { UiScreen.Sets, SetsView.Draw },
+            { UiScreen.Options, OptionsView.Draw },
+            { UiScreen.Help, HelpView.Draw },
         };
 
         public static void Load(IPlatform platform)
@@ -208,8 +209,9 @@ namespace Tossup.UI
             {
                 var game = Ui.Game;
                 if (game != null && !game.Paused) A.OpenMenu();
-                else if (Ui.Screen == "sets") A.BackFromSets();
-                else if (Ui.Screen != "title") A.Go("title");
+                else if (Ui.Screen == UiScreen.Sets) A.BackFromSets();
+                else if (Ui.Screen == UiScreen.CoinDetail) CoinDetailView.Close();
+                else if (Ui.Screen != UiScreen.Title) A.Go(UiScreen.Title);
                 else if (game != null) game.Paused = false;
                 return;
             }
@@ -232,7 +234,7 @@ namespace Tossup.UI
                 }
             }
 
-            if ((currentGame == null || currentGame.Paused) && Ui.Screen == "select" &&
+            if ((currentGame == null || currentGame.Paused) && Ui.Screen == UiScreen.Select &&
                 int.TryParse(key, out int choice) && choice >= 1 && choice <= Content.CharacterOrder.Count)
             {
                 A.SelectCharacter(Content.CharacterOrder[choice - 1]);

@@ -20,10 +20,25 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Score(3) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Gold(1) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "First Reprise plays across levels", 10, 35, 100,
+            "Heads scores +1 point.", "Tails gains +1 gold.", "Heads scores another +2 points.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Heads);
 
         public RepriseCoin()
         {
             On.Coins.Resolve += ReturnOnce;
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (!ctx.Game.Encounter.BestScores.ContainsKey(ctx.Coin.Uid)) ctx.Mastery.Add(1);
+                int level = ctx.Mastery.Level;
+                if (res.Result == Side.Heads)
+                {
+                    if (level >= 1) res.Effects.Add(Effect.Score(1));
+                    if (level >= 3) res.Effects.Add(Effect.Score(2));
+                }
+                else if (res.Result == Side.Tails && level >= 2) res.Effects.Add(Effect.Gold(1));
+            };
         }
 
         static void ReturnOnce(HookContext context, Res res)

@@ -17,10 +17,20 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.Energy(2) };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.Score(3) };
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
-        public override IReadOnlyList<Upgrade> Upgrades { get; } = new Upgrade[]
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Spark energy generated", 30, 100, 300,
+            "Tails scores +1 point.", "Heads generates +1 energy.", "Heads chance +3%.",
+            MasterySides.Tails, MasterySides.Heads, MasterySides.Heads);
+
+        public SparkCoin()
         {
-            UpgradeCatalog.HotSpark,
-            UpgradeCatalog.ReliableSpark,
-        };
+            On.Game.Effects.Applied += (ctx,e) =>
+            {
+                if (e.Inst == ctx.Coin && e.Effect?.Type == EffectType.Energy)
+                    ctx.Mastery.Add(Math.Max(0, e.EnergyDelta));
+            };
+            On.Coins.Resolve += (ctx,res) => { if(res.Result==Side.Tails && ctx.Mastery.Level>=1) res.Effects.Add(Effect.Score(1)); if(res.Result==Side.Heads && ctx.Mastery.Level>=2) res.Effects.Add(Effect.Energy(1)); };
+            On.Coins.Odds += (ctx,odds) => { if(ctx.Mastery.Level>=3) odds.Heads+=.03; };
+        }
     }
 }

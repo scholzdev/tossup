@@ -18,6 +18,33 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Tails { get; } = Array.Empty<Effect>();
         public override IReadOnlyList<Effect> Edge => Effect.HalfOf(Tails, Heads);
         public override string HeadsDescription => "1/2/3 copies: 2/8/18 points";
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Square Dance Heads with at least two copies", 10, 35, 100,
+            "Heads scores +1 point per copy.", "Heads chance +3%.",
+            "Heads scores another +1 point per copy.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
+
+        public SquareDanceCoin()
+        {
+            On.Game.Coins.Resolved += (ctx, e) =>
+            {
+                if (e.Inst != ctx.Coin || e.Res.Result != Side.Heads) return;
+                int copies = 0;
+                foreach (var coin in ctx.Game.Coins)
+                    if (coin.Definition == this) copies++;
+                if (copies >= 2) ctx.Mastery.Add(1);
+            };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (res.Result != Side.Heads || ctx.Mastery.Level == 0) return;
+                int copies = 0;
+                foreach (var coin in ctx.Game.Coins)
+                    if (coin.Definition == this) copies++;
+                res.Effects.Add(Effect.Score(copies * (ctx.Mastery.Level >= 3 ? 2 : 1)));
+            };
+            On.Coins.Odds += (ctx, odds) =>
+            { if (ctx.Mastery.Level >= 2) odds.Heads += .03; };
+        }
 
         public override double EstimateExtraScore(GameState game, CoinInst inst, double heads, double tails)
         {

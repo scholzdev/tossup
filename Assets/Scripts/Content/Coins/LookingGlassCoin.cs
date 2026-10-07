@@ -17,5 +17,24 @@ namespace Tossup.Coins
         public override IReadOnlyList<Effect> Heads { get; } = new[] { Effect.NextHeads() };
         public override IReadOnlyList<Effect> Tails { get; } = new[] { Effect.NextSwap() };
         public override IReadOnlyList<Effect> Edge { get; } = new[] { Effect.Score(3) };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Coins redirected by Looking Glass", 10, 40, 120,
+            "Heads scores 1 point.", "Tails scores 1 point.", "Edge scores +2 points.",
+            MasterySides.Heads, MasterySides.Tails, MasterySides.Edge);
+
+        public LookingGlassCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) =>
+            {
+                if (e.Buff?.SourceUid == ctx.Coin.Uid) ctx.Mastery.Add(1);
+            };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                int level = ctx.Mastery.Level;
+                if (res.Result == Side.Heads && level >= 1) res.Effects.Add(Effect.Score(1));
+                if (res.Result == Side.Tails && level >= 2) res.Effects.Add(Effect.Score(1));
+                if (res.Result == Side.Tie && level >= 3) res.Effects.Add(Effect.Score(2));
+            };
+        }
     }
 }

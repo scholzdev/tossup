@@ -26,6 +26,23 @@ namespace Tossup.Coins
                 if (result.Result == Side.Heads && !context.Game.Encounter.BestScores.ContainsKey(context.Coin.Uid))
                     result.Effects.Add(Effect.ExtraDraw(1));
             };
+            On.Coins.Resolve += (ctx, res) =>
+            {
+                if (res.Result != Side.Heads || ctx.Game.Encounter.BestScores.ContainsKey(ctx.Coin.Uid) ||
+                    ctx.Game.Encounter.Returned >= Game.ReturnCap) return;
+                if (ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(Math.Min(2, ctx.Mastery.Level)));
+                if (ctx.Mastery.Level >= 3) res.Effects.Add(Effect.Energy(1));
+            };
+            On.Game.Effects.Applied += (ctx, e) =>
+            {
+                if (e.Inst == ctx.Coin && e.Effect?.Type == EffectType.ExtraDraw && e.ReturnedDelta > 0)
+                    ctx.Mastery.Add(e.ReturnedDelta);
+            };
         }
+
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "First Heads that return Overclock to the pile", 15, 60, 180,
+            "That Heads scores +1.", "That Heads scores +2 total.", "That Heads also grants 1 energy.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
     }
 }

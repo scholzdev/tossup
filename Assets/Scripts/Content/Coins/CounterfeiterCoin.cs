@@ -21,5 +21,16 @@ namespace Tossup.Coins
         {
             new BuffSpec("counterfeiter_greed", OutcomeSide.Heads, BuffTarget.NextOfType(CoinType.Greed, 2), Effect.TypeBuff(kind: CoinType.Greed)),
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Greed coins affected by Counterfeiter", 12, 45, 135,
+            "Tails loses 1 less gold.", "Its buff reaches three Greed coins.", "Heads also scores 2 points.",
+            MasterySides.Tails, MasterySides.None, MasterySides.Heads);
+
+        public CounterfeiterCoin()
+        {
+            On.Game.Buffs.Applied += (ctx,e) => { if(e.Buff?.SourceUid==ctx.Coin.Uid && e.Buff.SpecId=="counterfeiter_greed") ctx.Mastery.Add(1); };
+            On.Coins.Resolve += (ctx,res) => { if(res.Result==Side.Tails && ctx.Mastery.Level>=1) foreach(var effect in res.Effects) if(effect.Type==EffectType.GoldLoss) effect.Amount=Math.Max(0,effect.Amount-1); if(res.Result==Side.Heads && ctx.Mastery.Level>=3) res.Effects.Add(Effect.Score(2)); };
+            On.Coins.BuffCreated += (ctx,buff) => { if(buff.SpecId=="counterfeiter_greed" && ctx.Mastery.Level>=2) buff.Left=3; };
+        }
     }
 }

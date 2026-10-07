@@ -31,6 +31,13 @@ namespace Tossup.Coins
                     case 2: odds.Tails += 0.12; break;
                 }
             };
+            On.Game.Coins.Resolved += (ctx, e) => { if (e.Inst == ctx.Coin && e.Flip.Final == Side.Heads && (int)(e.Flip.OddsSampleTime / 2) % 3 == 0) ctx.Mastery.Add(1); };
+            On.Coins.Odds += (ctx, odds) => { if (ctx.Game.Encounter != null && (int)(ctx.ElapsedSeconds / 2) % 3 == 0) odds.Heads += .02 * ctx.Mastery.Level; };
         }
+
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Heads landed during the Heads-favored phase", 20, 80, 240,
+            "Heads-favored odds gain another 2%.", "Heads-favored odds gain another 4% total.", "Heads-favored odds gain another 6% total.",
+            MasterySides.Heads, MasterySides.Heads, MasterySides.Heads);
     }
 }

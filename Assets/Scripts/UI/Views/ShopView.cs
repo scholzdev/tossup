@@ -53,10 +53,8 @@ namespace Tossup.UI
                 {
                     int cost = Game.CoinOfferCost(g, i);
                     Price(cost, x, 186, 110, g.Player.Gold >= cost && !full);
-                    var offerUpgrade = i < g.ShopUpgrades.Count ? g.ShopUpgrades[i] : null;
-                    CoinImage(id, x + 7, 228, 96, offerUpgrade);
-                    CoinHover(id, x, 228, 110, 96, upgrade: offerUpgrade);
-                    if (offerUpgrade != null) Centered("UPGRADED", x, 326, 110, Ui.F16, C.Gold);
+                    CoinImage(id, x + 7, 228, 96);
+                    CoinHover(id, x, 228, 110, 96);
                     int index = i;
                     Button(full ? "FULL" : "BUY", x, 336, 110, 34, C.Blue, () => Game.Buy(g, index), g.Player.Gold >= cost && !full);
                 }
@@ -95,22 +93,19 @@ namespace Tossup.UI
             }
             else Centered("SOLD", px, 474, 110, Ui.F32, C.Muted);
 
-            // tune-ups for the selected coin
+            // Services for the selected coin
             Box(1000, 190, 220, 370, PanelColor);
             Outline(1000, 190, 220, 370, C.Line);
-            Centered("TUNE-UPS", 1000, 200, 220, Ui.F20, C.Gold);
+            Centered("COIN SERVICES", 1000, 200, 220, Ui.F20, C.Gold);
             var selected = g.SelectedUid.HasValue ? Game.GetCoin(g, g.SelectedUid.Value) : null;
-            Centered("ODDS TUNER", 1000, 236, 220, Ui.F20, C.Face);
-            Centered("+10% HEADS ON THE", 1000, 262, 220, Ui.F16, C.Muted);
-            Centered("SELECTED COIN", 1000, 281, 220, Ui.F16, C.Muted);
-            Price(10, 1000, 298, 220, g.Player.Gold >= 10);
-            Button("UPGRADE", 1032, 340, 156, 36, C.Gold, () => { if (g.SelectedUid.HasValue) Game.Upgrade(g, g.SelectedUid.Value); },
-                g.Player.Gold >= 10 && selected != null && Game.Probability(g, selected) < 1);
-            Centered("COIN REMOVAL", 1000, 400, 220, Ui.F20, C.Face);
-            Centered("DROP THE SELECTED COIN", 1000, 426, 220, Ui.F16, C.Muted);
-            Price(8, 1000, 444, 220, g.Player.Gold >= 8);
-            Button("REMOVE", 1032, 486, 156, 36, C.Red, () => { if (g.SelectedUid.HasValue) Game.Remove(g, g.SelectedUid.Value); },
-                g.Player.Gold >= 8 && g.Coins.Count > 1);
+            Centered(selected == null ? "SELECT A COIN" : Lang.Upper(selected.Definition.Name), 1000, 225, 220, Ui.F16, C.Muted);
+            float tuneY = 248;
+            Box(1008, tuneY, 204, 64, C.Card);
+            Centered("COIN REMOVAL", 1008, tuneY + 6, 204, Ui.F16, C.Face);
+            TextHover("Coin Removal", "Drop the selected coin", 1008, tuneY, 204, 34);
+            Text("8 G", 1018, tuneY + 39, Ui.F16, g.Player.Gold >= 8 ? C.Gold : C.Red);
+            Button("REMOVE", 1102, tuneY + 34, 100, 26, C.Red, () => { if (g.SelectedUid.HasValue) Game.Remove(g, g.SelectedUid.Value); },
+                g.Player.Gold >= 8 && selected != null && g.Coins.Count > 1, face: Ui.F16);
 
             // your deck
             Text(L("YOUR DECK  %d / %d", g.Coins.Count, g.Slots), 70, 612, Ui.F20, C.Gold);
@@ -136,7 +131,7 @@ namespace Tossup.UI
                 CoinImage(item, x + 18, 668, 48);
                 double p = Game.Probability(g, item);
                 Centered(L("%d%% H", Math.Floor(p * 100 + .5)), x, 718, 84, Ui.F16, C.Gold);
-                CoinHover(item.Id, x, 664, 84, 76, p, upgrade: item.Upgrade, oddsTuned: item.Bonus > 0);
+                CoinHover(item.Id, x, 664, 84, 76, p);
                 AddButton(x, 664, 84, 76, () => A.CoinAction(item), "COIN");
             }
 

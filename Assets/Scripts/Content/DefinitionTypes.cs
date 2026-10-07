@@ -30,7 +30,6 @@ namespace Tossup
         [CoinColor("61B879")]
         Fortune
     }
-    public enum UpgradeType { ScoreBonus, Probability }
     public enum EffectType { AllOdds, Amplify, BankDiscard, ComboBonus, ComboShield, Energy, ExtraDraw, ExtraExchange, FetchBest, FortuneOdds, Gold, GoldLoss, NextHeads, NextMult, NextOdds, NextSwap, Penalty, Probability, Score, TypeBuff }
     public enum CharacterPerkType { StartEnergy, CoinDiscount, TailsGold, ExtraExchange, ComboStep, ComboShield }
 

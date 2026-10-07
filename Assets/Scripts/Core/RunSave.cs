@@ -63,20 +63,18 @@ namespace Tossup
             if (g.LastResult != null && g.LastResult.CoinId != null && !Content.Coins.ContainsKey(g.LastResult.CoinId)) return false;
             foreach (var c in g.Coins)
                 if (c == null || c.Id == null || !Content.Coins.ContainsKey(c.Id) || c.Uid < 1 || c.Uid > g.NextUid || !uids.Add(c.Uid) ||
-                    !Finite(c.Bonus) || !Finite(c.Charge) || !Finite(c.Debt) || !Finite(c.Stack) || !Finite(c.Anger) ||
-                    c.CompostLevel < 0 || c.FetchedLevel < 0 || (c.Upgrade != null && !c.Definition.TryGetUpgrade(c.Upgrade.Id,out _))) return false;
+                    !Finite(c.Charge) || !Finite(c.Debt) || !Finite(c.Stack) || !Finite(c.Anger) ||
+                    c.CompostLevel < 0 || c.FetchedLevel < 0) return false;
             if (g.SelectedUid.HasValue && !uids.Contains(g.SelectedUid.Value)) return false;
             if (!Ids(g.Relics, Content.Relics.ContainsKey) || !Ids(g.Items, Content.Items.ContainsKey) ||
                 !Ids(g.Unlocked, Content.Coins.ContainsKey) || !Ids(g.Purchased, Content.Coins.ContainsKey) ||
                 !Ids(g.ShopItems, Content.Items.ContainsKey, true) || g.ShopOffers == null || g.ShopOffers.Exists(c => c != null && (!Content.Coins.TryGetValue(c.Id,out var known) || known != c)) ||
-                g.Log == null || g.Log.Exists(x => x == null) || g.ShopUpgrades == null || g.ShopUpgrades.Count > g.ShopOffers.Count ||
+                g.Log == null || g.Log.Exists(x => x == null) ||
                 g.Shop == null || g.Shop.RefreshCost < 0 || g.Shop.CoinOfferCount < 1 || g.Shop.CoinOfferCount > 99 ||
                 !Finite(g.Shop.CoinPriceDiscount) || g.Shop.CoinPriceDiscount < 0 ||
                 g.ShopRelic != null && !Content.Relics.ContainsKey(g.ShopRelic) ||
                 g.RunEncounterId != null && (!Game.EncounterById.TryGetValue(g.RunEncounterId,out var savedEncounter) || g.RunEncounter != savedEncounter) ||
                 g.RunEncounterId == null && g.RunEncounter != null) return false;
-            for (int i = 0; i < g.ShopUpgrades.Count; i++)
-                if (g.ShopUpgrades[i] != null && (g.ShopOffers[i] == null || !g.ShopOffers[i].TryGetUpgrade(g.ShopUpgrades[i].Id,out _))) return false;
             if (!Ids(g.Augments, Game.AugmentDefs.ContainsKey) || g.Augments.Count > 2 || new HashSet<string>(g.Augments).Count != g.Augments.Count || g.AugmentData == null) return false;
             if (g.AugmentData.TryGetValue("type_specialist", out var kind) && (kind == null || !g.Augments.Contains("type_specialist") || !KnownType(kind))) return false;
             if (g.Phase == Phase.Augment)
@@ -162,7 +160,6 @@ namespace Tossup
         static void Write(StringBuilder output, object value, Type declared)
         {
             if (value == null) { output.Append("null"); return; }
-            if (value is Upgrade upgrade) { output.Append(JsonData.Quote(upgrade.Id)); return; }
             if (value is CoinDef coin) { output.Append(JsonData.Quote(coin.Id)); return; }
             Type type = value.GetType();
             if (type == typeof(EffectType) || type == typeof(CoinType)) { output.Append(JsonData.Quote(DefinitionKeys.Key((Enum)value))); return; }
@@ -223,8 +220,6 @@ namespace Tossup
             }
             Type nullable = Nullable.GetUnderlyingType(type);
             if (nullable != null) return Decode(data, nullable);
-            if (type == typeof(Upgrade))
-                return data.Kind == JsonKind.String && UpgradeCatalog.ById.TryGetValue(data.String,out var upgrade) ? upgrade : throw new FormatException("unknown upgrade definition");
             if (type == typeof(CoinDef))
                 return data.Kind == JsonKind.String && Content.Coins.TryGetValue(data.String,out var coin) ? coin : throw new FormatException("unknown coin definition");
             if (type == typeof(string)) return data.Kind == JsonKind.String ? data.String : throw new FormatException("expected string");

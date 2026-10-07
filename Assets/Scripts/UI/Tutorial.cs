@@ -68,7 +68,7 @@ namespace Tossup.UI
             Ui.Game = null;
             Ui.FlipAnimation = null;
             Ui.Holding = false;
-            Ui.Screen = "title";
+            Ui.Screen = UiScreen.Title;
         }
 
         public static void Next()

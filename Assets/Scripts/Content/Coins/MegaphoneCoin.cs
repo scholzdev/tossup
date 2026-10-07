@@ -21,5 +21,16 @@ namespace Tossup.Coins
         {
             new BuffSpec("megaphone_double_next", OutcomeSide.Heads, BuffTarget.NextCoins(2), Effect.NextMult(2)),
         };
+        public override CoinMastery Mastery { get; } = new CoinMastery(
+            "Coins affected by Megaphone doubling", 25, 100, 300,
+            "Megaphone Heads scores +1.", "Its buff reaches a third coin.", "Megaphone Heads scores +3 total.",
+            MasterySides.Heads, MasterySides.None, MasterySides.Heads);
+
+        public MegaphoneCoin()
+        {
+            On.Game.Buffs.Applied += (ctx, e) => { if (e.Buff?.SourceUid == ctx.Coin.Uid && e.Buff.SpecId == "megaphone_double_next") ctx.Mastery.Add(1); };
+            On.Coins.BuffCreated += (ctx, buff) => { if (buff.SpecId == "megaphone_double_next" && ctx.Mastery.Level >= 2) buff.Left = 3; };
+            On.Coins.Resolve += (ctx, res) => { if (res.Result == Side.Heads && ctx.Mastery.Level > 0) res.Effects.Add(Effect.Score(ctx.Mastery.Level >= 3 ? 3 : 1)); };
+        }
     }
 }
